@@ -1,17 +1,19 @@
-// Cuts a landmark out of a photo with a flat background, for version 2 of the
-// post. The background colour is read from the top-left pixel, and every large
-// area of that colour is removed (including sky enclosed between buildings).
-// The photo is toned to the palette, black to the panel's ink and white to
-// stone, and stood on the bottom edge of the line panel, centred, with its
-// tallest point at a chosen height.
+// Cuts a landmark out of a photo for the post's line panel. A PNG that is
+// already cut out, on a transparent background, keeps its own edges. Any other
+// photo needs a flat background: its colour is read from the top-left pixel,
+// and every large area of that colour is removed (including sky enclosed
+// between buildings). The photo is toned to the palette, black to the panel's
+// ink and white to stone, and stood on the bottom edge of the line panel,
+// centred, with its tallest point at a chosen height.
 //
 // usage: node scripts/skyline.mjs <photo> <name> [top] [left right bottom]
 //   top                where the tallest point sits, in panel pixels from the
 //                      top (default 540, halfway down the post)
 //   left right bottom  the part of the photo to keep, in the photo's own
 //                      pixels (default: all of it)
-// e.g.   node scripts/skyline.mjs assets/places/kuala-lumpur.png kuala-lumpur 540 167 434 600
-//        keeps just the twin towers, down to where other buildings crowd them
+// e.g.   node scripts/skyline.mjs assets/places/kuala-lumpur-skyline.png kuala-lumpur 65 18 767 860
+//        the skyline across the panel's full width, its soft outer edges
+//        cropped so the tree line sits flush on the bottom edge
 //
 // Writes public/places/<name>-920.png and <name>-1840.png (1x and 2x).
 
@@ -30,15 +32,28 @@ const INK = [0x14, 0x14, 0x14];
 const STONE = [0xe9, 0xe5, 0xdd];
 const MIN_SKY = 150; // smaller patches of the background colour stay in the photo
 
-const { data, info } = await sharp(input).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 const { width: W, height: H } = info;
 const [top = 540, left = 0, right = W, bottom = H] = numbers.map(Number);
-const bg = [data[0], data[1], data[2]];
+const at = (i, k) => data[i * 4 + k];
 
-// Background: pixels within a hair of the corner colour, in large patches.
-const near = new Uint8Array(W * H);
+// Already cut out: some pixels are fully transparent. Its own alpha is the
+// mask, lifted so the most solid pixels are fully solid (some editors stop
+// at 253, which would let the lines show faintly through the landmark).
+let solid = 0;
+let clear = 0;
 for (let i = 0; i < W * H; i++) {
-  near[i] = bg.every((c, k) => Math.abs(data[i * 3 + k] - c) <= 2) ? 1 : 0;
+  solid = Math.max(solid, at(i, 3));
+  if (at(i, 3) === 0) clear++;
+}
+const cutOut = clear > 0;
+
+// Otherwise the background: pixels within a hair of the corner colour, in
+// large patches.
+const bg = [at(0, 0), at(0, 1), at(0, 2)];
+const near = new Uint8Array(W * H);
+for (let i = 0; i < W * H && !cutOut; i++) {
+  near[i] = bg.every((c, k) => Math.abs(at(i, k) - c) <= 2) ? 1 : 0;
 }
 const sky = new Uint8Array(W * H);
 const seen = new Uint8Array(W * H);
@@ -70,10 +85,11 @@ for (let y = 0; y < h; y++) {
   for (let x = 0; x < w; x++) {
     const i = y * W + x + left;
     const o = (y * w + x) * 4;
-    const grey = (0.2126 * data[i * 3] + 0.7152 * data[i * 3 + 1] + 0.0722 * data[i * 3 + 2]) / 255;
+    const grey = (0.2126 * at(i, 0) + 0.7152 * at(i, 1) + 0.0722 * at(i, 2)) / 255;
     for (let k = 0; k < 3; k++) rgba[o + k] = Math.round(INK[k] + (STONE[k] - INK[k]) * grey);
-    rgba[o + 3] = sky[i] ? 0 : 255;
-    if (!sky[i]) tip = Math.min(tip, y);
+    const alpha = cutOut ? Math.min(255, Math.round((at(i, 3) * 255) / solid)) : sky[i] ? 0 : 255;
+    rgba[o + 3] = alpha;
+    if (alpha > 0) tip = Math.min(tip, y);
   }
 }
 
@@ -107,4 +123,6 @@ for (const k of [1, 2]) {
     .toFile(file);
   console.log(file);
 }
-console.log(`background ${bg.join(",")}, tallest point at row ${tip}, scale ${scale.toFixed(3)}`);
+console.log(
+  `${cutOut ? "cut out already" : `background ${bg.join(",")}`}, tallest point at row ${tip}, scale ${scale.toFixed(3)}`,
+);

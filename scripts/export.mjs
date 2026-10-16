@@ -1,17 +1,14 @@
-// Renders the post into export/: for each version, one MP4 per motion and a
-// PNG of the main design's still frame, each in 4K (3840 x 2160) and 1080p
-// (1920 x 1080).
+// Renders the post into export/: one MP4 per motion and a PNG of the main
+// design's still frame, each in 4K (3840 x 2160) and 1080p (1920 x 1080).
 // Frames are stepped one by one (not screen-recorded), so every video is
 // smooth and loops cleanly. The page is captured at 2x for 4K, and the 1080p
 // files are those same frames at half size, so the two always match.
 //
-// usage: npm run export                      every version and motion
-//        npm run export -- skyline           one version, every motion
-//        npm run export -- original scenes   one version, one motion
+// usage: npm run export
 
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { mkdir } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { post } from "../src/content/post.ts";
 
@@ -70,52 +67,53 @@ const open = async (params = {}) => {
   await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0));
 };
 
-// The page lists its versions and motions; the first motion is the main design.
+// The page lists its motions; the first is the main design.
 await open();
-const all = await page.evaluate(() => ({ motions: window.__post.motions, versions: window.__post.versions }));
-const args = process.argv.slice(2);
-const pick = (list) => {
-  const chosen = list.filter((x) => args.includes(x.id));
-  return chosen.length ? chosen : list;
-};
+const motions = await page.evaluate(() => window.__post.motions);
+const asked = motions.filter((m) => process.argv.slice(2).includes(m.id));
 
-for (const { id: version, suffix } of pick(all.versions)) {
-  const name = `${NAME}${suffix}`;
+// The still: the first motion's still frame.
+await page.evaluate((s) => window.__post.renderAt(s), motions[0].still);
+await page.screenshot({ path: `export/${NAME}-4k.png`, clip: CLIP });
+await finished(ffmpeg(["-i", `export/${NAME}-4k.png`, "-vf", HALF, `export/${NAME}.png`]), "the still");
+console.log(`export/${NAME}-4k.png\nexport/${NAME}.png`);
 
-  // The still: the first motion's still frame.
-  await open({ version });
-  await page.evaluate((s) => window.__post.renderAt(s), all.motions[0].still);
-  await page.screenshot({ path: `export/${name}-4k.png`, clip: CLIP });
-  await finished(ffmpeg(["-i", `export/${name}-4k.png`, "-vf", HALF, `export/${name}.png`]), "the still");
-  console.log(`export/${name}-4k.png\nexport/${name}.png`);
+for (const { id: motion, duration, still } of asked.length ? asked : motions) {
+  await open({ motion });
+  const frames = Math.round(duration * FPS) * LOOPS;
+  const uhd = `export/${NAME}-${motion}-4k.mp4`;
+  const hd = `export/${NAME}-${motion}.mp4`;
 
-  for (const { id: motion, duration, still } of pick(all.motions)) {
-    await open({ version, motion });
-    const frames = Math.round(duration * FPS) * LOOPS;
-    const uhd = `export/${name}-${motion}-4k.mp4`;
-    const hd = `export/${name}-${motion}.mp4`;
+  const encoder = ffmpeg(
+    [
+      "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "png", "-i", "-",
+      "-filter_complex", `[0:v]split=2[a][b];[a]${TO_VIDEO}[uhd];[b]${HALF},${TO_VIDEO}[hd]`,
+      // Written under a .part name and renamed once complete, so Download 4K
+      // never hands out a video that is still being made.
+      "-map", "[uhd]", ...x264("5.2"), "-f", "mp4", `${uhd}.part`,
+      "-map", "[hd]", ...x264("4.2"), "-f", "mp4", `${hd}.part`,
+    ],
+    "pipe",
+  );
 
-    const encoder = ffmpeg(
-      [
-        "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "png", "-i", "-",
-        "-filter_complex", `[0:v]split=2[a][b];[a]${TO_VIDEO}[uhd];[b]${HALF},${TO_VIDEO}[hd]`,
-        "-map", "[uhd]", ...x264("5.2"), uhd,
-        "-map", "[hd]", ...x264("4.2"), hd,
-      ],
-      "pipe",
-    );
-
-    for (let i = 0; i < frames; i++) {
-      // Videos open on the still frame, so the post's thumbnail is the design.
-      await page.evaluate((s) => window.__post.renderAt(s), still + i / FPS);
-      const png = await page.screenshot({ clip: CLIP, type: "png" });
-      if (!encoder.stdin.write(png)) await once(encoder.stdin, "drain");
-      if (i % FPS === 0) process.stdout.write(`\r${name} ${motion}: ${Math.round((i / frames) * 100)}%   `);
+  for (let i = 0; i < frames; i++) {
+    // Videos open on the still frame, so the post's thumbnail is the design.
+    await page.evaluate((s) => window.__post.renderAt(s), still + i / FPS);
+    const png = await page.screenshot({ clip: CLIP, type: "png" });
+    if (!encoder.stdin.write(png)) await once(encoder.stdin, "drain");
+    if (i % FPS === 0) {
+      const percent = Math.round((i / frames) * 100);
+      process.stdout.write(`\r${motion}: ${percent}%   `);
+      // Read by the viewer's Download 4K button while the export runs.
+      await writeFile("export/progress.json", JSON.stringify({ motion, percent }));
     }
-    encoder.stdin.end();
-    await finished(encoder, `${name} ${motion}`);
-    process.stdout.write(`\r${uhd}\n${hd} (${frames} frames, ${(frames / FPS).toFixed(0)}s)\n`);
   }
+  encoder.stdin.end();
+  await finished(encoder, motion);
+  await rename(`${uhd}.part`, uhd);
+  await rename(`${hd}.part`, hd);
+  await rm("export/progress.json", { force: true });
+  process.stdout.write(`\r${uhd}\n${hd} (${frames} frames, ${(frames / FPS).toFixed(0)}s)\n`);
 }
 
 await browser.close();

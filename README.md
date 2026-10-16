@@ -1,7 +1,8 @@
 # Aerchain speaker post
 
 An animated speaker post in black, orange and stone: the headline and speaker on
-stone at the left, and a staircase of scanlines on the right that moves.
+stone at the left, and on the right a field of scanlines that moves behind the
+Kuala Lumpur skyline.
 Built for Darshan Kadam's SpendOS talk; set up so the next speaker is a quick swap.
 
 ## See it
@@ -10,45 +11,40 @@ Built for Darshan Kadam's SpendOS talk; set up so the next speaker is a quick sw
 npm run dev
 ```
 
-Then open http://localhost:3200. The toolbar has two versions of the post:
+Then open http://localhost:3200. The Kuala Lumpur skyline, the Petronas Towers
+at its centre, stands across the foot of the line panel, and the lines move in
+the sky behind it.
 
-1. **Version 1**: the lines on their own.
-2. **Version 2**: the same post and motion, with Kuala Lumpur's Petronas
-   Towers rising from the bottom edge of the line panel, their tips halfway
-   up the post. The lines keep moving behind them.
+The motion follows the Solvd reference video. The panel moves between black,
+orange and stone in stepped wipes: an orange staircase rises, stone sweeps down
+from the top, an orange pixel circle bursts out of the right edge, then black
+slides back in from the middle. The logo changes colour line by line as each
+wipe passes behind it, and the orange "ai" flips. Each change sets off on an
+even 1.5 second beat and rests about a third of a second before the next, the
+loop point included, so the loop runs as one steady pulse. The bands ease into
+the left edge instead of stopping dead, and the circle is a true pixel circle
+that springs out, overshoots and settles. **Before** at the top right (or B)
+shows the motion exactly as measured from the reference, and **After** brings
+the post's own timing back.
 
-And four motions:
-
-1. **Scenes** (the main one): after the Solvd reference video. The panel moves
-   between black, orange and stone in stepped wipes: an orange staircase rises,
-   stone sweeps down from the top, an orange pixel circle bursts out of the
-   right edge, then black slides back in from the middle. The logo changes
-   colour line by line as each wipe passes behind it, and the orange "ai" flips.
-2. **Climb**: the steps reach out one after another, lowest first.
-3. **Breathe**: one slow wave runs up the staircase.
-4. **Signal**: thinks, decides, acts. The lines cool to stone and search, lock
-   back onto the steps in orange from the bottom up, then the top step fires
-   across the panel.
-
-Space pauses, keys 1 to 4 switch the motion, V switches the version.
-**Download 4K** at the end of the toolbar saves the version and motion you are
-watching as a 3840 x 2160 video (it serves the file made by `npm run export`,
+Space pauses. Where the skyline stands is `skyline.place` in
+`src/content/post.ts`: it moves sideways, lifts (below zero it sinks) and
+scales from its foot, and past a scale of 1.00 the image is enlarged beyond its
+own pixels and softens in 4K. **Download 4K** at the end of the toolbar saves
+the post as a 3840 x 2160 video (it serves the file made by `npm run export`,
 so export first).
 
 ## Export
 
 ```bash
-npm run export                    # both versions, every motion
-npm run export -- skyline         # version 2 only
-npm run export -- original scenes # version 1, one motion
+npm run export
 ```
 
-Files land in `export/`, each in 4K and in 1080p. Version 2's files have
-`-skyline` after the name.
+Files land in `export/`, each in 4K and in 1080p.
 
 - `aerchain-speaker-<name>-4k.png` and `aerchain-speaker-<name>.png`: the still
   (the rising staircase), 3840 x 2160 and 1920 x 1080
-- `aerchain-speaker-<name>-<motion>-4k.mp4` and `aerchain-speaker-<name>-<motion>.mp4`:
+- `aerchain-speaker-<name>-scenes-4k.mp4` and `aerchain-speaker-<name>-scenes.mp4`:
   3840 x 2160 and 1920 x 1080, 60 fps, the loop played twice, opening on the
   still frame so the thumbnail is the design
 
@@ -64,28 +60,32 @@ about ten minutes. It uses Google Chrome, which is already on this Mac.
    ```bash
    node scripts/photo.mjs assets/speakers/jane-doe.png jane-doe 20 10 330
    ```
-3. For version 2, put a landmark photo with a flat, single-colour sky in
-   `assets/places/` and cut it out (the sky colour is read from the top-left
-   corner). The numbers are where the tallest point sits (540 is halfway down
-   the post), then the part of the photo to keep: its left, right and bottom
-   edges in the photo's own pixels. Kuala Lumpur was made with:
+3. Put the landmark in `assets/places/` and cut it out. A PNG that is already
+   cut out on a transparent background keeps its own edges; any other photo
+   needs a flat, single-colour sky, read from its top-left corner. The numbers
+   are where the tallest point sits (540 is halfway down the post), then the
+   part of the image to keep: its left, right and bottom edges in the image's
+   own pixels. Kuala Lumpur was made with:
    ```bash
-   node scripts/skyline.mjs assets/places/kuala-lumpur.png kuala-lumpur 540 167 434 600
+   node scripts/skyline.mjs assets/places/kuala-lumpur-skyline.png kuala-lumpur 65 18 767 860
    ```
-   The bigger the photo, the sharper it is in 4K.
+   Where the image meets the bottom and sides of the panel, crop just inside
+   its soft outer edge, so the lines never show through beneath it. The bigger
+   the image, the sharper it is in 4K.
 4. Edit `src/content/post.ts`: headline lines, name, role, company, photo
-   paths, the landmark's name and files, and the slug used for file names.
+   paths, the event's date and location (with the words to set in orange),
+   the landmark's name and files, and the slug used for file names.
 5. `npm run export`.
 
 ## Where things are
 
 - `src/content/post.ts`: the words, the photo and the landmark
 - `src/components/post/post.tsx`: layout of the post
-- `src/components/post/versions.ts`: the two versions
-- `src/components/post/lines.ts`: the scanlines, the four motions and the logo animation
+- `src/components/post/lines.ts`: the scanlines, their motion and the logo animation.
+  Scenes reads as a storyboard: its times in `SCENE_TIMING`, the two looks in `SCENE_LOOKS`
 - `src/components/post/palette.ts`: black, orange and stone
 - `src/components/post/wordmark-paths.ts`: the Aerchain wordmark (from `assets/brand/aerchain-wordmark.svg`)
-- `src/app/download/[version]/[motion]/route.ts`: hands the 4K video to the Download 4K button
+- `src/app/download/[motion]/route.ts`: hands the 4K video to the Download 4K button
 - `scripts/export.mjs`, `scripts/photo.mjs`, `scripts/skyline.mjs`: export, speaker photo, landmark cut-out
-- `assets/places/`: the original landmark photos
+- `assets/places/`: the landmark image
 - `assets/reference/`: the line texture, the layout reference and the reference video

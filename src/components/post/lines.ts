@@ -29,57 +29,85 @@ const STONE: Fill = { lit: PALETTE.stoneField, gap: PALETTE.stoneLine };
 type Layer = { edge: number; color: Fill };
 type LineState = { base: Fill; layers: Layer[] };
 
-export type MotionId = "scenes" | "climb" | "breathe" | "signal";
+export type MotionId = "scenes";
+
+// How Scenes moves: with softer landings (the post's own), or as measured
+// from the reference (the Before switch).
+export type Look = "reference" | "refined";
 
 type Motion = {
   id: MotionId;
   label: string;
-  hint: string;
   duration: number; // seconds per loop; every motion is seamless
   still: number; // the moment used for the PNG and the first video frame
-  line: (r: number, t: number) => LineState;
+  line: (r: number, t: number, look: Look) => LineState;
 };
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-const smooth = (e0: number, e1: number, x: number) => {
-  const k = clamp((x - e0) / (e1 - e0));
-  return k * k * (3 - 2 * k);
-};
 const wrap = (t: number, d: number) => ((t % d) + d) % d;
-const easeOut = (x: number) => 1 - (1 - x) ** 3;
 const easeInOut = (x: number) => (x < 0.5 ? 4 * x ** 3 : 1 - (-2 * x + 2) ** 3 / 2);
-// Out over `rise` seconds, back over `fall` seconds, zero outside.
-const pulse = (x: number, rise: number, fall: number) => {
-  if (x <= 0 || x >= rise + fall) return 0;
-  return x < rise ? easeOut(x / rise) : 1 - easeInOut((x - rise) / fall);
-};
-// Stable pseudo-random number in [0, 1) for a line.
-const hash = (n: number) => {
-  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
-  return x - Math.floor(x);
-};
 
 const bandOf = (r: number) => Math.floor(r / BAND);
 const lineInBand = (r: number) => r % BAND; // 0 is the band's top line
 
 // ---------------------------------------------------------------------------
-// Scenes: after the reference video. The panel moves between black, orange
-// and stone in stepped band wipes, ten bands of nine lines.
-//   black to orange: a staircase rises from the bottom-right corner
-//   orange to stone: bands sweep down from the top
-//   stone to orange: a stepped circle bursts out of the right edge
-//   orange to black: bands slide back in from the middle outwards
-// Timings are measured from the reference, frame by frame.
+// Scenes: the panel moves between black, orange and stone in stepped band
+// wipes, ten bands of nine lines, after the reference video.
 
-const SCENES = {
-  duration: 6,
-  still: 1.25, // mid-climb, the staircase from the reference still
-  cross: 0.43, // seconds for one band to cross the panel
-  lineLag: 0.004, // lines inside a band trail each other, softening its edge
-  rise: { at: 0.6, gap: 0.095 },
-  sweep: { at: 2.68, gap: 0.088 },
-  burst: { at: 4.05, gap: 0.075, grow: 0.75 },
-  back: { at: 4.62, gap: 0.09 },
+/* ─────────────────────────────────────────────────────────
+ * SCENES STORYBOARD
+ *
+ * Read top to bottom. Times are ms into the 6000ms loop. Every change of
+ * scene sets off on a 1500ms beat, every wipe sets its bands off across
+ * the same 630ms, and each band takes 500ms to cross. So the loop keeps
+ * one steady pulse, about 1150ms of motion then about 350ms of rest, four
+ * times round, with no longer pause where it loops.
+ *
+ *    0ms   orange rises as a staircase from the bottom-right corner,
+ *          bottom band first (70ms apart)
+ *  560ms   the still: mid-rise, the frame every export opens on
+ * 1500ms   stone sweeps down, top band first (70ms apart)
+ * 3000ms   an orange pixel burst grows out of the right edge ring by
+ *          ring from the middle (75ms apart), exactly as the reference
+ *          has it, and fills the panel by 4050ms
+ * 4500ms   black slides back in from the middle bands outwards
+ *          (rings 157.5ms apart, the same 630ms spread)
+ * 6000ms   loop: orange rises again
+ *
+ * The Before switch plays the reference video's own timing instead
+ * (REFERENCE below).
+ * ───────────────────────────────────────────────────────── */
+
+const BEAT = 1500; // ms between changes of scene
+
+const SCENE_TIMING = {
+  rise:  0 * BEAT,  // orange sets off, bottom band
+  still: 560,       // the still every export opens on, mid-rise
+  sweep: 1 * BEAT,  // stone sets off, top band
+  burst: 2 * BEAT,  // the pixel circle sets off
+  back:  3 * BEAT,  // black sets off, middle bands
+  loop:  4 * BEAT,  // 6000: the end matches the start
+};
+
+/* Every wipe */
+const WIPES = {
+  spread:  630,  // ms from a wipe's first band setting off to its last
+  cross:   500,  // ms for one band to cross the panel
+  lineLag: 4,    // ms each line trails the one ahead of it in its band
+};
+
+/* The pixel burst, centred on the right edge, one step per band: the
+   reference's own, in both looks */
+const BURST = {
+  ringGap: 75,   // ms between rings, middle first
+  grow:    750,  // ms for a ring to reach the left edge, slowing as it goes
+};
+
+/* The reference video's own timing, frame by frame (the Before switch) */
+const REFERENCE = {
+  at:      { rise: 600, sweep: 2680, burst: 4050, back: 4620 },  // ms each change sets off
+  gap:     { rise: 95, sweep: 88, back: 90 },  // ms between bands, rings for black
+  cross:   430,  // ms for one band to cross the panel
 };
 
 // Distance of a band from the middle of the panel: 0 for the two middle bands.
@@ -88,163 +116,80 @@ const ringOf = (b: number) => (b < BANDS / 2 ? BANDS / 2 - 1 - b : b - BANDS / 2
 const outwardLag = (r: number) =>
   bandOf(r) < BANDS / 2 ? BAND - 1 - lineInBand(r) : lineInBand(r);
 
-// Mostly linear, with a little ease at both ends.
+// Mostly linear, with a little ease at both ends: the reference's crossing.
+// A band reaches the left edge at half speed and stops there at once.
 const glide = (p: number) => 0.5 * p + 0.5 * p * p * (3 - 2 * p);
-const crossing = (t: number, start: number) =>
-  PANEL_W * (1 - glide(clamp((t - start) / SCENES.cross)));
+// Sets off like glide, then eases into the left edge: its speed falls to
+// nothing as it arrives, so it lands instead of hitting the edge.
+const landing = (p: number) => 0.5 * p + 2 * p * p - 1.5 * p ** 3;
+// The burst: each ring of bands grows out of the right edge, fast at first,
+// slowing as it reaches the left edge; the middle rings lead.
+const burstRings = (b: number, ms: number) =>
+  PANEL_W * (1 - clamp((ms - ringOf(b) * BURST.ringGap) / BURST.grow)) ** 2;
 
-const scenes: Motion["line"] = (r, t) => {
+type SceneLook = {
+  at: { rise: number; sweep: number; burst: number; back: number }; // ms each change sets off
+  gap: { rise: number; sweep: number; back: number }; // ms between bands, rings for black
+  cross: number; // ms for one band to cross the panel
+  curve: (p: number) => number; // how far across it is, 0 to 1
+  burst: (b: number, ms: number) => number; // a band's circle edge, ms after it sets off
+};
+
+const SCENE_LOOKS: Record<Look, SceneLook> = {
+  // The post's own: on the beat, bands easing into the left edge, and the
+  // reference's own burst.
+  refined: {
+    at: SCENE_TIMING,
+    gap: {
+      rise: WIPES.spread / (BANDS - 1), // 70: ten bands
+      sweep: WIPES.spread / (BANDS - 1),
+      back: WIPES.spread / (BANDS / 2 - 1), // 157.5: five rings
+    },
+    cross: WIPES.cross,
+    curve: landing,
+    burst: burstRings,
+  },
+  // The reference: changes when the video made them, and bands crossing at a
+  // near constant speed.
+  reference: {
+    at: REFERENCE.at,
+    gap: REFERENCE.gap,
+    cross: REFERENCE.cross,
+    curve: glide,
+    burst: burstRings,
+  },
+};
+
+const scenes: Motion["line"] = (r, t, look) => {
+  const { at, gap, cross, curve, burst } = SCENE_LOOKS[look];
+  const ms = t * 1000;
   const b = bandOf(r);
   const i = lineInBand(r);
-  const { rise, sweep, burst, back, lineLag } = SCENES;
-  const ring = ringOf(b);
-  const grown = clamp((t - burst.at - ring * burst.gap) / burst.grow);
+  const lag = WIPES.lineLag;
+  // Where a band that set off at `start` ms has got to, right edge to left.
+  const across = (start: number) => PANEL_W * (1 - curve(clamp((ms - start) / cross)));
   return {
     base: BLACK,
     layers: [
       // bottom band first, and inside a band its bottom line first
-      { color: ORANGE, edge: crossing(t, rise.at + (BANDS - 1 - b) * rise.gap + (BAND - 1 - i) * lineLag) },
+      { color: ORANGE, edge: across(at.rise + (BANDS - 1 - b) * gap.rise + (BAND - 1 - i) * lag) },
       // top band first, top line first
-      { color: STONE, edge: crossing(t, sweep.at + b * sweep.gap + i * lineLag) },
-      // a crisp stepped circle centred on the right edge, slowing as it grows
-      { color: ORANGE, edge: PANEL_W * (1 - grown) ** 2 },
+      { color: STONE, edge: across(at.sweep + b * gap.sweep + i * lag) },
+      // the pixel circle out of the right edge
+      { color: ORANGE, edge: burst(b, ms - at.burst) },
       // middle bands first, spreading out
-      { color: BLACK, edge: crossing(t, back.at + ring * back.gap + outwardLag(r) * lineLag) },
+      { color: BLACK, edge: across(at.back + ringOf(b) * gap.back + outwardLag(r) * lag) },
     ],
   };
-};
-
-// ---------------------------------------------------------------------------
-// The other motions keep one fixed staircase: orange steps on a stone base.
-// Bands 0 and 1 stay clear for the logo.
-
-const EDGES = [920, 920, 840, 700, 560, 420, 280, 140, 0, 0];
-const TOP_STEP = 2;
-const LAST_STEP = 7; // lowest band that still has a step edge
-const isStep = (b: number) => b >= TOP_STEP && b <= LAST_STEP;
-const stepFromBottom = (b: number) => LAST_STEP - b; // 0 is the lowest step
-
-const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-const mix = (a: string, b: string, h: number) => {
-  const [x, y] = [rgb(a), rgb(b)];
-  const c = x.map((v, k) => Math.round(v + (y[k] - v) * h));
-  return `rgb(${c[0]} ${c[1]} ${c[2]})`;
-};
-// 0 is stone, 1 is orange. In between only while a line changes colour.
-function heatFill(h: number): Fill {
-  if (h <= 0) return STONE;
-  if (h >= 1) return ORANGE;
-  return { lit: mix(STONE.lit, ORANGE.lit, h), gap: mix(STONE.gap, ORANGE.gap, h) };
-}
-const staircase = (edge: number, heat: number): LineState => ({
-  base: BLACK,
-  layers: [{ edge, color: heatFill(heat) }],
-});
-const fixed = (r: number) => staircase(EDGES[bandOf(r)], isStep(bandOf(r)) ? 1 : 0);
-
-// Climb: the steps reach out one after another, lowest first, like someone
-// walking up them. Inside a step the bottom line leads by a hair.
-const CLIMB = { start: 1, gap: 0.36, rise: 0.38, fall: 0.9, reach: 84, lineLag: 0.014 };
-const climb: Motion["line"] = (r, t) => {
-  const b = bandOf(r);
-  if (!isStep(b)) return fixed(r);
-  const lag = (BAND - 1 - lineInBand(r)) * CLIMB.lineLag;
-  const x = t - CLIMB.start - stepFromBottom(b) * CLIMB.gap - lag;
-  return staircase(EDGES[b] - CLIMB.reach * pulse(x, CLIMB.rise, CLIMB.fall), 1);
-};
-
-// Breathe: one slow, continuous wave runs up the staircase.
-const BREATHE = { duration: 8, reach: 64, stepLag: 0.12, lineLag: 0.005 };
-const breathe: Motion["line"] = (r, t) => {
-  const b = bandOf(r);
-  if (!isStep(b)) return fixed(r);
-  const phase =
-    t / BREATHE.duration -
-    stepFromBottom(b) * BREATHE.stepLag -
-    (BAND - 1 - lineInBand(r)) * BREATHE.lineLag;
-  return staircase(EDGES[b] - BREATHE.reach * (0.5 - 0.5 * Math.cos(2 * Math.PI * phase)), 1);
-};
-
-// Signal, in three beats. Thinks: line by line the steps cool to stone and
-// start to search, each line at its own length. Decides: they lock back onto
-// the steps from the bottom up, turning orange as they land. Acts: the top
-// step fires across the panel and returns.
-const SIGNAL = {
-  cool: [0.9, 1.5], // lines cool to stone one by one inside this window
-  coolTime: 0.18, // each line's own fade
-  search: [1, 1.9], // searching ramps up over this window
-  reach: 110, // how far a searching line wanders, px
-  lock: 3.3, // lowest step locks here, the rest follow upward
-  lockGap: 0.09,
-  lockTime: 0.45,
-  fire: 4.05, // top step fires
-  fireOut: 0.5,
-  fireHold: 0.3,
-  fireBack: 0.85,
-  fireLineLag: 0.018,
-};
-const signal: Motion["line"] = (r, t) => {
-  const b = bandOf(r);
-  if (!isStep(b)) return fixed(r);
-  const lockAt = SIGNAL.lock + stepFromBottom(b) * SIGNAL.lockGap;
-  const landed = easeOut(clamp((t - lockAt) / SIGNAL.lockTime));
-  const searching = smooth(SIGNAL.search[0], SIGNAL.search[1], t) * (1 - landed);
-  const wander =
-    0.62 * Math.sin(2 * Math.PI * (0.55 * t + hash(r))) +
-    0.38 * Math.sin(2 * Math.PI * (1.15 * t + hash(r + 91)));
-  let edge = EDGES[b] + SIGNAL.reach * searching * wander;
-
-  const coolAt = SIGNAL.cool[0] + (SIGNAL.cool[1] - SIGNAL.cool[0]) * hash(r + 7);
-  const cooled = smooth(coolAt, coolAt + SIGNAL.coolTime, t);
-  // Back to orange, line by line, as the step lands.
-  const relightAt = lockAt + 0.06 + 0.14 * hash(r + 13);
-  const relit = smooth(relightAt, relightAt + SIGNAL.coolTime, t);
-  const heat = 1 - cooled * (1 - relit);
-
-  if (b === TOP_STEP) {
-    const x = t - SIGNAL.fire - lineInBand(r) * SIGNAL.fireLineLag;
-    const { fireOut: out, fireHold: hold, fireBack: back } = SIGNAL;
-    let f = 0;
-    if (x > 0 && x < out) f = easeOut(x / out);
-    else if (x >= out && x < out + hold) f = 1;
-    else if (x >= out + hold && x < out + hold + back) f = 1 - easeInOut((x - out - hold) / back);
-    edge -= EDGES[b] * f;
-  }
-  return staircase(edge, heat);
 };
 
 export const MOTIONS: Motion[] = [
   {
     id: "scenes",
     label: "Scenes",
-    hint: "Like the reference: black, orange and stone in stepped wipes, a rising staircase, a sweep and a pixel burst",
-    duration: SCENES.duration,
-    still: SCENES.still,
+    duration: SCENE_TIMING.loop / 1000,
+    still: SCENE_TIMING.still / 1000,
     line: scenes,
-  },
-  {
-    id: "climb",
-    label: "Climb",
-    hint: "The steps reach out one after another, lowest first",
-    duration: 6,
-    still: 0,
-    line: climb,
-  },
-  {
-    id: "breathe",
-    label: "Breathe",
-    hint: "One slow wave runs up the staircase",
-    duration: BREATHE.duration,
-    still: 0,
-    line: breathe,
-  },
-  {
-    id: "signal",
-    label: "Signal",
-    hint: "Thinks, decides, acts: the lines search, lock onto the steps, then the top step fires",
-    duration: 7,
-    still: 0,
-    line: signal,
   },
 ];
 
@@ -302,19 +247,20 @@ const colorAt = (s: LineState, x: number) =>
   runs(s).find(([a, b]) => x >= a && x < b)?.[2] ?? s.base;
 
 // Moments in the loop when the colour behind the "ai" changes.
-const flipTimes = new Map<MotionId, number[]>();
-function flipsFor(m: Motion) {
-  let times = flipTimes.get(m.id);
+const flipTimes = new Map<string, number[]>();
+function flipsFor(m: Motion, look: Look) {
+  const key = `${m.id}:${look}`;
+  let times = flipTimes.get(key);
   if (!times) {
     times = [];
     const step = 1 / 600;
-    let prev = colorAt(m.line(MARK_LINE, 0), MARK_X);
+    let prev = colorAt(m.line(MARK_LINE, 0, look), MARK_X);
     for (let t = step; t <= m.duration; t += step) {
-      const now = colorAt(m.line(MARK_LINE, t), MARK_X);
+      const now = colorAt(m.line(MARK_LINE, t, look), MARK_X);
       if (now !== prev) times.push(t - step / 2);
       prev = now;
     }
-    flipTimes.set(m.id, times);
+    flipTimes.set(key, times);
   }
   return times;
 }
@@ -329,6 +275,7 @@ function drawLogo(
   t: number,
   lines: LineState[],
   snap: Snap,
+  look: Look,
 ) {
   const { letters, mark } = getPaths();
   const base = ctx.getTransform();
@@ -360,7 +307,7 @@ function drawLogo(
 
   // The "ai": flat, or mid-flip around a change of colour behind it.
   let turn = 1;
-  for (const at of flipsFor(m)) {
+  for (const at of flipsFor(m, look)) {
     const d = wrap(t - at + m.duration / 2, m.duration) - m.duration / 2;
     if (Math.abs(d) < FLIP / 2) turn = Math.abs(Math.cos(Math.PI * easeInOut(d / FLIP + 0.5)));
   }
@@ -377,7 +324,12 @@ function drawLogo(
 }
 
 // Draws one frame. `ctx` is expected to be scaled so 1 unit = 1 post pixel.
-export function drawPanel(ctx: CanvasRenderingContext2D, motion: MotionId, seconds: number) {
+export function drawPanel(
+  ctx: CanvasRenderingContext2D,
+  motion: MotionId,
+  seconds: number,
+  look: Look = "reference",
+) {
   const m = MOTION_BY_ID[motion];
   const t = wrap(seconds, m.duration);
   const k = ctx.getTransform().d || 1;
@@ -387,7 +339,7 @@ export function drawPanel(ctx: CanvasRenderingContext2D, motion: MotionId, secon
   ctx.fillRect(0, 0, PANEL_W, PANEL_H);
   const lines: LineState[] = [];
   for (let r = 0; r < ROWS; r++) {
-    const s = m.line(r, t);
+    const s = m.line(r, t, look);
     lines.push(s);
     const top = snap(r * PITCH);
     const litTop = snap(r * PITCH + (PITCH - STROKE) / 2);
@@ -404,5 +356,5 @@ export function drawPanel(ctx: CanvasRenderingContext2D, motion: MotionId, secon
       ctx.fillRect(a, litTop, PANEL_W - a, litBottom - litTop);
     }
   }
-  drawLogo(ctx, m, t, lines, snap);
+  drawLogo(ctx, m, t, lines, snap, look);
 }

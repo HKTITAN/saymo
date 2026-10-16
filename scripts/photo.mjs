@@ -2,11 +2,11 @@
 // at 1x (export) and 2x (screen) sizes.
 //
 // usage: node scripts/photo.mjs <input> <name> <left> <top> <crop>
-// e.g.   node scripts/photo.mjs assets/speakers/darshan-kadam.png darshan-kadam 38 26 320
+// e.g.   node scripts/photo.mjs assets/speakers/darshan-kadam.png darshan-kadam 23 10 331
 
 import sharp from "sharp";
 
-const TILE = 240; // tile size on the 1920 x 1080 post
+const TILE = 240; // tile size on the 1920 x 1080 post: PHOTO in post.tsx
 
 const [, , input, name, left, top, crop] = process.argv;
 if (!input || !name) {
