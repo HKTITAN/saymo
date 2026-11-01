@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      A studio film, written for HyperFrames: HTML and CSS drawn by a paused
+      GSAP timeline at window.__timelines.main, which the studio (and the
+      renderer) seeks frame by frame. Nothing here plays on its own.
+
+      The studio sets two things before this page's scripts run:
+        window.__film    { width, height, fps, duration } from film.json
+        window.__params  the values of film.json's params, by key
+      Fallbacks below keep the file working when opened on its own.
+
+      LINE FIELD (5 s at speed 1)
+        0.30  the headline rises in, line by line
+        0.60  the accent arrives from the right as a staircase, bottom band
+              first, each line a few ms behind the one below it
+        1.60  cover: the staircase has landed
+        3.60  black slides back in from the middle bands outwards
+        5.00  all black again, the headline still up: it loops
+    -->
+    <script src="assets/vendor/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Bricolage Grotesque";
+        src: url("assets/fonts/BricolageGrotesque-Variable.ttf") format("truetype");
+        font-weight: 200 800;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #141414;
+      }
+      #root {
+        position: absolute;
+        inset: 0;
+      }
+      #field {
+        position: absolute;
+        inset: 0;
+        display: block;
+      }
+      #headline {
+        position: absolute;
+        left: 72px;
+        /* Cap tops on y 72, as on the speaker post (cap height 0.66 em). */
+        top: calc(72px - 0.17em);
+        margin: 0;
+        color: #e9e5dd;
+        font: 600 86px/1.04 "Bricolage Grotesque", sans-serif;
+        font-variation-settings: "opsz" 86;
+        letter-spacing: -0.01em;
+        max-width: calc(100% - 144px);
+      }
+      #headline .line {
+        display: block;
+        overflow: hidden;
+      }
+      #headline .line > span {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="5"
+      data-fps="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <svg id="field" data-layout-allow-overflow>
+        <g id="lines"></g>
+      </svg>
+      <h1 id="headline"></h1>
+    </div>
+    <script>
+      const FILM = Object.assign({ width: 1920, height: 1080, fps: 60, duration: 5 }, window.__film);
+      const P = Object.assign(
+        { headline: "Motion, made here.", accent: "#F55A00", speed: 1 },
+        window.__params,
+      );
+      const W = FILM.width;
+      const H = FILM.height;
+
+      // The Aerchain line texture: an 8px line on a 12px pitch, each colour a
+      // flat field with a slightly darker partner in the gaps.
+      const PITCH = 12;
+      const STROKE = 8;
+      const BAND = 9; // lines per band; the staircase moves band by band
+      const ROWS = Math.ceil(H / PITCH);
+      const BANDS = Math.ceil(ROWS / BAND);
+      const BLACK = { lit: "#1E1E1E", gap: "#141414" };
+      const darker = (hex, k = 0.895) => {
+        const n = parseInt(hex.slice(1), 16);
+        const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v * k));
+        return `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+      };
+      const ACCENT = { lit: P.accent, gap: darker(P.accent) };
+
+      // Times in seconds at speed 1; a faster speed only tightens them.
+      const s = (t) => t / Math.max(0.25, Number(P.speed) || 1);
+      const T = { words: s(0.3), accent: s(0.6), black: s(3.6), gap: s(0.07), ring: s(0.12), lag: s(0.004), travel: s(0.8), cross: s(0.5) };
+
+      // The staircase: the lower 60% of the bands step up to the right, so the
+      // headline's bands stay clear. Steps snap to whole 12px columns.
+      const first = Math.floor(BANDS * 0.4);
+      const steps = BANDS - first;
+      const stepAt = (b) => {
+        if (b < first) return W;
+        const k = b - first; // 0 at the top step, which sits furthest right
+        return Math.round((W * 0.75 * (steps - 1 - k)) / Math.max(1, steps - 1) / PITCH) * PITCH;
+      };
+
+      const landing = (p) => 0.5 * p + 2 * p * p - 1.5 * p ** 3; // sets off at half speed, eases in
+      const ringOf = (b) => Math.abs(b + 0.5 - BANDS / 2);
+      const outwardLag = (r) => {
+        const b = Math.floor(r / BAND);
+        return b + 0.5 < BANDS / 2 ? BAND - 1 - (r % BAND) : r % BAND;
+      };
+
+      const svg = document.getElementById("field");
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.setAttribute("width", W);
+      svg.setAttribute("height", H);
+      const NS = "http://www.w3.org/2000/svg";
+      const rect = (y, height, fill) => {
+        const el = document.createElementNS(NS, "rect");
+        el.setAttribute("y", y);
+        el.setAttribute("width", W);
+        el.setAttribute("height", height);
+        el.setAttribute("fill", fill);
+        return el;
+      };
+      // One full-width line in a colour: its gap behind, its stroke on top.
+      const layer = (r, color) => {
+        const g = document.createElementNS(NS, "g");
+        g.append(rect(r * PITCH, PITCH, color.gap), rect(r * PITCH + (PITCH - STROKE) / 2, STROKE, color.lit));
+        return g;
+      };
+
+      const tl = gsap.timeline({ paused: true });
+      const lines = document.getElementById("lines");
+      for (let r = 0; r < ROWS; r++) {
+        const b = Math.floor(r / BAND);
+        lines.append(layer(r, BLACK));
+        const to = stepAt(b);
+        if (to >= W) continue;
+        // Colour only arrives from the right: each layer slides in from the
+        // right edge to its step, and black covers it the same way.
+        const up = (BANDS - 1 - b) * T.gap + (BAND - 1 - (r % BAND)) * T.lag;
+        const accent = layer(r, ACCENT);
+        accent.id = `accent-${r}`;
+        const black = layer(r, BLACK);
+        black.id = `black-${r}`;
+        lines.append(accent, black);
+        tl.fromTo(accent, { x: W }, { x: to, duration: T.travel, ease: landing }, T.accent + up);
+        tl.fromTo(black, { x: W }, { x: 0, duration: T.cross, ease: landing }, T.black + ringOf(b) * T.ring + outwardLag(r) * T.lag);
+      }
+
+      // The headline, one block per line, each rising out of its own line box.
+      const headline = document.getElementById("headline");
+      String(P.headline)
+        .split(/\n/)
+        .forEach((text, i) => {
+          const line = document.createElement("span");
+          line.className = "line";
+          line.id = `headline-line-${i + 1}`;
+          const inner = document.createElement("span");
+          inner.textContent = text;
+          line.append(inner);
+          headline.append(line);
+          tl.fromTo(inner, { yPercent: 105 }, { yPercent: 0, duration: s(0.7), ease: "expo.out" }, T.words + i * s(0.08));
+        });
+
+      // Hold to the end, so the loop is the film's full length.
+      tl.set({}, {}, FILM.duration);
+      window.__timelines = window.__timelines || {};
+      window.__timelines.main = tl;
+    </script>
+  </body>
+</html>

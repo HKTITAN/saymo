@@ -151,49 +151,69 @@ The tool does all of this without the command line. By hand:
 - `assets/places/`: the landmark image
 - `assets/reference/`: the line texture, the layout reference and the reference video
 
-## Motion engines
+## Motion engines (under the studio)
 
-Groundwork for the studio (V2): three engines that turn code into video, set
-up in `studio/` without touching the post or the tool. Each one has made the
-same 4 second film, "Aerchain bands" (the post's line field: a stone and an
-orange staircase arrive from the right, then black slides back in), so they
-can be compared side by side. They render the same pixels and colours.
+The studio at `/studio` is our own motion tool: you see films, a stage and
+a chat with Claude, never an engine. Underneath, each film is written for
+one of three engines, chosen by Claude (or by the starter a film begins
+from), and the studio drives and renders it:
 
-| Engine | What it is good for | Preview | Licence |
+| A film written as | Engine | Good for | Licence |
 | --- | --- | --- | --- |
-| [Remotion](https://www.remotion.dev) 4.0.539, `studio/remotion` | Video as React components; its Studio has a timeline and edits props live | `npm run studio`, then http://localhost:3206 | Free for individuals, companies of up to 3 people, and evaluation. **Aerchain needs a company licence before using it for real work** (remotion.pro) |
-| [HyperFrames](https://hyperframes.heygen.com) 0.8.227, `studio/hyperframes` | Video as an HTML page with a paused GSAP timeline; closest to how the post is built, and the one its skills know best | `npm run preview`, then http://localhost:3205 | Apache 2.0, free |
-| [fframes](https://fframes.studio) 1.3.0, `studio/fframes` | Video as Rust code drawing SVG on the GPU; by far the fastest (a 4K film in seconds) | `cargo run --release -- preview` opens a window; no browser preview | MIT, free |
+| `html`: `index.html`, a paused GSAP timeline at `window.__timelines.main` | [HyperFrames](https://hyperframes.heygen.com) 0.8.227 (`studio/hyperframes`) | Most films: instant to preview, any web type, CSS and SVG, and the one Claude writes best. The default | Apache 2.0, free |
+| `react`: `src/Film.jsx`, a component drawn from `useCurrentFrame()` | [Remotion](https://www.remotion.dev) 4.0.539 (`studio/remotion`) | Films driven by data, captions, audio and video clips | Free for individuals, companies of up to 3 people, and evaluation. **Aerchain needs a company licence before using it for real work** (remotion.pro) |
+| `rust`: a Cargo crate drawing SVG per frame | [fframes](https://fframes.studio) 1.3.0 (`studio/fframes`) | Heavy generative scenes; renders 4K in seconds on the GPU | MIT, free |
+
+How the studio uses them:
+
+- **New films** are copied from `studio/starters/<html|react|rust>/`: a
+  short on-brand film (line texture, Bricolage Grotesque, colour arriving
+  from the right, orange once) with a few params (headline, accent colour,
+  speed or figure) and named moments (`marks`) in its `film.json`.
+- **The stage** (`/studio/stage/<id>`) plays one film at its own pixel size
+  in an iframe; the studio owns time and sends `studio:seek` on every frame
+  (the message contract is in `src/lib/studio/contract.ts`). Under the hood:
+  an HTML film runs as it is, with `window.__film` and `window.__params` set
+  before its scripts and its timeline seeked; a React film runs in the
+  Remotion Player (bundled by esbuild in well under a second, rebuilt when
+  its code changes); a Rust film plays its draft video, which the stage asks
+  for whenever the film has changed since the last one. Pointing mode picks
+  the element under the pointer (an id or `data-hf-id` in HTML, a
+  `data-part` in React) for the chat.
+- **Rendering**: `node scripts/studio/render.mjs --film <id> [--draft]` (the
+  studio queues them, one at a time, in `src/lib/studio/render.ts`). A
+  draft writes `films/<id>/out/draft.mp4` at the film's own size; a final
+  writes `4k.mp4` (twice its size) and `1080p.mp4` (its own size). Both make
+  `poster.png` at the film's "Cover" mark. Each engine hands over lossless
+  frames and one ffmpeg encodes them exactly as `npm run export` does
+  (H.264, tagged BT.709, the small copy being the big frames at half size).
+  HTML films use HyperFrames' renderer, or a Chrome capture at twice the
+  size for shapes it has no 4K preset for (4:5); React films use Remotion's
+  renderer; Rust films build into one shared folder,
+  `node_modules/.cache/studio-cargo`, so only the first build is slow.
+
+Typical times on this Mac for a 5 second 1920x1080 film:
+
+| | HTML | React | Rust |
+| --- | --- | --- | --- |
+| Stage ready | under 1 s | under 1 s | 10 to 20 s (its draft) |
+| Draft | 8 s | 19 to 22 s | 10 s |
+| Final (4K + 1080p) | 15 s | 56 s | 22 s |
 
 Set up once per engine (each keeps its own packages; the root is untouched):
 
 ```bash
 cd studio/remotion && npm install       # Remotion
 cd studio/hyperframes && npm install    # HyperFrames, pinned; telemetry is off
-cd studio/fframes/aerchain-bands && cargo build --release   # fframes, about 2.5 minutes the first time
 ```
 
-fframes needs Rust (installed from rustup.rs) and `brew install pkgconf nasm
-ninja`; Remotion and HyperFrames render with Google Chrome.
+fframes needs Rust (rustup.rs) and `brew install pkgconf nasm ninja`; its
+first build takes about 2.5 minutes. Remotion and HyperFrames render with
+Google Chrome.
 
-Render any film listed in `studio/compositions.json`, from the project root:
-
-```bash
-node scripts/studio/render.mjs aerchain-bands-remotion          # 4K and 1080p
-node scripts/studio/render.mjs aerchain-bands-hyperframes --draft   # a quick 1080p check
-```
-
-Files land in `studio/out/` (git ignores it): `<id>-4k.mp4` and
-`<id>-1080p.mp4`, or `<id>-draft.mp4`. Each engine hands over lossless frames
-and one ffmpeg makes the videos exactly as `npm run export` does (H.264,
-60 fps, tagged BT.709, the 1080p copy being the 4K frames at half size), so
-the orange matches across all three. While it works the script prints
-`progress <percent>` lines, for the studio's progress bar.
-
-`studio/compositions.json` lists every film: its `id`, `engine`, `title`,
-folder (`dir`), where to `preview` it (a URL, or for fframes its latest
-draft) and `duration` in seconds. Remotion films also name their
-`composition`.
+The first experiments are still here: `studio/compositions.json` lists the
+same 4 second "Aerchain bands" film made in each engine, rendered with
+`node scripts/studio/render.mjs <id> [--draft]` into `studio/out/`.
 
 The studio's chat gets the engines' own skills, installed in `.claude/skills`:
 Remotion's (`remotion-dev/skills`), HyperFrames' (`heygen-com/hyperframes`),
