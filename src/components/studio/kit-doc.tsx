@@ -71,7 +71,15 @@ export function KitDoc({
   const [editing, setEditing] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
 
-  const guide = useMemo(() => parseMarkdown(kit.notes ?? ""), [kit.notes]);
+  // Pictures the notes list as "- guide/<file>" lines show as a gallery
+  // instead of a list of file names.
+  const { guide, pictures } = useMemo(() => {
+    const picture = /^\s*-\s*(guide\/[^\s]+\.(?:jpe?g|png|webp))\s*$/i;
+    const lines = (kit.notes ?? "").split("\n");
+    const found = lines.map((l) => l.match(picture)?.[1]).filter((f): f is string => Boolean(f));
+    const kept = lines.filter((l) => !picture.test(l)).join("\n").replace(/\n#+ [^\n]*\n*$/, "\n");
+    return { guide: parseMarkdown(found.length ? kept : (kit.notes ?? "")), pictures: found };
+  }, [kit.notes]);
   const sections = useMemo(() => {
     const list: Omit<Section, "n">[] = [
       { id: "colour", title: "Colour" },
@@ -116,11 +124,11 @@ export function KitDoc({
           </ol>
         </nav>
 
-        <article className="mx-auto w-full max-w-[880px] rounded-[20px] bg-[#F7F6F2] px-[clamp(20px,6vw,64px)] py-14 text-[#1d1c1a] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.7)]">
+        <article className="mx-auto w-full max-w-[880px] rounded-[20px] bg-[#161616] px-[clamp(20px,6vw,64px)] py-14 text-white/90 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_30px_80px_-30px_rgba(0,0,0,0.7)]">
           <header className="mx-auto flex max-w-[68ch] flex-col gap-3 pb-10">
-            <p className="font-medium text-[11.5px] text-[#837e73] uppercase tracking-[0.08em]">Brand kit</p>
+            <p className="font-medium text-[11.5px] text-white/45 uppercase tracking-[0.08em]">Brand kit</p>
             <h1 className="font-semibold text-[44px] leading-[1.05] tracking-[-0.02em]">{kit.name}</h1>
-            {kit.source ? <p className="text-[14px] text-[#5d5951] leading-relaxed">{kit.source}</p> : null}
+            {kit.source ? <p className="text-[14px] text-white/60 leading-relaxed">{kit.source}</p> : null}
             {arrival ? <Arrival text={arrival} onDismiss={onDismissArrival} onCopy={onCopy} /> : null}
           </header>
 
@@ -140,17 +148,17 @@ export function KitDoc({
                   key={role.key}
                   type="button"
                   onClick={() => onCopy(r[role.key])}
-                  className="group flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white text-left shadow-[0_0_0_1px_rgba(29,28,26,0.08)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(29,28,26,0.2)] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+                  className="group flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
                   aria-label={`${role.label} ${r[role.key]}, copy`}
                 >
-                  <span className="h-20 shadow-[inset_0_-1px_0_rgba(29,28,26,0.06)]" style={{ background: r[role.key] }} />
+                  <span className="h-20 shadow-[inset_0_-1px_0_rgba(255,255,255,0.05)]" style={{ background: r[role.key] }} />
                   <span className="flex flex-col gap-0.5 p-3">
                     <span className="font-medium text-[13px]">{role.label}</span>
                     <span className="font-mono text-[11.5px] text-[#706b62] tabular-nums">
                       {r[role.key]}
                       <span className="ms-2 opacity-0 transition-opacity group-hover:opacity-100">Copy</span>
                     </span>
-                    <span className="text-[11.5px] text-[#837e73] leading-snug">{role.note}</span>
+                    <span className="text-[11.5px] text-white/45 leading-snug">{role.note}</span>
                   </span>
                 </button>
               ))}
@@ -161,10 +169,10 @@ export function KitDoc({
                 <div className="flex flex-col gap-4">
                   {kit.colors.ramps.map((ramp, i) => (
                     <div key={`${ramp.name}-${i}`} className="flex flex-col gap-1.5">
-                      <p className="text-[13px] text-[#5d5951]">
-                        {ramp.name} <span className="text-[#a8a598]">· {ramp.steps.length} steps, light to dark</span>
+                      <p className="text-[13px] text-white/60">
+                        {ramp.name} <span className="text-white/35">· {ramp.steps.length} steps, light to dark</span>
                       </p>
-                      <div className="flex overflow-hidden rounded-[10px] shadow-[0_0_0_1px_rgba(29,28,26,0.08)]">
+                      <div className="flex overflow-hidden rounded-[10px] shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
                         {ramp.steps.map((s, j) => (
                           <button
                             key={`${s.hex}-${j}`}
@@ -219,7 +227,7 @@ export function KitDoc({
             {kit.logos.length ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                 {kit.logos.map((l, i) => (
-                  <figure key={`${l.file}-${i}`} className="flex flex-col overflow-hidden rounded-[14px] bg-white shadow-[0_0_0_1px_rgba(29,28,26,0.08)]">
+                  <figure key={`${l.file}-${i}`} className="flex flex-col overflow-hidden rounded-[14px] bg-white/[0.04] shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
                     <div className="grid h-36 grid-cols-2">
                       {(["light", "dark"] as const).map((ground) => (
                         <div
@@ -234,7 +242,7 @@ export function KitDoc({
                     </div>
                     <figcaption className="flex items-center gap-2 p-3">
                       <span className="min-w-0 flex-1 truncate font-medium text-[13px]">{l.name}</span>
-                      <span className="text-[12px] text-[#837e73]">{l.on === "any" ? "Any ground" : l.on === "light" ? "For light grounds" : "For dark grounds"}</span>
+                      <span className="text-[12px] text-white/45">{l.on === "any" ? "Any ground" : l.on === "light" ? "For light grounds" : "For dark grounds"}</span>
                     </figcaption>
                   </figure>
                 ))}
@@ -248,7 +256,7 @@ export function KitDoc({
           {kit.texture ? (
             <DocSection id="texture" n={n("texture")} eyebrow="The structure" title="Line texture" onEdit={() => onOpenPanel("Line texture")}>
               <LineField kit={kit} />
-              <p className="text-[14px] text-[#5d5951] leading-relaxed">
+              <p className="text-[14px] text-white/60 leading-relaxed">
                 <span className="font-mono text-[13px] tabular-nums">
                   {kit.texture.stroke} px lines, {kit.texture.gap} px gaps
                 </span>
@@ -288,7 +296,41 @@ export function KitDoc({
                   />
                 </EditTray>
               ) : (
-                <Markdown blocks={guide} onCopy={onCopy} />
+                <>
+                  <Markdown blocks={guide} onCopy={onCopy} />
+                  {pictures.length ? (
+                    <div className="mt-6 flex flex-col gap-3">
+                      <h3 className="font-semibold text-[15px] text-white/90">Pictures from the guideline</h3>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {pictures.map((file) => (
+                          <a
+                            key={file}
+                            href={brandFile(kit.id, file, version)}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="group flex flex-col overflow-hidden rounded-[12px] bg-white/[0.04] shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {/* biome-ignore lint/performance/noImgElement: the kit's own files, served as they are */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={brandFile(kit.id, file, version)}
+                              alt=""
+                              loading="lazy"
+                              className="aspect-[16/10] w-full object-cover transition-opacity group-hover:opacity-90"
+                            />
+                            <span className="truncate px-3 py-2 text-[11.5px] text-white/55">
+                              {file
+                                .replace(/^guide\/(\d+-)?/, "")
+                                .replace(/\.[a-z]+$/i, "")
+                                .replace(/-/g, " ")
+                                .replace(/^./, (c) => c.toUpperCase())}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </>
               )}
             </DocSection>
           ) : null}
@@ -344,10 +386,10 @@ function DocSection({
   children: ReactNode;
 }) {
   return (
-    <section id={`kit-${id}`} aria-labelledby={`kit-${id}-title`} className="mx-auto flex max-w-[68ch] scroll-mt-[72px] flex-col gap-4 border-[#1d1c1a]/[0.08] border-t py-10 first-of-type:border-t-0">
+    <section id={`kit-${id}`} aria-labelledby={`kit-${id}-title`} className="mx-auto flex max-w-[68ch] scroll-mt-[72px] flex-col gap-4 border-white/[0.07] border-t py-10 first-of-type:border-t-0">
       <div className="flex items-end gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <p className="font-medium text-[11.5px] text-[#837e73] uppercase tracking-[0.08em]">
+          <p className="font-medium text-[11.5px] text-white/45 uppercase tracking-[0.08em]">
             <span className="font-mono tabular-nums">{n}</span> · {eyebrow}
           </p>
           <h2 id={`kit-${id}-title`} className="font-semibold text-[28px] leading-tight tracking-[-0.01em]">
@@ -359,7 +401,7 @@ function DocSection({
             type="button"
             onClick={onEdit}
             aria-expanded={editing}
-            className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] text-[#5d5951] outline-none transition-colors hover:bg-[#1d1c1a]/[0.06] hover:text-[#1d1c1a] focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5"
+            className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5"
           >
             <PencilEditIcon aria-hidden="true" />
             {editing ? "Done" : "Edit"}
@@ -387,7 +429,7 @@ function EditTray({ children, note, onDone }: { children: ReactNode; note?: stri
 }
 
 function Empty({ children }: { children: ReactNode }) {
-  return <p className="rounded-[12px] bg-[#1d1c1a]/[0.04] px-4 py-6 text-[14px] text-[#837e73]">{children}</p>;
+  return <p className="rounded-[12px] bg-white/[0.04] px-4 py-6 text-[14px] text-white/45">{children}</p>;
 }
 
 // "Found: … / Guessed: …" from Claude, at the top of a kit it just made.
@@ -400,20 +442,20 @@ function Arrival({ text, onDismiss, onCopy }: { text: string; onDismiss: () => v
   const found = pick("found") ?? (parts.length ? parts[0] : null);
   const guessed = pick("guessed");
   return (
-    <aside className="relative mt-3 flex flex-col gap-3 rounded-[14px] bg-white p-5 pe-12 shadow-[0_0_0_1px_rgba(29,28,26,0.08)] animate-in fade-in slide-in-from-top-1 duration-300" aria-label="What Claude did">
+    <aside className="relative mt-3 flex flex-col gap-3 rounded-[14px] bg-white/[0.04] p-5 pe-12 shadow-[0_0_0_1px_rgba(255,255,255,0.07)] animate-in fade-in slide-in-from-top-1 duration-300" aria-label="What Claude did">
       {found ? (
         <div className="flex flex-col gap-1">
-          <p className="font-medium text-[12px] text-[#1d1c1a]">What Claude found</p>
-          <p className="text-[14px] text-[#5d5951] leading-relaxed"><Inline text={found} onCopy={onCopy} /></p>
+          <p className="font-medium text-[12px] text-white/90">What Claude found</p>
+          <p className="text-[14px] text-white/60 leading-relaxed"><Inline text={found} onCopy={onCopy} /></p>
         </div>
       ) : null}
       {guessed ? (
         <div className="flex flex-col gap-1">
-          <p className="font-medium text-[12px] text-[#AA2F00]">What it guessed</p>
-          <p className="text-[14px] text-[#5d5951] leading-relaxed"><Inline text={guessed} onCopy={onCopy} /></p>
+          <p className="font-medium text-[12px] text-[#FF8048]">What it guessed</p>
+          <p className="text-[14px] text-white/60 leading-relaxed"><Inline text={guessed} onCopy={onCopy} /></p>
         </div>
       ) : null}
-      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="absolute top-3 right-3 inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-[#837e73] outline-none hover:bg-[#1d1c1a]/[0.06] hover:text-[#1d1c1a] focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5">
+      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="absolute top-3 right-3 inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-white/45 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5">
         <MultipleCrossCancelIcon aria-hidden="true" />
       </button>
     </aside>
@@ -446,14 +488,14 @@ function RuleGroup({
     <div className="flex flex-col gap-3 pt-4">
       <div className="flex items-end gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <p className="text-[12px] text-[#837e73]">{eyebrow}</p>
+          <p className="text-[12px] text-white/45">{eyebrow}</p>
           <h3 className="font-semibold text-[18px]">{label}</h3>
         </div>
         <button
           type="button"
           onClick={onEdit}
           aria-expanded={editing}
-          className="flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-[12px] text-[#5d5951] outline-none hover:bg-[#1d1c1a]/[0.06] hover:text-[#1d1c1a] focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3"
+          className="flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-[12px] text-white/60 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3"
         >
           <PencilEditIcon aria-hidden="true" />
           {editing ? "Done" : "Edit"}
@@ -494,7 +536,7 @@ function RuleGroup({
       ) : rules.length ? (
         <>
           {keys.map((rule) => (
-            <p key={rule} className="rounded-[12px] border-[#F55A00] border-l-[3px] bg-[#FFF4EF] px-4 py-3 font-medium text-[15px] leading-snug">
+            <p key={rule} className="rounded-[12px] border-[#F55A00] border-l-[3px] bg-[#F55A00]/[0.08] px-4 py-3 font-medium text-[15px] leading-snug">
               <Inline text={rule} onCopy={onCopy} />
             </p>
           ))}
@@ -515,14 +557,14 @@ function RuleGroup({
 function RuleCard({ tone, rules, onCopy }: { tone: "do" | "dont"; rules: string[]; onCopy: (hex: string) => void }) {
   if (!rules.length) return <div className="hidden sm:block" />;
   return (
-    <div className="flex flex-col gap-2.5 rounded-[14px] bg-white p-4 shadow-[0_0_0_1px_rgba(29,28,26,0.08)]">
-      <p className={cn("flex items-center gap-2 font-semibold text-[12px] uppercase tracking-[0.06em]", tone === "do" ? "text-[#2f6b3f]" : "text-[#AA2F00]")}>
+    <div className="flex flex-col gap-2.5 rounded-[14px] bg-white/[0.04] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
+      <p className={cn("flex items-center gap-2 font-semibold text-[12px] uppercase tracking-[0.06em]", tone === "do" ? "text-[#7fc493]" : "text-[#FF8048]")}>
         <span className={cn("size-2 rounded-full", tone === "do" ? "bg-[#3f8f55]" : "bg-[#DE4A00]")} aria-hidden="true" />
         {tone === "do" ? "Do" : "Don’t"}
       </p>
       <ul className="flex flex-col gap-2">
         {rules.map((rule) => (
-          <li key={rule} className="text-[14px] text-[#3a3834] leading-relaxed">
+          <li key={rule} className="text-[14px] text-white/75 leading-relaxed">
             <Inline text={rule} onCopy={onCopy} />
           </li>
         ))}
@@ -661,17 +703,17 @@ export function parseMarkdown(source: string): Block[] {
 
 function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) => void }) {
   return (
-    <div className="flex flex-col gap-4 text-[15.5px] text-[#3a3834] leading-[1.7]">
+    <div className="flex flex-col gap-4 text-[15.5px] text-white/75 leading-[1.7]">
       {blocks.map((b, i) => {
         const key = `${b.t}-${i}`;
         switch (b.t) {
           case "h":
             return b.level <= 2 ? (
-              <h3 key={key} className="pt-5 font-semibold text-[20px] text-[#1d1c1a] leading-snug tracking-[-0.005em]">
+              <h3 key={key} className="pt-5 font-semibold text-[20px] text-white/90 leading-snug tracking-[-0.005em]">
                 <Inline text={b.text} onCopy={onCopy} />
               </h3>
             ) : (
-              <h4 key={key} className="pt-3 font-semibold text-[16px] text-[#1d1c1a] leading-snug">
+              <h4 key={key} className="pt-3 font-semibold text-[16px] text-white/90 leading-snug">
                 <Inline text={b.text} onCopy={onCopy} />
               </h4>
             );
@@ -685,12 +727,12 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
           case "ol": {
             const List = b.t === "ul" ? "ul" : "ol";
             return (
-              <List key={key} className={cn("flex flex-col gap-1.5 ps-5 marker:text-[#a8a598]", b.t === "ul" ? "list-disc" : "list-decimal marker:font-mono marker:text-[13px]")}>
+              <List key={key} className={cn("flex flex-col gap-1.5 ps-5 marker:text-white/35", b.t === "ul" ? "list-disc" : "list-decimal marker:font-mono marker:text-[13px]")}>
                 {b.items.map((item, j) => (
                   <li key={j} className="ps-1">
                     <Inline text={item.text} onCopy={onCopy} />
                     {item.sub.length ? (
-                      <ul className="mt-1.5 flex list-[circle] flex-col gap-1 ps-5 marker:text-[#a8a598]">
+                      <ul className="mt-1.5 flex list-[circle] flex-col gap-1 ps-5 marker:text-white/35">
                         {item.sub.map((s, k) => (
                           <li key={k} className="ps-1">
                             <Inline text={s} onCopy={onCopy} />
@@ -705,24 +747,24 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
           }
           case "quote":
             return (
-              <blockquote key={key} className="rounded-[12px] border-[#F55A00] border-l-[3px] bg-[#FFF4EF] px-4 py-3 font-medium text-[#1d1c1a]">
+              <blockquote key={key} className="rounded-[12px] border-[#F55A00] border-l-[3px] bg-[#F55A00]/[0.08] px-4 py-3 font-medium text-white/90">
                 <Inline text={b.text} onCopy={onCopy} />
               </blockquote>
             );
           case "code":
             return (
-              <pre key={key} className="overflow-x-auto rounded-[12px] bg-[#1d1c1a] p-4 font-mono text-[12.5px] text-[#eeede6] leading-relaxed [scrollbar-width:none]">
+              <pre key={key} className="overflow-x-auto rounded-[12px] bg-black/40 p-4 font-mono text-[12.5px] text-white/85 leading-relaxed [scrollbar-width:none]">
                 {b.text}
               </pre>
             );
           case "table":
             return (
-              <div key={key} className="overflow-x-auto rounded-[12px] shadow-[0_0_0_1px_rgba(29,28,26,0.1)] [scrollbar-width:none]">
+              <div key={key} className="overflow-x-auto rounded-[12px] shadow-[0_0_0_1px_rgba(255,255,255,0.09)] [scrollbar-width:none]">
                 <table className="w-full border-collapse text-left text-[14px]">
-                  <thead className="bg-[#1d1c1a]/[0.04]">
+                  <thead className="bg-white/[0.04]">
                     <tr>
                       {b.head.map((h, j) => (
-                        <th key={j} className="px-3 py-2 font-semibold text-[12.5px] text-[#1d1c1a]">
+                        <th key={j} className="px-3 py-2 font-semibold text-[12.5px] text-white/90">
                           <Inline text={h} onCopy={onCopy} />
                         </th>
                       ))}
@@ -730,7 +772,7 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
                   </thead>
                   <tbody>
                     {b.rows.map((row, j) => (
-                      <tr key={j} className="border-[#1d1c1a]/[0.06] border-t">
+                      <tr key={j} className="border-white/[0.06] border-t">
                         {row.map((c, k) => (
                           <td key={k} className="px-3 py-2 align-top">
                             <Inline text={c} onCopy={onCopy} />
@@ -743,7 +785,7 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
               </div>
             );
           case "hr":
-            return <hr key={key} className="my-2 border-[#1d1c1a]/[0.1]" />;
+            return <hr key={key} className="my-2 border-white/[0.1]" />;
           default:
             return null;
         }
@@ -764,14 +806,14 @@ function Inline({ text, onCopy }: { text: string; onCopy: (hex: string) => void 
           const inner = part.slice(1, -1);
           if (/^#[0-9a-fA-F]{6}$/.test(inner)) return <Swatch key={i} hex={inner.toUpperCase()} onCopy={onCopy} />;
           return (
-            <code key={i} className="rounded-[5px] bg-[#1d1c1a]/[0.06] px-1.5 py-0.5 font-mono text-[0.85em] text-[#1d1c1a]">
+            <code key={i} className="rounded-[5px] bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.85em] text-white/90">
               {inner}
             </code>
           );
         }
         if ((part.startsWith("**") && part.endsWith("**")) || (part.startsWith("__") && part.endsWith("__"))) {
           return (
-            <strong key={i} className="font-semibold text-[#1d1c1a]">
+            <strong key={i} className="font-semibold text-white/90">
               <Inline text={part.slice(2, -2)} onCopy={onCopy} />
             </strong>
           );
@@ -783,7 +825,7 @@ function Inline({ text, onCopy }: { text: string; onCopy: (hex: string) => void 
         if (link) {
           const safe = /^https?:\/\//.test(link[2]);
           return safe ? (
-            <a key={i} href={link[2]} target="_blank" rel="noreferrer noopener" className="text-[#AA2F00] underline decoration-[#AA2F00]/30 underline-offset-2 hover:decoration-[#AA2F00]">
+            <a key={i} href={link[2]} target="_blank" rel="noreferrer noopener" className="text-[#FF8048] underline decoration-[#FF8048]/40 underline-offset-2 hover:decoration-[#FF8048]">
               {link[1]}
             </a>
           ) : (
@@ -802,9 +844,9 @@ function Swatch({ hex, onCopy }: { hex: string; onCopy: (hex: string) => void })
       type="button"
       onClick={() => onCopy(hex)}
       title={`${hex}, click to copy`}
-      className="mx-0.5 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] bg-[#1d1c1a]/[0.06] py-0.5 ps-1 pe-1.5 align-[0.05em] font-mono text-[0.82em] text-[#1d1c1a] outline-none transition-colors hover:bg-[#1d1c1a]/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+      className="mx-0.5 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] bg-white/[0.06] py-0.5 ps-1 pe-1.5 align-[0.05em] font-mono text-[0.82em] text-white/90 outline-none transition-colors hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
     >
-      <span className="size-3 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(29,28,26,0.15)]" style={{ background: hex }} aria-hidden="true" />
+      <span className="size-3 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
       {hex}
     </button>
   );
