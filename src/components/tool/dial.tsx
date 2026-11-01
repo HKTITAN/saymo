@@ -1,8 +1,8 @@
 "use client";
 
 import { Slider as SliderPrimitive } from "@base-ui/react/slider";
-import { ChevronDownIcon } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
+import { ChevronDownIcon } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
@@ -11,9 +11,13 @@ import { cn } from "@/lib/utils";
 // a slider is the row itself, filled up to its value. Values are set in the
 // system's monospace so numbers don't jitter as they change.
 
-const ROW = "flex h-9 w-full items-center rounded-[10px] bg-white/[0.05] text-[12px] transition-colors";
-const LABEL = "shrink-0 text-white/65";
-const VALUE = "font-mono text-white/90 tabular-nums";
+export const ROW = "flex h-9 w-full items-center rounded-[10px] bg-white/[0.05] text-[12px] transition-colors";
+export const LABEL = "shrink-0 text-white/65";
+export const VALUE = "font-mono text-white/90 tabular-nums";
+// A row that opens something, such as a picker.
+export const ROW_BUTTON = `${ROW} cursor-pointer gap-3 px-3 text-left outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-white/[0.08]`;
+// A floating panel: a picker, or the toolbar over selected words.
+export const SURFACE = "rounded-[14px] bg-popover p-1.5 text-[12px] text-white/90 shadow-2xl shadow-black/50 ring-1 ring-white/10";
 
 // A titled group of rows that folds away.
 export function DialGroup({
@@ -109,19 +113,16 @@ export function DialSlider({
   );
 }
 
-// Words, typed in place on the right of the row. Dates and times use the
-// browser's own pickers.
+// Words, typed in place on the right of the row.
 export function DialText({
   label,
   value,
   placeholder,
-  type = "text",
   onChange,
 }: {
   label: string;
   value: string;
   placeholder?: string;
-  type?: "text" | "date" | "time";
   onChange: (value: string) => void;
 }) {
   const id = useId();
@@ -136,45 +137,10 @@ export function DialText({
       <span className={LABEL}>{label}</span>
       <input
         id={id}
-        type={type}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "h-full bg-transparent text-right text-white/90 outline-none placeholder:text-white/30 [color-scheme:dark]",
-          // Date and time fields keep their own width and sit on the right.
-          type === "text" ? "min-w-0 flex-1" : "ms-auto font-mono tabular-nums",
-        )}
-      />
-    </label>
-  );
-}
-
-// Several lines of words, like the headline.
-export function DialTextArea({
-  label,
-  value,
-  rows = 4,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  rows?: number;
-  onChange: (value: string) => void;
-}) {
-  const id = useId();
-  return (
-    <label
-      htmlFor={id}
-      className="flex cursor-text flex-col gap-1.5 rounded-[10px] bg-white/[0.05] px-3 pt-2.5 pb-2 text-[12px] transition-colors hover:bg-white/[0.07] has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
-    >
-      <span className={LABEL}>{label}</span>
-      <textarea
-        id={id}
-        value={value}
-        rows={rows}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full resize-none bg-transparent text-[13px] text-white/90 leading-relaxed outline-none"
+        className="h-full min-w-0 flex-1 bg-transparent text-right text-white/90 outline-none placeholder:text-white/30"
       />
     </label>
   );

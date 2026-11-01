@@ -63,6 +63,19 @@ export function fitHeadline(lines: string[]) {
   return size;
 }
 
+// The right edge of the words themselves, leaving out the box being typed
+// in, which reaches a little past them.
+function wordsRight(el: Element) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  const range = document.createRange();
+  let right = -Infinity;
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    range.selectNodeContents(node);
+    right = Math.max(right, range.getBoundingClientRect().right);
+  }
+  return right;
+}
+
 // What still does not fit once the post has rendered, as plain advice.
 export function layoutProblems(post: HTMLElement) {
   const frame = post.getBoundingClientRect();
@@ -76,7 +89,7 @@ export function layoutProblems(post: HTMLElement) {
   const problems: string[] = [];
 
   const headline = post.querySelector("[data-part=headline]");
-  if (headline && Math.max(...[...headline.children].map((c) => toPost(c.getBoundingClientRect()).left + c.scrollWidth)) > edge) {
+  if (headline && (wordsRight(headline) - frame.left) / scale > edge) {
     problems.push("The headline is too long even at its smallest. Split a long line in two.");
   }
   const event = [...post.querySelectorAll("[data-part=event] span")];

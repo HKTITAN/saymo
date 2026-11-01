@@ -1,7 +1,7 @@
 "use client";
 
-import { ImageUpIcon } from "lucide-react";
 import { type Ref, useRef, useState } from "react";
+import { PhotoImagePlusIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { DialButton } from "./dial";
 
@@ -40,7 +40,7 @@ export function DropZone({
         if (file && !busy) onFile(file);
       }}
     >
-      <ImageUpIcon className="size-5 text-white/40" aria-hidden="true" />
+      <PhotoImagePlusIcon className="size-5 text-white/40" aria-hidden="true" />
       <p className="font-medium text-[12px] text-white/85">{busy ?? title}</p>
       <p className="max-w-64 text-[11.5px] text-white/45 leading-relaxed">{hint}</p>
       <DialButton className="mt-1 h-8 w-auto px-4" loading={Boolean(busy)} onClick={() => input.current?.click()}>
