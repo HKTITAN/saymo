@@ -72,10 +72,19 @@ function Workspace({ initial }: { initial: PostDoc }) {
   // Every edit shows at once and is saved a moment later, tidied: no empty
   // headline lines, no spaces at the ends of lines.
   const dirty = useRef(false);
-  const edit = useCallback((change: (d: PostDoc) => PostDoc) => {
-    dirty.current = true;
-    setDoc(change);
-  }, []);
+  const docRef = useRef(doc);
+  useEffect(() => {
+    docRef.current = doc;
+  });
+  const history = useHistory();
+  const edit = useCallback(
+    (change: (d: PostDoc) => PostDoc) => {
+      history.record({ kind: "words", before: wordsOf(docRef.current) });
+      dirty.current = true;
+      setDoc(change);
+    },
+    [history],
+  );
   useEffect(() => {
     if (!dirty.current) return;
     dirty.current = false;
@@ -116,6 +125,7 @@ function Workspace({ initial }: { initial: PostDoc }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [edit]);
 
+
   const pick = doc.date.pick ?? NO_PICK;
   const onPick = (change: Partial<DatePick>) => {
     const next = { ...pick, ...change };
@@ -144,8 +154,12 @@ function Workspace({ initial }: { initial: PostDoc }) {
         failed("Unable to use that photo", error);
       }
     });
-  const changePhoto = (change: { crop?: Crop; plain?: boolean }) =>
+  const changePhoto = (change: { crop?: Crop; plain?: boolean }, fromHistory = false) =>
     withBusy("photo", "Updating the photo…", async () => {
+      const photo = docRef.current.photo;
+      if (!fromHistory && photo) {
+        history.record({ kind: "photo", before: { crop: photo.crop ?? undefined, plain: photo.plain } }, true);
+      }
       try {
         const r = await api.changePhoto(doc.id, change);
         setDoc((d) => ({ ...d, photo: r.photo, updatedAt: later(d.updatedAt, r.updatedAt) }));
@@ -197,6 +211,44 @@ function Workspace({ initial }: { initial: PostDoc }) {
         failed("Unable to switch to that try", error);
       }
     });
+
+  // ⌘Z / Ctrl+Z undo and ⇧⌘Z / Ctrl+Shift+Z / Ctrl+Y redo every change to
+  // the post: words, dates, orange words, animation, sizes, the landmark's
+  // placement and the photo's framing. Inside a text box the box's own
+  // undo runs instead.
+  const step = useCallback(
+    (direction: "undo" | "redo") => {
+      const current = docRef.current;
+      const entry = history.take(direction, (e) =>
+        e.kind === "words"
+          ? { kind: "words", before: wordsOf(current) }
+          : { kind: "photo", before: { crop: current.photo?.crop ?? e.before.crop, plain: current.photo?.plain ?? e.before.plain } },
+      );
+      if (!entry) return;
+      if (entry.kind === "words") {
+        dirty.current = true;
+        setDoc((d) => withWords(d, entry.before));
+      } else {
+        void changePhoto(entry.before, true);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- changePhoto is remade each render
+    [history],
+  );
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const key = e.key.toLowerCase();
+      const redo = (key === "z" && e.shiftKey) || (key === "y" && e.ctrlKey && !e.metaKey);
+      if (key !== "z" && !redo) return;
+      const target = e.target as HTMLElement;
+      if (target.closest("input, textarea, [contenteditable='true']")) return;
+      e.preventDefault();
+      step(redo ? "redo" : "undo");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [step]);
 
   // Each piece of text on the post edits in place; the date's icon opens
   // the calendar.
@@ -318,6 +370,70 @@ function Workspace({ initial }: { initial: PostDoc }) {
       </div>
     </main>
   );
+}
+
+// ─── Undo ─────────────────────────────────────────────────────────────────
+
+// What undo puts back: everything typed or set in the editor, and the
+// photo's framing (which the server redraws, so it is undone by asking
+// again). Uploads and new landmarks are not undone.
+type Words = Pick<PostDoc, "motion" | "title" | "titleSize" | "speaker" | "date" | "location"> & {
+  place: NonNullable<PostDoc["image"]>["place"] | null;
+};
+type Change =
+  | { kind: "words"; before: Words }
+  | { kind: "photo"; before: { crop?: Crop; plain: boolean } };
+
+const wordsOf = (d: PostDoc): Words => ({
+  motion: d.motion,
+  title: d.title,
+  titleSize: d.titleSize,
+  speaker: d.speaker,
+  date: d.date,
+  location: d.location,
+  place: d.image?.place ?? null,
+});
+const withWords = (d: PostDoc, { place, ...words }: Words): PostDoc => ({
+  ...d,
+  ...words,
+  image: d.image && place ? { ...d.image, place } : d.image,
+});
+
+// Changes made in quick succession (typing, dragging a slider) undo as one.
+const GROUP_MS = 700;
+const LIMIT = 100;
+
+function useHistory() {
+  const [history] = useState(() => {
+    const undo: Change[] = [];
+    const redo: Change[] = [];
+    let last = 0;
+    let lastKind: Change["kind"] | null = null;
+    return {
+      // Called before a change, with the state it changes from.
+      record(change: Change, separate = false) {
+        const now = Date.now();
+        const joins = !separate && lastKind === change.kind && now - last < GROUP_MS;
+        last = now;
+        lastKind = change.kind;
+        redo.length = 0;
+        if (joins) return;
+        undo.push(change);
+        if (undo.length > LIMIT) undo.shift();
+      },
+      // Takes the next change to undo (or redo), keeping the state it
+      // replaces on the other stack.
+      take(direction: "undo" | "redo", current: (entry: Change) => Change): Change | null {
+        const [from, to] = direction === "undo" ? [undo, redo] : [redo, undo];
+        const entry = from.pop();
+        if (!entry) return null;
+        to.push(current(entry));
+        lastKind = null;
+        return entry;
+      },
+    };
+  });
+  return history;
 }
 
 // Saves the post's edits half a second after the last change, one save at
