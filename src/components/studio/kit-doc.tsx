@@ -819,9 +819,9 @@ function Swatch({ hex, onCopy }: { hex: string; onCopy: (hex: string) => void })
       type="button"
       onClick={() => onCopy(hex)}
       title={`${hex}, click to copy`}
-      className="mx-px inline-flex h-[1.45em] cursor-pointer items-center gap-[0.35em] rounded-[5px] bg-white/[0.06] px-[0.35em] align-[-0.2em] font-mono text-[0.8em] text-white/90 leading-none outline-none transition-colors hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+      className="inline cursor-pointer whitespace-nowrap rounded-[4px] bg-white/[0.06] px-[0.3em] py-[0.12em] align-baseline font-mono text-[0.85em] text-white/90 outline-none transition-colors [box-decoration-break:clone] hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
     >
-      <span className="size-[0.8em] shrink-0 rounded-[2px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
+      <span className="me-[0.35em] inline-block size-[0.72em] rounded-[2px] align-[-0.04em] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
       {hex}
     </button>
   );
