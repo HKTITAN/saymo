@@ -320,6 +320,7 @@ function FilmView({
       if (filmRef.current?.kind === "video") clock.setDuration(d);
     },
     record: history.record,
+    enabled: film?.kind === "video",
   });
   useEffect(() => {
     edRef.current = ed;
@@ -861,6 +862,7 @@ function FilmView({
           chat={chatView}
           pinned={bubble ? null : pinned}
           time={time}
+          clock={clock}
           onClearPick={() => setPinned(null)}
           pointing={pointing}
           onPoint={togglePoint}

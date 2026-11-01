@@ -17,6 +17,7 @@ export function PromptBox({
   running,
   placeholder,
   chip,
+  meta,
   onClearChip,
   tools,
   inputRef,
@@ -32,6 +33,7 @@ export function PromptBox({
   running: boolean;
   placeholder: string;
   chip?: string | null;
+  meta?: React.ReactNode; // shown where the chip goes when there's no chip
   onClearChip?: () => void;
   tools?: ReactNode;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
@@ -83,7 +85,9 @@ export function PromptBox({
             </button>
           ) : null}
         </span>
-      ) : null}
+      ) : (
+        (meta ?? null)
+      )}
       <textarea
         ref={ref}
         rows={1}

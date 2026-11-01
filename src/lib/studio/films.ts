@@ -213,8 +213,20 @@ export function allowed(request: Request) {
   const host = (request.headers.get("host") ?? "").replace(/:\d+$/, "");
   if (!LOCAL_HOSTS.has(host)) return false;
   if (request.method === "GET" || request.method === "HEAD") return true;
+  // The page's own origin: this Mac by any of its names, on the same port
+  // (Next reports its own address as localhost even when the page was
+  // opened at 127.0.0.1).
   const origin = request.headers.get("origin");
-  if (origin !== null && origin !== new URL(request.url).origin) return false;
+  if (origin !== null) {
+    let from: URL;
+    try {
+      from = new URL(origin);
+    } catch {
+      return false;
+    }
+    const port = (request.headers.get("host") ?? "").match(/:(\d+)$/)?.[1] ?? "";
+    if (!LOCAL_HOSTS.has(from.hostname) || from.port !== port) return false;
+  }
   const site = request.headers.get("sec-fetch-site");
   if (site !== null && site !== "same-origin") return false;
   return request.headers.get("x-studio") === "1";

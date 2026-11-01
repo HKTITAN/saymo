@@ -365,7 +365,7 @@ async function editSummary(id: string): Promise<string> {
 function userMessage(film: Film, prompt: string, context: ChatContext, undone: boolean, edit: string | null) {
   const lines = [
     `<film>engine ${ENGINE_WORDS[film.engine]}, ${film.width}x${film.height}, ${film.fps} fps, ${film.duration} s, title "${film.title}"</film>`,
-    `<playhead>${context.t.toFixed(2)} s</playhead>`,
+    `<playhead>They stopped the playhead at ${context.t.toFixed(2)} s (frame ${Math.round(context.t * film.fps)}). "Here", "now", "this moment" and "at this point" mean exactly that time; make timed changes relative to it.</playhead>`,
   ];
   const pick = context.pick;
   if (pick) {

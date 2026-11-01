@@ -1,6 +1,7 @@
 "use client";
 
 import { type RefObject, useEffect, useRef, useState } from "react";
+import { type Clock, formatTime, useClock } from "./clock";
 import { Spinner } from "@/components/ui/spinner";
 import type { ChatMessage } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,7 @@ export function ChatPanel({
   chat,
   pinned,
   time,
+  clock,
   onClearPick,
   pointing,
   onPoint,
@@ -30,6 +32,7 @@ export function ChatPanel({
   chat: ChatState;
   pinned: Pinned | null;
   time: () => number;
+  clock: Clock;
   onClearPick: () => void;
   pointing: boolean;
   onPoint: () => void;
@@ -133,6 +136,7 @@ export function ChatPanel({
           placeholder="Make the title come in from the left"
           chip={pinned ? chipLabel(pinned.pick, pinned.t) : null}
           onClearChip={onClearPick}
+          meta={<PlayheadChip clock={clock} />}
           tools={
             <Hint label={pointing ? "Stop pointing" : "Point at the film"} keys={["P"]}>
               <button
@@ -162,6 +166,10 @@ function Message({ message }: { message: ChatMessage }) {
         {message.context?.pick ? (
           <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
             {chipLabel(message.context.pick, message.context.t)}
+          </span>
+        ) : message.context ? (
+          <span className="rounded-[6px] bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] text-white/45 tabular-nums">
+            At {formatTime(message.context.t)}
           </span>
         ) : null}
         <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed">
@@ -195,5 +203,18 @@ function Live({ text, steps, resumed }: { text: string; steps: string[]; resumed
       </p>
       {text ? <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">{text}</p> : null}
     </div>
+  );
+}
+
+// Where the playhead is, sent with every prompt so "here" and "now" mean
+// that exact moment. It follows the playhead on its own, so the rest of the
+// chat doesn't redraw while the film plays.
+function PlayheadChip({ clock }: { clock: Clock }) {
+  const t = useClock(clock, (s) => Math.round(s.t * 100) / 100);
+  return (
+    <span className="flex h-6 items-center gap-1.5 self-start rounded-[7px] bg-white/[0.06] px-2 text-[11.5px] text-white/50">
+      At
+      <span className="font-mono text-white/75 tabular-nums">{formatTime(t)}</span>
+    </span>
   );
 }

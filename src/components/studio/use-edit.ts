@@ -22,7 +22,13 @@ export function useEdit(
     onLive,
     onDuration,
     record,
-  }: { onLive: (edit: Edit) => void; onDuration: (seconds: number) => void; record: History["record"] },
+    enabled,
+  }: {
+    onLive: (edit: Edit) => void;
+    onDuration: (seconds: number) => void;
+    record: History["record"];
+    enabled: boolean; // only video films have an edit and footage
+  },
 ) {
   const [edit, setEdit] = useState<Edit | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -159,6 +165,7 @@ export function useEdit(
   }, [id, flush, show]);
 
   useEffect(() => {
+    if (!enabled) return;
     let live = true;
     videoApi
       .edit(id)
@@ -171,7 +178,7 @@ export function useEdit(
     return () => {
       live = false;
     };
-  }, [id, show]);
+  }, [id, show, enabled]);
 
   // ─── The bin ────────────────────────────────────────────────────────────
 
@@ -185,8 +192,8 @@ export function useEdit(
   const busy = media.some((m) => m.status === "importing" || m.transcribing);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- first load of the bin
-    if (!busy) void refreshMedia();
-  }, [busy, refreshMedia]);
+    if (enabled && !busy) void refreshMedia();
+  }, [busy, refreshMedia, enabled]);
   useEffect(() => {
     if (!busy) return;
     const timer = setInterval(() => void refreshMedia(), 1000);

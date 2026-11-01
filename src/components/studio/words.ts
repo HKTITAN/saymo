@@ -57,4 +57,4 @@ export const chipLabel = (pick: Picked | null, t: number) =>
     ? fromEdit(pick)
       ? `${(pick.text ?? "This part").split(" (")[0]} · ${clockTime(t)}`
       : `${pickName(pick)} · ${seconds(t)}`
-    : `At ${seconds(t)}`;
+    : `At ${clockTime(t)}`;
