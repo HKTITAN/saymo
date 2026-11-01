@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Bricolage Grotesque";
+        src: url("assets/fonts/BricolageGrotesque-Variable.ttf") format("truetype");
+        font-weight: 200 800;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #141414;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+      }
+      #film {
+        position: absolute;
+        inset: 0;
+        display: block;
+      }
+      #title {
+        font-variation-settings: "opsz" 86;
+      }
+      #caption {
+        font-variation-settings: "opsz" 32;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Aerchain bands: the speaker post's line field, full frame, as a 4 second
+      loop. The same film is made in Remotion and fframes, with the same
+      numbers, so the three engines can be compared side by side.
+
+      90 lines on a 12px pitch (an 8px line, a 2px darker gap above and below)
+      in 10 bands of 9. Colour only arrives from the right: each colour is a
+      layer of full-width lines slid in from the right edge.
+
+      STORYBOARD (seconds)
+        0.20  stone rises as a staircase from the bottom right, bottom band
+              first (70ms apart), each line 4ms behind the one below it
+        0.65  orange follows it in the same way, 240px short of each step
+        2.60  black slides back in from the middle bands outwards
+        4.00  loop: all black again
+    -->
+    <div data-hf-id="hf-nxch"
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="4"
+      data-fps="60"
+      data-width="1920"
+      data-height="1080"
+    >
+      <svg data-hf-id="hf-xh3g"
+        id="film"
+        class="clip"
+        data-start="0"
+        data-duration="4"
+        data-track-index="0"
+        viewBox="0 0 1920 1080"
+        width="1920"
+        height="1080"
+        data-layout-allow-overflow
+      >
+        <g data-hf-id="hf-twl0" id="lines"></g>
+        <!-- Cap tops on y 72, as on the post (cap height is 0.66 em). -->
+        <text data-hf-id="hf-ffsq"
+          id="title"
+          x="72"
+          y="128.76"
+          fill="#E9E5DD"
+          font-family="Bricolage Grotesque"
+          font-weight="600"
+          font-size="86"
+          letter-spacing="-0.86"
+        >
+          One film, three engines
+        </text>
+        <text data-hf-id="hf-zj94"
+          id="caption"
+          x="72"
+          y="180"
+          fill="#E9E5DD"
+          fill-opacity="0.5"
+          font-family="Bricolage Grotesque"
+          font-weight="400"
+          font-size="32"
+        >
+          Rendered in HyperFrames
+        </text>
+      </svg>
+    </div>
+    <script>
+      const W = 1920;
+      const PITCH = 12;
+      const STROKE = 8;
+      const ROWS = 90;
+      const BAND = 9;
+      const BANDS = 10;
+
+      // Each colour is a flat field with slightly darker lines through it.
+      const BLACK = { lit: "#1E1E1E", gap: "#141414" };
+      const ORANGE = { lit: "#F55A00", gap: "#DB5000" };
+      const STONE = { lit: "#D3CCBF", gap: "#C2BAAC" };
+
+      // Where each band's colour starts once in place: a stone staircase, with
+      // an orange one 240px inside it. The top two bands stay clear for words.
+      const STONE_STEPS = [W, W, 1440, 1200, 960, 720, 480, 240, 0, 0];
+      const ORANGE_STEPS = STONE_STEPS.map((x) => Math.min(W, x + 240));
+      const T = { stone: 0.2, orange: 0.65, black: 2.6, gap: 0.07, ring: 0.1575, lag: 0.004, travel: 0.8, cross: 0.5 };
+
+      // Sets off at half speed and eases into its step, like the post's bands.
+      const landing = (p) => 0.5 * p + 2 * p * p - 1.5 * p ** 3;
+      const bandOf = (r) => Math.floor(r / BAND);
+      const lineInBand = (r) => r % BAND;
+      const ringOf = (b) => (b < BANDS / 2 ? BANDS / 2 - 1 - b : b - BANDS / 2);
+      const outwardLag = (r) => (bandOf(r) < BANDS / 2 ? BAND - 1 - lineInBand(r) : lineInBand(r));
+
+      // Every move of line r, in paint order: [colour, start, duration, to x].
+      function moves(r) {
+        const b = bandOf(r);
+        if (STONE_STEPS[b] >= W) return [];
+        const up = (BANDS - 1 - b) * T.gap + (BAND - 1 - lineInBand(r)) * T.lag;
+        return [
+          [STONE, T.stone + up, T.travel, STONE_STEPS[b]],
+          [ORANGE, T.orange + up, T.travel, ORANGE_STEPS[b]],
+          [BLACK, T.black + ringOf(b) * T.ring + outwardLag(r) * T.lag, T.cross, 0],
+        ];
+      }
+
+      const SVG = "http://www.w3.org/2000/svg";
+      const rect = (y, height, fill) => {
+        const el = document.createElementNS(SVG, "rect");
+        el.setAttribute("y", y);
+        el.setAttribute("width", W);
+        el.setAttribute("height", height);
+        el.setAttribute("fill", fill);
+        return el;
+      };
+      // One full-width line in a colour: its gap behind, its stroke on top.
+      const layer = (r, color) => {
+        const g = document.createElementNS(SVG, "g");
+        g.append(rect(r * PITCH, PITCH, color.gap), rect(r * PITCH + (PITCH - STROKE) / 2, STROKE, color.lit));
+        return g;
+      };
+
+      const lines = document.getElementById("lines");
+      const tl = gsap.timeline({ paused: true });
+      for (let r = 0; r < ROWS; r++) {
+        lines.append(layer(r, BLACK));
+        moves(r).forEach(([color, start, duration, to], k) => {
+          const g = layer(r, color);
+          g.id = `line-${r}-${k}`;
+          lines.append(g);
+          tl.fromTo(g, { x: W }, { x: to, duration, ease: landing }, start);
+        });
+      }
+      // Hold to the end, so the loop is the full 4 seconds.
+      tl.set({}, {}, 4);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
