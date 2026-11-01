@@ -1,0 +1,27 @@
+[
+  {
+    "id": "aerchain-bands-remotion",
+    "engine": "remotion",
+    "title": "Aerchain bands",
+    "dir": "studio/remotion",
+    "composition": "aerchain-bands",
+    "preview": { "url": "http://localhost:3206/aerchain-bands" },
+    "duration": 4
+  },
+  {
+    "id": "aerchain-bands-hyperframes",
+    "engine": "hyperframes",
+    "title": "Aerchain bands",
+    "dir": "studio/hyperframes/aerchain-bands",
+    "preview": { "url": "http://localhost:3205/#project/aerchain-bands" },
+    "duration": 4
+  },
+  {
+    "id": "aerchain-bands-fframes",
+    "engine": "fframes",
+    "title": "Aerchain bands",
+    "dir": "studio/fframes/aerchain-bands",
+    "preview": { "file": "studio/out/aerchain-bands-fframes-draft.mp4" },
+    "duration": 4
+  }
+]

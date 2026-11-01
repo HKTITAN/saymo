@@ -45,3 +45,10 @@ next-env.d.ts
 
 # posts made in the tool, with their uploads and videos
 /posts
+
+# motion engines (studio/): renders, installs and build output
+/studio/out/
+/studio/**/node_modules/
+/studio/fframes/**/target/
+/studio/hyperframes/**/.hyperframes/
+/studio/hyperframes/**/renders/

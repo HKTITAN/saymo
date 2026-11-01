@@ -150,3 +150,52 @@ The tool does all of this without the command line. By hand:
 - `scripts/vision.swift`: background removal and face finding for the tool
 - `assets/places/`: the landmark image
 - `assets/reference/`: the line texture, the layout reference and the reference video
+
+## Motion engines
+
+Groundwork for the studio (V2): three engines that turn code into video, set
+up in `studio/` without touching the post or the tool. Each one has made the
+same 4 second film, "Aerchain bands" (the post's line field: a stone and an
+orange staircase arrive from the right, then black slides back in), so they
+can be compared side by side. They render the same pixels and colours.
+
+| Engine | What it is good for | Preview | Licence |
+| --- | --- | --- | --- |
+| [Remotion](https://www.remotion.dev) 4.0.539, `studio/remotion` | Video as React components; its Studio has a timeline and edits props live | `npm run studio`, then http://localhost:3206 | Free for individuals, companies of up to 3 people, and evaluation. **Aerchain needs a company licence before using it for real work** (remotion.pro) |
+| [HyperFrames](https://hyperframes.heygen.com) 0.8.227, `studio/hyperframes` | Video as an HTML page with a paused GSAP timeline; closest to how the post is built, and the one its skills know best | `npm run preview`, then http://localhost:3205 | Apache 2.0, free |
+| [fframes](https://fframes.studio) 1.3.0, `studio/fframes` | Video as Rust code drawing SVG on the GPU; by far the fastest (a 4K film in seconds) | `cargo run --release -- preview` opens a window; no browser preview | MIT, free |
+
+Set up once per engine (each keeps its own packages; the root is untouched):
+
+```bash
+cd studio/remotion && npm install       # Remotion
+cd studio/hyperframes && npm install    # HyperFrames, pinned; telemetry is off
+cd studio/fframes/aerchain-bands && cargo build --release   # fframes, about 2.5 minutes the first time
+```
+
+fframes needs Rust (installed from rustup.rs) and `brew install pkgconf nasm
+ninja`; Remotion and HyperFrames render with Google Chrome.
+
+Render any film listed in `studio/compositions.json`, from the project root:
+
+```bash
+node scripts/studio/render.mjs aerchain-bands-remotion          # 4K and 1080p
+node scripts/studio/render.mjs aerchain-bands-hyperframes --draft   # a quick 1080p check
+```
+
+Files land in `studio/out/` (git ignores it): `<id>-4k.mp4` and
+`<id>-1080p.mp4`, or `<id>-draft.mp4`. Each engine hands over lossless frames
+and one ffmpeg makes the videos exactly as `npm run export` does (H.264,
+60 fps, tagged BT.709, the 1080p copy being the 4K frames at half size), so
+the orange matches across all three. While it works the script prints
+`progress <percent>` lines, for the studio's progress bar.
+
+`studio/compositions.json` lists every film: its `id`, `engine`, `title`,
+folder (`dir`), where to `preview` it (a URL, or for fframes its latest
+draft) and `duration` in seconds. Remotion films also name their
+`composition`.
+
+The studio's chat gets the engines' own skills, installed in `.claude/skills`:
+Remotion's (`remotion-dev/skills`), HyperFrames' (`heygen-com/hyperframes`),
+fframes' (`fframes.studio`), GSAP's (`greensock/gsap-skills`) and
+LottieFiles' motion design principles (`lottiefiles/motion-design-skill`).
