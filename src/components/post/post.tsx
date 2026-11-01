@@ -1,9 +1,10 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
+import { Fragment, useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import { post } from "@/content/post";
 import { cn } from "@/lib/utils";
+import type { PostContent } from "./content";
 import { EVENT_ICONS } from "./icons";
 import { drawPanel, type Look, MOTION_BY_ID, PANEL_H, PANEL_W, type MotionId } from "./lines";
 import { PALETTE } from "./palette";
@@ -11,11 +12,20 @@ import { PALETTE } from "./palette";
 // The post is laid out at its export size, 1920 x 1080, in post pixels.
 export const POST_W = 1920;
 export const POST_H = 1080;
-const LEFT_W = POST_W - PANEL_W; // 1000
-const MARGIN = 72;
-const PHOTO = 240; // the speaker's square photo, as scripts/photo.mjs makes it
-// The headline: placed so its cap height lines up with the top of the logo.
-const HEADLINE = { top: MARGIN - 16, size: 86, leading: 1.04 };
+export const LEFT_W = POST_W - PANEL_W; // 1000
+export const MARGIN = 72;
+export const PHOTO = 240; // the speaker's square photo, as scripts/photo.mjs makes it
+// The headline: nudged so the letter stems line up with the photo's left
+// edge and the cap height lines up with the top of the logo. The nudges are
+// measured at 86px and scale with a headline the tool has shrunk to fit.
+export const HEADLINE = { size: 86, leading: 1.04, nudgeX: 4.3, nudgeY: 16 };
+// The when-and-where row sits this far under the headline.
+export const EVENT_GAP = 56;
+
+export function headlineBox(size: number) {
+  const k = size / HEADLINE.size;
+  return { left: MARGIN - HEADLINE.nudgeX * k, top: MARGIN - HEADLINE.nudgeY * k };
+}
 
 export type PostHandle = { renderAt: (seconds: number) => void };
 
@@ -35,15 +45,48 @@ function ordinals(text: string) {
 }
 
 // A line with its accent words in orange and its ordinals raised.
-function accented(line: string, accent?: string) {
-  const at = accent ? line.indexOf(accent) : -1;
+function accented(line: string, accent?: string | readonly string[]) {
+  if (Array.isArray(accent)) return accentedWords(line, accent);
+  const at = accent ? line.indexOf(accent as string) : -1;
   if (!accent || at < 0) return ordinals(line);
   return (
     <>
       {ordinals(line.slice(0, at))}
-      <span style={{ color: PALETTE.orangeLine }}>{ordinals(accent)}</span>
+      <span style={{ color: PALETTE.orangeLine }}>{ordinals(accent as string)}</span>
       {ordinals(line.slice(at + accent.length))}
     </>
+  );
+}
+
+// Words as the tool picks them: letters and figures, with any apostrophes
+// and hyphens inside them.
+export const WORD = /([\p{L}\p{N}'’-]+)/u;
+
+// Each picked word in orange wherever it appears in the line, whatever its
+// case. A space between two orange words is orange too, so a phrase like
+// "Kuala Lumpur" stays one run.
+function accentedWords(line: string, words: readonly string[]) {
+  const wanted = new Set(words.map((w) => w.toLocaleLowerCase()));
+  const parts = line.split(WORD); // the gaps and words in turn: gap, word, gap, ...
+  const orange = parts.map((part, i) => i % 2 === 1 && wanted.has(part.toLocaleLowerCase()));
+  parts.forEach((part, i) => {
+    if (i % 2 === 0 && /^\s+$/.test(part) && orange[i - 1] && orange[i + 1]) orange[i] = true;
+  });
+  const runs: { text: string; orange: boolean }[] = [];
+  parts.forEach((text, i) => {
+    const last = runs.at(-1);
+    if (!text) return;
+    if (last && last.orange === orange[i]) last.text += text;
+    else runs.push({ text, orange: orange[i] });
+  });
+  return runs.map((run, i) =>
+    run.orange ? (
+      <span key={i} style={{ color: PALETTE.orangeLine }}>
+        {ordinals(run.text)}
+      </span>
+    ) : (
+      <Fragment key={i}>{ordinals(run.text)}</Fragment>
+    ),
   );
 }
 
@@ -56,6 +99,8 @@ type PostProps = {
   live?: boolean;
   // The viewer's Before/After switch; softer landings otherwise.
   look?: Look;
+  // The words and images; the original post unless the tool passes its own.
+  content?: PostContent;
   ref?: Ref<PostHandle>;
 };
 
@@ -65,6 +110,7 @@ export function Post({
   pixelScale,
   live = true,
   look,
+  content = post,
   ref,
 }: PostProps) {
   const shownLook: Look = look ?? "refined";
@@ -121,8 +167,9 @@ export function Post({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, playing, motion, pixelScale, shownLook]);
 
-  const { title, speaker, event, skyline } = post;
-  const { place } = skyline;
+  const { title, speaker, event, skyline } = content;
+  const titleSize = content.titleSize ?? HEADLINE.size;
+  const headline = headlineBox(titleSize);
 
   return (
     <div
@@ -134,21 +181,20 @@ export function Post({
       <div className="absolute inset-y-0 left-0" style={{ width: LEFT_W }}>
         <h1
           className="absolute font-semibold"
-          // Nudged so the letter stems line up with the photo's left edge and
-          // the cap height lines up with the top of the logo.
           style={{
-            left: MARGIN - 4.3,
-            top: HEADLINE.top,
-            fontSize: HEADLINE.size,
+            left: headline.left,
+            top: headline.top,
+            fontSize: titleSize,
             lineHeight: HEADLINE.leading,
             letterSpacing: "-0.01em",
             color: PALETTE.ink,
           }}
+          data-part="headline"
         >
           {/* The first line leads at full strength; the rest sits back at 60%,
               which still reads at 4.4:1 on stone when the post is seen small. */}
           {title.map((line, i) => (
-            <span key={line} className={cn("block whitespace-nowrap", i > 0 && "opacity-60")}>
+            <span key={i} className={cn("block whitespace-nowrap", i > 0 && "opacity-60")}>
               {line}
             </span>
           ))}
@@ -164,9 +210,10 @@ export function Post({
           className="absolute flex"
           style={{
             left: MARGIN,
-            top: HEADLINE.top + title.length * HEADLINE.size * HEADLINE.leading + 56,
+            top: headline.top + title.length * titleSize * HEADLINE.leading + EVENT_GAP,
             gap: 40,
           }}
+          data-part="event"
         >
           {event.map((item) => (
             <div key={item.id} className="flex items-center" style={{ gap: 16 }}>
@@ -204,9 +251,9 @@ export function Post({
                     color: PALETTE.ink,
                   }}
                 >
-                  {item.lines.map((line) => (
-                    <span key={line} className="block whitespace-nowrap">
-                      {accented(line, "accent" in item ? item.accent : undefined)}
+                  {item.lines.map((line, i) => (
+                    <span key={i} className="block whitespace-nowrap">
+                      {accented(line, item.accent)}
                     </span>
                   ))}
                 </p>
@@ -221,21 +268,25 @@ export function Post({
         >
           {/* A plain img on purpose: the photo is pre-sized for the export
               and must not be resampled again by an image optimiser. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={speaker.photo.x1}
-            srcSet={`${speaker.photo.x1} 1x, ${speaker.photo.x2} 2x`}
-            width={PHOTO}
-            height={PHOTO}
-            alt={speaker.name}
-            className="block shrink-0"
-            draggable={false}
-          />
+          {speaker.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={speaker.photo.x1}
+              srcSet={`${speaker.photo.x1} 1x, ${speaker.photo.x2} 2x`}
+              width={PHOTO}
+              height={PHOTO}
+              alt={speaker.name}
+              className="block shrink-0"
+              draggable={false}
+            />
+          ) : (
+            <div className="shrink-0" style={{ width: PHOTO, height: PHOTO, background: PALETTE.stoneField }} />
+          )}
           {/* Bottom-aligned with the photo: the last line's box reaches 8.4px
               below its baseline at these sizes, so hanging the column 8.4px
               low would sit that baseline on the photo's bottom edge; it hangs
               6.4px, nudged 2px up by eye. */}
-          <div style={{ marginBottom: -6.4 }}>
+          <div style={{ marginBottom: -6.4 }} data-part="speaker">
             <p
               className="font-medium"
               style={{ fontSize: 30, lineHeight: 1.2, letterSpacing: "-0.01em", color: PALETTE.ink }}
@@ -265,21 +316,27 @@ export function Post({
           role="img"
           aria-label="Aerchain"
         />
-        {/* The landmark stands on the bottom edge, in front of the lines. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={skyline.x1}
-          srcSet={`${skyline.x1} 1x, ${skyline.x2} 2x`}
-          width={PANEL_W}
-          height={PANEL_H}
-          alt={skyline.landmark}
-          className="absolute inset-0 block"
-          style={{
-            transform: `translate(${place.x}px, ${-place.y}px) scale(${place.scale})`,
-            transformOrigin: "50% 100%",
-          }}
-          draggable={false}
-        />
+        {/* The landmark stands centred on the bottom edge, in front of the
+            lines. */}
+        {skyline && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={skyline.x1}
+            srcSet={`${skyline.x1} 1x, ${skyline.x2} 2x`}
+            width={skyline.width ?? PANEL_W}
+            height={skyline.height ?? PANEL_H}
+            alt={skyline.landmark}
+            className="absolute block"
+            style={{
+              left: (PANEL_W - (skyline.width ?? PANEL_W)) / 2,
+              bottom: 0,
+              transform: `translate(${skyline.place.x}px, ${-skyline.place.y}px) scale(${skyline.place.scale})`,
+              transformOrigin: "50% 100%",
+            }}
+            draggable={false}
+            data-part="landmark"
+          />
+        )}
       </div>
     </div>
   );

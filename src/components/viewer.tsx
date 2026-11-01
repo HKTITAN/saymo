@@ -2,8 +2,9 @@
 
 import { DownloadIcon, PauseIcon, PlayIcon } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { ExportStage } from "@/components/export-stage";
 import { MOTION_BY_ID, MOTIONS, type MotionId } from "@/components/post/lines";
-import { Post, POST_H, POST_W, type PostHandle } from "@/components/post/post";
+import { Post, POST_H, POST_W } from "@/components/post/post";
 import { post } from "@/content/post";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -16,16 +17,6 @@ import {
   ToolbarSeparator,
 } from "@/components/ui/toolbar";
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-
-declare global {
-  interface Window {
-    __post?: {
-      ready: boolean;
-      motions: { id: MotionId; duration: number; still: number }[];
-      renderAt: (seconds: number) => void;
-    };
-  }
-}
 
 const isMotion = (v: string | null): v is MotionId => !!v && Object.hasOwn(MOTION_BY_ID, v);
 
@@ -53,40 +44,6 @@ export function Viewer() {
     return <ExportStage motion={isMotion(motion) ? motion : MOTIONS[0].id} />;
   }
   return <Showcase />;
-}
-
-function ExportStage({ motion }: { motion: MotionId }) {
-  const handle = useRef<PostHandle>(null);
-  // The exporter opens this page at 2x for 4K, so the lines draw at 2x too.
-  const pixelScale = window.devicePixelRatio || 1;
-
-  useEffect(() => {
-    let cancelled = false;
-    document.fonts.ready.then(() => {
-      if (cancelled || !handle.current) return;
-      const h = handle.current;
-      window.__post = {
-        ready: true,
-        motions: MOTIONS.map(({ id, duration, still }) => ({ id, duration, still })),
-        renderAt: (s) => h.renderAt(s),
-      };
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [motion]);
-
-  return (
-    <div style={{ position: "fixed", inset: 0, width: POST_W, height: POST_H }}>
-      <Post
-        ref={handle}
-        motion={motion}
-        playing={false}
-        pixelScale={pixelScale}
-        live={false}
-      />
-    </div>
-  );
 }
 
 function Showcase() {

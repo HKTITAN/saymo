@@ -42,3 +42,6 @@ next-env.d.ts
 
 # rendered posts
 /export
+
+# posts made in the tool, with their uploads and videos
+/posts

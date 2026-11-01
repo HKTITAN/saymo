@@ -29,7 +29,7 @@ const STONE: Fill = { lit: PALETTE.stoneField, gap: PALETTE.stoneLine };
 type Layer = { edge: number; color: Fill };
 type LineState = { base: Fill; layers: Layer[] };
 
-export type MotionId = "scenes";
+export type MotionId = "scenes" | "burst" | "tide" | "signal";
 
 // How Scenes moves: with softer landings (the post's own), or as measured
 // from the reference (the Before switch).
@@ -38,6 +38,7 @@ export type Look = "reference" | "refined";
 type Motion = {
   id: MotionId;
   label: string;
+  hint: string; // what it does, in a line, for the tool's picker
   duration: number; // seconds per loop; every motion is seamless
   still: number; // the moment used for the PNG and the first video frame
   line: (r: number, t: number, look: Look) => LineState;
@@ -183,13 +184,132 @@ const scenes: Motion["line"] = (r, t, look) => {
   };
 };
 
+// ---------------------------------------------------------------------------
+// Three more, for the tool's picker. They are made of Scenes' own parts (the
+// same ten bands, colours, pixel burst and landing), so any of them can
+// stand in for it behind a landmark.
+
+// Where each band's orange starts once a staircase is in place: the top two
+// bands stay clear for the logo, the bottom two run the full width.
+const STEPS = [920, 920, 840, 700, 560, 420, 280, 140, 0, 0];
+const lowestFirst = (b: number) => BANDS - 1 - b; // 0 for the bottom band
+const linesUp = (r: number) => (BAND - 1 - lineInBand(r)) * WIPES.lineLag; // bottom line leads
+// 0 outside the window, easing up to 1 between a and b, back down between c and d.
+const window4 = (x: number, a: number, b: number, c: number, d: number) =>
+  Math.min(easeInOut(clamp((x - a) / (b - a))), 1 - easeInOut(clamp((x - c) / (d - c))));
+
+/* BURST: every change of colour is the pixel circle out of the right edge.
+ *    0ms   orange bursts out of the middle of the right edge
+ *  450ms   the still: the circle half grown
+ * 2000ms   stone bursts over it
+ * 4000ms   black bursts over that
+ * 6000ms   loop */
+const BURSTS = { gap: 2000, still: 450, loop: 6000 };
+const burst: Motion["line"] = (r, t) => {
+  const ms = t * 1000;
+  const b = bandOf(r);
+  return {
+    base: BLACK,
+    layers: [ORANGE, STONE, BLACK].map((color, k) => ({
+      color,
+      edge: burstRings(b, ms - k * BURSTS.gap),
+    })),
+  };
+};
+
+/* TIDE: orange only, and slow. A staircase rolls in from the bottom,
+ * breathes, and rolls back out to the right, top step first.
+ *    0ms   the bottom band sets off, each band above 140ms later, every
+ *          one stopping at its step
+ * 2400ms   the still: the staircase in place
+ * 2200ms to 5600ms   the steps breathe, a slow wave running up them
+ * 5800ms   the top step leaves first, back off the right edge
+ * 8000ms   loop: black again */
+const TIDE = { gap: 140, travel: 1100, leave: 5800, leaveTravel: 1000, breathe: 36, still: 2400, loop: 8000 };
+const tide: Motion["line"] = (r, t) => {
+  const ms = t * 1000;
+  const b = bandOf(r);
+  const lag = linesUp(r);
+  const arrived = landing(clamp((ms - lowestFirst(b) * TIDE.gap - lag) / TIDE.travel));
+  const left = easeInOut(clamp((ms - TIDE.leave - (b - 2) * TIDE.gap - lag) / TIDE.leaveTravel));
+  // The breath: a slow wave that runs up the steps once they are in.
+  const wave = Math.sin(2 * Math.PI * ((ms - 2200) / 3400 - lowestFirst(b) * 0.07));
+  const breath = TIDE.breathe * wave * window4(ms, 2200, 2700, 5100, 5600);
+  const reach = (PANEL_W - STEPS[b]) * arrived * (1 - left);
+  return { base: BLACK, layers: [{ color: ORANGE, edge: PANEL_W - reach - (reach > 0 ? breath : 0) }] };
+};
+
+/* SIGNAL: thinks, decides, acts, on Scenes' 1500ms beat.
+ *    0ms   thinks: orange lines search in from the right edge, each at its
+ *          own length, growing bolder
+ * 1000ms   the still: the lines mid-search, the motion's own picture
+ * 1500ms   decides: they settle into the staircase, lowest step first
+ * 3000ms   acts: the steps fire across the panel, lowest first, until it
+ *          is all orange
+ * 4500ms   black slides back in from the middle, as in Scenes
+ * 6000ms   loop
+ * The logo's two bands never search, so it stays whole until it all
+ * turns orange. */
+const SIGNAL = { search: 260, settle: 1500, settleGap: 90, settleTime: 450, fire: 3000, back: 4500, still: 1000, loop: 6000 };
+// Stable pseudo-random number in [0, 1) for a line.
+const hash = (n: number) => {
+  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+};
+const signal: Motion["line"] = (r, t) => {
+  const ms = t * 1000;
+  const b = bandOf(r);
+  const lag = linesUp(r);
+  // Searching: each line wanders on its own, two slow waves at its own phase.
+  const wander =
+    0.5 + 0.31 * Math.sin(2 * Math.PI * (0.55 * t + hash(r))) + 0.19 * Math.sin(2 * Math.PI * (1.15 * t + hash(r + 91)));
+  const searches = STEPS[b] < PANEL_W ? 1 : 0;
+  const searching = PANEL_W - SIGNAL.search * searches * easeInOut(clamp(ms / 1200)) * wander;
+  const settled = landing(clamp((ms - SIGNAL.settle - lowestFirst(b) * SIGNAL.settleGap - lag) / SIGNAL.settleTime));
+  const decided = searching + (STEPS[b] - searching) * settled;
+  const fireAt = SIGNAL.fire + lowestFirst(b) * (WIPES.spread / (BANDS - 1)) + lag;
+  return {
+    base: BLACK,
+    layers: [
+      { color: ORANGE, edge: decided },
+      { color: ORANGE, edge: PANEL_W * (1 - landing(clamp((ms - fireAt) / WIPES.cross))) },
+      { color: BLACK, edge: PANEL_W * (1 - landing(clamp((ms - SIGNAL.back - ringOf(b) * (WIPES.spread / (BANDS / 2 - 1)) - outwardLag(r) * WIPES.lineLag) / WIPES.cross))) },
+    ],
+  };
+};
+
 export const MOTIONS: Motion[] = [
   {
     id: "scenes",
     label: "Scenes",
+    hint: "Black, orange and stone in stepped wipes: a rising staircase, a sweep, a burst and back",
     duration: SCENE_TIMING.loop / 1000,
     still: SCENE_TIMING.still / 1000,
     line: scenes,
+  },
+  {
+    id: "burst",
+    label: "Burst",
+    hint: "Each colour bursts out of the right edge in a stepped circle: orange, stone, then black",
+    duration: BURSTS.loop / 1000,
+    still: BURSTS.still / 1000,
+    line: burst,
+  },
+  {
+    id: "tide",
+    label: "Tide",
+    hint: "Calm and orange only: a staircase rolls in, breathes and rolls back out",
+    duration: TIDE.loop / 1000,
+    still: TIDE.still / 1000,
+    line: tide,
+  },
+  {
+    id: "signal",
+    label: "Signal",
+    hint: "Thinks, decides, acts: lines search, settle into steps, then fire across",
+    duration: SIGNAL.loop / 1000,
+    still: SIGNAL.still / 1000,
+    line: signal,
   },
 ];
 
