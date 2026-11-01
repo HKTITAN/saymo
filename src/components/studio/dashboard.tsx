@@ -719,7 +719,6 @@ function FolderCard({
   const [over, setOver] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [landed, setLanded] = useState(0); // bumps when a film lands, for a small nod
-  const top = films.slice(0, 3);
   const latest = films[0]?.updatedAt;
   return (
     <li
@@ -759,7 +758,7 @@ function FolderCard({
           )}
           skullet-block=""
         >
-          <FolderArt films={top} open={over} />
+          <FolderArt open={over} />
         </span>
         <span className="flex flex-col gap-0.5 px-1 pb-0.5">
           <span className={cn("truncate text-[12.5px] text-white/90", renaming && "invisible")}>{folder.name}</span>
@@ -787,71 +786,38 @@ function FolderCard({
   );
 }
 
-// A folder drawn as a folder: a back with a tab, the films inside peeking
-// out as small stills, and a front pocket with a face. Hovering (or a film
-// dragged over it) tips the front open and lifts the stills.
-const SHEETS = [
-  { rotate: -3, x: -3 },
-  { rotate: 3, x: 3 },
-  { rotate: 0, x: 0 },
-];
+// A folder drawn the Windows way, standing up and seen from the side: the
+// back with a small tab low on its right, and the cover swung open on the
+// left. Hovering (or a film dragged over it) swings the cover wider.
 const EASE = "duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
-function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
-  const sheets = films.length ? films.slice().reverse() : [null];
+function FolderArt({ open }: { open: boolean }) {
   return (
-    <span aria-hidden="true" className="relative h-full w-full">
-      {/* The back and its tab, top left: the card's own outline. */}
-      <svg viewBox="0 0 100 125" className="absolute inset-0 h-full w-full">
-        <path d="M0 9 Q0 0 9 0 H33 Q37 0 39.5 3 L42 6 Q43 7 45 7 H91 Q100 7 100 16 V116 Q100 125 91 125 H9 Q0 125 0 116 Z" fill="#232323" />
-      </svg>
-      {/* What's inside: the newest films, or one blank sheet. */}
-      {sheets.map((f, i) => {
-        const at = SHEETS[SHEETS.length - sheets.length + i];
-        return (
-          <span
-            key={f?.id ?? "blank"}
-            className={cn(
-              "absolute top-[13%] left-[10%] flex h-[42%] w-[80%] items-center justify-center overflow-hidden rounded-[8px] bg-[#333] shadow-[0_2px_10px_rgba(0,0,0,0.4)] transition-transform",
-              EASE,
-              open ? "-translate-y-[20%]" : "group-hover/card:-translate-y-[10%]",
-            )}
-            style={{ rotate: `${at.rotate * (open ? 1.5 : 1)}deg`, translate: `${at.x * (open ? 1.5 : 1)}% 0` }}
-          >
-            {f?.poster ? (
-              // eslint-disable-next-line @next/next/no-img-element -- a local still of the film
-              <img src={f.poster} alt="" draggable={false} className="h-full w-full object-cover" />
-            ) : (
-              <span className="flex w-[60%] flex-col gap-[5px]">
-                <span className="h-[4px] w-[70%] rounded-full bg-white/[0.14]" />
-                <span className="h-[4px] w-full rounded-full bg-white/[0.08]" />
-              </span>
-            )}
-          </span>
-        );
-      })}
-      {/* The front pocket: low on the left, stepping up to the right, the
-          other way round from the tab. It tips open. */}
-      <svg
-        viewBox="0 0 100 125"
-        className={cn(
-          "absolute inset-0 h-full w-full origin-bottom overflow-visible drop-shadow-[0_-4px_10px_rgba(0,0,0,0.3)] transition-transform [transform:perspective(700px)_rotateX(0deg)]",
-          EASE,
-          open ? "[transform:perspective(700px)_rotateX(-22deg)_scaleX(0.95)]" : "group-hover/card:[transform:perspective(700px)_rotateX(-10deg)_scaleX(0.97)]",
-        )}
-      >
+    <svg viewBox="0 0 100 125" aria-hidden="true" className="absolute inset-0 h-full w-full overflow-visible">
+      <g transform="translate(1 3)">
+        {/* The back and its tab. */}
+        <path d="M84.3 88.5 L95 90.4 L84.3 95.6 Z" fill="rgb(0 0 0 / 0.45)" />
         <path
-          d="M0 66 Q0 58 8 58 H34 Q38 58 40.5 55 L43 52 Q45.5 50 49 50 H92 Q100 50 100 58 V116 Q100 125 91 125 H9 Q0 125 0 116 Z"
-          fill="#2f2f2f"
-          stroke="rgb(255 255 255 / 0.07)"
-          strokeWidth={0.6}
+          d="M16 6.6 H76.7 Q78.7 6.6 78.7 8.6 V60.5 Q78.7 62.5 80.5 63.6 L82.5 64.8 Q84.3 65.9 84.3 68 V93.6 Q84.3 95.6 82.3 95.6 H14 V8.6 Q14 6.6 16 6.6 Z"
+          fill="#2c2c2c"
         />
         <g className="text-white/60">
-          <circle cx={44} cy={88} r={1.6} fill="currentColor" />
-          <circle cx={56} cy={88} r={1.6} fill="currentColor" />
-          <path d={open ? "M46.6 92 q3.4 4.6 6.8 0 Z" : "M47 92.4 q3 2.8 6 0"} stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
+          <circle cx={56} cy={50} r={1.7} fill="currentColor" />
+          <circle cx={67} cy={50} r={1.7} fill="currentColor" />
+          <path d={open ? "M58.8 54.2 q2.7 4.4 5.4 0 Z" : "M59 54.6 q2.5 2.6 5 0"} stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
         </g>
-      </svg>
-    </span>
+        {/* The cover, swung open toward you. */}
+        <g
+          className={cn(
+            "transition-transform [transform-box:view-box] [transform-origin:14px_60px]",
+            EASE,
+            open ? "scale-x-[1.35]" : "group-hover/card:scale-x-[1.15]",
+          )}
+        >
+          <path d="M37.8 104 L48 105.6 L37.8 112.4 Z" fill="rgb(0 0 0 / 0.45)" />
+          <path d="M14 7.8 Q14 6.2 15.4 7.1 L36.4 23 Q37.8 24 37.8 25.6 V110.6 Q37.8 112.6 36.2 111.5 L15 96.4 Q14 95.7 14 94.4 Z" fill="#3b3b3b" />
+        </g>
+      </g>
+    </svg>
   );
 }
 
