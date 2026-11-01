@@ -31,11 +31,11 @@ const ROLES: { key: keyof ColorRoles; label: string; note: string }[] = [
   { key: "onAccent", label: "On accent", note: "Type on the accent" },
   { key: "line", label: "Line", note: "Rules and the line field" },
 ];
-const RULES: { key: keyof BrandKit["rules"]; label: string; eyebrow: string }[] = [
-  { key: "visual", label: "Look", eyebrow: "How it looks" },
-  { key: "motion", label: "Motion", eyebrow: "How it moves" },
-  { key: "sound", label: "Sound", eyebrow: "How it sounds" },
-  { key: "words", label: "Words", eyebrow: "How it speaks" },
+const RULES: { key: keyof BrandKit["rules"]; label: string }[] = [
+  { key: "visual", label: "Look" },
+  { key: "motion", label: "Motion" },
+  { key: "sound", label: "Sound" },
+  { key: "words", label: "Words" },
 ];
 
 // Rules that say what never to do read as Don'ts; short absolute ones
@@ -92,7 +92,6 @@ export function KitDoc({
     return list.map((s, i) => ({ ...s, n: String(i + 1).padStart(2, "0") }));
   }, [kit.texture, kit.notes]);
   const active = useActiveSection(scroller, sections.map((s) => s.id));
-  const n = (id: string) => sections.find((s) => s.id === id)?.n ?? "";
 
   const go = (id: string) => {
     const el = scroller.current?.querySelector(`#kit-${id}`);
@@ -116,7 +115,6 @@ export function KitDoc({
                     active === s.id ? "bg-white/[0.14] text-white" : "text-white/50 hover:text-white/85",
                   )}
                 >
-                  <span className="font-mono text-[10.5px] opacity-60 tabular-nums">{s.n}</span>
                   {s.title}
                 </button>
               </li>
@@ -126,14 +124,13 @@ export function KitDoc({
 
         <article className="mx-auto w-full max-w-[880px] rounded-[20px] bg-[#161616] px-[clamp(20px,6vw,64px)] py-14 text-white/90 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_30px_80px_-30px_rgba(0,0,0,0.7)]">
           <header className="mx-auto flex max-w-[68ch] flex-col gap-3 pb-10">
-            <p className="font-medium text-[11.5px] text-white/45 uppercase tracking-[0.08em]">Brand kit</p>
             <h1 className="font-semibold text-[44px] leading-[1.05] tracking-[-0.02em]">{kit.name}</h1>
             {kit.source ? <p className="text-[14px] text-white/60 leading-relaxed">{kit.source}</p> : null}
             {arrival ? <Arrival text={arrival} onDismiss={onDismissArrival} onCopy={onCopy} /> : null}
           </header>
 
           {/* 01 Colour */}
-          <DocSection id="colour" n={n("colour")} eyebrow="The palette" title="Colour" onEdit={() => setEditing(editing === "colour" ? null : "colour")} editing={editing === "colour"}>
+          <DocSection id="colour" title="Colour" onEdit={() => setEditing(editing === "colour" ? null : "colour")} editing={editing === "colour"}>
             {editing === "colour" ? (
               <EditTray onDone={() => setEditing(null)} note="Colour ramps are in the Kit panel on the right.">
                 {ROLES.map((role) => (
@@ -197,12 +194,12 @@ export function KitDoc({
           </DocSection>
 
           {/* 02 Type */}
-          <DocSection id="type" n={n("type")} eyebrow="The voice on the page" title="Type" onEdit={() => onOpenPanel("Fonts")}>
+          <DocSection id="type" title="Type" onEdit={() => onOpenPanel("Fonts")}>
             {kit.fonts.length ? (
               <div className="flex flex-col gap-4">
                 {kit.fonts.map((f, i) => (
-                  <figure key={`${f.file}-${f.role}-${i}`} className="flex flex-col gap-4 overflow-hidden rounded-[16px] p-6" style={{ background: r.surface, color: r.ink }}>
-                    <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px] opacity-70" style={{ fontFamily: "system-ui" }}>
+                  <figure key={`${f.file}-${f.role}-${i}`} className="flex flex-col gap-4 overflow-hidden rounded-[16px] bg-white/[0.04] p-6 text-white/90 shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
+                    <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px] text-white/45" style={{ fontFamily: "system-ui" }}>
                       <span className="font-medium">{f.family}</span>
                       <span>{f.role === "display" ? "Display" : f.role === "text" ? "Text" : "Mono"}</span>
                       <span className="font-mono tabular-nums">weights {f.weights}</span>
@@ -223,7 +220,7 @@ export function KitDoc({
           </DocSection>
 
           {/* 03 Logos */}
-          <DocSection id="logos" n={n("logos")} eyebrow="The signature" title="Logos" onEdit={() => onOpenPanel("Logos")}>
+          <DocSection id="logos" title="Logos" onEdit={() => onOpenPanel("Logos")}>
             {kit.logos.length ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                 {kit.logos.map((l, i) => (
@@ -254,7 +251,7 @@ export function KitDoc({
 
           {/* 04 Line texture */}
           {kit.texture ? (
-            <DocSection id="texture" n={n("texture")} eyebrow="The structure" title="Line texture" onEdit={() => onOpenPanel("Line texture")}>
+            <DocSection id="texture" title="Line texture" onEdit={() => onOpenPanel("Line texture")}>
               <LineField kit={kit} />
               <p className="text-[14px] text-white/60 leading-relaxed">
                 <span className="font-mono text-[13px] tabular-nums">
@@ -266,12 +263,11 @@ export function KitDoc({
           ) : null}
 
           {/* 05 Rules */}
-          <DocSection id="rules" n={n("rules")} eyebrow="What to do and not do" title="Rules">
+          <DocSection id="rules" title="Rules">
             {RULES.map((group) => (
               <RuleGroup
                 key={group.key}
                 label={group.label}
-                eyebrow={group.eyebrow}
                 rules={kit.rules[group.key]}
                 editing={editing === `rules-${group.key}`}
                 onEdit={() => setEditing(editing === `rules-${group.key}` ? null : `rules-${group.key}`)}
@@ -283,7 +279,7 @@ export function KitDoc({
 
           {/* 06 Guideline */}
           {kit.notes?.trim() || editing === "guideline" ? (
-            <DocSection id="guideline" n={n("guideline")} eyebrow="The long version" title="Guideline" onEdit={() => setEditing(editing === "guideline" ? null : "guideline")} editing={editing === "guideline"}>
+            <DocSection id="guideline" title="Guideline" onEdit={() => setEditing(editing === "guideline" ? null : "guideline")} editing={editing === "guideline"}>
               {editing === "guideline" ? (
                 <EditTray onDone={() => setEditing(null)} note="Markdown: # headings, - lists, **bold**, `values`, | tables |.">
                   <textarea
@@ -370,16 +366,12 @@ function useActiveSection(scroller: React.RefObject<HTMLDivElement | null>, ids:
 
 function DocSection({
   id,
-  n,
-  eyebrow,
   title,
   onEdit,
   editing,
   children,
 }: {
   id: string;
-  n: string;
-  eyebrow: string;
   title: string;
   onEdit?: () => void;
   editing?: boolean;
@@ -389,9 +381,6 @@ function DocSection({
     <section id={`kit-${id}`} aria-labelledby={`kit-${id}-title`} className="mx-auto flex max-w-[68ch] scroll-mt-[72px] flex-col gap-4 border-white/[0.07] border-t py-10 first-of-type:border-t-0">
       <div className="flex items-end gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <p className="font-medium text-[11.5px] text-white/45 uppercase tracking-[0.08em]">
-            <span className="font-mono tabular-nums">{n}</span> · {eyebrow}
-          </p>
           <h2 id={`kit-${id}-title`} className="font-semibold text-[28px] leading-tight tracking-[-0.01em]">
             {title}
           </h2>
@@ -462,10 +451,9 @@ function Arrival({ text, onDismiss, onCopy }: { text: string; onDismiss: () => v
   );
 }
 
-// One group of rules: its key rules as callouts, then Do and Don't cards.
+// One group of rules: its key rules first, then what to do and not do.
 function RuleGroup({
   label,
-  eyebrow,
   rules,
   editing,
   onEdit,
@@ -473,7 +461,6 @@ function RuleGroup({
   onCopy,
 }: {
   label: string;
-  eyebrow: string;
   rules: string[];
   editing: boolean;
   onEdit: () => void;
@@ -488,7 +475,6 @@ function RuleGroup({
     <div className="flex flex-col gap-3 pt-4">
       <div className="flex items-end gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <p className="text-[12px] text-white/45">{eyebrow}</p>
           <h3 className="font-semibold text-[18px]">{label}</h3>
         </div>
         <button
@@ -535,17 +521,22 @@ function RuleGroup({
         </EditTray>
       ) : rules.length ? (
         <>
-          {keys.map((rule) => (
-            <p key={rule} className="rounded-[12px] border-[#F55A00] border-l-[3px] bg-[#F55A00]/[0.08] px-4 py-3 font-medium text-[15px] leading-snug">
-              <Inline text={rule} onCopy={onCopy} />
-            </p>
-          ))}
-          {dos.length || donts.length ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <RuleCard tone="do" rules={dos} onCopy={onCopy} />
-              <RuleCard tone="dont" rules={donts} onCopy={onCopy} />
-            </div>
+          {keys.length ? (
+            // The key rules: plain lines, each marked with one small orange
+            // square, the brand's own way of saying "this matters".
+            <ul className="flex flex-col divide-y divide-white/[0.07] border-white/[0.07] border-y">
+              {keys.map((rule) => (
+                <li key={rule} className="flex gap-3.5 py-3.5 font-medium text-[15.5px] text-white/90 leading-snug">
+                  <span className="mt-[7px] size-1.5 shrink-0 bg-[#F55A00]" aria-hidden="true" />
+                  <span>
+                    <Inline text={rule} onCopy={onCopy} />
+                  </span>
+                </li>
+              ))}
+            </ul>
           ) : null}
+          <RuleList tone="do" rules={dos} onCopy={onCopy} />
+          <RuleList tone="dont" rules={donts} onCopy={onCopy} />
         </>
       ) : (
         <Empty>None yet.</Empty>
@@ -554,18 +545,25 @@ function RuleGroup({
   );
 }
 
-function RuleCard({ tone, rules, onCopy }: { tone: "do" | "dont"; rules: string[]; onCopy: (hex: string) => void }) {
-  if (!rules.length) return <div className="hidden sm:block" />;
+// Do or Don't: a quiet label, then one rule per line, full width.
+function RuleList({ tone, rules, onCopy }: { tone: "do" | "dont"; rules: string[]; onCopy: (hex: string) => void }) {
+  if (!rules.length) return null;
   return (
-    <div className="flex flex-col gap-2.5 rounded-[14px] bg-white/[0.04] p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
-      <p className={cn("flex items-center gap-2 font-semibold text-[12px] uppercase tracking-[0.06em]", tone === "do" ? "text-[#7fc493]" : "text-[#FF8048]")}>
-        <span className={cn("size-2 rounded-full", tone === "do" ? "bg-[#3f8f55]" : "bg-[#DE4A00]")} aria-hidden="true" />
-        {tone === "do" ? "Do" : "Don’t"}
-      </p>
-      <ul className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1 pt-2">
+      <p className="font-medium text-[11.5px] text-white/40 uppercase tracking-[0.08em]">{tone === "do" ? "Do" : "Don’t"}</p>
+      <ul className="flex flex-col">
         {rules.map((rule) => (
-          <li key={rule} className="text-[14px] text-white/75 leading-relaxed">
-            <Inline text={rule} onCopy={onCopy} />
+          <li key={rule} className="flex gap-3.5 py-2 text-[14.5px] text-white/75 leading-relaxed">
+            <span
+              className={cn(
+                "mt-[9px] size-1.5 shrink-0",
+                tone === "do" ? "bg-white/35" : "shadow-[inset_0_0_0_1px_#FF8048]",
+              )}
+              aria-hidden="true"
+            />
+            <span>
+              <Inline text={rule} onCopy={onCopy} />
+            </span>
           </li>
         ))}
       </ul>
