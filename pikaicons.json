@@ -16,6 +16,10 @@
       "name": "arrow-left",
       "variant": "stroke"
     },
+    "arrow-up": {
+      "name": "arrow-up",
+      "variant": "stroke"
+    },
     "calendar-default": {
       "name": "calendar-default",
       "variant": "stroke"
@@ -60,8 +64,24 @@
       "name": "external-link-square",
       "variant": "stroke"
     },
+    "eye-off": {
+      "name": "eye-off",
+      "variant": "stroke"
+    },
+    "eye-on": {
+      "name": "eye-on",
+      "variant": "stroke"
+    },
+    "grid-dashboard-02": {
+      "name": "grid-dashboard-02",
+      "variant": "stroke"
+    },
     "information-circle": {
       "name": "information-circle",
+      "variant": "stroke"
+    },
+    "minus-default": {
+      "name": "minus-default",
       "variant": "stroke"
     },
     "multiple-cross-cancel-default": {

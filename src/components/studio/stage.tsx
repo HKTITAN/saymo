@@ -1,0 +1,156 @@
+"use client";
+
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import type { Engine, Picked, StageInbound, StageOutbound } from "@/lib/studio/contract";
+import { stageUrl } from "./api";
+
+// The stage: the film's own page in an iframe, at the film's pixel size,
+// scaled to fit the room the panels leave. The studio talks to it by
+// postMessage (StageInbound / StageOutbound in contract.ts).
+
+export type Insets = { top: number; right: number; bottom: number; left: number };
+export type Fit = { x: number; y: number; scale: number; width: number; height: number };
+
+// Holds the current iframe so anything (the clock, the inspector) can send
+// it a message without passing refs around.
+export type Bridge = {
+  attach: (frame: HTMLIFrameElement | null) => void;
+  detach: (frame: HTMLIFrameElement | null) => void;
+  post: (message: StageInbound) => void;
+};
+
+export function createBridge(): Bridge {
+  let current: HTMLIFrameElement | null = null;
+  return {
+    attach(frame) {
+      current = frame;
+    },
+    detach(frame) {
+      if (current === frame) current = null;
+    },
+    post(message) {
+      current?.contentWindow?.postMessage(message, window.location.origin);
+    },
+  };
+}
+
+const subscribeResize = (cb: () => void) => {
+  window.addEventListener("resize", cb);
+  return () => window.removeEventListener("resize", cb);
+};
+const windowSize = () => `${window.innerWidth}x${window.innerHeight}`;
+
+// Where the film sits: as large as fits inside the insets, centred, never
+// above its own size times two.
+export function useFit(width: number, height: number, insets: Insets): Fit {
+  const size = useSyncExternalStore(subscribeResize, windowSize, () => "1440x900");
+  const [w, h] = size.split("x").map(Number);
+  const roomW = Math.max(160, w - insets.left - insets.right);
+  const roomH = Math.max(90, h - insets.top - insets.bottom);
+  const scale = Math.min(roomW / width, roomH / height, 2);
+  const fw = width * scale;
+  const fh = height * scale;
+  return {
+    x: insets.left + (roomW - fw) / 2,
+    y: insets.top + (roomH - fh) / 2,
+    scale,
+    width: fw,
+    height: fh,
+  };
+}
+
+export type StageStatus = { state: "loading" } | { state: "ready" } | { state: "error"; message: string };
+
+export function Stage({
+  id,
+  engine,
+  width,
+  height,
+  fit,
+  bridge,
+  version,
+  pointing,
+  onMessage,
+}: {
+  id: string;
+  engine: Engine;
+  width: number;
+  height: number;
+  fit: Fit;
+  bridge: Bridge;
+  version: number; // bumped to load the stage page afresh
+  pointing: boolean;
+  onMessage: (message: StageOutbound) => void;
+}) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  const handler = useRef(onMessage);
+  useEffect(() => {
+    handler.current = onMessage;
+  });
+
+  useEffect(() => {
+    const frame = ref.current;
+    bridge.attach(frame);
+    const listen = (event: MessageEvent) => {
+      if (event.source !== frame?.contentWindow || event.origin !== window.location.origin) return;
+      const data = event.data as StageOutbound;
+      if (data && typeof data === "object" && typeof data.type === "string" && data.type.startsWith("studio:")) {
+        handler.current(data);
+      }
+    };
+    window.addEventListener("message", listen);
+    return () => {
+      window.removeEventListener("message", listen);
+      bridge.detach(frame);
+    };
+  }, [bridge, version]);
+
+  useEffect(() => {
+    bridge.post({ type: "studio:point", on: pointing });
+  }, [bridge, pointing]);
+
+  // A rust film can't tell what's under the pointer, so the studio takes the
+  // click itself and passes on only where it was.
+  const overlay = pointing && engine === "rust";
+
+  return (
+    <div
+      className="absolute top-0 left-0 origin-top-left overflow-hidden rounded-[3px] bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.06)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
+      style={{ width, height, transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.scale})` }}
+    >
+      <iframe
+        key={version}
+        ref={ref}
+        src={`${stageUrl(id)}?v=${version}`}
+        title="The film"
+        width={width}
+        height={height}
+        className="block border-0"
+        style={{ width, height, pointerEvents: pointing && !overlay ? "auto" : "none" }}
+        onLoad={() => {
+          bridge.attach(ref.current);
+          bridge.post({ type: "studio:point", on: pointing });
+        }}
+      />
+      {overlay ? (
+        <button
+          type="button"
+          aria-label="Point at the film"
+          className="absolute inset-0 cursor-crosshair"
+          onClick={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            const pick: Picked = {
+              x: ((e.clientX - r.left) / r.width) * width,
+              y: ((e.clientY - r.top) / r.height) * height,
+              id: null,
+              tag: null,
+              text: null,
+              rect: null,
+            };
+            handler.current({ type: "studio:picked", pick });
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
