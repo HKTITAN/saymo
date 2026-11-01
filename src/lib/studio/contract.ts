@@ -54,10 +54,11 @@ export type Film = {
   createdAt: string; // ISO
   updatedAt: string; // ISO
   session?: string; // Claude session id, so the chat continues
+  kind?: "motion" | "video"; // video = an edit of footage (edit.ts); missing = motion
 };
 
 // A film in the list.
-export type FilmSummary = Pick<Film, "id" | "title" | "engine" | "width" | "height" | "duration" | "updatedAt"> & {
+export type FilmSummary = Pick<Film, "id" | "title" | "engine" | "kind" | "width" | "height" | "duration" | "updatedAt"> & {
   poster: string | null; // URL of a still, if one has been made
 };
 

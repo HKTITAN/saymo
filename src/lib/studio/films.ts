@@ -54,6 +54,7 @@ export async function listFilms(): Promise<FilmSummary[]> {
       id: f.id,
       title: f.title,
       engine: f.engine,
+      kind: f.kind ?? "motion",
       width: f.width,
       height: f.height,
       duration: f.duration,
