@@ -48,6 +48,10 @@
       "name": "clock-default",
       "variant": "stroke"
     },
+    "cloud-default": {
+      "name": "cloud-default",
+      "variant": "stroke"
+    },
     "copy-default": {
       "name": "copy-default",
       "variant": "stroke"
@@ -72,6 +76,10 @@
       "name": "eye-on",
       "variant": "stroke"
     },
+    "github": {
+      "name": "github",
+      "variant": "stroke"
+    },
     "grid-dashboard-02": {
       "name": "grid-dashboard-02",
       "variant": "stroke"
@@ -82,6 +90,10 @@
     },
     "layer-three": {
       "name": "layer-three",
+      "variant": "stroke"
+    },
+    "link-chain-horizontal": {
+      "name": "link-chain-horizontal",
       "variant": "stroke"
     },
     "mic-on": {

@@ -262,6 +262,9 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
   ];
   const deny = [
     `Read(${root}/**/.env*)`,
+    // Connections' tokens and the library's working copy.
+    `Read(${root}/.studio/**)`,
+    `Edit(${root}/.studio/**)`,
     `Read(${root}/**/node_modules/**)`,
     `Edit(/${dir}/.history/**)`,
     `Edit(/${dir}/out/**)`,
