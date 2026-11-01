@@ -50,6 +50,8 @@ export const api = {
   get: (id: string) => call<PostDoc>(`/api/posts/${id}`),
   save: (id: string, edit: DocEdit, keepalive = false) =>
     call<Saved>(`/api/posts/${id}`, { ...send("PUT", edit), keepalive }),
+  rename: (id: string, name: string) =>
+    call<Saved & { name: string | null }>(`/api/posts/${id}`, send("PATCH", { name })),
   remove: (id: string) => call<unknown>(`/api/posts/${id}`, { method: "DELETE" }),
   uploadPhoto: (id: string, file: File) => call<PhotoResult>(`/api/posts/${id}/photo`, upload(file)),
   changePhoto: (id: string, change: { crop?: Crop; plain?: boolean }) =>

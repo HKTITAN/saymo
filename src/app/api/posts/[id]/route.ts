@@ -25,6 +25,23 @@ export async function PUT(req: Request, ctx: RouteContext<"/api/posts/[id]">) {
   });
 }
 
+// Renames the post. An empty name goes back to the speaker's name.
+export async function PATCH(req: Request, ctx: RouteContext<"/api/posts/[id]">) {
+  const { id } = await ctx.params;
+  const body = (await req.json().catch(() => null)) as { name?: unknown } | null;
+  if (typeof body?.name !== "string") {
+    return Response.json({ error: "Send the new name." }, { status: 400 });
+  }
+  const name = body.name.trim().slice(0, 80);
+  return withPost(id, async () => {
+    const doc = await readDoc(id);
+    if (!doc) return missing();
+    const next = { ...doc, name: name || undefined, updatedAt: new Date().toISOString() };
+    await writeDoc(next);
+    return Response.json({ updatedAt: next.updatedAt, name: next.name ?? null });
+  });
+}
+
 export async function DELETE(_req: Request, ctx: RouteContext<"/api/posts/[id]">) {
   const { id } = await ctx.params;
   await withPost(id, () => deleteDoc(id));

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CopyIcon, DeleteDustbin01Icon, PlusIcon, ThreeDotsMenuHorizontalIcon } from "@/components/icons";
+import { CopyIcon, DeleteDustbin01Icon, PencilEditIcon, PlusIcon, ThreeDotsMenuHorizontalIcon } from "@/components/icons";
 import type { PostContent } from "@/components/post/content";
 import type { MotionId } from "@/components/post/lines";
 import { Post, POST_H, POST_W } from "@/components/post/post";
@@ -18,9 +18,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
+import { RenameField } from "./rename";
 import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
-import { motionOf, type PostDoc, type PostSummary, toContent } from "@/lib/tool/doc";
+import { motionOf, type PostDoc, type PostSummary, postName, toContent } from "@/lib/tool/doc";
 import { api } from "./api";
 import { openPost } from "./nav";
 
@@ -76,6 +77,19 @@ export function Dashboard() {
         description: (error as Error).message,
       });
       setCreating(false);
+    }
+  };
+
+  // Shown at once, put back if it doesn't save.
+  const rename = async (doc: PostDoc, name: string) => {
+    const set = (value: string | undefined) =>
+      setPosts((list) => list?.map((p) => (p.doc.id === doc.id ? { ...p, doc: { ...p.doc, name: value } } : p)) ?? null);
+    set(name || undefined);
+    try {
+      await api.rename(doc.id, name);
+    } catch (error) {
+      set(doc.name);
+      toastManager.add({ type: "error", title: "Unable to rename the post", description: (error as Error).message });
     }
   };
 
@@ -142,6 +156,7 @@ export function Dashboard() {
               key={p.doc.id}
               summary={p}
               onDuplicate={() => create(p.doc.id, "copy")}
+              onRename={(name) => rename(p.doc, name)}
               onDelete={() => setDeleting(p.doc)}
             />
           ))}
@@ -205,15 +220,18 @@ function ExportChip({ summary }: { summary: PostSummary }) {
 function PostCard({
   summary,
   onDuplicate,
+  onRename,
   onDelete,
 }: {
   summary: PostSummary;
   onDuplicate: () => void;
+  onRename: (name: string) => void;
   onDelete: () => void;
 }) {
   const { doc } = summary;
   const [hover, setHover] = useState(false);
-  const name = doc.speaker.name.trim() || UNNAMED;
+  const [renaming, setRenaming] = useState(false);
+  const name = postName(doc) || UNNAMED;
 
   return (
     <li
@@ -224,7 +242,20 @@ function PostCard({
       <Thumbnail content={toContent(doc)} motion={motionOf(doc)} playing={hover} />
       <div className="flex flex-col gap-1 px-2 pt-2.5 pb-1.5">
         <div className="flex items-center justify-between gap-3">
-          <p className="truncate font-medium text-[13px] text-white/90">{name}</p>
+          {renaming ? (
+            // Above the card's own button, so typing doesn't open the post.
+            <RenameField
+              value={postName(doc)}
+              placeholder={doc.speaker.name.trim() || UNNAMED}
+              className="relative z-10 h-6 flex-1 font-medium text-[13px]"
+              onDone={(next) => {
+                setRenaming(false);
+                if (next !== null) onRename(next);
+              }}
+            />
+          ) : (
+            <p className="truncate font-medium text-[13px] text-white/90">{name}</p>
+          )}
           <ExportChip summary={summary} />
         </div>
         <p className="truncate text-[12px] text-white/55">{doc.title.join(" ")}</p>
@@ -255,6 +286,10 @@ function PostCard({
           <ThreeDotsMenuHorizontalIcon aria-hidden="true" />
         </MenuTrigger>
         <MenuPopup align="end">
+          <MenuItem onClick={() => setRenaming(true)}>
+            <PencilEditIcon aria-hidden="true" />
+            Rename
+          </MenuItem>
           <MenuItem onClick={onDuplicate}>
             <CopyIcon aria-hidden="true" />
             Duplicate

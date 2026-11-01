@@ -17,6 +17,8 @@ export type PostDoc = {
   id: string;
   createdAt: string;
   updatedAt: string;
+  // The post's own name in the list; the speaker's name when left out.
+  name?: string;
   // Which of the four animations the post plays; Scenes when left out.
   motion?: MotionId;
   title: string[];
@@ -125,3 +127,6 @@ export type ExportStatus =
   | { state: "failed"; error: string };
 
 export type PostSummary = { doc: PostDoc; export: ExportStatus };
+
+// What the list and the editor call a post.
+export const postName = (doc: Pick<PostDoc, "name" | "speaker">) => doc.name?.trim() || doc.speaker.name.trim();

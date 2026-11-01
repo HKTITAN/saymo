@@ -11,7 +11,7 @@ import { toastManager } from "@/components/ui/toast";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON, Panel } from "@/components/studio/panel";
 import { dateLines } from "@/lib/tool/dates";
 import { cn } from "@/lib/utils";
-import { type Crop, type DatePick, type DocEdit, motionOf, type PostDoc, toContent, toEdit } from "@/lib/tool/doc";
+import { type Crop, type DatePick, type DocEdit, motionOf, type PostDoc, postName, toContent, toEdit } from "@/lib/tool/doc";
 import { api, type Problem, ProblemError } from "./api";
 import { createPickerHandle, DateIconTrigger, DatePicker, TimePicker } from "./date-picker";
 import { DialGroup, DialNote } from "./dial";
@@ -22,6 +22,7 @@ import { EditingContext, InlineField, tidy, titleLines, useInlineEditing } from 
 import { MotionPicker } from "./motion-picker";
 import { openPost } from "./nav";
 import { PhotoField } from "./photo-field";
+import { RenameField } from "./rename";
 import { Preview } from "./preview";
 import { Timeline } from "./timeline";
 
@@ -69,6 +70,7 @@ function Workspace({ initial }: { initial: PostDoc }) {
   const postHandle = useRef<PostHandle>(null);
   const [calendar] = useState(createPickerHandle);
   const [hidden, setHidden] = useState(false);
+  const [renaming, setRenaming] = useState(false);
   const [folded, setFolded] = useState(false);
   const saver = useSaver(doc.id, (updatedAt) => setDoc((d) => ({ ...d, updatedAt: later(d.updatedAt, updatedAt) })));
   const { schedule, flush } = saver;
@@ -266,6 +268,18 @@ function Workspace({ initial }: { initial: PostDoc }) {
   const onPlace = (place: NonNullable<PostDoc["image"]>["place"]) =>
     edit((d) => (d.image ? { ...d, image: { ...d.image, place } } : d));
 
+  const rename = (name: string) => {
+    const before = doc.name;
+    setDoc((d) => ({ ...d, name: name || undefined }));
+    api.rename(doc.id, name).then(
+      (r) => setDoc((d) => ({ ...d, updatedAt: later(d.updatedAt, r.updatedAt) })),
+      (error) => {
+        setDoc((d) => ({ ...d, name: before }));
+        failed("Unable to rename the post", error);
+      },
+    );
+  };
+
   const leave = () => {
     flush().catch(() => {});
     openPost(null);
@@ -314,9 +328,27 @@ function Workspace({ initial }: { initial: PostDoc }) {
               <ArrowLeftIcon aria-hidden="true" />
             </button>
           </Hint>
-          <h1 className="max-w-60 truncate ps-1 font-medium text-[12.5px] text-white/90">
-            {doc.speaker.name || "New speaker"}
-          </h1>
+          {renaming ? (
+            <RenameField
+              value={postName(doc)}
+              placeholder={doc.speaker.name.trim() || "New speaker"}
+              className="h-7 w-52 font-medium text-[12.5px]"
+              onDone={(next) => {
+                setRenaming(false);
+                if (next !== null) rename(next);
+              }}
+            />
+          ) : (
+            <Hint label="Rename">
+              <button
+                type="button"
+                onClick={() => setRenaming(true)}
+                className="h-7 max-w-60 cursor-text truncate rounded-[6px] px-1.5 font-medium text-[12.5px] text-white/90 outline-none hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {postName(doc) || "New speaker"}
+              </button>
+            </Hint>
+          )}
           <span
             className={cn("ps-2 text-[11.5px]", saver.state === "failed" ? "text-destructive-foreground" : "text-white/40")}
             aria-live="polite"
