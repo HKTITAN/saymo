@@ -1,14 +1,16 @@
 "use client";
 
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangleIcon, ArrowLeftIcon } from "@/components/icons";
+import { AlertTriangleIcon, ArrowLeftIcon, EyeOffIcon, EyeOnIcon } from "@/components/icons";
 import { MOTIONS } from "@/components/post/lines";
 import { HEADLINE, type PostHandle, type PostPart } from "@/components/post/post";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
 import { toastManager } from "@/components/ui/toast";
+import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON, Panel } from "@/components/studio/panel";
 import { dateLines } from "@/lib/tool/dates";
+import { cn } from "@/lib/utils";
 import { type Crop, type DatePick, type DocEdit, motionOf, type PostDoc, toContent, toEdit } from "@/lib/tool/doc";
 import { api, type Problem, ProblemError } from "./api";
 import { createPickerHandle, DateIconTrigger, DatePicker, TimePicker } from "./date-picker";
@@ -66,6 +68,8 @@ function Workspace({ initial }: { initial: PostDoc }) {
   const postRef = useRef<HTMLDivElement>(null);
   const postHandle = useRef<PostHandle>(null);
   const [calendar] = useState(createPickerHandle);
+  const [hidden, setHidden] = useState(false);
+  const [folded, setFolded] = useState(false);
   const saver = useSaver(doc.id, (updatedAt) => setDoc((d) => ({ ...d, updatedAt: later(d.updatedAt, updatedAt) })));
   const { schedule, flush } = saver;
 
@@ -118,6 +122,7 @@ function Workspace({ initial }: { initial: PostDoc }) {
         e.preventDefault();
         setPlaying((p) => !p);
       }
+      if (e.key === "h" || e.key === "H") setHidden((h) => !h);
       const picked = MOTIONS[Number(e.key) - 1];
       if (picked) edit((d) => ({ ...d, motion: picked.id }));
     };
@@ -261,67 +266,119 @@ function Workspace({ initial }: { initial: PostDoc }) {
   const onPlace = (place: NonNullable<PostDoc["image"]>["place"]) =>
     edit((d) => (d.image ? { ...d, image: { ...d.image, place } } : d));
 
+  const leave = () => {
+    flush().catch(() => {});
+    openPost(null);
+  };
+  const saved =
+    saver.state === "saving"
+      ? "Saving…"
+      : saver.state === "failed"
+        ? "Not saved. Make any change to try again."
+        : "Saved";
+
+  // The post fills the window; the controls float over it, as in the
+  // studio. The panel folds to a pill, H hides everything but the post.
+  const panelOpen = !hidden && !folded;
   return (
-    <main className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      <header className="flex min-h-16 items-center justify-between gap-6 border-b px-4 py-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              flush().catch(() => {});
-              openPost(null);
-            }}
-          >
-            <ArrowLeftIcon aria-hidden="true" />
-            All posts
-          </Button>
-          <h1 className="truncate font-medium text-sm">{doc.speaker.name || "New speaker"}</h1>
-          <span
-            className={
-              saver.state === "failed" ? "text-destructive-foreground text-xs" : "text-muted-foreground text-xs"
-            }
-          >
-            {saver.state === "saving"
-              ? "Saving changes…"
-              : saver.state === "failed"
-                ? "Changes not saved. Make any change to try again."
-                : "Changes saved"}
-          </span>
-        </div>
-        <ExportControl doc={doc} flush={flush} />
-      </header>
+    <main className="relative h-dvh overflow-hidden bg-[#0c0c0c] text-foreground">
+      <section
+        className="absolute transition-[inset] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
+        style={{ top: hidden ? 24 : 76, left: 24, right: panelOpen ? 24 + 372 + 16 : 24, bottom: hidden ? 24 : 92 }}
+      >
+        <EditingContext value={editing}>
+          <Preview
+            content={toContent({ ...doc, title: titleLines(doc) })}
+            motion={motion}
+            handle={postHandle}
+            wrap={wrap}
+            postRef={postRef}
+            onPlace={onPlace}
+          />
+        </EditingContext>
+      </section>
 
-      <div className="flex min-h-0 flex-1">
-        <section className="flex min-w-0 flex-1 flex-col gap-4 p-6">
-          <div className="min-h-0 flex-1">
-            <EditingContext value={editing}>
-              <Preview
-                content={toContent({ ...doc, title: titleLines(doc) })}
-                motion={motion}
-                handle={postHandle}
-                wrap={wrap}
-                postRef={postRef}
-                onPlace={onPlace}
-              />
-            </EditingContext>
-          </div>
-          <Timeline motion={motion} playing={playing} onPlaying={setPlaying} post={postHandle} />
-          {problems.length > 0 && (
-            <ul className="flex flex-col gap-1 text-warning-foreground text-xs" aria-live="polite">
-              {problems.map((p) => (
-                <li key={p} className="flex items-center gap-2">
-                  <AlertTriangleIcon className="size-3.5 shrink-0" aria-hidden="true" />
-                  {p}
-                </li>
-              ))}
-            </ul>
+      <div className="pointer-events-none absolute inset-0">
+        {/* Top left: back, the post's name, saving, undo. */}
+        <div
+          inert={hidden}
+          className={cn(
+            CARD,
+            PANEL_MOTION,
+            "pointer-events-auto absolute top-4 left-4 flex h-11 items-center gap-1 ps-1.5 pe-2",
+            hidden && "pointer-events-none translate-y-1 scale-[0.98] opacity-0",
           )}
-        </section>
+        >
+          <Hint label="All posts">
+            <button type="button" className={ICON_BUTTON} onClick={leave} aria-label="All posts">
+              <ArrowLeftIcon aria-hidden="true" />
+            </button>
+          </Hint>
+          <h1 className="max-w-60 truncate ps-1 font-medium text-[12.5px] text-white/90">
+            {doc.speaker.name || "New speaker"}
+          </h1>
+          <span
+            className={cn("ps-2 text-[11.5px]", saver.state === "failed" ? "text-destructive-foreground" : "text-white/40")}
+            aria-live="polite"
+          >
+            {saved}
+          </span>
+          <span className="mx-1.5 h-4 w-px bg-white/10" aria-hidden="true" />
+          <Hint label="Undo" keys={["⌘", "Z"]}>
+            <button
+              type="button"
+              className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}
+              onClick={() => step("undo")}
+              disabled={!history.can("undo")}
+            >
+              Undo
+            </button>
+          </Hint>
+          <Hint label="Redo" keys={["⇧", "⌘", "Z"]}>
+            <button
+              type="button"
+              className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}
+              onClick={() => step("redo")}
+              disabled={!history.can("redo")}
+            >
+              Redo
+            </button>
+          </Hint>
+        </div>
 
-        <aside className="w-100 shrink-0 border-l">
+        {/* Top right: hide the panels, make the video. */}
+        <div
+          className={cn(
+            CARD,
+            PANEL_MOTION,
+            "pointer-events-auto absolute top-4 right-4 flex h-11 items-center gap-1.5 ps-1.5 pe-1.5",
+          )}
+        >
+          <Hint label={hidden ? "Show panels" : "Hide panels"} keys={["H"]}>
+            <button
+              type="button"
+              className={ICON_BUTTON}
+              onClick={() => setHidden((h) => !h)}
+              aria-label={hidden ? "Show panels" : "Hide panels"}
+            >
+              {hidden ? <EyeOnIcon aria-hidden="true" /> : <EyeOffIcon aria-hidden="true" />}
+            </button>
+          </Hint>
+          {hidden ? null : <ExportControl doc={doc} flush={flush} />}
+        </div>
+
+        {/* Right: everything that isn't edited on the post itself. */}
+        <Panel
+          title="Post"
+          folded={folded}
+          onFold={setFolded}
+          hidden={hidden}
+          className="top-[76px] right-4 bottom-[92px] w-[372px]"
+          pillClassName="top-[76px] right-4"
+          bodyClassName="flex flex-col"
+        >
           <ScrollArea scrollFade>
-            <div className="flex flex-col gap-5 px-4 py-4">
+            <div className="flex flex-col gap-5 px-4 pt-1 pb-4">
               <DialGroup title="Animation">
                 <MotionPicker value={motion} onChange={(m) => edit((d) => ({ ...d, motion: m }))} />
               </DialGroup>
@@ -366,7 +423,31 @@ function Workspace({ initial }: { initial: PostDoc }) {
               </DialGroup>
             </div>
           </ScrollArea>
-        </aside>
+        </Panel>
+
+        {/* Bottom: the timeline, with anything that doesn't fit above it. */}
+        <div
+          inert={hidden}
+          className={cn(
+            CARD,
+            PANEL_MOTION,
+            "pointer-events-auto absolute bottom-4 left-4 flex flex-col gap-2 p-2",
+            hidden && "pointer-events-none translate-y-1 scale-[0.98] opacity-0",
+          )}
+          style={{ right: panelOpen ? 24 + 372 + 8 : 16 }}
+        >
+          {problems.length > 0 && (
+            <ul className="flex flex-col gap-1 px-2 pt-1 text-[11.5px] text-warning-foreground" aria-live="polite">
+              {problems.map((p) => (
+                <li key={p} className="flex items-center gap-2">
+                  <AlertTriangleIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+          )}
+          <Timeline motion={motion} playing={playing} onPlaying={setPlaying} post={postHandle} />
+        </div>
       </div>
     </main>
   );
@@ -423,6 +504,7 @@ function useHistory() {
       },
       // Takes the next change to undo (or redo), keeping the state it
       // replaces on the other stack.
+      can: (direction: "undo" | "redo") => (direction === "undo" ? undo : redo).length > 0,
       take(direction: "undo" | "redo", current: (entry: Change) => Change): Change | null {
         const [from, to] = direction === "undo" ? [undo, redo] : [redo, undo];
         const entry = from.pop();
