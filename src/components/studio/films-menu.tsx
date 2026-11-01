@@ -39,7 +39,7 @@ export function FilmsMenu({
   films: FilmSummary[];
   hidden: boolean;
   onOpen: (id: string) => void;
-  onCreate: (width: number, height: number) => Promise<void>;
+  onCreate: (width: number, height: number, kind: "motion" | "video") => Promise<void>;
   onDuplicate: () => Promise<void>;
   onDelete: () => Promise<void>;
   onRename: (title: string) => void;
@@ -47,6 +47,7 @@ export function FilmsMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<"list" | "new" | "delete">("list");
+  const [kind, setKind] = useState<"motion" | "video">("video");
   const [busy, setBusy] = useState(false);
 
   const run = async (job: () => Promise<void>) => {
@@ -136,9 +137,31 @@ export function FilmsMenu({
                 </>
               ) : view === "new" ? (
                 <>
-                  <p className="px-2 pt-1.5 pb-1 font-medium text-[11.5px] text-white/40">New film: pick a size</p>
+                  <div className="m-1 mb-1.5 flex gap-0.5 rounded-[9px] bg-white/[0.05] p-0.5" role="radiogroup" aria-label="Kind of film">
+                    {(
+                      [
+                        ["video", "Edit a video"],
+                        ["motion", "Motion graphics"],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <button
+                        key={k}
+                        type="button"
+                        role="radio"
+                        aria-checked={kind === k}
+                        onClick={() => setKind(k)}
+                        className={cn(
+                          "h-7 flex-1 cursor-pointer rounded-[7px] text-[12px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                          kind === k ? "bg-white/[0.13] text-white" : "text-white/50 hover:text-white/80",
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="px-2 pt-1 pb-1 font-medium text-[11.5px] text-white/40">Pick a size</p>
                   {SIZES.map((s) => (
-                    <button key={s.label} type="button" className={ITEM} disabled={busy} onClick={() => run(() => onCreate(s.width, s.height))}>
+                    <button key={s.label} type="button" className={ITEM} disabled={busy} onClick={() => run(() => onCreate(s.width, s.height, kind))}>
                       <span
                         className="shrink-0 rounded-[3px] bg-white/[0.12] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]"
                         style={{ width: (s.width / Math.max(s.width, s.height)) * 22, height: (s.height / Math.max(s.width, s.height)) * 22 }}

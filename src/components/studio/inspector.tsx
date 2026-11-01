@@ -29,6 +29,7 @@ export function Inspector({
   onFold,
   hidden,
   style,
+  editLength,
 }: {
   film: Film;
   values: Values;
@@ -39,6 +40,8 @@ export function Inspector({
   onFold: (folded: boolean) => void;
   hidden: boolean;
   style?: React.CSSProperties;
+  // A video film runs as long as its timeline, so its length isn't set here.
+  editLength?: number;
 }) {
   const size = SIZES.find((s) => s.width === film.width && s.height === film.height);
   return (
@@ -50,7 +53,7 @@ export function Inspector({
       className="top-[68px] right-4 max-h-[calc(100dvh-160px)] w-[288px]"
       pillClassName="top-[68px] right-4"
       style={style}
-      bodyClassName="flex flex-col gap-4 overflow-y-auto px-3 pb-3"
+      bodyClassName="flex flex-col gap-4 overflow-y-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <DialGroup title="Frame">
         <Choice
@@ -67,18 +70,26 @@ export function Inspector({
             {film.width} × {film.height} pixels
           </DialNote>
         ) : null}
-        <DialSlider
-          label="Length"
-          value={film.duration}
-          min={1}
-          max={Math.max(30, Math.ceil(film.duration))}
-          step={0.1}
-          format={(v) => `${v.toFixed(1)} s`}
-          onChange={(v) => onDuration(v, false)}
-          onCommit={(v) => onDuration(v, true)}
-        />
+        {editLength !== undefined ? (
+          <DialNote>
+            The film runs as long as its timeline,{" "}
+            <span className="font-mono tabular-nums">{editLength.toFixed(1)} s</span>. Changing the size keeps each
+            clip framed where you put it.
+          </DialNote>
+        ) : (
+          <DialSlider
+            label="Length"
+            value={film.duration}
+            min={1}
+            max={Math.max(30, Math.ceil(film.duration))}
+            step={0.1}
+            format={(v) => `${v.toFixed(1)} s`}
+            onChange={(v) => onDuration(v, false)}
+            onCommit={(v) => onDuration(v, true)}
+          />
+        )}
       </DialGroup>
-      {film.params.length ? (
+      {editLength !== undefined && !film.params.length ? null : film.params.length ? (
         <DialGroup title="Settings">
           {film.params.map((p) => (
             <ParamRow key={p.key} param={p} value={values[p.key] ?? p.value} onChange={(v) => onParam(p.key, v)} />
@@ -93,7 +104,7 @@ export function Inspector({
   );
 }
 
-function ParamRow({ param, value, onChange }: { param: Param; value: Param["value"]; onChange: (v: Param["value"]) => void }) {
+export function ParamRow({ param, value, onChange }: { param: Param; value: Param["value"]; onChange: (v: Param["value"]) => void }) {
   switch (param.type) {
     case "number": {
       const min = param.min ?? 0;
@@ -132,7 +143,7 @@ function ParamRow({ param, value, onChange }: { param: Param; value: Param["valu
 
 // One of a few, as a segmented row: the label on the left, the choices on
 // the right. Many or long choices wrap onto a second line under the label.
-function Choice({
+export function Choice({
   label,
   value,
   options,

@@ -1,38 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { UploadUpIcon } from "@/components/icons";
 import { SIZES } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
-import { CARD } from "./panel";
+import { CARD, PILL_BUTTON } from "./panel";
 import { PromptBox } from "./prompt-box";
+import { ACCEPTS, isMediaFile } from "./video-api";
 
-// What the studio shows before there are any films: describe one and
-// Claude makes it, or start from a blank film.
+// What the studio shows before there are any films: two ways to start.
+// Edit a video: drop footage and it's laid on the timeline end to end.
+// Make motion graphics: describe a film and Claude makes it.
+
+type Kind = "video" | "motion";
 
 export function FirstFilm({
   busy,
   error,
   onStart,
+  onStartVideo,
 }: {
   busy: boolean;
   error: string | null;
   onStart: (prompt: string | null, width: number, height: number) => void;
+  onStartVideo: (files: File[], width: number, height: number) => void;
 }) {
+  const [kind, setKind] = useState<Kind>("video");
   const [draft, setDraft] = useState("");
   const [size, setSize] = useState<(typeof SIZES)[number]>(SIZES[0]);
+  const [over, setOver] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
+
+  const take = (list: FileList | null) => {
+    const files = [...(list ?? [])].filter(isMediaFile);
+    if (files.length) onStartVideo(files, size.width, size.height);
+  };
 
   return (
     <div className="absolute inset-0 flex items-center justify-center p-6">
-      <section aria-labelledby="first-film" className={cn(CARD, "flex w-full max-w-[520px] flex-col gap-4 p-5")}>
+      <section aria-labelledby="first-film" className={cn(CARD, "flex w-full max-w-[540px] flex-col gap-4 p-5")}>
         <div className="flex flex-col gap-1.5">
           <h1 id="first-film" className="font-medium text-[15px] text-white/95">
             Make your first film
           </h1>
           <p className="text-[12.5px] text-white/55 leading-relaxed">
-            Describe it and Claude makes it. Afterwards, change anything by asking, or point at a part of the film to
-            change just that.
+            Cut your own footage, or have Claude make motion graphics. Either way, change anything afterwards by asking
+            Claude or pointing at the film.
           </p>
         </div>
+
+        <div className="flex gap-1 rounded-[12px] bg-white/[0.04] p-1" role="tablist" aria-label="How to start">
+          {(
+            [
+              ["video", "Edit a video", "Footage, photos and music"],
+              ["motion", "Make motion graphics", "Described in words"],
+            ] as const
+          ).map(([k, label, note]) => (
+            <button
+              key={k}
+              type="button"
+              role="tab"
+              aria-selected={kind === k}
+              onClick={() => setKind(k)}
+              className={cn(
+                "flex flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-[9px] px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                kind === k ? "bg-white/[0.11]" : "hover:bg-white/[0.05]",
+              )}
+            >
+              <span className={cn("font-medium text-[12.5px]", kind === k ? "text-white" : "text-white/65")}>{label}</span>
+              <span className="text-[11.5px] text-white/40">{note}</span>
+            </button>
+          ))}
+        </div>
+
         <div className="flex gap-1" role="radiogroup" aria-label="Size">
           {SIZES.map((s) => (
             <button
@@ -58,24 +98,76 @@ export function FirstFilm({
             </button>
           ))}
         </div>
-        <PromptBox
-          value={draft}
-          onChange={setDraft}
-          onSend={() => onStart(draft, size.width, size.height)}
-          running={busy}
-          autoFocus
-          maxRows={5}
-          placeholder="A 6 second loop: orange lines rise like a staircase, then the Aerchain wordmark appears"
-        />
+
+        {kind === "video" ? (
+          <>
+            <input
+              ref={picker}
+              type="file"
+              multiple
+              accept={ACCEPTS}
+              className="hidden"
+              tabIndex={-1}
+              onChange={(e) => {
+                take(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: a drop target; the button inside it is the keyboard way in */}
+            <div
+              onDragOver={(e) => {
+                if (!e.dataTransfer.types.includes("Files")) return;
+                e.preventDefault();
+                e.stopPropagation();
+                setOver(true);
+              }}
+              onDragLeave={() => setOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setOver(false);
+                take(e.dataTransfer.files);
+              }}
+              className={cn(
+                "flex h-40 flex-col items-center justify-center gap-2.5 rounded-[12px] border border-dashed text-center transition-colors",
+                over ? "border-white/50 bg-white/[0.07]" : "border-white/15 bg-white/[0.02]",
+              )}
+            >
+              <p className="text-[12.5px] text-white/70">Drop footage, photos or music here</p>
+              <p className="text-[11.5px] text-white/40">They go on the timeline end to end, in the order you drop them.</p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => picker.current?.click()}
+                className={cn(PILL_BUTTON, "mt-1 bg-white text-[#141414] hover:bg-white/90")}
+              >
+                <UploadUpIcon aria-hidden="true" />
+                Choose files
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <PromptBox
+              value={draft}
+              onChange={setDraft}
+              onSend={() => onStart(draft, size.width, size.height)}
+              running={busy}
+              autoFocus
+              maxRows={5}
+              placeholder="A 6 second loop: orange lines rise like a staircase, then the Aerchain wordmark appears"
+            />
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onStart(null, size.width, size.height)}
+              className="self-start rounded-[6px] text-[12px] text-white/45 underline decoration-white/20 underline-offset-4 outline-none transition-colors hover:text-white/75 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            >
+              Start from a blank film
+            </button>
+          </>
+        )}
         {error ? <p className="text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onStart(null, size.width, size.height)}
-          className="self-start rounded-[6px] text-[12px] text-white/45 underline decoration-white/20 underline-offset-4 outline-none transition-colors hover:text-white/75 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-        >
-          Start from a blank film
-        </button>
       </section>
     </div>
   );

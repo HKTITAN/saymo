@@ -80,12 +80,20 @@
       "name": "information-circle",
       "variant": "stroke"
     },
+    "layer-three": {
+      "name": "layer-three",
+      "variant": "stroke"
+    },
     "minus-default": {
       "name": "minus-default",
       "variant": "stroke"
     },
     "multiple-cross-cancel-default": {
       "name": "multiple-cross-cancel-default",
+      "variant": "stroke"
+    },
+    "music-beam-note": {
+      "name": "music-beam-note",
       "variant": "stroke"
     },
     "pause-circle": {
@@ -116,8 +124,16 @@
       "name": "refresh",
       "variant": "stroke"
     },
+    "speaker-on": {
+      "name": "speaker-on",
+      "variant": "stroke"
+    },
     "three-dots-menu-horizontal": {
       "name": "three-dots-menu-horizontal",
+      "variant": "stroke"
+    },
+    "upload-up": {
+      "name": "upload-up",
       "variant": "stroke"
     },
     "video-call-default": {

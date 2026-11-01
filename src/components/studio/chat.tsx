@@ -78,7 +78,7 @@ export function ChatPanel({
       bodyClassName="flex flex-col"
       actions={
         claudeTurns > 0 ? (
-          <Hint label="Undo Claude’s last change">
+          <Hint label="Undo Claude’s last change. ⌘Z undoes your changes too, in order" keys={["⌘", "Z"]}>
             <button
               type="button"
               className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}

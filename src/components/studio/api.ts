@@ -48,7 +48,7 @@ const film = (id: string) => `/api/studio/films/${id}`;
 
 export const api = {
   list: () => call<FilmSummary[]>("/api/studio/films"),
-  create: (body: { title?: string; engine?: Engine; width?: number; height?: number }) =>
+  create: (body: { title?: string; engine?: Engine; kind?: "motion" | "video"; width?: number; height?: number }) =>
     call<Film>("/api/studio/films", send("POST", body)),
   get: (id: string) => call<Film>(film(id)),
   edit: (id: string, edit: FilmEdit) => call<Film>(film(id), send("PATCH", edit)),
