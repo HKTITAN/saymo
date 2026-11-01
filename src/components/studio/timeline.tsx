@@ -1,20 +1,24 @@
 "use client";
 
-import { type KeyboardEvent, type PointerEvent, useRef } from "react";
-import { PauseCircleIcon, PlayCircleIcon, RefreshIcon } from "@/components/icons";
+import { type KeyboardEvent, type PointerEvent, useLayoutEffect, useRef, useState } from "react";
+import { PauseCircleIcon, PlayCircleIcon, RefreshIcon, SpeakerOnIcon } from "@/components/icons";
 import type { Mark } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { type Clock, formatTime, useClock } from "./clock";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION } from "./panel";
+import { MotionSoundLane, type SoundLaneData, showLane } from "./sound-lane";
 
 // The timeline along the bottom: play and pause, the film's named moments,
-// and a track to scrub. Dragging pauses; Space plays.
+// and a track to scrub, with the sound design's waveform under it once the
+// film has one. Dragging pauses; Space plays; M mutes the sound here.
 
 export function Timeline({
   clock,
   fps,
   marks,
   hidden,
+  sound,
+  onMute,
   className,
   style,
 }: {
@@ -22,6 +26,8 @@ export function Timeline({
   fps: number;
   marks: Mark[];
   hidden: boolean;
+  sound?: SoundLaneData;
+  onMute?: (muted: boolean) => void;
   className?: string;
   style?: React.CSSProperties;
 }) {
@@ -31,6 +37,17 @@ export function Timeline({
   const loop = useClock(clock, (s) => s.loop);
   const track = useRef<HTMLDivElement>(null);
   const share = duration > 0 ? Math.min(1, t / duration) : 0;
+  const lane = showLane(sound);
+  const [trackW, setTrackW] = useState(0);
+  useLayoutEffect(() => {
+    const el = track.current;
+    if (!el) return;
+    const measure = () => setTrackW(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const at = (clientX: number) => {
     const r = track.current?.getBoundingClientRect();
@@ -74,7 +91,8 @@ export function Timeline({
       className={cn(
         CARD,
         PANEL_MOTION,
-        "pointer-events-auto absolute flex h-14 items-center gap-2 px-2",
+        "pointer-events-auto absolute flex min-h-14 items-center gap-2 px-2",
+        lane && "py-2",
         hidden && "pointer-events-none translate-y-2 opacity-0",
         className,
       )}
@@ -94,6 +112,7 @@ export function Timeline({
         <span className="text-white/90">{formatTime(t)}</span>
         <span className="text-white/35"> / {formatTime(duration)}</span>
       </p>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div
         ref={track}
         role="slider"
@@ -106,7 +125,7 @@ export function Timeline({
         onPointerDown={down}
         onPointerMove={move}
         onKeyDown={keys}
-        className="relative h-10 min-w-0 flex-1 cursor-ew-resize touch-none select-none overflow-hidden rounded-[10px] bg-white/[0.05] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative h-10 min-w-0 cursor-ew-resize touch-none select-none overflow-hidden rounded-[10px] bg-white/[0.05] outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="absolute inset-y-0 left-0 bg-white/[0.07]" style={{ width: `${share * 100}%` }} />
         {[...marks]
@@ -132,6 +151,26 @@ export function Timeline({
           style={{ left: `${share * 100}%` }}
         />
       </div>
+      {lane && sound ? (
+        // Scrubbing works here too, as on the track above.
+        <div onPointerDown={down} onPointerMove={move} className="cursor-ew-resize touch-none select-none">
+          <MotionSoundLane data={sound} duration={duration} width={trackW} share={share} />
+        </div>
+      ) : null}
+      </div>
+      {lane && sound && onMute ? (
+        <Hint label={sound.muted ? "Hear the sound" : "Mute while I work"} keys={["M"]}>
+          <button
+            type="button"
+            className={cn(ICON_BUTTON, "size-9", !sound.muted && "text-white")}
+            onClick={() => onMute(!sound.muted)}
+            aria-pressed={sound.muted}
+            aria-label="Mute while I work"
+          >
+            <SpeakerOnIcon aria-hidden="true" className={cn(sound.muted && "opacity-40")} />
+          </button>
+        </Hint>
+      ) : null}
       <Hint label={loop ? "Play once" : "Play on repeat"} keys={["L"]}>
         <button
           type="button"

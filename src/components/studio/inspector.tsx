@@ -30,6 +30,7 @@ export function Inspector({
   hidden,
   style,
   editLength,
+  soundGroup,
 }: {
   film: Film;
   values: Values;
@@ -42,6 +43,7 @@ export function Inspector({
   style?: React.CSSProperties;
   // A video film runs as long as its timeline, so its length isn't set here.
   editLength?: number;
+  soundGroup?: React.ReactNode; // the film's sound design, last
 }) {
   const size = SIZES.find((s) => s.width === film.width && s.height === film.height);
   return (
@@ -100,6 +102,7 @@ export function Inspector({
           Ask Claude to add settings here, such as colours, speeds or words you want to change without asking again.
         </DialNote>
       )}
+      {soundGroup}
     </Panel>
   );
 }
