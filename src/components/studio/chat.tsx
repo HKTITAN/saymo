@@ -12,6 +12,7 @@ import { PromptBox } from "./prompt-box";
 import { SentFiles } from "./sent-files";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
+import { VersionsButton } from "./versions";
 import { chipLabel, type Pinned } from "./words";
 
 // The chat with Claude, on the left. It grows to full height while Claude
@@ -101,19 +102,29 @@ export function ChatPanel({
       style={style}
       bodyClassName="flex flex-col"
       actions={
-        claudeTurns > 0 ? (
-          <Hint label="Undo Claude’s last change. ⌘Z undoes your changes too, in order" keys={["⌘", "Z"]}>
-            <button
-              type="button"
-              className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}
-              onClick={undo}
-              disabled={turn.running || chat.undoing}
-            >
-              {chat.undoing ? <Spinner className="size-3" /> : null}
-              Undo
-            </button>
-          </Hint>
-        ) : null
+        <>
+          {messages.length > 0 ? (
+            <VersionsButton
+              filmId={filmId}
+              busy={turn.running || chat.undoing}
+              time={() => pinned?.t ?? time()}
+              onRestore={chat.restore}
+            />
+          ) : null}
+          {claudeTurns > 0 ? (
+            <Hint label="Undo Claude’s last change. ⌘Z undoes your changes too, in order" keys={["⌘", "Z"]}>
+              <button
+                type="button"
+                className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}
+                onClick={undo}
+                disabled={turn.running || chat.undoing || chat.restoring}
+              >
+                {chat.undoing ? <Spinner className="size-3" /> : null}
+                Undo
+              </button>
+            </Hint>
+          ) : null}
+        </>
       }
     >
       <div ref={list} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3">

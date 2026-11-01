@@ -51,6 +51,7 @@ export function useChat(
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turn, setTurn] = useState<Turn>(IDLE);
   const [undoing, setUndoing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [queue, setQueue] = useState<Queued[]>([]);
   const [paused, setPaused] = useState(false);
   useEffect(() => {
@@ -165,7 +166,7 @@ export function useChat(
   );
 
   // Sends now, or queues it while Claude is working.
-  const busy = turn.running || undoing;
+  const busy = turn.running || undoing || restoring;
   const send = useCallback(
     async (prompt: string, context: ChatContext) => {
       const words = prompt.trim();
@@ -217,7 +218,28 @@ export function useChat(
     }
   }, [id]);
 
-  return { messages, turn, send, stop, undo, undoing, loaded, queue, paused, removeQueued, clearQueue, resume };
+  // Goes back to an earlier version of the film (the film as it was is kept
+  // as a version too). Returns an error to show, or null.
+  const restore = useCallback(
+    async (n: number, t: number) => {
+      setRestoring(true);
+      try {
+        const film = await api.restore(id, n, t);
+        callbacks.current.onFilm(film);
+        callbacks.current.onChanged();
+        const saved = await api.history(id).catch(() => null);
+        if (saved) setMessages(saved.messages);
+        return null;
+      } catch (e) {
+        return e instanceof StudioError ? e.message : "Unable to go back. Try again.";
+      } finally {
+        setRestoring(false);
+      }
+    },
+    [id],
+  );
+
+  return { messages, turn, send, stop, undo, restore, undoing, restoring, loaded, queue, paused, removeQueued, clearQueue, resume };
 }
 
 export type ChatState = ReturnType<typeof useChat>;

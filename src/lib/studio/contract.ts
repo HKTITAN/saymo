@@ -86,6 +86,7 @@ export const SIZES = [
 //   Cargo.toml, src/, media/,    rust
 //   params.json
 //   .history/<n>/                a copy of the film before each Claude turn
+//   .history/versions.json       which prompt each copy was taken before
 //   out/                         renders: draft.mp4, 4k.mp4, 1080p.mp4,
 //                                poster.png, render.json (RenderStatus)
 //
@@ -157,6 +158,9 @@ export type StageOutbound =
 // DELETE /api/studio/films/<id>/chat           → stops the running turn
 // GET    /api/studio/films/<id>/chat           → ChatMessage[] (the history)
 // POST   /api/studio/films/<id>/undo           → Film (state before the last turn)
+// GET    /api/studio/films/<id>/versions       → { versions: Version[] }, newest first
+// POST   /api/studio/films/<id>/versions/<n>/restore  {t?: number}
+//        → Film (snapshot n, after keeping the film as it was as a new version)
 //
 // POST   /api/studio/films/<id>/render  {quality: "draft" | "final"}
 //        → RenderStatus (starts it; one render at a time across the studio)
@@ -212,6 +216,18 @@ export type ChatMessage = {
   at: string; // ISO
   context?: ChatContext; // on yours
   steps?: string[]; // on Claude's
+};
+
+// One version of a film in its history: the film as it stood after one of
+// your prompts. "Now" (current) is the film as it is.
+export type Version = {
+  n: number | null; // the snapshot; null for now
+  at: string; // ISO
+  label: string; // "Now", "Start", "After: <prompt>", "Before going back to …"
+  detail?: string; // on now: what it is, "After: <prompt>"
+  prompt: string | null; // the prompt that made it, in full
+  t: number | null; // where the playhead was when that was asked
+  current?: true;
 };
 
 export type RenderStatus =
