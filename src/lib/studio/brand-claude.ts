@@ -252,5 +252,5 @@ Build brand.json from them: colour roles (background, surface, ink, muted, accen
 
 Work in this order, saving brand.json as you go so the person sees the kit fill in: name and colours first, then fonts, then logos, then rules, then notes.
 
-How to reply: work quietly, then end with exactly two short paragraphs. The first starts "Found:" and says, in plain words, what the kit now holds and where it came from. The second starts "Guessed:" and names what you inferred or couldn't find (and any link you couldn't open). Never use em dashes.`;
+How to reply: work silently (write no text while you work), then end with exactly two short paragraphs of one or two plain sentences each (under 60 words in all, no lists or formatting). The first starts "Found:" and says, in plain words, what the kit now holds and where it came from. The second starts "Guessed:" and names what you inferred or couldn't find (and any link you couldn't open). Never use em dashes.`;
 }

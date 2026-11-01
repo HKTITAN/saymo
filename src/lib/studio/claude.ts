@@ -332,7 +332,7 @@ The film's sound design is sound/score.js (music in Strudel, effects in Tone.js,
   ${soundCommand(id)}
 No other shell commands are available, and there is no web access.${video}
 
-How to reply: work quietly, without narrating, then end with two or three plain sentences saying what changed on screen, in visual words (no code, no file names). Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
+How to reply: work silently (write no text while you work), then end with at most two short sentences, under 35 words in all, saying what changed on screen in visual words. Plain text only: no lists, no headings, no bold, no code, no file names. Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
 }
 
 // ─── Video films ─────────────────────────────────────────────────────────────
@@ -432,6 +432,8 @@ function userMessage(film: Film, prompt: string, context: ChatContext, undone: b
   }
   if (undone) lines.push("<note>They undid your previous change: the files are back to how they were before it.</note>");
   lines.push(`<request>\n${prompt}\n</request>`);
+  // Repeated every turn, since a conversation keeps its first system prompt.
+  lines.push("<reply>Work silently. Then answer in at most two short plain sentences (under 35 words), no lists or formatting. Ask one short question only if you truly can't guess.</reply>");
   return lines.join("\n");
 }
 

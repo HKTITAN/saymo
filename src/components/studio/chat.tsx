@@ -192,7 +192,9 @@ function Message({ message }: { message: ChatMessage }) {
   return (
     <div className="flex flex-col gap-1.5 pe-4">
       {message.text ? (
-        <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">{message.text}</p>
+        <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
+          <Rich text={message.text} />
+        </p>
       ) : null}
     </div>
   );
@@ -212,7 +214,11 @@ function Live({ text, steps, resumed }: { text: string; steps: string[]; resumed
           {step}
         </span>
       </p>
-      {text ? <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">{text}</p> : null}
+      {text ? (
+        <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
+          <Rich text={text} />
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -275,5 +281,28 @@ function Queue({
         </div>
       ))}
     </div>
+  );
+}
+
+// Claude is asked for plain sentences, but when a reply carries **bold** or
+// `code` anyway, it shows as such instead of as raw marks.
+function Rich({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*\n]+\*\*|`[^`\n]+`)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith("**") && part.endsWith("**") && part.length > 4 ? (
+          <strong key={i} className="font-semibold text-white/90">
+            {part.slice(2, -2)}
+          </strong>
+        ) : part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
+          <code key={i} className="rounded-[4px] bg-white/[0.06] px-1 font-mono text-[0.92em]">
+            {part.slice(1, -1)}
+          </code>
+        ) : (
+          part
+        ),
+      )}
+    </>
   );
 }
