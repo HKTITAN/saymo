@@ -155,6 +155,7 @@ export type FilmEdit = Partial<Pick<Film, "title" | "width" | "height" | "fps" |
 export type ChatContext = {
   t: number; // where the playhead is, seconds
   pick: Picked | null; // what was pointed at, if anything
+  selection?: string[]; // video films: ids of the timeline items selected (edit.ts Clip/Graphic ids)
 };
 
 export type ChatRequest = { prompt: string; context: ChatContext };
