@@ -1,0 +1,108 @@
+{
+  "framework": "react-tsx",
+  "dir": "src/components/icons",
+  "importAlias": "@/components/icons",
+  "variant": "stroke",
+  "icons": {
+    "alert-circle": {
+      "name": "alert-circle",
+      "variant": "stroke"
+    },
+    "alert-triangle": {
+      "name": "alert-triangle",
+      "variant": "stroke"
+    },
+    "arrow-left": {
+      "name": "arrow-left",
+      "variant": "stroke"
+    },
+    "calendar-default": {
+      "name": "calendar-default",
+      "variant": "stroke"
+    },
+    "check-tick-circle": {
+      "name": "check-tick-circle",
+      "variant": "stroke"
+    },
+    "chevron-down": {
+      "name": "chevron-down",
+      "variant": "stroke"
+    },
+    "chevron-left": {
+      "name": "chevron-left",
+      "variant": "stroke"
+    },
+    "chevron-right": {
+      "name": "chevron-right",
+      "variant": "stroke"
+    },
+    "chevron-up": {
+      "name": "chevron-up",
+      "variant": "stroke"
+    },
+    "clock-default": {
+      "name": "clock-default",
+      "variant": "stroke"
+    },
+    "copy-default": {
+      "name": "copy-default",
+      "variant": "stroke"
+    },
+    "delete-dustbin-01": {
+      "name": "delete-dustbin-01",
+      "variant": "stroke"
+    },
+    "download-down": {
+      "name": "download-down",
+      "variant": "stroke"
+    },
+    "external-link-square": {
+      "name": "external-link-square",
+      "variant": "stroke"
+    },
+    "information-circle": {
+      "name": "information-circle",
+      "variant": "stroke"
+    },
+    "multiple-cross-cancel-default": {
+      "name": "multiple-cross-cancel-default",
+      "variant": "stroke"
+    },
+    "pause-circle": {
+      "name": "pause-circle",
+      "variant": "stroke"
+    },
+    "pencil-edit": {
+      "name": "pencil-edit",
+      "variant": "stroke"
+    },
+    "photo-image-default": {
+      "name": "photo-image-default",
+      "variant": "stroke"
+    },
+    "photo-image-plus": {
+      "name": "photo-image-plus",
+      "variant": "stroke"
+    },
+    "play-circle": {
+      "name": "play-circle",
+      "variant": "stroke"
+    },
+    "plus-default": {
+      "name": "plus-default",
+      "variant": "stroke"
+    },
+    "refresh": {
+      "name": "refresh",
+      "variant": "stroke"
+    },
+    "three-dots-menu-horizontal": {
+      "name": "three-dots-menu-horizontal",
+      "variant": "stroke"
+    },
+    "video-call-default": {
+      "name": "video-call-default",
+      "variant": "stroke"
+    }
+  }
+}
