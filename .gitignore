@@ -52,3 +52,6 @@ next-env.d.ts
 /studio/fframes/**/target/
 /studio/hyperframes/**/.hyperframes/
 /studio/hyperframes/**/renders/
+
+# films made in the studio, with their history and renders
+/films
