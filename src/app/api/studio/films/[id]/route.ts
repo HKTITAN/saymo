@@ -1,3 +1,4 @@
+import { readBrand } from "@/lib/studio/brands";
 import { allowed, deleteFilm, editFilm, readFilm, refused } from "@/lib/studio/films";
 import { soundLater } from "@/lib/studio/sound-render";
 import { filmEdit } from "@/lib/studio/validate";
@@ -18,6 +19,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/studio/fil
   if (!film) return missing();
   const edit = filmEdit(film, await request.json().catch(() => null));
   if (typeof edit === "string") return Response.json({ error: edit }, { status: 400 });
+  if (edit.brand && !(await readBrand(edit.brand))) return Response.json({ error: "That brand kit no longer exists." }, { status: 400 });
   const next = await editFilm(id, edit);
   // A new length or new values can change the sound (it is exactly as long
   // as the film, and its effects may follow the values).

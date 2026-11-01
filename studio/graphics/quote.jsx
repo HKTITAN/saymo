@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont } from "studio-kit";
+import { clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
 // QUOTE: a pull quote over a black line field.
 //   0.00  the black ground sweeps in from the right
@@ -7,7 +7,9 @@ import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont } from 
 //   0.45  the quote rises in, then who said it
 //   end-0.6  the words fade and the lines leave the way they came
 export default function Quote({ values, duration }) {
-  useBrandFont();
+  const FONT = useBrandFont();
+  const PALETTE = usePalette();
+  const { pitch: PITCH } = useTexture();
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;

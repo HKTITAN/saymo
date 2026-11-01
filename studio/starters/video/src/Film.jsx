@@ -1,6 +1,6 @@
 import { AbsoluteFill, Audio, Img, OffthreadVideo, Sequence, useCurrentFrame, useVideoConfig } from "remotion";
 import graphics from "studio-graphics";
-import { Captions, FONT, useBrandFont } from "studio-kit";
+import { Captions, useBrandFont, usePalette } from "studio-kit";
 
 // A VIDEO FILM: an edit of footage, played from edit.json (see
 // src/lib/studio/edit.ts for its shape). The studio gives it two props:
@@ -103,9 +103,11 @@ function ClipBody({ clip, file, muted, soundOnly, length }) {
 function Missing() {
   const { width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;
+  const family = useBrandFont();
+  const palette = usePalette();
   return (
-    <AbsoluteFill style={{ background: "#1E1E1E", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontFamily: FONT, fontSize: Math.round(28 * u), color: "#6B665E" }}>Getting this clip ready</div>
+    <AbsoluteFill style={{ background: palette.black.lit, alignItems: "center", justifyContent: "center" }}>
+      <div style={{ fontFamily: family, fontSize: Math.round(28 * u), color: palette.muted }}>Getting this clip ready</div>
     </AbsoluteFill>
   );
 }

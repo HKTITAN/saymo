@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { clamp01, landing, Wordmark } from "studio-kit";
+import { BrandLogo, clamp01, landing } from "studio-kit";
 
 // LOGO IN THE CORNER: the Aerchain wordmark held in a corner over footage.
 //   0.00  it slides in a little from the right and fades up
@@ -25,7 +25,7 @@ export default function Logo({ values, duration }) {
         transform: `translateX(${(1 - p) * 24 * u}px)`,
       }}
     >
-      <Wordmark height={h} letters={values.tone === "Dark" ? "#141414" : "#E9E5DD"} />
+      <BrandLogo height={h} ground={values.tone === "Dark" ? "light" : "dark"} letters={values.tone === "Dark" ? "#141414" : "#E9E5DD"} />
     </div>
   );
 }

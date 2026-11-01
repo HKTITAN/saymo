@@ -1,0 +1,64 @@
+import { connection } from "next/server";
+import { isBrandRunning, readBrandChat, runBrandTurn, siteOf, stopBrandTurn } from "@/lib/studio/brand-claude";
+import { readBrand } from "@/lib/studio/brands";
+import type { ChatEvent } from "@/lib/studio/contract";
+import { allowed, refused } from "@/lib/studio/films";
+
+// Claude building or tidying the kit. POST streams the turn (a ChatEvent per
+// `data:` line; `done` carries the kit); DELETE stops it; GET is the history.
+
+const missing = () => Response.json({ error: "That kit no longer exists." }, { status: 404 });
+
+export async function GET(request: Request, ctx: RouteContext<"/api/studio/brands/[id]/chat">) {
+  await connection();
+  if (!allowed(request)) return refused();
+  const { id } = await ctx.params;
+  if (!(await readBrand(id))) return missing();
+  return Response.json(await readBrandChat(id), { headers: { "x-studio-running": isBrandRunning(id) ? "1" : "0" } });
+}
+
+export async function POST(request: Request, ctx: RouteContext<"/api/studio/brands/[id]/chat">) {
+  if (!allowed(request)) return refused();
+  const { id } = await ctx.params;
+  if (!(await readBrand(id))) return missing();
+  const body = (await request.json().catch(() => null)) as { prompt?: unknown; url?: unknown } | null;
+  const prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 8000) : "";
+  if (!prompt.trim()) return Response.json({ error: "Say what the kit should have." }, { status: 400 });
+  const url = siteOf(typeof body?.url === "string" && body.url.trim() ? body.url.trim() : undefined);
+  if (typeof body?.url === "string" && body.url.trim() && !url) {
+    return Response.json({ error: "That website address doesn't look right." }, { status: 400 });
+  }
+  if (isBrandRunning(id)) return Response.json({ error: "Claude is still working on this kit." }, { status: 409 });
+
+  const encoder = new TextEncoder();
+  let open = true;
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const emit = (event: ChatEvent) => {
+        if (!open) return;
+        try {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        } catch {
+          open = false;
+        }
+      };
+      void runBrandTurn(id, prompt, url, emit).finally(() => {
+        if (!open) return;
+        open = false;
+        controller.close();
+      });
+    },
+    cancel() {
+      // The page went away: the turn keeps going and its history is saved.
+      open = false;
+    },
+  });
+  return new Response(stream, {
+    headers: { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", connection: "keep-alive" },
+  });
+}
+
+export async function DELETE(request: Request, ctx: RouteContext<"/api/studio/brands/[id]/chat">) {
+  if (!allowed(request)) return refused();
+  return Response.json({ stopped: stopBrandTurn((await ctx.params).id) });
+}

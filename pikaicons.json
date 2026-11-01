@@ -84,6 +84,10 @@
       "name": "grid-dashboard-02",
       "variant": "stroke"
     },
+    "home-default": {
+      "name": "home-default",
+      "variant": "stroke"
+    },
     "information-circle": {
       "name": "information-circle",
       "variant": "stroke"

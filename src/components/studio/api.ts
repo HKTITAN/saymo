@@ -82,11 +82,17 @@ export const stageUrl = (id: string) => `/studio/stage/${id}`;
 // Sends one prompt and hands each event of Claude's turn to `onEvent` as it
 // arrives. The answer is a stream of `data: {json}` lines (server-sent
 // events). Resolves when the stream ends; aborting the signal stops reading.
-export async function chat(id: string, request: ChatRequest, onEvent: (event: ChatEvent) => void, signal?: AbortSignal) {
+export function chat(id: string, request: ChatRequest, onEvent: (event: ChatEvent) => void, signal?: AbortSignal) {
+  return streamEvents(`${film(id)}/chat`, request, onEvent, signal);
+}
+
+// POSTs `body` to `url` and reads the answer as server-sent ChatEvents.
+// Shared by a film's chat and a brand kit's.
+export async function streamEvents(url: string, body: unknown, onEvent: (event: ChatEvent) => void, signal?: AbortSignal) {
   let res: Response;
   try {
-    res = await fetch(`${film(id)}/chat`, {
-      ...send("POST", request),
+    res = await fetch(url, {
+      ...send("POST", body),
       headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...STUDIO_HEADERS },
       signal,
     });

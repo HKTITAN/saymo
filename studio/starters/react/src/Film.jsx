@@ -1,5 +1,5 @@
-import { loadFont } from "@remotion/fonts";
-import { AbsoluteFill, Easing, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { useBrandFont, usePalette, useTexture } from "studio-kit";
 
 // A studio film, written for Remotion: a React component drawn once per
 // frame from useCurrentFrame(). The studio plays it in the Remotion Player
@@ -14,20 +14,10 @@ import { AbsoluteFill, Easing, interpolate, staticFile, useCurrentFrame, useVide
 //   3.60  black slides back in from the middle lines outwards
 //   5.00  all black again: it loops
 
-// Bricolage Grotesque, from public/fonts. Remotion waits for it before a
-// frame is drawn.
-loadFont({
-  family: "Bricolage Grotesque",
-  url: staticFile("fonts/BricolageGrotesque-Variable.ttf"),
-  weight: "200 800",
-});
-
-// The Aerchain line texture: an 8px line on a 12px pitch, each colour a
-// flat field with a slightly darker partner in the gaps.
-const PITCH = 12;
-const STROKE = 8;
-const BLACK = { lit: "#1E1E1E", gap: "#141414" };
-const TEXT = "#E9E5DD";
+// The film's brand kit (studio-kit): its display face (Remotion waits for
+// it before a frame is drawn), its colours and its line texture, an 8px
+// line on a 12px pitch for Aerchain, each colour a flat field with a
+// slightly darker partner in the gaps.
 
 const darker = (hex, k = 0.895) => {
   const n = parseInt(hex.slice(1), 16);
@@ -42,6 +32,11 @@ const landing = (p) => {
 };
 
 export default function Film({ figure = 40, unit = "%", label = "faster sourcing", accent = "#F55A00" }) {
+  const FAMILY = useBrandFont();
+  const palette = usePalette();
+  const { pitch: PITCH, stroke: STROKE } = useTexture();
+  const BLACK = palette.black;
+  const TEXT = palette.stone;
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const t = frame / fps;
@@ -81,7 +76,7 @@ export default function Film({ figure = 40, unit = "%", label = "faster sourcing
         ))}
         {runs}
       </svg>
-      <div style={{ position: "absolute", left: 72, top: 72, color: TEXT, fontFamily: "Bricolage Grotesque", opacity: out }}>
+      <div style={{ position: "absolute", left: 72, top: 72, color: TEXT, fontFamily: FAMILY, opacity: out }}>
         <div
           data-part="figure"
           style={{

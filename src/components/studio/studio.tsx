@@ -5,6 +5,7 @@ import { EyeOnIcon, RefreshIcon, UploadUpIcon } from "@/components/icons";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import type { BrandSummary } from "@/lib/studio/brand";
 import type { Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/contract";
 import type { FilmSound } from "@/lib/studio/sound";
 import { editEnd, type GraphicInfo, type Media } from "@/lib/studio/edit";
@@ -16,9 +17,11 @@ import { createClock } from "./clock";
 import { EditInspector } from "./edit-inspector";
 import { addGraphic, addMedia, endOf, type Item } from "./edit-ops";
 import { FilmsMenu } from "./films-menu";
-import { FirstFilm } from "./first-film";
+import { brandApi } from "./brand-api";
+import { Dashboard } from "./dashboard";
 import { undoKey, useHistory } from "./history";
 import { Inspector, type Values } from "./inspector";
+import { KitPage } from "./kit-page";
 import { MediaBin } from "./media-bin";
 import { clipNumber, defaults, Multitrack } from "./multitrack";
 import { CARD, PILL_BUTTON } from "./panel";
@@ -40,7 +43,8 @@ import type { Pinned } from "./words";
 // A video film adds a timeline of tracks, a bin of footage and graphics,
 // and an inspector for whatever is selected on the timeline.
 
-// ─── Which film is open: /studio?film=<id> ──────────────────────────────────
+// ─── What's open: /studio (the dashboard), /studio?film=<id>, or
+// /studio?brand=<id> (a brand kit) ──────────────────────────────────────────
 
 const NAVIGATE = "studio:navigate";
 const subscribe = (cb: () => void) => {
@@ -52,6 +56,14 @@ const subscribe = (cb: () => void) => {
   };
 };
 const currentFilm = () => new URLSearchParams(window.location.search).get("film") ?? "";
+const currentKit = () => new URLSearchParams(window.location.search).get("brand") ?? "";
+
+function openKit(id: string | null, replace = false) {
+  const url = id ? `/studio?brand=${id}` : "/studio";
+  if (replace) window.history.replaceState(null, "", url);
+  else window.history.pushState(null, "", url);
+  window.dispatchEvent(new Event(NAVIGATE));
+}
 
 function openFilm(id: string | null, replace = false) {
   const url = id ? `/studio?film=${id}` : "/studio";
@@ -76,7 +88,11 @@ const titleFromFile = (name: string) => {
 
 export function Studio() {
   const id = useSyncExternalStore(subscribe, currentFilm, () => null);
+  const kitId = useSyncExternalStore(subscribe, currentKit, () => null);
   const [films, setFilms] = useState<FilmSummary[] | null>(null);
+  const [kits, setKits] = useState<BrandSummary[] | null>(null);
+  // A kit made from files opens with Claude reading them.
+  const kitOpening = useRef<{ prompt: string; url: string } | null>(null);
   const [hidden, setHidden] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -92,15 +108,47 @@ export function Studio() {
     }
   }, []);
 
+  const refreshKits = useCallback(async () => {
+    try {
+      setKits(await brandApi.list());
+    } catch {
+      setKits((k) => k ?? []);
+    }
+  }, []);
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- first load of the film list
     void refresh();
   }, [refresh]);
 
-  // With no film named, open the newest.
+  // The dashboard's kits, fresh each time it shows.
+  const onDashboard = id === "" && kitId === "";
   useEffect(() => {
-    if (id === "" && films && films.length) openFilm(films[0].id, true);
-  }, [id, films]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load the kits for the dashboard
+    if (onDashboard) void refreshKits();
+  }, [onDashboard, refreshKits]);
+
+  const newKit = () =>
+    start(async () => {
+      const kit = await brandApi.create("New brand");
+      openKit(kit.id);
+    });
+  const importKit = (file: File) =>
+    start(async () => {
+      const kit = await brandApi.import(file);
+      openKit(kit.id);
+    });
+  // A kit from a guideline: make it, put the files in, then Claude builds it.
+  const makeKit = (name: string, files: File[], url: string) =>
+    start(async () => {
+      const kit = await brandApi.create(name);
+      for (const file of files) await brandApi.upload(kit.id, file);
+      kitOpening.current = {
+        prompt: `Build the ${name} brand kit from the files I added${url ? " and the website" : ""}: colours, fonts, logos, rules and notes.`,
+        url,
+      };
+      openKit(kit.id);
+    });
 
   const create = async (
     width: number,
@@ -127,12 +175,21 @@ export function Studio() {
     }
   };
 
-  if (id === null || films === null) return <div className="fixed inset-0 bg-[#0b0b0b]" />;
+  if (id === null || kitId === null || films === null) return <div className="fixed inset-0 bg-[#0b0b0b]" />;
 
   return (
     <TooltipProvider delay={400}>
       <main className="fixed inset-0 overflow-hidden bg-[#0b0b0b] font-sans text-white antialiased">
-        {id && films.some((f) => f.id === id) ? (
+        {kitId ? (
+          <KitPage
+            key={kitId}
+            id={kitId}
+            openingRef={kitOpening}
+            onHome={() => openFilm(null)}
+            onOpenKit={(next) => openKit(next)}
+            onGone={() => openKit(null, true)}
+          />
+        ) : id && films.some((f) => f.id === id) ? (
           <FilmView
             key={id}
             id={id}
@@ -144,21 +201,29 @@ export function Studio() {
             onRefresh={refresh}
             onOpen={(next) => openFilm(next)}
             onCreate={(w, h, kind) => create(w, h, { kind })}
+            onHome={() => openFilm(null)}
             onGone={async () => {
               const rest = (await api.list().catch(() => [])) ?? [];
               setFilms(rest);
-              openFilm(rest[0]?.id ?? null, true);
+              openFilm(null, true);
             }}
           />
-        ) : films.length === 0 || !id ? (
-          <FirstFilm
+        ) : !id ? (
+          <Dashboard
+            films={films}
+            kits={kits}
             busy={starting}
             error={startError}
-            onStart={(prompt, w, h) => start(() => create(w, h, { prompt }))}
+            onOpenFilm={(next) => openFilm(next)}
+            onStartFilm={(prompt, w, h) => start(() => create(w, h, { prompt }))}
             onStartVideo={(files, w, h) => start(() => create(w, h, { kind: "video", files }))}
+            onOpenKit={(next) => openKit(next)}
+            onNewKit={newKit}
+            onImportKit={importKit}
+            onMakeKit={makeKit}
           />
         ) : (
-          <Missing onBack={() => openFilm(films[0]?.id ?? null, true)} />
+          <Missing onBack={() => openFilm(null, true)} />
         )}
       </main>
     </TooltipProvider>
@@ -170,9 +235,9 @@ function Missing({ onBack }: { onBack: () => void }) {
     <div className="absolute inset-0 flex items-center justify-center p-6">
       <div className={cn(CARD, "flex max-w-[360px] flex-col items-start gap-3 p-5")}>
         <p className="font-medium text-[14px] text-white/90">This film isn’t here any more</p>
-        <p className="text-[12.5px] text-white/55 leading-relaxed">It may have been deleted. Open your newest film instead.</p>
+        <p className="text-[12.5px] text-white/55 leading-relaxed">It may have been deleted. Your other films and kits are in the studio.</p>
         <button type="button" onClick={onBack} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
-          Open newest film
+          Back to the studio
         </button>
       </div>
     </div>
@@ -216,7 +281,9 @@ function FilmView({
   onOpen,
   onCreate,
   onGone,
+  onHome,
 }: {
+  onHome: () => void;
   id: string;
   films: FilmSummary[];
   hidden: boolean;
@@ -494,6 +561,47 @@ function FilmView({
     },
     [id, onRefresh],
   );
+
+  // The film's brand kit: saved, then the film is drawn afresh in it. A
+  // colour setting still at the old kit's accent follows to the new one.
+  const applyBrand = useCallback(
+    async (brand: string, params?: Record<string, Param["value"]>) => {
+      const saved = await api.edit(id, { brand, ...(params ? { params } : {}) }).catch(() => null);
+      if (saved) {
+        setFilm(saved);
+        if (params) setValues((v) => ({ ...v, ...params }));
+        setStatus({ state: "loading" });
+        setVersion((v) => v + 1);
+        void onRefresh();
+      }
+    },
+    [id, onRefresh],
+  );
+  const setBrand = async (brand: string) => {
+    const was = film?.brand ?? "aerchain";
+    if (was === brand || !film) return;
+    const [from, to] = await Promise.all([brandApi.get(was).catch(() => null), brandApi.get(brand).catch(() => null)]);
+    const before: Record<string, Param["value"]> = {};
+    const after: Record<string, Param["value"]> = {};
+    if (from && to) {
+      for (const p of film.params) {
+        const v = valuesRef.current[p.key] ?? p.value;
+        if (p.type === "color" && String(v).toUpperCase() === from.colors.roles.accent.toUpperCase()) {
+          before[p.key] = v;
+          after[p.key] = to.colors.roles.accent;
+        }
+      }
+    }
+    const moved = Object.keys(after).length > 0;
+    history.record({
+      label: `Brand kit ${to?.name ?? ""}`.trim(),
+      undo: () => {
+        void applyBrand(was, moved ? before : undefined);
+        return () => void applyBrand(brand, moved ? after : undefined);
+      },
+    });
+    void applyBrand(brand, moved ? after : undefined);
+  };
 
   const setSize = (width: number, height: number) => {
     const was = film ? { w: film.width, h: film.height } : null;
@@ -910,6 +1018,7 @@ function FilmView({
           films={films}
           hidden={hidden}
           onOpen={onOpen}
+          onHome={onHome}
           onCreate={onCreate}
           onRefresh={() => void onRefresh()}
           onRename={rename}
@@ -969,6 +1078,7 @@ function FilmView({
             values={values}
             onParam={setParam}
             onSize={setSize}
+            onBrand={setBrand}
             onDuration={setDuration}
             folded={folded.inspector}
             onFold={(f) => setFolded((s) => ({ ...s, inspector: f }))}

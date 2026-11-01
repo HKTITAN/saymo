@@ -93,14 +93,24 @@
       const W = FILM.width;
       const H = FILM.height;
 
-      // The Aerchain line texture: an 8px line on a 12px pitch, each colour a
-      // flat field with a slightly darker partner in the gaps.
-      const PITCH = 12;
-      const STROKE = 8;
+      // The film's brand kit (window.__brand): its ground, type and line
+      // texture. Without one, Aerchain's.
+      const BRAND = window.__brand;
+      const ROLES = Object.assign({ background: "#141414", surface: "#E9E5DD", line: "#1E1E1E" }, BRAND?.colors?.roles);
+      const DISPLAY = (BRAND?.fonts?.find((f) => f.role === "display") ?? BRAND?.fonts?.[0])?.family ?? "Bricolage Grotesque";
+      document.body.style.background = ROLES.background;
+      const headlineEl = document.getElementById("headline");
+      headlineEl.style.color = ROLES.surface;
+      headlineEl.style.fontFamily = `"${DISPLAY}", sans-serif`;
+
+      // The line texture: an 8px line on a 12px pitch for Aerchain, each
+      // colour a flat field with a slightly darker partner in the gaps.
+      const STROKE = BRAND?.texture?.stroke ?? 8;
+      const PITCH = BRAND?.texture ? BRAND.texture.stroke + BRAND.texture.gap : 12;
       const BAND = 9; // lines per band; the staircase moves band by band
       const ROWS = Math.ceil(H / PITCH);
       const BANDS = Math.ceil(ROWS / BAND);
-      const BLACK = { lit: "#1E1E1E", gap: "#141414" };
+      const BLACK = { lit: ROLES.line, gap: ROLES.background };
       const darker = (hex, k = 0.895) => {
         const n = parseInt(hex.slice(1), 16);
         const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v * k));

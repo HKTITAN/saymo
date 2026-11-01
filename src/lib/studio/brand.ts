@@ -60,7 +60,9 @@ export type BrandKit = {
     words: string[]; // "Write Aerchain, never AERCHAIN, in copy."
   };
   // The line field and similar structural numbers, when the brand has them.
-  texture?: { stroke: number; gap: number; note?: string }; // px at 1080p
+  // `fields`: a colour used as a line field, and the exact line and gap
+  // colours to draw it with (otherwise the gap is a step darker).
+  texture?: { stroke: number; gap: number; note?: string; fields?: Record<Hex, { lit: Hex; gap: Hex }> }; // px at 1080p
   notes: string; // the longer guideline in plain Markdown, for Claude
 };
 

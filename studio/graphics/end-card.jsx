@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont, Wordmark } from "studio-kit";
+import { BrandLogo, clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
 // END CARD: the Aerchain wordmark to close a film.
 //   0.00  the ground sweeps in from the right, bottom line first
@@ -7,7 +7,9 @@ import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont, Wordma
 //   0.70  the line under it (aerchain.io) follows
 //   it holds to the end; nothing leaves, as the film ends here
 export default function EndCard({ values }) {
-  useBrandFont();
+  const FONT = useBrandFont();
+  const PALETTE = usePalette();
+  const { pitch: PITCH } = useTexture();
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;
@@ -29,7 +31,7 @@ export default function EndCard({ values }) {
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: Math.round(28 * u) }}>
         <div data-part="wordmark" style={rise(0.45)}>
-          <Wordmark height={markH} letters={stone ? PALETTE.ink : PALETTE.stone} />
+          <BrandLogo height={markH} ground={stone ? "light" : "dark"} letters={stone ? PALETTE.ink : PALETTE.stone} />
         </div>
         {values.line ? (
           <div data-part="line" style={{ fontFamily: FONT, fontSize: Math.round(30 * u), fontWeight: 500, color: stone ? PALETTE.muted : PALETTE.stone, opacity: 0.75, ...rise(0.7) }}>
