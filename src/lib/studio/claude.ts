@@ -4,6 +4,7 @@ import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/prom
 import { homedir } from "node:os";
 import path from "node:path";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./contract";
+import { atPlayhead } from "./captions";
 import type { Clip, Edit, Graphic } from "./edit";
 import { filmDir, readFilm, ROOT, snapshotFilm, withFilm, writeFilm } from "./films";
 
@@ -154,7 +155,7 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   if (turn.stopped && proc.pid) killGroup(proc.pid);
   // The exact command goes first in the turn's log, for debugging.
   await appendFile(logFile(id), `${JSON.stringify({ type: "studio_command", bin: CLAUDE_BIN, args })}\n`).catch(() => {});
-  const edit = film.kind === "video" ? await editSummary(id) : null;
+  const edit = film.kind === "video" ? await editSummary(id, request.context.t) : null;
   proc.stdin.end(userMessage(film, prompt, request.context, undone, edit));
 
   const limit = setTimeout(() => {
@@ -334,7 +335,7 @@ You can't open the footage files. To hear, see and measure them, run one of thes
 
 // A short picture of a video film's edit, sent with each message, so "the
 // second clip" or "the lower third" makes sense.
-async function editSummary(id: string): Promise<string> {
+async function editSummary(id: string, t: number): Promise<string> {
   let edit: Edit;
   try {
     edit = JSON.parse(await readFile(path.join(filmDir(id), "edit.json"), "utf8")) as Edit;
@@ -357,6 +358,14 @@ async function editSummary(id: string): Promise<string> {
     const flags = [track.muted ? "muted" : null, track.hidden ? "hidden" : null].filter(Boolean).join(", ");
     lines.push(`${track.kind} track "${track.name}" (${track.id}${flags ? `, ${flags}` : ""}): ${shown.join("; ") || "empty"}${more}`);
   }
+  // What the playhead is on, down to the moment in the source file, so
+  // "cut here" lands on the exact frame.
+  const under = atPlayhead(edit, t).map((a) =>
+    a.type === "clip"
+      ? `clip ${a.id} on ${a.track} (${a.media}): source ${a.source.toFixed(2)} s, ${a.intoClip.toFixed(2)} s into the clip, ${a.left.toFixed(2)} s left`
+      : `graphic ${a.id} (${a.graphic}) on ${a.track}: ${a.intoGraphic.toFixed(2)} s in, ${a.left.toFixed(2)} s left`,
+  );
+  lines.push(`at the playhead (${t.toFixed(2)} s): ${under.join("; ") || "nothing, a gap"}`);
   const c = edit.captions;
   lines.push(`captions ${c?.on ? `on (${c.style}, ${c.position})` : "off"}, ${c?.words?.length ?? 0} words. The edit ends at ${end.toFixed(2)} s.`);
   return lines.join("\n");
