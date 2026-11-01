@@ -7,6 +7,7 @@ import { SURFACE } from "@/components/tool/dial";
 import type { RenderStatus } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { api, outUrl, StudioError } from "./api";
+import { ConnectionsButton, SavedTo } from "./connections";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON } from "./panel";
 
 // Top right: make the video, follow its progress, then download it. One
@@ -90,6 +91,7 @@ export function RenderControl({
           <EyeOffIcon aria-hidden="true" />
         </button>
       </Hint>
+      <ConnectionsButton />
 
       {status.state === "done" && !working ? (
         <Popover.Root>
@@ -111,6 +113,7 @@ export function RenderControl({
                     {fileLabel(f)}
                   </a>
                 ))}
+                {id ? <SavedTo id={id} renderedAt={status.at} /> : null}
               </Popover.Popup>
             </Popover.Positioner>
           </Popover.Portal>
@@ -157,6 +160,7 @@ export function RenderControl({
                 <span className="text-[12.5px] text-white/90">4K video</span>
                 <span className="text-[11.5px] text-white/45">The finished film in 4K and 1080p, with a still</span>
               </button>
+              {id ? <SavedTo id={id} renderedAt={status.state === "done" ? status.at : null} /> : null}
               {error || status.state === "failed" ? (
                 <p className="px-2.5 pt-1 pb-1.5 text-[11.5px] text-[#ff9592] leading-relaxed">
                   {error ?? (status.state === "failed" ? status.message : null)}

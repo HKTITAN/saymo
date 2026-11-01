@@ -73,6 +73,8 @@ function next() {
     const at = new Date().toISOString();
     if (ok) {
       await record(job.id, { state: "done", quality: job.quality, files, at }).catch(() => {});
+      // Then to Google Drive and GitHub, if they're connected.
+      void import("./connect").then((c) => c.afterRender(job.id, job.quality, files)).catch(() => {});
     } else {
       const said = await readFile(path.join(dir, "render-log.txt"), "utf8").catch(() => "");
       await record(job.id, { state: "failed", message: plain(said), at }).catch(() => {});
