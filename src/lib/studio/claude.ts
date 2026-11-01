@@ -4,6 +4,7 @@ import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/prom
 import { homedir } from "node:os";
 import path from "node:path";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./contract";
+import type { Clip, Edit, Graphic } from "./edit";
 import { filmDir, readFilm, ROOT, snapshotFilm, withFilm, writeFilm } from "./films";
 
 // The studio's chat: each prompt is one Claude Code turn, run headless on
@@ -16,8 +17,12 @@ import { filmDir, readFilm, ROOT, snapshotFilm, withFilm, writeFilm } from "./fi
 //  - read the project (to learn the house style, skills and starters), but
 //    not secrets such as .env files;
 //  - write only inside its own film's folder;
-//  - run exactly two commands: the film checker and a draft render of this
-//    film. No other shell, no web, no MCP servers, no subagents.
+//  - run exactly three commands: the film checker, a draft render of this
+//    film and, for video films, the media tool on this film's footage (it
+//    reports transcripts, pauses, cuts and faces, and makes small stills).
+//    No other shell, no web, no MCP servers, no subagents;
+//  - look at footage only through that tool: the original video and sound
+//    files can't be read or changed.
 // Only project settings load (not the owner's own plugins and hooks).
 
 const ENGINE_WORDS: Record<Film["engine"], string> = {
@@ -138,7 +143,7 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
 
   const dir = filmDir(id);
   await rm(logFile(id), { force: true });
-  const args = claudeArgs(id, film.session);
+  const args = claudeArgs(id, film.session, film.kind);
   const proc = spawn(CLAUDE_BIN, args, {
     cwd: dir,
     env: childEnv(),
@@ -149,7 +154,8 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   if (turn.stopped && proc.pid) killGroup(proc.pid);
   // The exact command goes first in the turn's log, for debugging.
   await appendFile(logFile(id), `${JSON.stringify({ type: "studio_command", bin: CLAUDE_BIN, args })}\n`).catch(() => {});
-  proc.stdin.end(userMessage(film, prompt, request.context, undone));
+  const edit = film.kind === "video" ? await editSummary(id) : null;
+  proc.stdin.end(userMessage(film, prompt, request.context, undone, edit));
 
   const limit = setTimeout(() => {
     turn.stopped = true;
@@ -218,11 +224,16 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
 
 // ─── The command ─────────────────────────────────────────────────────────────
 
-function claudeArgs(id: string, session: string | undefined) {
+function claudeArgs(id: string, session: string | undefined, kind: Film["kind"]) {
   const dir = filmDir(id);
   const root = `/${ROOT}`; // permission rules: "//" starts an absolute path
   const check = `node ${path.join(ROOT, "scripts/studio/check-film.mjs")}`;
   const draft = `node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft`;
+  // Its arguments vary (media ids, times), so it's allowed as a prefix. The
+  // tool checks every argument and runs nothing through a shell, and Claude
+  // Code still refuses chained or substituted commands.
+  const media = mediaTool(id);
+  const frames = path.join(ROOT, "films/.work", id, "frames");
   const allow = [
     `Edit(/${dir}/**)`, // covers Write and Edit: this film's folder only
     `Read(/${dir}/**)`,
@@ -234,8 +245,10 @@ function claudeArgs(id: string, session: string | undefined) {
     `Read(${root}/public/**)`,
     `Read(${root}/CLAUDE.md)`,
     `Read(${root}/AGENTS.md)`,
+    `Read(/${frames}/**)`, // stills the media tool makes, so Claude can see the footage
     `Bash(${check})`,
     `Bash(${draft})`,
+    `Bash(${media} *)`,
     "Skill",
     "TodoWrite",
   ];
@@ -244,6 +257,10 @@ function claudeArgs(id: string, session: string | undefined) {
     `Read(${root}/**/node_modules/**)`,
     `Edit(/${dir}/.history/**)`,
     `Edit(/${dir}/out/**)`,
+    // Footage is never changed, and the big files are never read (the
+    // media tool reports on them); stills, thumbnails and JSON stay readable.
+    `Edit(/${dir}/media/**)`,
+    ...FOOTAGE_FILES.map((f) => `Read(/${dir}/media/**/${f})`),
   ];
   const args = [
     "-p",
@@ -258,7 +275,7 @@ function claudeArgs(id: string, session: string | undefined) {
     "--tools", "Read,Edit,Write,Glob,Grep,Bash,Skill,TodoWrite",
     "--allowedTools", ...allow,
     "--disallowedTools", ...deny,
-    "--append-system-prompt", systemPrompt(id),
+    "--append-system-prompt", systemPrompt(id, kind),
   ];
   if (session) args.push("--resume", session);
   return args;
@@ -278,8 +295,9 @@ function childEnv(): NodeJS.ProcessEnv {
 // Recorded with the conversation on its first turn (Claude Code keeps the
 // system prompt fixed for a session), so it holds only what never changes
 // for this film; the rest goes with each message.
-function systemPrompt(id: string) {
-  return `You are the motion designer inside Aerchain's motion studio, an internal tool. The person you work with is a visual designer: they see the film playing and talk to you about it. You change the film by editing its files.
+function systemPrompt(id: string, kind: Film["kind"]) {
+  const video = kind === "video" ? videoPrompt(id) : "";
+  return `You are the ${kind === "video" ? "video editor and motion designer" : "motion designer"} inside Aerchain's motion studio, an internal tool. The person you work with is a visual designer: they see the film playing and talk to you about it. You change the film by editing its files.
 
 Your film is films/${id}/ and the shell is already in it. Write only inside it. Load the aerchain-film skill before your first change: it explains how a studio film is made, how film.json works and which other skills to use.
 
@@ -287,12 +305,64 @@ To check your work, run exactly:
   node ${path.join(ROOT, "scripts/studio/check-film.mjs")}
 and fix what it reports. For a quick test video of a film that can't be checked any other way, run exactly:
   node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft
-No other shell commands are available, and there is no web access.
+No other shell commands are available, and there is no web access.${video}
 
 How to reply: work quietly, without narrating, then end with two or three plain sentences saying what changed on screen, in visual words (no code, no file names). Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
 }
 
-function userMessage(film: Film, prompt: string, context: ChatContext, undone: boolean) {
+// ─── Video films ─────────────────────────────────────────────────────────────
+
+const FOOTAGE_FILES = ["original.*", "*.mp4", "*.mov", "*.m4v", "*.webm", "*.mkv", "*.wav", "*.mp3", "*.m4a", "*.aac", "*.aif", "*.aiff", "*.flac"];
+
+const mediaTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/media-tool.mjs")} ${id}`;
+
+// What a video film adds to the system prompt.
+function videoPrompt(id: string) {
+  const tool = mediaTool(id);
+  return `
+
+This film is a VIDEO EDIT of footage the person brought in. Load the aerchain-video-edit skill before your first change. The edit is edit.json, shaped as src/lib/studio/edit.ts: tracks of clips cut from the footage, graphics and music, plus captions. Change the edit by editing edit.json. The studio's graphics are in ${path.join(ROOT, "studio/graphics")}/ (look there, not across the whole project; the checker also lists them). For a graphic the studio doesn't have, write the film's own as graphics/<name>.jsx. "start" and caption times are on the film's timeline; a clip's "from" and "to" are seconds in its source. Keep film.json's duration equal to where the edit ends.
+
+You can't open the footage files. To hear, see and measure them, run one of these per call, nothing chained:
+  ${tool} list
+  ${tool} words <media> [from] [to]
+  ${tool} silences <media> [min-seconds] [threshold-dB]
+  ${tool} scenes <media> [sensitivity]
+  ${tool} frames <media> <t> [t ...]   (then Read the stills it names)
+  ${tool} faces <media> [every-seconds]`;
+}
+
+// A short picture of a video film's edit, sent with each message, so "the
+// second clip" or "the lower third" makes sense.
+async function editSummary(id: string): Promise<string> {
+  let edit: Edit;
+  try {
+    edit = JSON.parse(await readFile(path.join(filmDir(id), "edit.json"), "utf8")) as Edit;
+  } catch {
+    return "edit.json is missing or unreadable";
+  }
+  const length = (item: Clip | Graphic) => (item.type === "clip" ? (item.to - item.from) / (item.speed ?? 1) : item.duration);
+  const span = (item: Clip | Graphic) => `${item.start.toFixed(2)}-${(item.start + length(item)).toFixed(2)} s`;
+  let end = 0;
+  const lines: string[] = [];
+  for (const track of edit.tracks ?? []) {
+    const items = [...(track.items ?? [])].sort((a, b) => a.start - b.start);
+    for (const item of items) end = Math.max(end, item.start + length(item));
+    const shown = items.slice(0, 25).map((item) =>
+      item.type === "clip"
+        ? `${item.id}: ${item.media} source ${item.from.toFixed(2)}-${item.to.toFixed(2)} at ${span(item)}`
+        : `${item.id}: ${item.graphic} at ${span(item)}`,
+    );
+    const more = items.length > 25 ? `; and ${items.length - 25} more` : "";
+    const flags = [track.muted ? "muted" : null, track.hidden ? "hidden" : null].filter(Boolean).join(", ");
+    lines.push(`${track.kind} track "${track.name}" (${track.id}${flags ? `, ${flags}` : ""}): ${shown.join("; ") || "empty"}${more}`);
+  }
+  const c = edit.captions;
+  lines.push(`captions ${c?.on ? `on (${c.style}, ${c.position})` : "off"}, ${c?.words?.length ?? 0} words. The edit ends at ${end.toFixed(2)} s.`);
+  return lines.join("\n");
+}
+
+function userMessage(film: Film, prompt: string, context: ChatContext, undone: boolean, edit: string | null) {
   const lines = [
     `<film>engine ${ENGINE_WORDS[film.engine]}, ${film.width}x${film.height}, ${film.fps} fps, ${film.duration} s, title "${film.title}"</film>`,
     `<playhead>${context.t.toFixed(2)} s</playhead>`,
@@ -310,6 +380,10 @@ function userMessage(film: Film, prompt: string, context: ChatContext, undone: b
     lines.push(
       `<pointed>They pointed at film pixel (${Math.round(pick.x)}, ${Math.round(pick.y)}) at ${context.t.toFixed(2)} s${what.length ? `: ${what.join(", ")}` : ""}. "This" or "here" means that.</pointed>`,
     );
+  }
+  if (edit) lines.push(`<edit>\n${edit}\n</edit>`);
+  if (context.selection?.length) {
+    lines.push(`<selected>On the timeline they have selected ${context.selection.join(", ")}. "This", "these" or "the selected" means them.</selected>`);
   }
   if (undone) lines.push("<note>They undid your previous change: the files are back to how they were before it.</note>");
   lines.push(`<request>\n${prompt}\n</request>`);
@@ -400,6 +474,15 @@ class StreamReader {
   }
 }
 
+const MEDIA_STEPS: Record<string, string> = {
+  list: "Looking at the footage",
+  words: "Reading what's said",
+  silences: "Finding the pauses",
+  scenes: "Finding the cuts",
+  frames: "Watching the footage",
+  faces: "Finding the speaker",
+};
+
 function stepFor(name: string, input: Json, dir: string): string | null {
   const file = typeof input.file_path === "string" ? path.resolve(dir, input.file_path) : null;
   const inFilm = file?.startsWith(`${dir}${path.sep}`) ?? false;
@@ -416,11 +499,14 @@ function stepFor(name: string, input: Json, dir: string): string | null {
     case "Edit":
     case "Write":
     case "MultiEdit":
-      return file?.endsWith("film.json") ? "Updating the film's settings" : "Editing the film";
+      if (file?.endsWith("film.json")) return "Updating the film's settings";
+      if (file?.endsWith("edit.json")) return "Editing the cut";
+      return file?.includes(`${path.sep}graphics${path.sep}`) ? "Making a graphic" : "Editing the film";
     case "Bash": {
       const command = String(input.command ?? "");
       if (command.includes("check-film")) return "Checking it";
       if (command.includes("render.mjs")) return "Making a draft";
+      if (command.includes("media-tool")) return MEDIA_STEPS[command.split(/\s+/)[3] ?? ""] ?? "Looking at the footage";
       return "Running a command";
     }
     default:

@@ -71,13 +71,19 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/studio/fi
 function context(raw: unknown): ChatContext {
   const c = (raw ?? {}) as Partial<ChatContext>;
   const t = Number.isFinite(c.t) ? Math.max(0, Number(c.t)) : 0;
+  // Selected timeline items: ids only, in the shape edit.json uses.
+  const selection = Array.isArray(c.selection)
+    ? c.selection.filter((s): s is string => typeof s === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(s)).slice(0, 50)
+    : [];
+  const extra = selection.length ? { selection } : {};
   const p = c.pick;
-  if (!p || typeof p !== "object") return { t, pick: null };
+  if (!p || typeof p !== "object") return { t, pick: null, ...extra };
   const num = (v: unknown) => (Number.isFinite(v) ? Number(v) : 0);
   const str = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) || null : null);
   const r = p.rect;
   return {
     t,
+    ...extra,
     pick: {
       x: num(p.x),
       y: num(p.y),

@@ -9,6 +9,8 @@ The studio at `/studio` is Aerchain's own motion tool. The person you work with 
 
 The contract is `src/lib/studio/contract.ts` (read it if anything below is unclear). Everything a film needs lives in its own folder, `films/<id>/`. You may only write there.
 
+**Video films:** if film.json says `"kind": "video"` (there's an edit.json), the film is an edit of footage the person brought in. Load the **aerchain-video-edit** skill as well: you change the edit through edit.json, not by rewriting the component, and you look at the footage with the media tool. The film.json rules, the Aerchain look and "Before you finish" below still apply.
+
 ## film.json: keep it true
 
 `film.json` is what the studio reads to show the film. Keep it current whenever you change the film:

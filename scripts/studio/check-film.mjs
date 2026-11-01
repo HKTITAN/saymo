@@ -2,6 +2,9 @@
 //   html  HyperFrames' own check: lint, runtime, layout, motion, contrast
 //   react the component bundles (catches typos and missing imports)
 //   rust  the crate builds, offline, inside a sandbox
+//   video (a react film of kind "video"): edit.json against
+//         src/lib/studio/edit.ts and the footage, then the film's own
+//         graphics and component bundle
 //
 // This is the one command the studio's Claude may run to check its work
 // (see src/lib/studio/claude.ts), so it takes no arguments: it always
@@ -9,8 +12,8 @@
 //
 // usage (from films/<id>/): node <project>/scripts/studio/check-film.mjs
 
-import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,6 +41,46 @@ const run = (cmd, args, opts = {}) =>
     });
   });
 
+// Bundles one React file with esbuild, against the studio's Remotion
+// install: catches typos, bad JSX and missing imports.
+const bundle = (entry) =>
+  run(
+    path.join(ROOT, "studio/hyperframes/node_modules/.bin/esbuild"),
+    [
+      entry,
+      "--bundle",
+      "--format=esm",
+      "--jsx=automatic",
+      "--loader:.js=jsx",
+      "--log-level=warning",
+      `--outfile=${path.join(tmpdir(), `studio-check-${film.id}-${path.basename(entry)}.js`)}`,
+    ],
+    { env: { ...process.env, NODE_PATH: path.join(ROOT, "studio/remotion/node_modules") } },
+  );
+
+if (film.kind === "video") {
+  const problems = checkEdit();
+  if (problems.length) {
+    console.error(`The edit has ${problems.length} problem${problems.length > 1 ? "s" : ""}:`);
+    for (const p of problems.slice(0, 40)) console.error(`- ${p}`);
+    if (problems.length > 40) console.error(`- and ${problems.length - 40} more`);
+    process.exit(1);
+  }
+  console.log("The edit is sound: every clip fits its footage, nothing overlaps, graphics and captions check out.");
+  // The film's own graphics must bundle, as must its component if it has one.
+  const graphicsDir = path.join(dir, "graphics");
+  const own = existsSync(graphicsDir)
+    ? readdirSync(graphicsDir).filter((f) => /\.jsx?$/.test(f)).map((f) => path.join(graphicsDir, f))
+    : [];
+  const component = path.join(dir, "src/Film.jsx");
+  for (const file of [...own, ...(existsSync(component) ? [component] : [])]) {
+    const code = await bundle(file);
+    if (code !== 0) process.exit(code);
+  }
+  if (own.length) console.log(`The film's own graphics bundle cleanly (${own.length}).`);
+  process.exit(0);
+}
+
 if (film.engine === "html") {
   const bin = path.join(ROOT, "studio/hyperframes/node_modules/.bin/hyperframes");
   if (!existsSync(bin)) fail("The film checker isn't installed: run `npm ci` in studio/hyperframes.");
@@ -50,18 +93,9 @@ if (film.engine === "html") {
 }
 
 if (film.engine === "react") {
-  const esbuild = path.join(ROOT, "studio/hyperframes/node_modules/.bin/esbuild");
   const entry = path.join(dir, "src/Film.jsx");
   if (!existsSync(entry)) fail("src/Film.jsx is missing: a react film's component lives there.");
-  const code = await run(esbuild, [
-    entry,
-    "--bundle",
-    "--format=esm",
-    "--jsx=automatic",
-    "--loader:.js=jsx",
-    "--log-level=warning",
-    `--outfile=${path.join(tmpdir(), `studio-check-${film.id}.js`)}`,
-  ], { env: { ...process.env, NODE_PATH: path.join(ROOT, "studio/remotion/node_modules") } });
+  const code = await bundle(entry);
   if (code === 0) console.log("The component bundles cleanly.");
   process.exit(code);
 }
@@ -88,3 +122,194 @@ if (film.engine === "rust") {
 }
 
 fail(`Unknown engine "${film.engine}" in film.json.`);
+
+// ─── Video films: the edit ──────────────────────────────────────────────────
+//
+// Mirrors src/lib/studio/edit.ts. Every problem is a sentence Claude can
+// act on, naming the item by its id and where it sits.
+
+function checkEdit() {
+  const problems = [];
+  const say = (p) => problems.push(p);
+  let edit;
+  try {
+    edit = JSON.parse(readFileSync(path.join(dir, "edit.json"), "utf8"));
+  } catch (error) {
+    return [existsSync(path.join(dir, "edit.json")) ? `edit.json isn't valid JSON: ${error.message}` : "edit.json is missing."];
+  }
+  const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+  const t = (v) => (isNum(v) ? `${v.toFixed(2)} s` : String(v));
+
+  if (edit.version !== 1) say('edit.json needs "version": 1.');
+  if (typeof edit.background !== "string" || !/^#[0-9a-f]{6}$/i.test(edit.background)) say('"background" must be a colour like "#141414".');
+  if (!Array.isArray(edit.tracks)) return [...problems, '"tracks" must be a list of tracks.'];
+
+  const media = mediaIndex();
+  const graphics = graphicIndex();
+  const ids = new Set();
+  let end = 0;
+
+  for (const [ti, track] of edit.tracks.entries()) {
+    const where = `track ${ti + 1} ("${track?.name ?? track?.id ?? "?"}")`;
+    if (!track || typeof track !== "object") {
+      say(`${where} isn't a track object.`);
+      continue;
+    }
+    if (typeof track.id !== "string" || !track.id) say(`${where} needs an "id".`);
+    if (!["video", "graphics", "audio"].includes(track.kind)) say(`${where}: "kind" must be "video", "graphics" or "audio", not "${track.kind}".`);
+    if (typeof track.name !== "string") say(`${where} needs a "name".`);
+    if (!Array.isArray(track.items)) {
+      say(`${where}: "items" must be a list.`);
+      continue;
+    }
+    const spans = [];
+    for (const item of track.items) {
+      const it = `${item?.type ?? "item"} "${item?.id ?? "?"}" on ${where}`;
+      if (!item || typeof item !== "object") {
+        say(`${where} has an item that isn't an object.`);
+        continue;
+      }
+      if (typeof item.id !== "string" || !item.id) say(`An item on ${where} has no "id".`);
+      else if (ids.has(item.id)) say(`Two items share the id "${item.id}"; ids must be unique across the edit.`);
+      else ids.add(item.id);
+      if (!isNum(item.start) || item.start < 0) say(`${it}: "start" must be 0 or more seconds (it's ${t(item.start)}).`);
+
+      let length = null;
+      if (item.type === "clip") {
+        if (track.kind === "graphics") say(`${it}: footage clips belong on a video or audio track, not a graphics track.`);
+        const m = media.get(item.media);
+        if (!m) {
+          say(`${it} uses media "${item.media}", which this film doesn't have. Media ids: ${[...media.keys()].join(", ") || "none yet"}.`);
+        } else {
+          if (track.kind === "audio" && m.kind === "image") say(`${it}: a photo has no sound, so it can't sit on an audio track.`);
+          if (track.kind === "audio" && m.kind === "video" && m.hasAudio === false) say(`${it}: "${m.name}" has no sound.`);
+          if (track.kind === "video" && m.kind === "audio") say(`${it}: "${m.name}" is sound only; put it on an audio track.`);
+        }
+        if (!isNum(item.from) || item.from < 0) say(`${it}: "from" must be 0 or more seconds in the source (it's ${t(item.from)}).`);
+        if (!isNum(item.to) || !(item.to > item.from)) say(`${it}: "to" must be after "from" (from ${t(item.from)}, to ${t(item.to)}).`);
+        else if (m?.duration && m.kind !== "image" && item.to > m.duration + 0.05) {
+          say(`${it}: "to" is ${t(item.to)} but "${m.name}" is only ${t(m.duration)} long.`);
+        }
+        const speed = item.speed ?? 1;
+        if (!isNum(speed) || speed < 0.1 || speed > 8) say(`${it}: "speed" must be between 0.1 and 8 (it's ${speed}).`);
+        if (item.volume !== undefined && (!isNum(item.volume) || item.volume < 0 || item.volume > 2)) say(`${it}: "volume" must be 0 to 2 (1 is as recorded).`);
+        for (const k of ["fadeIn", "fadeOut"]) {
+          if (item[k] !== undefined && (!isNum(item[k]) || item[k] < 0)) say(`${it}: "${k}" must be 0 or more seconds.`);
+        }
+        if (item.zoom !== undefined && (!isNum(item.zoom) || item.zoom < 1 || item.zoom > 6)) say(`${it}: "zoom" must be 1 (just covers the frame) to 6.`);
+        for (const k of ["x", "y"]) {
+          if (item[k] !== undefined && (!isNum(item[k]) || item[k] < 0 || item[k] > 1)) say(`${it}: "${k}" is the framing centre, 0 to 1 of the source (it's ${item[k]}).`);
+        }
+        if (isNum(item.from) && isNum(item.to) && isNum(speed) && speed > 0) length = (item.to - item.from) / speed;
+      } else if (item.type === "graphic") {
+        if (track.kind !== "graphics") say(`${it}: graphics belong on a graphics track.`);
+        if (typeof item.graphic !== "string" || !graphics.has(item.graphic)) {
+          say(
+            `${it} uses the graphic "${item.graphic}", which doesn't exist. Studio graphics: ${[...graphics.entries()].filter(([, w]) => w === "studio").map(([n]) => n).join(", ") || "none installed"}; this film's own (graphics/<name>.jsx): ${[...graphics.entries()].filter(([, w]) => w === "film").map(([n]) => n).join(", ") || "none"}.`,
+          );
+        }
+        if (!isNum(item.duration) || item.duration <= 0) say(`${it}: "duration" must be more than 0 seconds.`);
+        else length = item.duration;
+        if (!item.values || typeof item.values !== "object" || Array.isArray(item.values)) say(`${it}: "values" must be an object of the graphic's settings (it can be {}).`);
+      } else {
+        say(`${it}: "type" must be "clip" or "graphic".`);
+      }
+      if (length !== null && isNum(item.start)) {
+        spans.push({ id: item.id, start: item.start, end: item.start + length });
+        end = Math.max(end, item.start + length);
+      }
+    }
+    spans.sort((a, b) => a.start - b.start);
+    for (let i = 1; i < spans.length; i++) {
+      const [a, b] = [spans[i - 1], spans[i]];
+      if (b.start < a.end - 0.001) {
+        say(`On ${where}, "${a.id}" (until ${t(a.end)}) overlaps "${b.id}" (from ${t(b.start)}). Move one, or put it on another track.`);
+      }
+    }
+  }
+
+  const c = edit.captions;
+  if (!c || typeof c !== "object") say('"captions" is missing: { "on": false, "style": "lines", "words": [], "position": "bottom" }.');
+  else {
+    if (typeof c.on !== "boolean") say('captions "on" must be true or false.');
+    if (!["words", "lines", "karaoke"].includes(c.style)) say('captions "style" must be "words", "lines" or "karaoke".');
+    if (!["bottom", "middle"].includes(c.position)) say('captions "position" must be "bottom" or "middle".');
+    if (!Array.isArray(c.words)) say('captions "words" must be a list.');
+    else {
+      let prev = -Infinity;
+      for (const [i, w] of c.words.entries()) {
+        const at = `caption word ${i + 1} ("${w?.text ?? "?"}")`;
+        if (typeof w?.text !== "string" || !w.text.trim()) say(`${at} has no text.`);
+        if (!isNum(w?.start) || !isNum(w?.end) || w.end <= w.start) say(`${at}: "end" must be after "start" (${t(w?.start)} to ${t(w?.end)}).`);
+        else {
+          if (w.start < prev - 0.001) say(`${at} starts at ${t(w.start)}, before the word ahead of it ends; caption words must be in time order.`);
+          if (end > 0 && w.start > end + 0.05) say(`${at} is at ${t(w.start)}, after the film ends (${t(end)}). Captions are on the film's timeline, not the source's.`);
+          prev = w.end;
+        }
+        if (problems.length > 60) break;
+      }
+      if (c.on && c.words.length === 0) say("Captions are on but there are no caption words.");
+    }
+  }
+
+  if (end > 0 && isNum(film.duration) && Math.abs(film.duration - end) > 0.05) {
+    say(`film.json says the film is ${t(film.duration)} long but the edit ends at ${t(end)}. Set film.json "duration" to ${Math.round(end * 100) / 100}.`);
+  }
+  return problems;
+}
+
+// The film's footage: media/<id>/ with media.json (written on import), or
+// what can be read from the files.
+function mediaIndex() {
+  const index = new Map();
+  const root = path.join(dir, "media");
+  if (!existsSync(root)) return index;
+  for (const mid of readdirSync(root).filter((m) => /^[a-z0-9]{8}$/.test(m))) {
+    const folder = path.join(root, mid);
+    let meta = {};
+    try {
+      meta = JSON.parse(readFileSync(path.join(folder, "media.json"), "utf8"));
+    } catch {}
+    const files = readdirSync(folder);
+    const original = meta.original ?? files.find((f) => f.startsWith("original."));
+    const kind =
+      meta.kind ??
+      (/\.(wav|mp3|m4a|aac|aif|aiff|flac|ogg|opus)$/i.test(original ?? "")
+        ? "audio"
+        : /\.(jpe?g|png|webp|gif|heic|tiff?)$/i.test(original ?? "")
+          ? "image"
+          : "video");
+    let duration = meta.duration ?? null;
+    let hasAudio = meta.hasAudio;
+    if ((duration == null || hasAudio == null) && kind !== "image") {
+      const file = files.includes("proxy.mp4") ? path.join(folder, "proxy.mp4") : original ? path.join(folder, original) : null;
+      if (file) {
+        try {
+          const j = JSON.parse(
+            execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "json", file], { encoding: "utf8" }),
+          );
+          duration ??= Number(j.format?.duration) || null;
+          hasAudio ??= j.streams?.some((s) => s.codec_type === "audio") ?? false;
+        } catch {}
+      }
+    }
+    index.set(mid, { kind, duration, hasAudio, name: meta.name ?? original ?? mid });
+  }
+  return index;
+}
+
+// Graphics a film can use: the studio's library (studio/graphics/<name>.jsx
+// or <name>/index.jsx) and the film's own (graphics/<name>.jsx).
+function graphicIndex() {
+  const index = new Map();
+  const add = (folder, where) => {
+    if (!existsSync(folder)) return;
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      if (entry.isFile() && /\.jsx?$/.test(entry.name)) index.set(entry.name.replace(/\.jsx?$/, ""), where);
+      else if (entry.isDirectory() && ["index.jsx", "index.js"].some((f) => existsSync(path.join(folder, entry.name, f)))) index.set(entry.name, where);
+    }
+  };
+  add(path.join(ROOT, "studio/graphics"), "studio");
+  add(path.join(dir, "graphics"), "film");
+  return index;
+}
