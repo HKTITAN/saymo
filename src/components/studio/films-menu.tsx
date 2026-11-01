@@ -10,6 +10,7 @@ import {
   HomeIcon,
   PlusIcon,
 } from "@/components/icons";
+import { Skeleton } from "@/components/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { SURFACE } from "@/components/tool/dial";
 import { type Film, type FilmSummary, SIZES } from "@/lib/studio/contract";
@@ -106,8 +107,11 @@ export function FilmsMenu({
                   </button>
                   <div className="my-1 h-px bg-white/[0.07]" />
                   <p className="px-2 pt-1.5 pb-1 font-medium text-[11.5px] text-white/40">Films</p>
-                  <div className="flex max-h-[min(360px,50dvh)] flex-col gap-0.5 overflow-y-auto">
-                    {films.map((f) => (
+                  {/* Stills still on their way are drawn as quiet shapes. */}
+                  <Skeleton data={films} id="films-menu" label="Loading your films">
+                    {(list) => (
+                  <div className="flex max-h-[min(360px,50dvh)] flex-col gap-0.5 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {list.map((f) => (
                       <button
                         key={f.id}
                         type="button"
@@ -128,6 +132,8 @@ export function FilmsMenu({
                       </button>
                     ))}
                   </div>
+                    )}
+                  </Skeleton>
                   <div className="my-1 h-px bg-white/[0.07]" />
                   <button type="button" className={ITEM} onClick={() => setView("new")}>
                     <PlusIcon aria-hidden="true" />

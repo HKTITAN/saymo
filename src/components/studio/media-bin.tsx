@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { DeleteDustbin01Icon, LayerThreeIcon, MusicBeamNoteIcon, UploadUpIcon } from "@/components/icons";
+import { Skeleton } from "@/components/skeleton";
 import type { GraphicInfo, Media } from "@/lib/studio/edit";
 import { cn } from "@/lib/utils";
 import { StudioError } from "./api";
@@ -108,7 +109,22 @@ export function MediaBin({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {tab === "footage" ? (
+        {tab === "footage" && !ed.binLoaded ? (
+          // The footage is on its way: three rows' worth of shapes.
+          <Skeleton loading label="Loading the footage">
+            <div className="flex flex-col gap-1">
+              {["Interview with Darshan.mov", "Stage wide shot.mp4", "Walk-on music.mp3"].map((name) => (
+                <div key={name} className="flex min-h-12 items-center gap-2.5 px-2 py-1.5">
+                  <span className="h-9 w-14 shrink-0 rounded-[6px]" skullet-block="" />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-[12px]">{name}</span>
+                    <span className="font-mono text-[11px]">0:42 · 1920 × 1080</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Skeleton>
+        ) : tab === "footage" ? (
           <>
             {ed.uploads.map((u) => (
               <div key={u.key} className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] px-2.5 py-2">

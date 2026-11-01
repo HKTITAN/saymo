@@ -24,6 +24,7 @@ import { undoKey, useHistory } from "./history";
 import { Inspector, type Values } from "./inspector";
 import { KitPage } from "./kit-page";
 import { MediaBin } from "./media-bin";
+import { Opening } from "./opening";
 import { clipNumber, defaults, Multitrack } from "./multitrack";
 import { CARD, PILL_BUTTON } from "./panel";
 import { RenderControl } from "./render";
@@ -1055,7 +1056,7 @@ function FilmView({
       </div>
     );
   }
-  if (!film) return null;
+  if (!film) return <Opening what="film" />;
 
   const selection = isVideo && ed.selected.size > 0;
 
