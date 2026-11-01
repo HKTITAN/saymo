@@ -53,7 +53,9 @@ const exists = (p: string) => stat(p).then(() => true, () => false);
 
 export async function listFilms(): Promise<FilmSummary[]> {
   const ids = (await readdir(FILMS_DIR).catch(() => [])).filter(isId);
-  const films = (await Promise.all(ids.map(readFilm))).filter((f): f is Film => f !== null);
+  // A film still being made briefly holds its starter's film.json, with no
+  // id yet; it shows up once it's ready.
+  const films = (await Promise.all(ids.map(readFilm))).filter((f): f is Film => typeof f?.id === "string");
   const summaries = await Promise.all(
     films.map(async (f) => ({
       id: f.id,
