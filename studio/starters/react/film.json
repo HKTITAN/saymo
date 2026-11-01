@@ -1,0 +1,19 @@
+{
+  "title": "Untitled film",
+  "engine": "react",
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "duration": 5,
+  "params": [
+    { "key": "figure", "label": "Figure", "type": "number", "value": 40, "min": 0, "max": 100, "step": 1 },
+    { "key": "unit", "label": "Unit", "type": "text", "value": "%" },
+    { "key": "label", "label": "Label", "type": "text", "value": "faster sourcing" },
+    { "key": "accent", "label": "Accent colour", "type": "color", "value": "#F55A00" }
+  ],
+  "marks": [
+    { "t": 0.4, "label": "Bar arrives" },
+    { "t": 1.6, "label": "Cover" },
+    { "t": 3.6, "label": "Black returns" }
+  ]
+}

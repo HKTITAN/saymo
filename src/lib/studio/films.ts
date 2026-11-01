@@ -149,10 +149,12 @@ export async function snapshotFilm(id: string): Promise<number> {
   const dir = filmDir(id);
   const turns = await historyTurns(id);
   const n = (turns.at(-1) ?? 0) + 1;
-  await cp(dir, path.join(historyDir(id), String(n)), {
-    recursive: true,
-    filter: (src) => path.dirname(src) !== dir || keep(src),
-  });
+  // Entry by entry: a folder can't be copied into its own .history.
+  const snap = path.join(historyDir(id), String(n));
+  await mkdir(snap, { recursive: true });
+  for (const name of (await readdir(dir)).filter(keep)) {
+    await cp(path.join(dir, name), path.join(snap, name), { recursive: true });
+  }
   for (const old of turns.slice(0, Math.max(0, turns.length + 1 - 30))) {
     await rm(path.join(historyDir(id), String(old)), { recursive: true, force: true });
   }

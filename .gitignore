@@ -55,3 +55,4 @@ next-env.d.ts
 
 # films made in the studio, with their history and renders
 /films
+/studio/starters/**/.hyperframes/

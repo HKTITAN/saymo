@@ -1,0 +1,18 @@
+{
+  "title": "Untitled film",
+  "engine": "rust",
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "duration": 5,
+  "params": [
+    { "key": "headline", "label": "Headline", "type": "text", "value": "Drawn line by line." },
+    { "key": "accent", "label": "Accent colour", "type": "color", "value": "#F55A00" },
+    { "key": "swell", "label": "Swell", "type": "number", "value": 180, "min": 0, "max": 480, "step": 12, "unit": "px" }
+  ],
+  "marks": [
+    { "t": 0.5, "label": "Accent arrives" },
+    { "t": 1.8, "label": "Cover" },
+    { "t": 3.6, "label": "Black returns" }
+  ]
+}
