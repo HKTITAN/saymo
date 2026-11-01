@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { CopyIcon, MultipleCrossCancelIcon, PencilEditIcon, PlusIcon } from "@/components/icons";
+import { CheckTickCircleIcon, CopyIcon, MultipleCrossCancelIcon, PencilEditIcon, PlusIcon } from "@/components/icons";
 import type { BrandFont, BrandKit, ColorRoles } from "@/lib/studio/brand";
 import { cn } from "@/lib/utils";
 import { brandFile } from "./brand-api";
@@ -69,6 +69,13 @@ export function KitDoc({
   const r = kit.colors.roles;
   const family = (f: BrandFont | undefined) => (f ? `"${fontName(kit, f.family)}", system-ui` : "system-ui");
   const [editing, setEditing] = useState<string | null>(null);
+  // The swatch just copied shows a tick for a moment.
+  const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(null), 1400);
+    return () => clearTimeout(t);
+  }, [copied]);
   const scroller = useRef<HTMLDivElement>(null);
 
   // The "- guide/<file>" lines list pictures for Claude to look at; the page
@@ -144,17 +151,25 @@ export function KitDoc({
                 <button
                   key={role.key}
                   type="button"
-                  onClick={() => onCopy(r[role.key])}
+                  onClick={() => {
+                    onCopy(r[role.key]);
+                    setCopied(role.key);
+                  }}
                   className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
                   aria-label={`${role.label} ${r[role.key]}, copy`}
                 >
                   <span className="h-20 shadow-[inset_0_-1px_0_rgba(255,255,255,0.05)]" style={{ background: r[role.key] }} />
                   {/* Copy, in the swatch's top right corner, shown on hover. */}
                   <span
-                    className="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-[8px] bg-black/45 text-white/90 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 [&_svg]:size-3.5"
+                    className={cn(
+                      "absolute top-2 right-2 grid size-7 place-items-center rounded-[8px] bg-black/45 text-white/90 backdrop-blur-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 [&_svg]:col-start-1 [&_svg]:row-start-1 [&_svg]:size-3.5 [&_svg]:transition-[opacity,scale,filter] [&_svg]:duration-200 [&_svg]:ease-out",
+                      copied === role.key ? "opacity-100" : "opacity-0",
+                    )}
                     aria-hidden="true"
                   >
-                    <CopyIcon />
+                    {/* Copy turns into a tick once the code is copied. */}
+                    <CopyIcon className={copied === role.key ? "scale-50 opacity-0 blur-[2px]" : "scale-100 opacity-100 blur-0"} />
+                    <CheckTickCircleIcon className={copied === role.key ? "scale-100 opacity-100 blur-0" : "scale-50 opacity-0 blur-[2px]"} />
                   </span>
                   <span className="flex flex-col gap-0.5 p-3">
                     <span className="font-medium text-[13px]">{role.label}</span>

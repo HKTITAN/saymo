@@ -61,11 +61,47 @@ export function ChatPanel({
   const { messages, turn } = chat;
   const claudeTurns = messages.filter((m) => m.role === "claude").length;
 
-  // Keep the newest words in view.
+  // The chat sits at its newest message: when a film opens, when a prompt
+  // is sent, and as replies, pictures and the queue grow, unless you've
+  // scrolled up to read something (then it stays put until you come back
+  // down or send).
+  const stuck = useRef(true);
   useEffect(() => {
     const el = list.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages.length, turn.text, turn.steps.length]);
+    if (!el) return;
+    const toEnd = () => {
+      if (stuck.current) el.scrollTop = el.scrollHeight;
+    };
+    const onScroll = () => {
+      stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    };
+    const sizes = new ResizeObserver(toEnd);
+    const watch = () => {
+      sizes.disconnect();
+      sizes.observe(el);
+      for (const child of el.children) sizes.observe(child);
+    };
+    const changes = new MutationObserver(() => {
+      watch();
+      toEnd();
+    });
+    el.addEventListener("scroll", onScroll, { passive: true });
+    changes.observe(el, { childList: true, subtree: true, characterData: true });
+    watch();
+    toEnd();
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      sizes.disconnect();
+      changes.disconnect();
+    };
+  }, []);
+  const lastRole = messages.at(-1)?.role;
+  useEffect(() => {
+    // A film just opened, or you just sent a prompt: back to the end.
+    stuck.current = true;
+    const el = list.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [filmId, chat.loaded, messages.length, lastRole, chat.queue.length]);
 
   const files = useAttachments(`/api/studio/films/${filmId}/attachments`);
 

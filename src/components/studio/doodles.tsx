@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { cn } from "@/lib/utils";
 
 // Small drawings for the studio's home page: the two ways to start, the
@@ -42,62 +42,71 @@ function Face({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   );
 }
 
-// Edit a video: a little screen playing, over a timeline of clips; on
-// hover the playhead glides on and the screen's play button swells.
+// The two start tiles: one plain object each, the studio's screen at its
+// simplest. At rest each shows its result; on hover, the one thing that
+// makes it happens again.
+
+const INK = "#f2f2f2";
+const TYPE = { fontFamily: "inherit" } as const;
+
+// Edit a video: a screen over three clips. On hover the playhead runs into
+// the last clip and the caption appears on the screen.
 export function VideoDoodle({ className }: { className?: string }) {
   return (
-    <Doodle viewBox="0 0 160 90" className={className}>
-      {/* The screen on its stand. */}
-      <rect x={70} y={50} width={20} height={8} rx={2} fill="#2b2b2b" />
-      <rect x={42} y={6} width={76} height={46} rx={9} fill="#2b2b2b" />
-      <rect x={47} y={11} width={66} height={36} rx={6} fill="#3a3a3a" />
-      <g className={cn(MOVE, "origin-center motion-safe:group-hover/doodle:scale-[1.15]")}>
-        <circle cx={80} cy={29} r={9} fill="rgb(255 255 255 / 0.85)" />
-        <path d="M77.6 25.4 Q76.8 25 76.8 25.9 V32.1 Q76.8 33 77.6 32.6 L83 29.6 Q83.6 29 83 28.4 Z" fill="#2b2b2b" />
+    <svg viewBox="0 0 320 180" aria-hidden="true" className={className}>
+      <rect x={92} y={26} width={136} height={77} rx={8} fill="#2e2e2e" />
+      <g className="motion-safe:group-hover/doodle:animate-[studio-caption-in_1.3s_both]">
+        <rect x={122} y={84} width={76} height={12} rx={4} fill="rgb(0 0 0 / 0.55)" />
+        <text x={160} y={92.6} fontSize={7.5} fontWeight={500} fill={INK} textAnchor="middle" style={TYPE}>
+          Welcome aboard
+        </text>
       </g>
-      {/* The timeline and its clips. */}
-      <rect x={14} y={62} width={132} height={22} rx={8} fill="#232323" />
       {(
         [
-          [20, 34, "#454545"],
-          [57, 26, "#3a3a3a"],
-          [86, 54, "#454545"],
+          [72, 58],
+          [134, 44],
+          [182, 66],
         ] as const
-      ).map(([x, w, fill], i) => (
-        <g key={x} className={cn(MOVE, "motion-safe:group-hover/doodle:-translate-y-[1.5px]")} style={{ transitionDelay: `${i * 60}ms` }}>
-          <rect x={x} y={67} width={w} height={12} rx={4} fill={fill} />
-        </g>
+      ).map(([x, w]) => (
+        <rect key={x} x={x} y={124} width={w} height={20} rx={5} fill={x === 182 ? "#4a4a4a" : "#2e2e2e"} />
       ))}
-      <g className={cn(MOVE, "motion-safe:group-hover/doodle:translate-x-[34px]")}>
-        <line x1={64} x2={64} y1={60} y2={86} stroke="rgb(255 255 255 / 0.9)" strokeWidth={2} />
-        <circle cx={64} cy={59} r={3.4} fill="rgb(255 255 255 / 0.9)" />
+      <g className="[transform-box:view-box] motion-safe:group-hover/doodle:animate-[studio-playhead_1.3s_cubic-bezier(0.45,0,0.2,1)_both]">
+        <line x1={206} x2={206} y1={118} y2={150} stroke={INK} strokeWidth={1.5} strokeLinecap="round" />
+        <circle cx={206} cy={117} r={3} fill={INK} />
       </g>
-    </Doodle>
+    </svg>
   );
 }
 
-// Make motion graphics: a happy ball bouncing past a square and a
-// triangle; on hover it hops higher and its shadow shrinks.
+// Make motion graphics: a prompt sent, and the title it asked for rising
+// in word by word.
 export function MotionDoodle({ className }: { className?: string }) {
+  const id = useId();
+  const word = "motion-safe:group-hover/doodle:animate-[studio-word-in_0.75s_cubic-bezier(0.23,1,0.32,1)_both] [transform-box:fill-box]";
   return (
-    <Doodle viewBox="0 0 160 90" className={className}>
-      <rect x={10} y={78} width={140} height={4} rx={2} fill="#232323" />
-      <path d="M22 70 Q44 10 72 58" stroke="rgb(255 255 255 / 0.22)" strokeWidth={1.6} strokeDasharray="0.1 6" />
-      <g className={cn(MOVE, "origin-bottom rotate-[10deg] motion-safe:group-hover/doodle:rotate-[24deg]")}>
-        <rect x={112} y={50} width={28} height={28} rx={7} fill="#3a3a3a" />
+    <svg viewBox="0 0 320 180" aria-hidden="true" className={className}>
+      <defs>
+        <clipPath id={`${id}-line`}>
+          <rect x={60} y={44} width={200} height={34} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${id}-line)`}>
+        <text x={157} y={70} fontSize={26} fontWeight={650} letterSpacing={-0.5} fill={INK} textAnchor="end" className={word} style={{ ...TYPE, animationDelay: "0.3s" }}>
+          Launch
+        </text>
+        <text x={164} y={70} fontSize={26} fontWeight={650} letterSpacing={-0.5} fill={INK} className={word} style={{ ...TYPE, animationDelay: "0.42s" }}>
+          day
+        </text>
       </g>
-      <path d="M24 78 L36 56 Q38 53 40 56 L52 78 Z" fill="#2b2b2b" />
-      {/* The shadow, which shrinks as the ball rises. */}
-      <g className={cn(MOVE, "origin-center motion-safe:group-hover/doodle:scale-x-[0.6]")}>
-        <ellipse cx={84} cy={78} rx={13} ry={2.6} fill="rgb(0 0 0 / 0.5)" />
+      <rect x={70} y={112} width={180} height={30} rx={15} fill="#2e2e2e" />
+      <text x={85} y={130} fontSize={9} fill="rgb(255 255 255 / 0.75)" style={TYPE}>
+        Bring the title in
+      </text>
+      <g className="[transform-box:fill-box] origin-center motion-safe:group-hover/doodle:animate-[studio-press_0.4s_ease-out_both]">
+        <circle cx={235} cy={127} r={10} fill={INK} />
+        <path d="M235 131.5 V123 M231.2 126.6 L235 122.8 L238.8 126.6" stroke="#141414" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
       </g>
-      <g className={cn(MOVE, "motion-safe:group-hover/doodle:-translate-y-[12px]")}>
-        <circle cx={84} cy={54} r={15} fill="rgb(255 255 255 / 0.88)" />
-        <circle cx={79} cy={52} r={1.7} fill="#2b2b2b" />
-        <circle cx={89} cy={52} r={1.7} fill="#2b2b2b" />
-        <path d="M81.4 56.5 q2.6 2.6 5.2 0" stroke="#2b2b2b" strokeWidth={1.5} />
-      </g>
-    </Doodle>
+    </svg>
   );
 }
 

@@ -377,13 +377,13 @@ export function Dashboard({
           {/* The two ways to start. */}
           <section aria-label="Start a film" className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
             <StartCard
-              doodle={<VideoDoodle className="h-[66%] w-auto" />}
+              doodle={<VideoDoodle className="absolute inset-0 h-full w-full" />}
               title="Edit a video"
               note="Cut your footage, photos and music into a film."
               onClick={() => setOverlay("video")}
             />
             <StartCard
-              doodle={<MotionDoodle className="h-[66%] w-auto" />}
+              doodle={<MotionDoodle className="absolute inset-0 h-full w-full" />}
               title="Make motion graphics"
               note="Describe a film in a sentence and Claude makes it."
               onClick={() => setOverlay("motion")}
@@ -665,10 +665,7 @@ function StartCard({ doodle, title, note, onClick }: { doodle: ReactNode; title:
       onClick={onClick}
       className="group/doodle flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color,scale] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
     >
-      <span className="relative flex aspect-video w-full items-center justify-center rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
-        {doodle}
-        <PlusIcon className="absolute top-2.5 right-2.5 size-4 text-white/30 transition-colors group-hover/doodle:text-white/75" aria-hidden="true" />
-      </span>
+      <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">{doodle}</span>
       <span className="flex flex-col gap-0.5 px-1 pb-0.5">
         <span className="text-[12.5px] text-white/90">{title}</span>
         <span className="text-pretty text-[11.5px] text-white/40 leading-snug">{note}</span>
@@ -803,9 +800,10 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
   const sheets = films.length ? films.slice().reverse() : [null];
   return (
     <span aria-hidden="true" className="relative h-full w-full">
-      {/* The back and its tab: the card's own outline. */}
-      <span className="absolute top-0 left-0 h-[16%] w-[40%] rounded-t-[12px] bg-[#232323]" />
-      <span className="absolute inset-x-0 top-[9%] bottom-0 rounded-[14px] rounded-tl-none bg-[#232323]" />
+      {/* The back and its tab, top left: the card's own outline. */}
+      <svg viewBox="0 0 160 90" className="absolute inset-0 h-full w-full">
+        <path d="M0 10 Q0 0 10 0 H50 Q55 0 58 3.5 L61 7 Q62 8 64 8 H150 Q160 8 160 18 V80 Q160 90 150 90 H10 Q0 90 0 80 Z" fill="#232323" />
+      </svg>
       {/* What's inside: the newest films, or one blank sheet. */}
       {sheets.map((f, i) => {
         const at = SHEETS[SHEETS.length - sheets.length + i];
@@ -813,9 +811,9 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
           <span
             key={f?.id ?? "blank"}
             className={cn(
-              "absolute top-[16%] left-[10%] flex h-[56%] w-[80%] items-center justify-center overflow-hidden rounded-[8px] bg-[#333] shadow-[0_2px_10px_rgba(0,0,0,0.4)] transition-transform",
+              "absolute top-[17%] left-[9%] flex h-[54%] w-[82%] items-center justify-center overflow-hidden rounded-[8px] bg-[#333] shadow-[0_2px_10px_rgba(0,0,0,0.4)] transition-transform",
               EASE,
-              open ? "-translate-y-[22%]" : "group-hover/card:-translate-y-[12%]",
+              open ? "-translate-y-[20%]" : "group-hover/card:-translate-y-[10%]",
             )}
             style={{ rotate: `${at.rotate * (open ? 1.5 : 1)}deg`, translate: `${at.x * (open ? 1.5 : 1)}% 0` }}
           >
@@ -831,20 +829,28 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
           </span>
         );
       })}
-      {/* The front pocket, which tips open. */}
-      <span
+      {/* The front pocket: low on the left, stepping up to the right, the
+          other way round from the tab. It tips open. */}
+      <svg
+        viewBox="0 0 160 90"
         className={cn(
-          "absolute inset-x-0 bottom-0 flex h-[62%] origin-bottom items-center justify-center rounded-[14px] bg-[#2e2e2e] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_-6px_18px_rgba(0,0,0,0.3)] transition-transform [transform:perspective(700px)_rotateX(0deg)]",
+          "absolute inset-0 h-full w-full origin-bottom overflow-visible drop-shadow-[0_-4px_10px_rgba(0,0,0,0.3)] transition-transform [transform:perspective(700px)_rotateX(0deg)]",
           EASE,
           open ? "[transform:perspective(700px)_rotateX(-22deg)_scaleX(0.95)]" : "group-hover/card:[transform:perspective(700px)_rotateX(-10deg)_scaleX(0.97)]",
         )}
       >
-        <svg viewBox="0 0 28 14" className="h-[16%] text-white/60">
-          <circle cx={7} cy={4} r={2} fill="currentColor" />
-          <circle cx={21} cy={4} r={2} fill="currentColor" />
-          <path d={open ? "M10.5 8.5 q3.5 5 7 0 Z" : "M11 9 q3 3 6 0"} stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
-        </svg>
-      </span>
+        <path
+          d="M0 46 Q0 37 9 37 H54 Q59 37 62 33.5 L64.5 30.5 Q67.5 27 72 27 H151 Q160 27 160 36 V80 Q160 90 150 90 H10 Q0 90 0 80 Z"
+          fill="#2f2f2f"
+          stroke="rgb(255 255 255 / 0.07)"
+          strokeWidth={0.6}
+        />
+        <g className="text-white/60">
+          <circle cx={74} cy={58} r={1.6} fill="currentColor" />
+          <circle cx={86} cy={58} r={1.6} fill="currentColor" />
+          <path d={open ? "M76.6 62 q3.4 4.6 6.8 0 Z" : "M77 62.4 q3 2.8 6 0"} stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
+        </g>
+      </svg>
     </span>
   );
 }
