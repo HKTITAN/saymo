@@ -42,4 +42,19 @@ const TAGS: Record<string, string> = {
   section: "This section",
 };
 
-export const chipLabel = (pick: Picked | null, t: number) => (pick ? `${pickName(pick)} · ${seconds(t)}` : `At ${seconds(t)}`);
+// A part of a video film's edit (a clip or a graphic, picked by the studio
+// from the timeline): its name is already readable, and times read like the
+// timeline's, "Clip 2 · 0:12.40".
+const fromEdit = (pick: Picked) => pick.tag === "clip" || pick.tag === "graphic";
+
+const clockTime = (t: number) => {
+  const m = Math.floor(t / 60);
+  return `${m}:${(t - m * 60).toFixed(2).padStart(5, "0")}`;
+};
+
+export const chipLabel = (pick: Picked | null, t: number) =>
+  pick
+    ? fromEdit(pick)
+      ? `${(pick.text ?? "This part").split(" (")[0]} · ${clockTime(t)}`
+      : `${pickName(pick)} · ${seconds(t)}`
+    : `At ${seconds(t)}`;

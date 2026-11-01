@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import type { Engine, Picked, StageInbound, StageOutbound } from "@/lib/studio/contract";
+import type { StageEditMessage } from "@/lib/studio/edit";
 import { stageUrl } from "./api";
 
 // The stage: the film's own page in an iframe, at the film's pixel size,
@@ -16,7 +17,7 @@ export type Fit = { x: number; y: number; scale: number; width: number; height: 
 export type Bridge = {
   attach: (frame: HTMLIFrameElement | null) => void;
   detach: (frame: HTMLIFrameElement | null) => void;
-  post: (message: StageInbound) => void;
+  post: (message: StageInbound | StageEditMessage) => void;
 };
 
 export function createBridge(): Bridge {
@@ -70,10 +71,12 @@ export function Stage({
   bridge,
   version,
   pointing,
+  ownPick = false,
   onMessage,
 }: {
   id: string;
   engine: Engine;
+  ownPick?: boolean; // the studio works out what was clicked
   width: number;
   height: number;
   fit: Fit;
@@ -109,9 +112,10 @@ export function Stage({
     bridge.post({ type: "studio:point", on: pointing });
   }, [bridge, pointing]);
 
-  // A rust film can't tell what's under the pointer, so the studio takes the
-  // click itself and passes on only where it was.
-  const overlay = pointing && engine === "rust";
+  // A rust film can't tell what's under the pointer, and a video film's parts
+  // are known from its edit, so for those the studio takes the click itself
+  // and passes on only where it was.
+  const overlay = pointing && (engine === "rust" || ownPick);
 
   return (
     <div
