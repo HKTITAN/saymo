@@ -34,7 +34,8 @@ import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/pro
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { paramValues, prepareHtml } from "../../src/lib/studio/inject.ts";
+import { fontFaces, kitForFilm, tokensForRender } from "../../src/lib/studio/brand-tokens.ts";
+import { brandScript, paramValues, prepareHtml } from "../../src/lib/studio/inject.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // One Rust build folder for every film: the engine's dependencies (about
@@ -355,10 +356,15 @@ async function renderFilm(id) {
   });
   await mkdir(out, { recursive: true });
   const params = paramValues(film);
+  // The film's brand kit: its fonts and logos copied in beside the film,
+  // its tokens handed over as each engine expects (brand.ts).
+  const kit = await kitForFilm(ROOT, film.brand);
+  const brand = kit ? await tokensForRender(ROOT, kit, film.engine === "react" ? path.join(src, "public") : src) : null;
   if (film.engine === "html") {
     const index = path.join(src, "index.html");
-    await writeFile(index, prepareHtml(await readFile(index, "utf8"), film, params));
+    await writeFile(index, prepareHtml(await readFile(index, "utf8"), film, params, brand ? brandScript(brand, fontFaces(brand)) : ""));
   }
+  if (brand && film.engine === "rust") await writeFile(path.join(src, "brand.json"), `${JSON.stringify(brand, null, 2)}\n`);
 
   const job = {
     dir: src,
@@ -366,7 +372,8 @@ async function renderFilm(id) {
     height: film.height,
     fps: film.fps,
     duration: film.duration,
-    params,
+    // A React film reads its brand from its props (studio-kit's useBrand()).
+    params: film.engine === "react" && brand ? { ...params, brand } : params,
     scale: draft ? 1 : 2,
   };
   let server = null;
@@ -382,7 +389,7 @@ async function renderFilm(id) {
       const file = m.kind === "image" ? m.proxy : m.original;
       media[mid] = { src: `${server.url}/${mid}/${encodeURIComponent(file)}`, kind: m.kind, width: m.width, height: m.height, name: m.name };
     }
-    job.params = { ...params, edit, media };
+    job.params = { ...job.params, edit, media };
     job.duration = Math.max(1 / film.fps, editEnd(edit));
     job.footage = true;
     if (!draft && !hasDetailFor2x(edit, media, film)) job.scale = 1;

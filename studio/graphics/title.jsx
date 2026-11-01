@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont } from "studio-kit";
+import { clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
 // TITLE CARD: a full-frame card that opens a film or a chapter.
 //   0.00  the ground (black or stone lines) sweeps in from the right,
@@ -8,7 +8,9 @@ import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont } from 
 //   0.60  a short orange staircase climbs in at the bottom right (orange once)
 //   end-0.6  the words fade and the lines leave the way they came
 export default function Title({ values, duration }) {
-  useBrandFont();
+  const FONT = useBrandFont();
+  const PALETTE = usePalette();
+  const { pitch: PITCH } = useTexture();
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;

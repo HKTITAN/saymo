@@ -1,18 +1,27 @@
-// The studio's kit for React films: the Aerchain look in pieces, shared by
+// The studio's kit for React films: the film's brand in pieces, shared by
 // the graphics library (studio/graphics/), captions and video films.
 // Import it as "studio-kit"; the studio's bundlers point that name here.
 //
-//   PALETTE, PITCH, STROKE   the post's colours and line texture
+//   useBrand()               the film's brand kit tokens (brand.ts BrandTokens)
+//   usePalette()             its colours in the shape graphics draw with
+//   useTexture()             its line texture: { pitch, stroke }
+//   useBrandFont()           loads its fonts; returns the display family
+//   BrandLogo                its logo for a light or dark ground
 //   useUnit()                1 at 1080 on the short side; scale sizes by it
-//   landing(p)               the post's ease: sets off, then settles
+//   landing(p)               the house ease: sets off, then settles
 //   LineBlock                a block of the line texture that arrives from
 //                            the right, line by line, and leaves the way it came
 //   Wordmark                 the Aerchain wordmark (letters + orange "ai")
 //   Captions                 captions in three styles (edit.ts CaptionStyle)
-//   useBrandFont()           loads Bricolage Grotesque from the film's public/fonts
+//
+// The brand comes from the page (window.__brand on the stage) or the
+// render's input props (`brand`); without either it is Aerchain's.
+// PALETTE, PITCH, STROKE and FONT are Aerchain's fixed values, kept for
+// films written before brand kits.
 
 import { loadFont } from "@remotion/fonts";
-import { staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { getInputProps, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import AERCHAIN_KIT from "../brands/aerchain/brand.json";
 import { WORDMARK } from "../../src/components/post/wordmark-paths.ts";
 import { captionLines } from "../../src/lib/studio/captions.ts";
 
@@ -34,8 +43,104 @@ export const darker = (hex, k = 0.895) => {
   const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v * k));
   return `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
 };
-export const field = (hex) =>
-  hex === PALETTE.orange.lit ? PALETTE.orange : hex === PALETTE.stone ? PALETTE.stoneField : { lit: hex, gap: darker(hex) };
+
+// ─── The brand ──────────────────────────────────────────────────────────────
+
+// Aerchain's kit, its files found in the film's own public/ folder.
+const AERCHAIN = {
+  id: AERCHAIN_KIT.id,
+  name: AERCHAIN_KIT.name,
+  colors: AERCHAIN_KIT.colors,
+  texture: AERCHAIN_KIT.texture,
+  fonts: AERCHAIN_KIT.fonts.map((f) => ({ ...f, url: f.file })),
+  logos: AERCHAIN_KIT.logos.map((l) => ({ ...l, url: l.file })),
+};
+
+export function currentBrand() {
+  if (typeof window !== "undefined" && window.__brand) return window.__brand;
+  try {
+    const props = getInputProps();
+    if (props && props.brand) return props.brand;
+  } catch {}
+  return AERCHAIN;
+}
+// The brand never changes while a film plays, so this needs no state.
+export const useBrand = currentBrand;
+
+// A file of the brand: absolute URLs as they are, others from the film's
+// public/ folder (where a render puts the kit's files).
+export const brandUrl = (url) => (/^(https?:|data:|\/)/.test(url) ? url : staticFile(url));
+
+// A colour as a line field: the exact pair the brand gives, else the colour
+// with a step darker gap.
+export const fieldOf = (brand, hex) => {
+  const exact = brand.texture?.fields?.[String(hex).toUpperCase()];
+  return exact ?? { lit: hex, gap: darker(hex) };
+};
+export const field = (hex) => fieldOf(currentBrand(), hex);
+
+export function paletteOf(brand) {
+  const r = brand.colors.roles;
+  const accent = fieldOf(brand, r.accent);
+  return {
+    stone: r.surface,
+    ink: r.ink,
+    muted: r.muted,
+    black: { lit: r.line, gap: r.background },
+    orange: accent,
+    accent,
+    stoneField: fieldOf(brand, r.surface),
+    background: r.background,
+    onAccent: r.onAccent,
+  };
+}
+export const usePalette = () => paletteOf(currentBrand());
+
+export function useTexture() {
+  const t = currentBrand().texture;
+  const stroke = t?.stroke ?? STROKE;
+  return { pitch: stroke + (t?.gap ?? stroke / 2), stroke };
+}
+
+const loaded = new Set();
+// Loads the brand's fonts (once each) and returns the display family.
+export function useBrandFont() {
+  const brand = currentBrand();
+  for (const f of brand.fonts) {
+    const key = `${f.family}|${f.url}`;
+    if (loaded.has(key)) continue;
+    loaded.add(key);
+    loadFont({ family: f.family, url: brandUrl(f.url), weight: f.weights }).catch(() => {});
+  }
+  return (brand.fonts.find((f) => f.role === "display") ?? brand.fonts[0])?.family ?? FONT;
+}
+export function useTextFont() {
+  useBrandFont();
+  const brand = currentBrand();
+  return (brand.fonts.find((f) => f.role === "text") ?? brand.fonts.find((f) => f.role === "display") ?? brand.fonts[0])?.family ?? FONT;
+}
+
+// The brand's logo, `height` pixels tall, for a light or dark ground.
+// Aerchain's is drawn from its paths, so its letters can take any colour
+// (`letters`) while the "ai" stays orange.
+export function BrandLogo({ height = 40, ground = "light", letters, style }) {
+  const brand = currentBrand();
+  if (brand.id === "aerchain") {
+    const P = paletteOf(brand);
+    return <Wordmark height={height} letters={letters ?? (ground === "dark" ? P.stone : P.ink)} style={style} />;
+  }
+  const fits = (l) => l.on === ground || l.on === "any";
+  const logo = brand.logos.find((l) => fits(l) && l.kind !== "mark") ?? brand.logos.find(fits);
+  if (logo) return <Img src={brandUrl(logo.url)} style={{ height, width: "auto", display: "block", ...style }} />;
+  // No logo drawn for this ground: the brand's name, set in its own type.
+  const P = paletteOf(brand);
+  const family = (brand.fonts.find((f) => f.role === "display") ?? brand.fonts[0])?.family ?? FONT;
+  return (
+    <span style={{ display: "block", fontFamily: family, fontWeight: 600, fontSize: height * 0.9, lineHeight: 1, color: letters ?? (ground === "dark" ? P.stone : P.ink), ...style }}>
+      {brand.name}
+    </span>
+  );
+}
 
 // Sets off at half speed and eases into place, like the post's bands.
 export const landing = (p) => {
@@ -50,23 +155,19 @@ export function useUnit() {
   return Math.min(width, height) / 1080;
 }
 
-let fontLoaded = false;
-export function useBrandFont() {
-  if (fontLoaded) return;
-  fontLoaded = true;
-  loadFont({ family: FONT, url: staticFile("fonts/BricolageGrotesque-Variable.ttf"), weight: "200 800" }).catch(() => {});
-}
 
 // A block of lines in one colour, x/y/width/height in pixels. Each line
 // arrives from the right edge of the block, the bottom line first (a
 // staircase), over `travel` seconds from `enter`; from `leave` they go back
 // out to the right, top line first. Times are seconds on the caller's own
 // clock (a graphic's Sequence starts at 0).
-export function LineBlock({ x, y, width, height, color = PALETTE.orange.lit, enter = 0, leave = Infinity, travel = 0.6, lag = 0.012, pitch = PITCH, stroke = STROKE, solid = false }) {
+export function LineBlock({ x, y, width, height, color, enter = 0, leave = Infinity, travel = 0.6, lag = 0.012, pitch = PITCH, stroke = STROKE, solid = false }) {
   const frame = useCurrentFrame();
+  const brand = currentBrand();
+  const fill = color ?? brand.colors.roles.accent;
   const { fps } = useVideoConfig();
   const t = frame / fps;
-  const f = field(color);
+  const f = fieldOf(brand, fill);
   const rows = Math.max(1, Math.round(height / pitch));
   const runs = [];
   for (let r = 0; r < rows; r++) {
@@ -108,7 +209,8 @@ export const WORDMARK_RATIO = WORDMARK.width / WORDMARK.height;
 //   words    one word at a time, big
 //   karaoke  a line at a time, the word being said in orange
 export function Captions({ words = [], style = "lines", position = "bottom" }) {
-  useBrandFont();
+  const family = useBrandFont();
+  const P = usePalette();
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;
@@ -132,11 +234,11 @@ export function Captions({ words = [], style = "lines", position = "bottom" }) {
     >
       <div
         style={{
-          fontFamily: FONT,
+          fontFamily: family,
           fontVariationSettings: '"opsz" 48',
           fontWeight: 600,
-          color: PALETTE.stone,
-          background: "rgba(20,20,20,0.88)",
+          color: P.stone,
+          background: withAlpha(P.background, 0.88),
           borderRadius: Math.round(10 * u),
           padding: `${Math.round(10 * u)}px ${Math.round(22 * u)}px ${Math.round(14 * u)}px`,
           lineHeight: 1.15,
@@ -162,7 +264,7 @@ export function Captions({ words = [], style = "lines", position = "bottom" }) {
   return box(
     <span style={{ fontSize: size }}>
       {line.words.map((w, i) => (
-        <span key={i} style={{ color: style === "karaoke" && t >= w.start && t < w.end + 0.05 ? PALETTE.orange.lit : undefined }}>
+        <span key={i} style={{ color: style === "karaoke" && t >= w.start && t < w.end + 0.05 ? P.orange.lit : undefined }}>
           {i ? " " : ""}
           {w.text}
         </span>
@@ -170,4 +272,10 @@ export function Captions({ words = [], style = "lines", position = "bottom" }) {
     </span>,
     "l",
   );
+}
+
+// "#141414", 0.88 → "rgba(20,20,20,0.88)"
+function withAlpha(hex, a) {
+  const n = parseInt(String(hex).slice(1), 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
 }

@@ -6,6 +6,7 @@ import path from "node:path";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./contract";
 import { atPlayhead } from "./captions";
 import type { Clip, Edit, Graphic } from "./edit";
+import { brandDir, DEFAULT_BRAND, isBrandId } from "./brand-tokens";
 import { filmDir, readFilm, ROOT, snapshotFilm, withFilm, writeFilm } from "./films";
 
 // The studio's chat: each prompt is one Claude Code turn, run headless on
@@ -33,9 +34,9 @@ const ENGINE_WORDS: Record<Film["engine"], string> = {
 };
 
 const TURN_LIMIT_MS = 15 * 60 * 1000;
-const MODEL = process.env.STUDIO_MODEL ?? "opus";
+export const MODEL = process.env.STUDIO_MODEL ?? "opus";
 
-const CLAUDE_BIN = (() => {
+export const CLAUDE_BIN = (() => {
   const own = path.join(homedir(), ".local/bin/claude");
   return process.env.STUDIO_CLAUDE_BIN ?? (existsSync(own) ? own : "claude");
 })();
@@ -93,7 +94,7 @@ export function stopTurn(id: string) {
   return true;
 }
 
-function killGroup(pid: number) {
+export function killGroup(pid: number) {
   try {
     process.kill(-pid, "SIGTERM");
   } catch {}
@@ -144,7 +145,7 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
 
   const dir = filmDir(id);
   await rm(logFile(id), { force: true });
-  const args = claudeArgs(id, film.session, film.kind);
+  const args = claudeArgs(id, film.session, film.kind, film.brand);
   const proc = spawn(CLAUDE_BIN, args, {
     cwd: dir,
     env: childEnv(),
@@ -225,7 +226,7 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
 
 // ─── The command ─────────────────────────────────────────────────────────────
 
-function claudeArgs(id: string, session: string | undefined, kind: Film["kind"]) {
+function claudeArgs(id: string, session: string | undefined, kind: Film["kind"], brand?: string) {
   const dir = filmDir(id);
   const root = `/${ROOT}`; // permission rules: "//" starts an absolute path
   const check = `node ${path.join(ROOT, "scripts/studio/check-film.mjs")}`;
@@ -247,6 +248,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
     `Read(${root}/CLAUDE.md)`,
     `Read(${root}/AGENTS.md)`,
     `Read(/${frames}/**)`, // stills the media tool makes, so Claude can see the footage
+    `Read(/${brandDir(ROOT, brand && isBrandId(brand) ? brand : DEFAULT_BRAND)}/**)`, // the film's brand kit
     `Bash(${check})`,
     `Bash(${draft})`,
     `Bash(${media} *)`,
@@ -287,7 +289,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
 
 // A clean environment: the dev server's own variables (keys in .env.local,
 // the owner's Claude Code session settings) don't pass to the turn.
-function childEnv(): NodeJS.ProcessEnv {
+export function childEnv(): NodeJS.ProcessEnv {
   const keep = ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "TERM", "CARGO_HOME", "RUSTUP_HOME"];
   const env = {} as NodeJS.ProcessEnv;
   for (const key of keep) if (process.env[key]) env[key] = process.env[key] as string;
@@ -393,6 +395,10 @@ function userMessage(film: Film, prompt: string, context: ChatContext, undone: b
       `<pointed>They pointed at film pixel (${Math.round(pick.x)}, ${Math.round(pick.y)}) at ${context.t.toFixed(2)} s${what.length ? `: ${what.join(", ")}` : ""}. "This" or "here" means that.</pointed>`,
     );
   }
+  const kit = film.brand && isBrandId(film.brand) ? film.brand : DEFAULT_BRAND;
+  lines.push(
+    `<brand>The film's brand kit is "${kit}": ${path.join(brandDir(ROOT, kit), "brand.json")} (colours, fonts, logos, rules and notes, with its files beside it). Follow its rules, and draw with its tokens (see the aerchain-film skill) rather than fixed colours or fonts.</brand>`,
+  );
   if (edit) lines.push(`<edit>\n${edit}\n</edit>`);
   if (context.selection?.length) {
     lines.push(`<selected>On the timeline they have selected ${context.selection.join(", ")}. "This", "these" or "the selected" means them.</selected>`);
@@ -406,7 +412,7 @@ function userMessage(film: Film, prompt: string, context: ChatContext, undone: b
 
 type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-class StreamReader {
+export class StreamReader {
   session: string | undefined;
   reply = "";
   steps: string[] = [];
@@ -527,7 +533,7 @@ function stepFor(name: string, input: Json, dir: string): string | null {
 }
 
 // Plain-English versions of the ways a turn can fail.
-function explain(raw: string) {
+export function explain(raw: string) {
   const text = raw.toLowerCase();
   if (/not logged in|please run \/login|invalid api key|authentication|oauth/.test(text)) {
     return "Claude isn't signed in on this Mac. Open Terminal, run `claude`, then type /login.";

@@ -7,6 +7,7 @@ import {
   CopyIcon,
   DeleteDustbin01Icon,
   GridDashboard02Icon,
+  HomeIcon,
   PlusIcon,
 } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
@@ -29,6 +30,7 @@ export function FilmsMenu({
   films,
   hidden,
   onOpen,
+  onHome,
   onCreate,
   onDuplicate,
   onDelete,
@@ -39,6 +41,7 @@ export function FilmsMenu({
   films: FilmSummary[];
   hidden: boolean;
   onOpen: (id: string) => void;
+  onHome: () => void; // the dashboard: every film and brand kit
   onCreate: (width: number, height: number, kind: "motion" | "video") => Promise<void>;
   onDuplicate: () => Promise<void>;
   onDelete: () => Promise<void>;
@@ -90,6 +93,18 @@ export function FilmsMenu({
             <Popover.Popup className={cn(SURFACE, POPUP, "flex w-[300px] flex-col gap-0.5 p-1.5")}>
               {view === "list" ? (
                 <>
+                  <button
+                    type="button"
+                    className={ITEM}
+                    onClick={() => {
+                      onHome();
+                      setOpen(false);
+                    }}
+                  >
+                    <HomeIcon aria-hidden="true" />
+                    All films and brand kits
+                  </button>
+                  <div className="my-1 h-px bg-white/[0.07]" />
                   <p className="px-2 pt-1.5 pb-1 font-medium text-[11.5px] text-white/40">Films</p>
                   <div className="flex max-h-[min(360px,50dvh)] flex-col gap-0.5 overflow-y-auto">
                     {films.map((f) => (

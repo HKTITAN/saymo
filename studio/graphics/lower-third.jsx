@@ -1,5 +1,5 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
-import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont } from "studio-kit";
+import { clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
 // LOWER THIRD: a speaker's name and role over a stone panel.
 //   0.00  the stone panel arrives from the right, line by line, bottom first
@@ -8,7 +8,9 @@ import { clamp01, FONT, LineBlock, landing, PALETTE, PITCH, useBrandFont } from 
 //   end-0.6  the words fade, the lines leave the way they came
 // Props: values (name, role, side), duration (seconds on the film).
 export default function LowerThird({ values, duration }) {
-  useBrandFont();
+  const FONT = useBrandFont();
+  const PALETTE = usePalette();
+  const { pitch: PITCH } = useTexture();
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;

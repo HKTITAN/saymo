@@ -151,6 +151,31 @@ The tool does all of this without the command line. By hand:
 - `assets/places/`: the landmark image
 - `assets/reference/`: the line texture, the layout reference and the reference video
 
+## Brand kits (in the studio)
+
+`/studio` opens on a dashboard of every film and every brand kit. A kit is
+what makes a film look, move and sound like its brand: colour roles and
+ramps, fonts, logos for light and dark grounds, a line texture, rules
+(look, motion, sound, words) and a longer guideline for Claude
+(`src/lib/studio/brand.ts`).
+
+- Aerchain's full kit ships in `studio/brands/aerchain/` (from the Framer
+  guideline /home-ets, the wordmark and the post's tuned film colours) and
+  is copied into `brands/aerchain/` the first time the studio needs it.
+  Kits made in the studio live in `brands/<id>/`, which git ignores, as
+  they may belong to clients.
+- A kit's page (`/studio?brand=<id>`) shows it as a specimen board, with
+  the settings on the right and Claude on the left. Drop fonts, logos or a
+  guideline PDF anywhere on it. "Make a kit from files" on the dashboard
+  has Claude read a guideline (and optionally one website) and fill the
+  kit in. Kits export and import as `.zip` files.
+- Each film picks its kit (the Brand row in the film panel). The stage and
+  every render hand the kit to the film: `window.__brand` for HTML films,
+  `useBrand()`, `usePalette()`, `useTexture()`, `useBrandFont()` and
+  `<BrandLogo>` from `studio-kit` for React films, `brand.json` for Rust
+  films. The graphics library draws with them, so a lower third or end
+  card takes the film's brand. Aerchain films draw exactly as before.
+
 ## Motion engines (under the studio)
 
 The studio at `/studio` is our own motion tool: you see films, a stage and

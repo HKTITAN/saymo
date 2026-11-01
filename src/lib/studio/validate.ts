@@ -74,6 +74,11 @@ export function filmEdit(film: Film, body: unknown): FilmEdit | string {
     if (!Number.isFinite(d) || d < 0.5 || d > 120) return "A film runs from half a second to two minutes.";
     out.duration = Math.round(d * 1000) / 1000;
   }
+  // The brand kit the film follows (brand.ts); the route checks it exists.
+  if (body.brand !== undefined) {
+    if (typeof body.brand !== "string" || !/^[a-z0-9][a-z0-9-]{2,31}$/.test(body.brand)) return "That isn't a brand kit.";
+    out.brand = body.brand;
+  }
   if (body.params !== undefined) {
     if (!isObject(body.params)) return "Send the values as an object, by name.";
     const params: Record<string, Param["value"]> = {};

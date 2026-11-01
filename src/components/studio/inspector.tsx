@@ -3,6 +3,7 @@
 import { DialGroup, DialNote, DialSlider, DialText, DialToggle, LABEL, ROW } from "@/components/tool/dial";
 import { type Film, type Param, SIZES } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
+import { BrandRow } from "./brand-row";
 import { ColorRow } from "./color-row";
 import { Panel } from "./panel";
 
@@ -30,7 +31,9 @@ export function Inspector({
   hidden,
   style,
   editLength,
+  onBrand,
 }: {
+  onBrand?: (id: string) => void; // the film's brand kit
   film: Film;
   values: Values;
   onParam: (key: string, value: Param["value"]) => void;
@@ -70,6 +73,7 @@ export function Inspector({
             {film.width} × {film.height} pixels
           </DialNote>
         ) : null}
+        {onBrand ? <BrandRow value={film.brand ?? "aerchain"} onChange={onBrand} /> : null}
         {editLength !== undefined ? (
           <DialNote>
             The film runs as long as its timeline,{" "}

@@ -59,6 +59,16 @@ For heavy generative scenes (thousands of moving shapes) where a browser would b
 
 Only if asked, or if the film truly can't be done in its engine. Copy the right starter from `studio/starters/<engine>/` into the film folder, rebuild the film there, remove the old engine's files, and set `"engine"` in film.json. Say in your reply that you rebuilt it.
 
+## The film's brand kit
+
+Every film follows a brand kit (film.json `brand`; none means `aerchain`). Your message names it and its path: `brands/<id>/brand.json`, with its fonts and logos beside it. Read it before designing: its `rules` (look, motion, sound, words) and `notes` are the brief, and its tokens are what you draw with. Don't hard-code colours, fonts or logos; take them from the kit, so the film changes with it:
+
+- html: `window.__brand` (`colors.roles`, `colors.ramps`, `fonts` with `url`, `logos` with `url`, `texture`). The kit's fonts are already loaded as @font-face under their own family names.
+- react: `useBrand()`, `usePalette()` (`stone`, `ink`, `muted`, `black`, `accent` with `{ lit, gap }`), `useTexture()` (`{ pitch, stroke }`), `useBrandFont()` (loads the fonts, returns the display family) and `<BrandLogo height ground="light|dark" />`, all from `"studio-kit"`.
+- rust: `brand.json` beside Cargo.toml when the film is rendered.
+
+The Aerchain kit's values are the ones below. For another brand, its kit wins over this section wherever they differ.
+
 ## The Aerchain look
 
 Unless asked otherwise, films look like Aerchain:

@@ -5,7 +5,8 @@ import path from "node:path";
 import { bridgeScript, STAGE_STYLE } from "./bridge";
 import type { Film } from "./contract";
 import { FILMS_DIR, filmDir, outDir, ROOT } from "./films";
-import { globalsScript, paramValues, prepareHtml, scriptJson } from "./inject";
+import { fontFaces, kitForFilm, stageFileUrl, tokensOf } from "./brand-tokens";
+import { brandScript, globalsScript, paramValues, prepareHtml, scriptJson } from "./inject";
 import { listMedia } from "./media";
 
 // The stage: one page per film that plays it at its own pixel size, for the
@@ -21,19 +22,29 @@ const head = (film: Film, extra = "") =>
   bridgeScript({ id: film.id, engine: film.engine }) +
   extra;
 
+// The film's brand kit, as tokens on window.__brand with its fonts.
+async function brandHead(film: Film) {
+  const kit = await kitForFilm(ROOT, film.brand);
+  if (!kit) return "";
+  const tokens = tokensOf(kit, stageFileUrl(kit.id));
+  return brandScript(tokens, fontFaces(tokens));
+}
+
 export async function stagePage(film: Film): Promise<string> {
+  const brand = await brandHead(film);
   if (film.engine === "html") {
     const html = await readFile(path.join(filmDir(film.id), "index.html"), "utf8").catch(() => null);
     if (html === null) return errorPage(film, "This film has no index.html.");
-    // The globals go first, then the bridge, then the film's own head.
-    return prepareHtml(html, film, paramValues(film), `<base href="${stageBase(film.id)}">${STAGE_STYLE}${bridgeScript({ id: film.id, engine: "html" })}`);
+    // The globals go first, then the brand and the bridge, then the film's own head.
+    return prepareHtml(html, film, paramValues(film), `<base href="${stageBase(film.id)}">${STAGE_STYLE}${brand}${bridgeScript({ id: film.id, engine: "html" })}`);
   }
   if (film.engine === "react") {
     const key = await sourceKey(film.id);
     // Files under public/ are the film's staticFile()s.
     const statics =
       `<script>window.remotion_staticBase=${JSON.stringify(`${stageBase(film.id)}public`.replace(/\/$/, ""))};</script>` +
-      (film.kind === "video" ? await videoGlobals(film) : "");
+      (film.kind === "video" ? await videoGlobals(film) : "") +
+      brand;
     return `<!doctype html><html><head>${head(film, statics)}</head><body><div id="root"></div><script src="${stageBase(film.id)}__stage.js?v=${key}"></script></body></html>`;
   }
   return rustPage(film);

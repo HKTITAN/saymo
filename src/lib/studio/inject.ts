@@ -54,6 +54,13 @@ export function syncRoot(html: string, film: FilmGlobals) {
   return html.slice(0, tag.index) + open + html.slice(tag.index + tag[0].length);
 }
 
+// The film's brand kit (brand.ts BrandTokens) as window.__brand, with
+// @font-face rules for its fonts, so the film draws with the brand's
+// colours, type and logos. Its font and logo URLs are already resolved.
+export function brandScript(tokens: unknown, faces: string) {
+  return `<script>window.__brand=${scriptJson(tokens)};</script>${faces ? `<style>${faces.replace(/<\//g, "<\\/")}</style>` : ""}`;
+}
+
 // The film's index.html as the renderer (or the stage, with its bridge
 // added) should load it.
 export function prepareHtml(html: string, film: FilmGlobals, params: Record<string, Param["value"]>, extra = "") {
