@@ -35,6 +35,9 @@ export type SoundScore = {
   // Video films: how loud the music stays while someone speaks, 0..1
   // (default 0.3; 1 = no ducking). Effects are never ducked.
   duck?: number;
+  // How loud the rendered sound is, in LUFS (-20 to -12). Default -16,
+  // right for most social films; a launch film may ask for -14.
+  loudness?: number;
 };
 
 // What effects() gets. `Tone` is the Tone.js module bound to the offline

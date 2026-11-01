@@ -37,6 +37,13 @@ const CACHE = path.join(ROOT, "node_modules/.cache/studio-sound");
 const RATE = 48000;
 const TARGET_LUFS = -16;
 const TARGET_TP = -1.5;
+// A score may ask for its own loudness (`loudness: -14` at the top level of
+// its export), from -20 to -12 LUFS; launch films want a little more than
+// the studio's default.
+const loudnessOf = (source) => {
+  const asked = Number(/\bloudness\s*:\s*(-?\d+(?:\.\d+)?)/.exec(source)?.[1]);
+  return Number.isFinite(asked) ? Math.min(-12, Math.max(-20, asked)) : TARGET_LUFS;
+};
 
 const args = process.argv.slice(2);
 const id = args.find((a) => !a.startsWith("--"));
@@ -339,6 +346,7 @@ async function main() {
     return;
   }
   const source = await readFile(scoreFile, "utf8");
+  const targetLufs = loudnessOf(source);
   await mkdir(soundDir, { recursive: true });
   const started = Date.now();
   await status({ state: "rendering", step: "Playing the score" });
@@ -381,16 +389,33 @@ async function main() {
   if (!silent) {
     const { stderr } = await run("ffmpeg", [
       "-hide_banner", "-nostats", "-f", "f32le", "-ar", String(RATE), "-ac", "2", "-i", raw,
-      "-af", `loudnorm=I=${TARGET_LUFS}:TP=${TARGET_TP}:LRA=11:print_format=json`, "-f", "null", "-",
+      "-af", `loudnorm=I=${targetLufs}:TP=${TARGET_TP}:LRA=11:print_format=json`, "-f", "null", "-",
     ]);
     m = JSON.parse(stderr.slice(stderr.lastIndexOf("{"), stderr.lastIndexOf("}") + 1));
     // Too quiet to measure (a few clicks in silence) counts as silent.
     if (!Number.isFinite(Number(m.input_i)) || !Number.isFinite(Number(m.input_tp))) silent = true;
   }
   if (!silent) {
-    filters.push(
-      `loudnorm=I=${TARGET_LUFS}:TP=${TARGET_TP}:LRA=11:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`,
-    );
+    if (m.normalization_type === "dynamic") {
+      // A plain gain change would push the peaks past the limit, and
+      // loudnorm's own fallback rides the level up and down (a quiet intro
+      // ends up as loud as the beat). Instead: one steady gain to the target,
+      // then a limiter catching only the peaks, a little under the limit so
+      // the true peak stays below it.
+      const gain = targetLufs - Number(m.input_i);
+      // Limited at four times the sample rate, so peaks between samples
+      // (the true peak) are caught too.
+      const ceiling = 10 ** ((TARGET_TP - 0.5) / 20);
+      filters.push(
+        `volume=${gain.toFixed(2)}dB`,
+        "aresample=192000",
+        `alimiter=limit=${ceiling.toFixed(4)}:attack=2:release=40:level=disabled`,
+      );
+    } else {
+      filters.push(
+        `loudnorm=I=${targetLufs}:TP=${TARGET_TP}:LRA=11:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`,
+      );
+    }
   }
   // Exactly the film's length, at 48 kHz (loudnorm works at 192 kHz inside).
   filters.push(`aresample=${RATE}`, "apad", `atrim=end_sample=${total}`);
