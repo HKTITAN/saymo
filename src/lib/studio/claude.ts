@@ -531,6 +531,7 @@ const MEDIA_STEPS: Record<string, string> = {
 function stepFor(name: string, input: Json, dir: string): string | null {
   const file = typeof input.file_path === "string" ? path.resolve(dir, input.file_path) : null;
   const inFilm = file?.startsWith(`${dir}${path.sep}`) ?? false;
+  if (dir.includes(`${path.sep}brands${path.sep}`)) return kitStepFor(name, file, dir);
   switch (name) {
     case "Read":
       if (inFilm) return "Reading the film";
@@ -556,6 +557,30 @@ function stepFor(name: string, input: Json, dir: string): string | null {
       if (command.includes("media-tool")) return MEDIA_STEPS[command.split(/\s+/)[3] ?? ""] ?? "Looking at the footage";
       return "Running a command";
     }
+    default:
+      return null;
+  }
+}
+
+// A brand kit's turn, in the words of making a kit.
+function kitStepFor(name: string, file: string | null, dir: string): string | null {
+  const inKit = file?.startsWith(`${dir}${path.sep}`) ?? false;
+  switch (name) {
+    case "Read":
+      if (inKit && /[/\\](guide|fonts|logos)[/\\]/.test(file ?? "")) return "Reading what you shared";
+      if (file?.includes(`${path.sep}.claude${path.sep}skills${path.sep}`)) return "Looking up how to do it";
+      return inKit ? "Looking at the kit" : "Looking at a full kit for reference";
+    case "Glob":
+    case "Grep":
+      return "Looking through what you shared";
+    case "WebFetch":
+      return "Looking at the links";
+    case "Edit":
+    case "Write":
+    case "MultiEdit":
+      return "Writing the kit";
+    case "Skill":
+      return "Looking up how to do it";
     default:
       return null;
   }

@@ -40,8 +40,12 @@ export const brandApi = {
   remove: (id: string) => call<void>(kit(id), { method: "DELETE" }),
   duplicate: (id: string) => call<BrandKit>(`${kit(id)}/duplicate`, json("POST")),
   // A font, logo or guideline file; the kit sorts it by kind.
-  upload: (id: string, file: File) =>
-    call<{ file: string }>(`${kit(id)}/files`, { method: "POST", body: file, headers: { "x-file-name": encodeURIComponent(file.name) } }),
+  upload: (id: string, file: File, folder?: KitFolder) =>
+    call<{ file: string }>(`${kit(id)}/files`, {
+      method: "POST",
+      body: file,
+      headers: { "x-file-name": encodeURIComponent(file.name), ...(folder ? { "x-kit-folder": folder } : {}) },
+    }),
   import: (file: File) => call<BrandKit>("/api/studio/brands/import", { method: "POST", body: file }),
   exportUrl: (id: string) => `${kit(id)}/export`,
   history: async (id: string) => {
@@ -49,7 +53,7 @@ export const brandApi = {
     if (!res?.ok) return { messages: [] as ChatMessage[], running: false };
     return { messages: ((await res.json().catch(() => [])) ?? []) as ChatMessage[], running: res.headers.get("x-studio-running") === "1" };
   },
-  chat: (id: string, body: { prompt: string; url?: string }, onEvent: (event: ChatEvent) => void, signal?: AbortSignal) =>
+  chat: (id: string, body: { prompt: string; url?: string; links?: string[] }, onEvent: (event: ChatEvent) => void, signal?: AbortSignal) =>
     streamEvents(`${kit(id)}/chat`, body, onEvent, signal),
   stop: (id: string) => call<void>(`${kit(id)}/chat`, { method: "DELETE" }),
   undo: (id: string) => call<BrandKit>(`${kit(id)}/undo`, json("POST")),
@@ -58,6 +62,13 @@ export const brandApi = {
 // A kit's own file (font, logo) as the browser loads it.
 export const brandFile = (id: string, file: string, version?: string) =>
   `/studio/brand/${id}/${file.split("/").map(encodeURIComponent).join("/")}${version ? `?v=${encodeURIComponent(version)}` : ""}`;
+
+export type KitFolder = "fonts" | "logos" | "guide";
+export const FOLDER_ACCEPTS: Record<KitFolder, string> = {
+  fonts: ".ttf,.otf,.woff,.woff2",
+  logos: ".svg,.png,.webp",
+  guide: ".pdf,.png,.jpg,.jpeg,.webp,.txt,.md",
+};
 
 export const FONT_FILE = /\.(ttf|otf|woff2?)$/i;
 export const LOGO_FILE = /\.(svg|png|webp)$/i;

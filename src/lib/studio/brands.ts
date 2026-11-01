@@ -236,8 +236,12 @@ export const safeName = (name: string) =>
     .slice(0, 100) || "file";
 
 // Saves an uploaded file into the kit, returning its path inside the kit.
-export async function saveBrandFile(id: string, name: string, body: ReadableStream<Uint8Array>): Promise<string> {
-  const folder = folderFor(name);
+// Whether a file of this name can go in the folder the person picked.
+const fits = (folder: string, name: string) =>
+  folder === "fonts" ? FONT_EXT.test(name) : folder === "logos" ? LOGO_EXT.test(name) : folder === "guide" ? GUIDE_EXT.test(name) || LOGO_EXT.test(name) : false;
+
+export async function saveBrandFile(id: string, name: string, body: ReadableStream<Uint8Array>, want?: string | null): Promise<string> {
+  const folder = want && fits(want, name) ? (want as "fonts" | "logos" | "guide") : folderFor(name);
   if (!folder) throw new Error("Fonts (TTF, OTF, WOFF), logos (SVG, PNG) and guidelines (PDF, images) can go in a kit.");
   const file = `${folder}/${safeName(name)}`;
   const target = path.join(kitDir(id), file);
