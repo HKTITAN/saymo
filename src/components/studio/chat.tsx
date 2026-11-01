@@ -1,6 +1,6 @@
 "use client";
 
-import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
+import { type RefObject, useCallback, useEffect, useId, useRef, useState } from "react";
 import { type Clock, formatTime, useClock } from "./clock";
 import { MultipleCrossCancelIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
@@ -299,13 +299,50 @@ function Message({ message, filmId }: { message: ChatMessage; filmId: string }) 
   );
 }
 
+// Aerchain's ai mark while Claude works: the dot hops and a light sweep
+// runs across the swoosh, in time with the shimmering line beside it.
+const SWOOSH =
+  "M172.309 19.9259C172.411 14.5877 170.209 8.11491 164.449 11.7919C163.965 11.9834 163.689 11.9158 163.434 11.5498C162.707 10.2096 162.149 8.83849 161.458 7.43075C156.259 -6.19338 150.322 1.59707 144.051 9.66061C130.046 28.102 136.644 36.2697 158.719 20.0751C159.49 19.5176 161.035 18.352 161.591 18.3041C162.177 18.2084 162.42 18.6927 162.862 19.7063C163.291 20.7452 164.004 22.2177 164.656 23.2678C168.423 30.7148 172.597 28.9889 172.312 19.9568V19.9259H172.309ZM155.709 17.1498C152.931 18.9179 150.295 21.083 147.243 22.3753C145.914 22.9412 143.976 22.3162 143.498 21.221C142.956 19.5232 144.894 17.0203 145.845 15.2578C146.948 13.2504 148.41 11.4653 149.811 9.64653C151.171 7.85307 153.017 5.19244 155.576 6.35523C157.63 7.54337 158.473 10.829 159.648 12.8111C160.178 13.6699 160.162 14.278 159.233 14.7961C158.108 15.5253 156.889 16.3558 155.731 17.1385L155.709 17.1526V17.1498ZM170.761 20.6663C170.701 21.6884 170.51 25.554 169.23 23.7127C168.042 21.4378 166.737 18.6026 165.574 16.1785C165.12 14.9396 167.948 14.4385 168.683 14.6496C170.737 15.4211 170.808 18.7208 170.761 20.6494V20.6692V20.6663Z";
+function WorkingMark() {
+  const id = useId();
+  return (
+    <svg viewBox="128 -4 46 34" aria-hidden="true" className="h-[13px] w-[18px] shrink-0 overflow-visible">
+      <defs>
+        <clipPath id={`${id}-swoosh`}>
+          <path d={SWOOSH} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${id}-swoosh)`}>
+        <rect x={128} y={-4} width={46} height={34} fill="#F55A00" />
+        <rect
+          x={110}
+          y={-4}
+          width={12}
+          height={34}
+          fill="#ffd2b8"
+          opacity={0.75}
+          className="motion-safe:animate-[studio-mark-sweep_1.6s_ease-in-out_infinite]"
+        />
+      </g>
+      <circle
+        cx={169.4}
+        cy={6.1}
+        r={2.4}
+        fill="#F55A00"
+        className="[transform-box:fill-box] [transform-origin:50%_100%] motion-safe:animate-[studio-mark-hop_0.8s_ease-in-out_infinite]"
+      />
+    </svg>
+  );
+}
+
 function Live({ text, steps, resumed }: { text: string; steps: string[]; resumed: boolean }) {
   // One line that shimmers and changes in place as Claude moves from step
   // to step, so the chat doesn't fill up with a list of steps.
   const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
   return (
     <div className="flex flex-col gap-1.5 pe-4" aria-live="polite">
-      <p className="h-4 overflow-hidden text-[11.5px]">
+      <p className="flex h-4 items-center gap-2 overflow-hidden text-[11.5px]">
+        <WorkingMark />
         <span
           key={`${steps.length}-${step}`}
           className="studio-shimmer block animate-in fade-in slide-in-from-bottom-1 duration-200"

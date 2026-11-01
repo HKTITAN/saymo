@@ -353,3 +353,32 @@
     scale: 1;
   }
 }
+
+/* Aerchain's ai mark while Claude works: a light sweep across the swoosh,
+   and the dot hopping. */
+@keyframes studio-mark-sweep {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 80px 0;
+  }
+}
+@keyframes studio-mark-hop {
+  0%,
+  100% {
+    translate: 0 0;
+    scale: 1 1;
+  }
+  15% {
+    scale: 1.15 0.85;
+  }
+  45% {
+    translate: 0 -5px;
+    scale: 0.95 1.05;
+  }
+  80% {
+    translate: 0 0;
+    scale: 1.1 0.9;
+  }
+}
