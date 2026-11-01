@@ -71,14 +71,14 @@ export function KitDoc({
   const [editing, setEditing] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
 
-  // Pictures the notes list as "- guide/<file>" lines show as a gallery
-  // instead of a list of file names.
-  const { guide, pictures } = useMemo(() => {
+  // The "- guide/<file>" lines list pictures for Claude to look at; the page
+  // leaves them out rather than show a list of file names.
+  const { guide } = useMemo(() => {
     const picture = /^\s*-\s*(guide\/[^\s]+\.(?:jpe?g|png|webp))\s*$/i;
     const lines = (kit.notes ?? "").split("\n");
     const found = lines.map((l) => l.match(picture)?.[1]).filter((f): f is string => Boolean(f));
     const kept = lines.filter((l) => !picture.test(l)).join("\n").replace(/\n#+ [^\n]*\n*$/, "\n");
-    return { guide: parseMarkdown(found.length ? kept : (kit.notes ?? "")), pictures: found };
+    return { guide: parseMarkdown(found.length ? kept : (kit.notes ?? "")) };
   }, [kit.notes]);
   const sections = useMemo(() => {
     const list: Omit<Section, "n">[] = [
@@ -294,38 +294,6 @@ export function KitDoc({
               ) : (
                 <>
                   <Markdown blocks={guide} onCopy={onCopy} />
-                  {pictures.length ? (
-                    <div className="mt-6 flex flex-col gap-3">
-                      <h3 className="font-semibold text-[15px] text-white/90">Pictures from the guideline</h3>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {pictures.map((file) => (
-                          <a
-                            key={file}
-                            href={brandFile(kit.id, file, version)}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="group flex flex-col overflow-hidden rounded-[12px] bg-white/[0.04] shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          >
-                            {/* biome-ignore lint/performance/noImgElement: the kit's own files, served as they are */}
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={brandFile(kit.id, file, version)}
-                              alt=""
-                              loading="lazy"
-                              className="aspect-[16/10] w-full object-cover transition-opacity group-hover:opacity-90"
-                            />
-                            <span className="truncate px-3 py-2 text-[11.5px] text-white/55">
-                              {file
-                                .replace(/^guide\/(\d+-)?/, "")
-                                .replace(/\.[a-z]+$/i, "")
-                                .replace(/-/g, " ")
-                                .replace(/^./, (c) => c.toUpperCase())}
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
                 </>
               )}
             </DocSection>
@@ -640,7 +608,10 @@ export function parseMarkdown(source: string): Block[] {
     }
     const h = /^(#{1,6})\s+(.*)$/.exec(line);
     if (h) {
-      blocks.push({ t: "h", level: h[1].length, text: h[2].replace(/\s+#+\s*$/, "") });
+      // House style numbers things 1, 2, 3: "01 The Prism Principle"
+      // reads as "1. The Prism Principle".
+      const text = h[2].replace(/\s+#+\s*$/, "").replace(/^0*(\d{1,2})\.?\s+/, "$1. ");
+      blocks.push({ t: "h", level: h[1].length, text });
       i++;
       continue;
     }
@@ -842,9 +813,9 @@ function Swatch({ hex, onCopy }: { hex: string; onCopy: (hex: string) => void })
       type="button"
       onClick={() => onCopy(hex)}
       title={`${hex}, click to copy`}
-      className="mx-0.5 inline-flex cursor-pointer items-center gap-1.5 rounded-[6px] bg-white/[0.06] py-0.5 ps-1 pe-1.5 align-[0.05em] font-mono text-[0.82em] text-white/90 outline-none transition-colors hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+      className="mx-px inline-flex h-[1.45em] cursor-pointer items-center gap-[0.35em] rounded-[5px] bg-white/[0.06] px-[0.35em] align-[-0.2em] font-mono text-[0.8em] text-white/90 leading-none outline-none transition-colors hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
     >
-      <span className="size-3 rounded-[3px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
+      <span className="size-[0.8em] shrink-0 rounded-[2px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
       {hex}
     </button>
   );
