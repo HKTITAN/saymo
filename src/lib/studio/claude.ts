@@ -7,6 +7,7 @@ import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./c
 import { atPlayhead } from "./captions";
 import type { Clip, Edit, Graphic } from "./edit";
 import { filmDir, readFilm, ROOT, snapshotFilm, withFilm, writeFilm } from "./films";
+import { startSound } from "./sound-render";
 
 // The studio's chat: each prompt is one Claude Code turn, run headless on
 // the owner's own Claude login (no API key), in the film's folder. The
@@ -204,6 +205,9 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
 
   // A turn that changed nothing needn't be a step for undo.
   if (!reader.changedAny) await dropSnapshot(id, n);
+  // A new score, length or cut means new sound, unless Claude already
+  // rendered it while listening to its work.
+  else void startSound(id);
 
   const problem = turn.stopped
     ? null
@@ -230,6 +234,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
   const root = `/${ROOT}`; // permission rules: "//" starts an absolute path
   const check = `node ${path.join(ROOT, "scripts/studio/check-film.mjs")}`;
   const draft = `node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft`;
+  const sound = soundCommand(id);
   // Its arguments vary (media ids, times), so it's allowed as a prefix. The
   // tool checks every argument and runs nothing through a shell, and Claude
   // Code still refuses chained or substituted commands.
@@ -249,6 +254,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
     `Read(/${frames}/**)`, // stills the media tool makes, so Claude can see the footage
     `Bash(${check})`,
     `Bash(${draft})`,
+    `Bash(${sound})`,
     `Bash(${media} *)`,
     "Skill",
     "TodoWrite",
@@ -261,6 +267,11 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
     // Footage is never changed, and the big files are never read (the
     // media tool reports on them); stills, thumbnails and JSON stay readable.
     `Edit(/${dir}/media/**)`,
+    // The sound is written as a score; what it renders to is the renderer's.
+    `Edit(/${dir}/sound/sound.wav)`,
+    `Edit(/${dir}/sound/peaks.json)`,
+    `Edit(/${dir}/sound/status.json)`,
+    `Read(/${dir}/sound/*.wav)`,
     ...FOOTAGE_FILES.map((f) => `Read(/${dir}/media/**/${f})`),
   ];
   const args = [
@@ -306,6 +317,8 @@ To check your work, run exactly:
   node ${path.join(ROOT, "scripts/studio/check-film.mjs")}
 and fix what it reports. For a quick test video of a film that can't be checked any other way, run exactly:
   node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft
+The film's sound design is sound/score.js (music in Strudel, effects in Tone.js, as src/lib/studio/sound.ts describes). Load the aerchain-sound-design skill before writing or changing sound. To render the sound and hear what you made (loudness, and where each hit lands against the film's moments), run exactly:
+  ${soundCommand(id)}
 No other shell commands are available, and there is no web access.${video}
 
 How to reply: work quietly, without narrating, then end with two or three plain sentences saying what changed on screen, in visual words (no code, no file names). Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
@@ -314,6 +327,8 @@ How to reply: work quietly, without narrating, then end with two or three plain 
 // ─── Video films ─────────────────────────────────────────────────────────────
 
 const FOOTAGE_FILES = ["original.*", "*.mp4", "*.mov", "*.m4v", "*.webm", "*.mkv", "*.wav", "*.mp3", "*.m4a", "*.aac", "*.aif", "*.aiff", "*.flac"];
+
+const soundCommand = (id: string) => `node ${path.join(ROOT, "scripts/studio/sound.mjs")} ${id}`;
 
 const mediaTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/media-tool.mjs")} ${id}`;
 
@@ -510,11 +525,13 @@ function stepFor(name: string, input: Json, dir: string): string | null {
     case "MultiEdit":
       if (file?.endsWith("film.json")) return "Updating the film's settings";
       if (file?.endsWith("edit.json")) return "Editing the cut";
+      if (file?.includes(`${path.sep}sound${path.sep}`)) return "Writing the sound";
       return file?.includes(`${path.sep}graphics${path.sep}`) ? "Making a graphic" : "Editing the film";
     case "Bash": {
       const command = String(input.command ?? "");
       if (command.includes("check-film")) return "Checking it";
       if (command.includes("render.mjs")) return "Making a draft";
+      if (command.includes("sound.mjs")) return "Listening to the sound";
       if (command.includes("media-tool")) return MEDIA_STEPS[command.split(/\s+/)[3] ?? ""] ?? "Looking at the footage";
       return "Running a command";
     }

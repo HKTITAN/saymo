@@ -86,5 +86,15 @@ export function filmEdit(film: Film, body: unknown): FilmEdit | string {
     }
     out.params = params;
   }
+  if (body.sound !== undefined) {
+    // Sound design on or off, and how loud under the film (sound.ts).
+    if (!isObject(body.sound)) return "Send the sound as { on, volume }.";
+    const now = film.sound ?? { on: true, volume: 1 };
+    const on = body.sound.on === undefined ? now.on : body.sound.on;
+    const volume = body.sound.volume === undefined ? now.volume : Number(body.sound.volume);
+    if (typeof on !== "boolean") return "Sound is either on or off.";
+    if (!Number.isFinite(volume) || volume < 0 || volume > 1.5) return "Sound volume goes from 0 to 1.5.";
+    out.sound = { on, volume: Math.round(volume * 1000) / 1000 };
+  }
   return out;
 }

@@ -5,6 +5,7 @@
   "height": 1080,
   "fps": 60,
   "duration": 5,
+  "sound": { "on": true, "volume": 1 },
   "params": [
     { "key": "figure", "label": "Figure", "type": "number", "value": 40, "min": 0, "max": 100, "step": 1 },
     { "key": "unit", "label": "Unit", "type": "text", "value": "%" },

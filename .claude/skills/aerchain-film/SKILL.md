@@ -70,6 +70,10 @@ Unless asked otherwise, films look like Aerchain:
 - For principles of timing and choreography see **motion-design**. For faux product UI (app windows, dashboards, cursors) see **stageshow**.
 - Words on screen: plain English, sentence case, no em dashes.
 
+## Sound
+
+Every film can have a sound track, written as a score in `sound/score.js` (Strudel music, Tone.js hits on the film's moments) and rendered by the studio. Starters come with one. Load the **aerchain-sound-design** skill before writing or changing sound, and whenever you change the film's timing or marks, check the score still lands on them: run the sound command from your instructions and read where each hit falls.
+
 ## Before you finish
 
 1. Run the check, exactly as given in your instructions (`node …/scripts/studio/check-film.mjs`), and fix every error. Fix warnings that affect what's on screen; one about an empty first frame matters, since the first frame is the thumbnail.

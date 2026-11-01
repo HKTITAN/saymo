@@ -32,6 +32,9 @@ export type SoundScore = {
   // context. Called once; schedule everything relative to `at(seconds)`.
   effects?: (kit: SoundKit) => void | Promise<void>;
   effectsGain?: number; // 0..1, default 0.8
+  // Video films: how loud the music stays while someone speaks, 0..1
+  // (default 0.3; 1 = no ducking). Effects are never ducked.
+  duck?: number;
 };
 
 // What effects() gets. `Tone` is the Tone.js module bound to the offline
@@ -44,6 +47,13 @@ export type SoundKit = {
   duration: number;
   marks: { t: number; label: string }[];
   params: Record<string, number | string | boolean>;
+  fps: number;
+  // Video films only (empty otherwise): the graphics on the timeline and
+  // the spans of film time where someone is speaking (from the captions,
+  // or the clips' transcripts), so hits can land on graphics and stay out
+  // of the way of speech.
+  graphics: { id: string; graphic: string; start: number; duration: number }[];
+  speech: { start: number; end: number }[];
 };
 
 // film.json gains:

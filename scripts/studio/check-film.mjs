@@ -41,6 +41,13 @@ const run = (cmd, args, opts = {}) =>
     });
   });
 
+// The sound design, if the film has one: the score loads, plays and sounds
+// the same each time it renders (sound.mjs --check renders it twice).
+if (existsSync(path.join(dir, "sound/score.js"))) {
+  const code = await run(process.execPath, [path.join(ROOT, "scripts/studio/sound.mjs"), film.id, "--check"]);
+  if (code !== 0) process.exit(code);
+}
+
 // Bundles one React file with esbuild, against the studio's Remotion
 // install: catches typos, bad JSX and missing imports.
 const bundle = (entry) =>
