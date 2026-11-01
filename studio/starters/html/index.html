@@ -82,7 +82,9 @@
       <svg id="field" data-layout-allow-overflow>
         <g id="lines"></g>
       </svg>
-      <h1 id="headline"></h1>
+      <!-- data-param binds the words to their text param, so they can be
+           edited right on the film; each line break is a new line. -->
+      <h1 id="headline" data-param="headline" data-multiline></h1>
     </div>
     <script>
       const FILM = Object.assign({ width: 1920, height: 1080, fps: 60, duration: 5 }, window.__film);

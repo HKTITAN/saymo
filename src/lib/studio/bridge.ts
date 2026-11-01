@@ -150,13 +150,212 @@ function bridge(options: BridgeOptions) {
     pointing = on;
     document.documentElement.style.cursor = on ? "crosshair" : "";
     if (!on) outline(null);
+    if (on) hover(null);
+  };
+
+  // ─── Words edited in place ──────────────────────────────────────────────
+  //
+  // While the film is paused (the studio says so with "studio:text"), any
+  // element bound to a text param with data-param shows a quiet outline on
+  // hover; a click turns it into an editable line with the film's own type.
+  // Enter finishes (Shift+Enter breaks the line where data-multiline is
+  // set), Escape puts the words back, Tab moves to the next words on screen.
+  let textOn = false;
+  let editing: { el: HTMLElement; key: string; before: string } | null = null;
+  let quiet: HTMLDivElement | null = null;
+  const TEXT = "[data-param]";
+  const textAt = (x: number, y: number) => {
+    const el = document.elementFromPoint(x, y);
+    return (el?.closest(TEXT) as HTMLElement | null) ?? null;
+  };
+  const hover = (el: Element | null) => {
+    if (!quiet) {
+      quiet = document.createElement("div");
+      quiet.style.cssText =
+        "position:fixed;pointer-events:none;z-index:2147483646;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 0 2px rgba(0,0,0,.35);display:none";
+      document.documentElement.append(quiet);
+      // Selected words show in the studio's orange, not the browser's blue.
+      const look = document.createElement("style");
+      look.textContent =
+        "[data-param][contenteditable]{outline:none;caret-color:#F55A00}[data-param][contenteditable]::selection,[data-param][contenteditable] *::selection{background:rgba(245,90,0,.38);color:inherit}";
+      document.head.append(look);
+    }
+    if (!el) {
+      quiet.style.display = "none";
+      return;
+    }
+    const r = el.getBoundingClientRect();
+    const editingNow = editing?.el === el;
+    Object.assign(quiet.style, {
+      display: "block",
+      left: `${r.left - 4}px`,
+      top: `${r.top - 3}px`,
+      width: `${r.width + 8}px`,
+      height: `${r.height + 6}px`,
+      boxShadow: editingNow
+        ? "0 0 0 2px #F55A00, 0 0 0 3px rgba(0,0,0,.35)"
+        : "0 0 0 1px rgba(255,255,255,.55), 0 0 0 2px rgba(0,0,0,.35)",
+    });
+  };
+  const textOf = (el: HTMLElement) => (el.innerText ?? el.textContent ?? "").replace(/\n+$/, "");
+  const visible = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2 || r.right < 0 || r.bottom < 0 || r.left > innerWidth || r.top > innerHeight) return false;
+    let alpha = 1;
+    for (let n: HTMLElement | null = el; n && n !== document.body; n = n.parentElement) {
+      const s = getComputedStyle(n);
+      if (s.display === "none" || s.visibility === "hidden") return false;
+      alpha *= Number(s.opacity);
+    }
+    return alpha > 0.2;
+  };
+  const sendEdit = (key: string, value: string, isEditing: boolean) => {
+    w.__params[key] = value;
+    (w.__studioStage as { keepParams(v: Values): void }).keepParams({ [key]: value });
+    post({ type: "studio:param-edit", key, value, editing: isEditing });
+  };
+  const startEdit = (el: HTMLElement, selectAll: boolean) => {
+    const key = el.getAttribute("data-param");
+    if (!key) return;
+    if (editing && editing.el !== el) finishEdit(true);
+    if (editing) return;
+    editing = { el, key, before: String(w.__params[key] ?? textOf(el)) };
+    el.setAttribute("contenteditable", "plaintext-only");
+    el.style.outline = "none";
+    el.style.cursor = "text";
+    el.focus();
+    if (selectAll) {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+    hover(el);
+    post({ type: "studio:param-edit", key, value: textOf(el), editing: true });
+  };
+  let rebuild = 0;
+  const finishEdit = (keep: boolean) => {
+    const now = editing;
+    if (!now) return;
+    editing = null;
+    const { el, key, before } = now;
+    if (!keep) el.innerText = before;
+    el.removeAttribute("contenteditable");
+    el.style.cursor = "";
+    getSelection()?.removeAllRanges();
+    const value = keep ? textOf(el) : before;
+    sendEdit(key, value, false);
+    hover(null);
+    // The film is built from its words, so it is rebuilt with the new ones
+    // (at the same moment) once the edit is done.
+    if (value !== before || !keep) {
+      if (options.engine === "html") {
+        clearTimeout(rebuild);
+        rebuild = window.setTimeout(reload, 120);
+      } else adapter?.params?.({ ...w.__params });
+    }
+  };
+  const nextText = (from: HTMLElement) => {
+    const all = [...document.querySelectorAll<HTMLElement>(TEXT)].filter(visible);
+    const i = all.indexOf(from);
+    return all.length ? all[(i + 1) % all.length] : null;
+  };
+  window.addEventListener(
+    "pointermove",
+    (e) => {
+      if (!textOn || pointing || editing) return;
+      const el = textAt(e.clientX, e.clientY);
+      hover(el);
+      document.documentElement.style.cursor = el ? "text" : "";
+    },
+    true,
+  );
+  window.addEventListener(
+    "pointerdown",
+    (e) => {
+      if (pointing) return;
+      // Words can be clicked while the film plays too: the studio pauses it
+      // as soon as editing starts.
+      const el = textAt(e.clientX, e.clientY);
+      if (editing && editing.el.contains(e.target as Node)) return;
+      if (editing) finishEdit(true);
+      // Made editable before the browser handles the press, so the caret
+      // lands where the click was.
+      if (el) startEdit(el, false);
+    },
+    true,
+  );
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (!editing) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        finishEdit(false);
+      } else if (e.key === "Enter" && !(e.shiftKey && editing.el.hasAttribute("data-multiline"))) {
+        e.preventDefault();
+        finishEdit(true);
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        const from = editing.el;
+        finishEdit(true);
+        const next = nextText(from);
+        if (next && next !== from) startEdit(next, true);
+      }
+    },
+    true,
+  );
+  window.addEventListener(
+    "input",
+    (e) => {
+      if (!editing || !editing.el.contains(e.target as Node)) return;
+      sendEdit(editing.key, textOf(editing.el), true);
+      hover(editing.el);
+    },
+    true,
+  );
+  const setText = (on: boolean) => {
+    textOn = on;
+    if (!on) {
+      if (editing) finishEdit(true);
+      hover(null);
+      if (!pointing) document.documentElement.style.cursor = "";
+    }
+  };
+  // When is this text first on screen? Steps through the film (html films
+  // seek in an instant) and puts the playhead back.
+  const findText = (key: string) => {
+    const el = () => document.querySelector<HTMLElement>(`[data-param="${CSS.escape(key)}"]`);
+    if (!el()) return null;
+    if (options.engine !== "html" || !adapter) return visible(el() as HTMLElement) ? t : null;
+    const back = t;
+    const steps = Math.max(30, Math.ceil(FILM.duration * 8));
+    let found: number | null = null;
+    for (let i = 0; i <= steps && found === null; i++) {
+      const s = (FILM.duration * i) / steps;
+      adapter.seek(s);
+      const now = [...document.querySelectorAll<HTMLElement>(`[data-param="${CSS.escape(key)}"]`)].some(visible);
+      // A little after it appears, so the words have settled in.
+      if (now) found = Math.min(FILM.duration, s + FILM.duration / steps);
+    }
+    adapter.seek(back);
+    return found;
   };
 
   window.addEventListener("message", (e) => {
     if (e.source !== window.parent || e.origin !== location.origin) return;
-    const m = (e.data ?? {}) as { type?: string; t?: number; params?: Values; on?: boolean; edit?: unknown };
-    if (m.type === "studio:seek") seek(Number(m.t));
-    else if (m.type === "studio:point") setPointing(Boolean(m.on));
+    const m = (e.data ?? {}) as { type?: string; t?: number; params?: Values; on?: boolean; edit?: unknown; key?: string };
+    if (m.type === "studio:seek") {
+      // A seek while editing would move the words being typed into.
+      if (!editing) seek(Number(m.t));
+    } else if (m.type === "studio:point") setPointing(Boolean(m.on));
+    else if (m.type === "studio:text") setText(Boolean(m.on));
+    else if (m.type === "studio:find-param" && m.key) post({ type: "studio:param-at", key: m.key, t: findText(m.key) });
+    else if (m.type === "studio:focus-param" && m.key) {
+      const target = [...document.querySelectorAll<HTMLElement>(`[data-param="${CSS.escape(m.key)}"]`)].find(visible);
+      if (target) startEdit(target, true);
+    }
     else if (m.type === "studio:params" && m.params) {
       if (adapter?.params) adapter.params(m.params);
     } else if (m.type === "studio:edit" && m.edit) {
@@ -177,7 +376,8 @@ function bridge(options: BridgeOptions) {
       if (readied) return;
       readied = true;
       seek(t);
-      post({ type: "studio:ready", duration: FILM.duration, fps: FILM.fps, width: FILM.width, height: FILM.height });
+      const texts = [...new Set([...document.querySelectorAll(TEXT)].map((el) => el.getAttribute("data-param") ?? ""))].filter(Boolean);
+      post({ type: "studio:ready", duration: FILM.duration, fps: FILM.fps, width: FILM.width, height: FILM.height, texts });
     },
     error: fail,
     loading: () => post({ type: "studio:loading" }),

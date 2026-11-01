@@ -61,6 +61,8 @@ export function useChat(
   useEffect(() => {
     saveQueue(id, queue);
   }, [id, queue]);
+  // False until the chat so far has been read: the panel draws shapes until then.
+  const [loaded, setLoaded] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const callbacks = useRef({ onChanged, onFilm });
   useEffect(() => {
@@ -75,6 +77,7 @@ export function useChat(
     const check = async (first: boolean) => {
       const h = await api.history(id).catch(() => null);
       if (!live) return;
+      if (first) setLoaded(true);
       if (!h) {
         if (first) setMessages([]);
         return;
@@ -214,7 +217,7 @@ export function useChat(
     }
   }, [id]);
 
-  return { messages, turn, send, stop, undo, undoing, queue, paused, removeQueued, clearQueue, resume };
+  return { messages, turn, send, stop, undo, undoing, loaded, queue, paused, removeQueued, clearQueue, resume };
 }
 
 export type ChatState = ReturnType<typeof useChat>;

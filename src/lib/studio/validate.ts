@@ -79,6 +79,12 @@ export function filmEdit(film: Film, body: unknown): FilmEdit | string {
     if (typeof body.brand !== "string" || !/^[a-z0-9][a-z0-9-]{2,31}$/.test(body.brand)) return "That isn't a brand kit.";
     out.brand = body.brand;
   }
+  // The folder it's filed in, or null to take it out; the route checks the
+  // folder exists.
+  if (body.folder !== undefined) {
+    if (body.folder !== null && (typeof body.folder !== "string" || !/^[a-z0-9]{8}$/.test(body.folder))) return "That isn't a folder.";
+    out.folder = body.folder as string | null;
+  }
   if (body.params !== undefined) {
     if (!isObject(body.params)) return "Send the values as an object, by name.";
     const params: Record<string, Param["value"]> = {};
@@ -102,4 +108,10 @@ export function filmEdit(film: Film, body: unknown): FilmEdit | string {
     out.sound = { on, volume: Math.round(volume * 1000) / 1000 };
   }
   return out;
+}
+
+// A folder's name: plain words, kept short enough for the folder row.
+export function folderName(body: unknown): string {
+  if (!isObject(body) || typeof body.name !== "string" || !body.name.trim()) return "";
+  return body.name.trim().replace(/\s+/g, " ").slice(0, 60);
 }

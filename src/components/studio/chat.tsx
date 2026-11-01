@@ -3,6 +3,7 @@
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { type Clock, formatTime, useClock } from "./clock";
 import { MultipleCrossCancelIcon } from "@/components/icons";
+import { Skeleton } from "@/components/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import type { ChatMessage } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,12 @@ import { chipLabel, type Pinned } from "./words";
 // works and settles back when the turn ends.
 
 const IDEAS = ["Make it loop smoothly", "Slow the opening down", "Add a title that types in"];
+
+// What the loading shapes are measured from.
+const SAMPLE: ChatMessage[] = [
+  { role: "you", text: "Make the title come in from the left", at: "" },
+  { role: "claude", text: "The title now slides in from the left over half a second, then settles.", at: "" },
+];
 
 export function ChatPanel({
   chat,
@@ -97,7 +104,15 @@ export function ChatPanel({
       }
     >
       <div ref={list} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3">
-        {messages.length === 0 && !turn.running ? (
+        {!chat.loaded ? (
+          // The chat so far is on its way: two messages' worth of shapes.
+          <Skeleton loading label="Loading the chat">
+            <div className="flex flex-col gap-3 pt-1">
+              <Message message={SAMPLE[0]} />
+              <Message message={SAMPLE[1]} />
+            </div>
+          </Skeleton>
+        ) : messages.length === 0 && !turn.running ? (
           <div className="flex flex-col gap-2 pt-1 pb-1">
             <p className="text-[12.5px] text-white/55 leading-relaxed">
               Tell Claude what to change, or point at a part of the film to change just that.

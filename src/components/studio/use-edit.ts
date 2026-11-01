@@ -34,6 +34,8 @@ export function useEdit(
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [media, setMedia] = useState<Media[]>([]);
+  // False until the bin's footage has been read once: it draws shapes until then.
+  const [binLoaded, setBinLoaded] = useState(false);
   const [graphics, setGraphics] = useState<GraphicInfo[]>([]);
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [save, setSave] = useState<SaveState>("saved");
@@ -185,6 +187,7 @@ export function useEdit(
   const refreshMedia = useCallback(async () => {
     const list = await videoApi.media(id).catch(() => null);
     if (list) setMedia(list);
+    setBinLoaded(true);
     return list;
   }, [id]);
 
@@ -283,6 +286,7 @@ export function useEdit(
     selected,
     setSelected,
     media,
+    binLoaded,
     mediaById: byId,
     graphics,
     uploads,

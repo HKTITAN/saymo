@@ -19,13 +19,17 @@ export function FirstFilm({
   error,
   onStart,
   onStartVideo,
+  initialKind = "video",
+  title = "Make your first film",
 }: {
+  initialKind?: Kind;
+  title?: string;
   busy: boolean;
   error: string | null;
   onStart: (prompt: string | null, width: number, height: number) => void;
   onStartVideo: (files: File[], width: number, height: number) => void;
 }) {
-  const [kind, setKind] = useState<Kind>("video");
+  const [kind, setKind] = useState<Kind>(initialKind);
   const [draft, setDraft] = useState("");
   const [size, setSize] = useState<(typeof SIZES)[number]>(SIZES[0]);
   const [over, setOver] = useState(false);
@@ -41,7 +45,7 @@ export function FirstFilm({
       <section aria-labelledby="first-film" className={cn(CARD, "flex w-full max-w-[540px] flex-col gap-4 p-5")}>
         <div className="flex flex-col gap-1.5">
           <h1 id="first-film" className="font-medium text-[15px] text-white/95">
-            Make your first film
+            {title}
           </h1>
           <p className="text-[12.5px] text-white/55 leading-relaxed">
             Cut your own footage, or have Claude make motion graphics. Either way, change anything afterwards by asking

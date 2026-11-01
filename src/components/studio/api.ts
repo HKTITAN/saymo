@@ -6,6 +6,7 @@ import {
   type Film,
   type FilmEdit,
   type FilmSummary,
+  type Folder,
   type RenderStatus,
   STUDIO_HEADERS,
 } from "@/lib/studio/contract";
@@ -72,6 +73,11 @@ export const api = {
   render: (id: string, quality: "draft" | "final") =>
     call<RenderStatus>(`${film(id)}/render`, send("POST", { quality })),
   renderStatus: (id: string) => call<RenderStatus>(`${film(id)}/render`),
+  // Folders on the front page. A film is moved with edit(id, { folder }).
+  folders: () => call<Folder[]>("/api/studio/folders"),
+  newFolder: (name: string) => call<Folder>("/api/studio/folders", send("POST", { name })),
+  renameFolder: (fid: string, name: string) => call<Folder>(`/api/studio/folders/${fid}`, send("PATCH", { name })),
+  removeFolder: (fid: string) => call<void>(`/api/studio/folders/${fid}`, { method: "DELETE" }),
 };
 
 export const outUrl = (id: string, file: string, download = false) =>

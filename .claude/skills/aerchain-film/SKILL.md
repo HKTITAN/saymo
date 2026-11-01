@@ -19,6 +19,7 @@ The contract is `src/lib/studio/contract.ts` (read it if anything below is uncle
 - `title`: leave it unless asked.
 - `marks`: the named moments on the timeline, `{ "t": 1.2, "label": "Orange rises" }`. Keep one per real beat (a thing arriving, leaving or changing), labelled in plain words, in time order. Update them when timings change.
 - `params`: the values the person can change from the panel without you. Expose the few that matter (main colours, the headline words, speeds or timings, an on/off for an element). Shape: `{ "key": "accent", "label": "Accent colour", "type": "color", "value": "#F55A00" }`; types are `number` (with `min`, `max`, `step`, `unit`), `color`, `text`, `toggle`, `choice` (with `options`). Keys are camelCase; labels are plain English. The film must read the current values (see each engine below) and fall back to the `value` in film.json.
+- **Words are edited on the film, not in the panel.** Every `text` param must be bound to the element that shows it with `data-param="<key>"` (html: the element that holds the words, e.g. `<h1 id="headline" data-param="headline">`; react: `data-param="label"` on the element that renders `{label}`). Add `data-multiline` where a line break (`\n` in the value) starts a new line. The person clicks the words, types, and the film is rebuilt from the new value, so the element's text must come from the param, not be hard-coded. A text param without a bound element falls back to a panel row.
 - Never touch `id`, `engine`, `createdAt`, `session`.
 
 ## The three engines

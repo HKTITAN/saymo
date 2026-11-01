@@ -25,6 +25,8 @@ import { undoKey } from "./history";
 import { Choice } from "./inspector";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON, Panel } from "./panel";
 import { fontName, KitDoc } from "./kit-doc";
+import { Skeleton } from "@/components/skeleton";
+import { Opening } from "./opening";
 import { PromptBox } from "./prompt-box";
 
 // A brand kit's own page, at /studio?brand=<id>. The kit reads as a brand
@@ -264,7 +266,7 @@ export function KitPage({
       </div>
     );
   }
-  if (!kit) return null;
+  if (!kit) return <Opening what="kit" />;
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the whole page takes dropped files
@@ -892,6 +894,8 @@ const IDLE: KitTurn = { running: false, text: "", steps: [], error: null };
 function useKitChat(id: string, onKit: (kit: BrandKit) => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [turn, setTurn] = useState<KitTurn>(IDLE);
+  // False until the chat so far has been read: the panel draws shapes until then.
+  const [loaded, setLoaded] = useState(false);
   const abort = useRef<AbortController | null>(null);
   const kitCallback = useRef(onKit);
   useEffect(() => {
@@ -902,8 +906,10 @@ function useKitChat(id: string, onKit: (kit: BrandKit) => void) {
     let live = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const check = async (first: boolean) => {
-      const h = await brandApi.history(id);
+      const h = await brandApi.history(id).catch(() => null);
       if (!live) return;
+      if (first) setLoaded(true);
+      if (!h) return;
       setMessages(h.messages);
       if (h.running) {
         setTurn((t) => (t.running ? t : { ...IDLE, running: true }));
@@ -978,7 +984,7 @@ function useKitChat(id: string, onKit: (kit: BrandKit) => void) {
     }
   }, [id]);
 
-  return { messages, turn, running: turn.running, send, stop, undo };
+  return { messages, turn, running: turn.running, send, stop, undo, loaded };
 }
 
 const KIT_IDEAS = ["Tidy the rules into short sentences", "Write the motion rules for this brand", "Fill in the colour ramps from the logo"];
@@ -1048,7 +1054,15 @@ function KitChat({
       }
     >
       <div ref={list} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {!messages.length && !turn.running ? (
+        {!chat.loaded ? (
+          // The chat so far is on its way: a few lines' worth of shapes.
+          <Skeleton loading label="Loading the chat">
+            <div className="flex flex-col gap-3 pt-1">
+              <p className="self-end rounded-[12px] px-3 py-2 text-[12.5px]">Build the kit from our guideline PDF</p>
+              <p className="text-[12.5px] leading-relaxed">I read the guideline and set the colours, the type and both logos from it.</p>
+            </div>
+          </Skeleton>
+        ) : !messages.length && !turn.running ? (
           <div className="flex flex-col gap-2.5">
             <p className="text-[12.5px] text-white/55 leading-relaxed">
               Ask Claude to build or tidy this kit. It reads the files you add (a guideline PDF, screenshots, logos, fonts)
