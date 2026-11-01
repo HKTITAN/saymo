@@ -6,6 +6,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/contract";
+import type { FilmSound } from "@/lib/studio/sound";
 import { editEnd, type GraphicInfo, type Media } from "@/lib/studio/edit";
 import { cn } from "@/lib/utils";
 import { api, StudioError } from "./api";
@@ -22,10 +23,14 @@ import { MediaBin } from "./media-bin";
 import { clipNumber, defaults, Multitrack } from "./multitrack";
 import { CARD, PILL_BUTTON } from "./panel";
 import { RenderControl } from "./render";
+import { SoundGroup } from "./sound-group";
+import { type SoundLaneData, showLane } from "./sound-lane";
+import { soundApi, soundOf } from "./sound-api";
 import { createBridge, type Insets, Stage, type StageStatus, useFit } from "./stage";
 import { Timeline } from "./timeline";
 import { useChat } from "./use-chat";
 import { useEdit } from "./use-edit";
+import { useSound } from "./use-sound";
 import { isMediaFile } from "./video-api";
 import type { Pinned } from "./words";
 
@@ -301,6 +306,13 @@ function FilmView({
   });
 
   const history = useHistory({ undoClaude: chat.undo, claudeBusy: () => chat.turn.running });
+
+  // The film's sound design: played here in step with the clock.
+  const sound = useSound({ id, film, clock, bridge, claudeRunning: chat.turn.running });
+  const soundRef = useRef(sound);
+  useEffect(() => {
+    soundRef.current = sound;
+  });
 
   const wasRunning = useRef(false);
   useEffect(() => {
@@ -586,6 +598,46 @@ function FilmView({
     if (made) ed.setSelected(new Set([made]));
   };
 
+  // Sound On | Off and volume: shown at once, saved a moment later, each a
+  // step for ⌘Z (a volume drag is one step).
+  const soundTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const applySound = useCallback(
+    (next: FilmSound) => {
+      setFilm((f) => (f ? { ...f, sound: next } : f));
+      if (soundTimer.current) clearTimeout(soundTimer.current);
+      soundTimer.current = setTimeout(() => void soundApi.set(id, next).catch(() => null), 300);
+    },
+    [id],
+  );
+  const setSoundOn = (on: boolean) => {
+    const before = soundOf(filmRef.current);
+    if (before.on === on) return;
+    history.record({
+      label: `Sound ${on ? "on" : "off"}`,
+      undo: () => {
+        const now = soundOf(filmRef.current);
+        applySound(before);
+        return () => applySound(now);
+      },
+    });
+    applySound({ ...before, on });
+  };
+  const setSoundVolume = (volume: number) => {
+    const before = soundOf(filmRef.current);
+    const v = Math.round(volume * 100) / 100;
+    if (before.volume === v) return;
+    history.record({
+      label: `Volume ${Math.round(v * 100)}%`,
+      group: "sound-volume",
+      undo: () => {
+        const now = soundOf(filmRef.current);
+        applySound(before);
+        return () => applySound(now);
+      },
+    });
+    applySound({ ...before, volume: v });
+  };
+
   const togglePoint = useCallback(() => {
     setBubble(false);
     setPointing((p) => {
@@ -642,6 +694,11 @@ function FilmView({
         case "l":
         case "L":
           clock.setLoop(!clock.get().loop);
+          break;
+        case "m":
+        case "M":
+          // Only listening here: the film's own Sound On | Off is unchanged.
+          if (soundRef.current.status.state !== "none") soundRef.current.setMuted(!soundRef.current.muted);
           break;
         case "ArrowRight":
         case "ArrowLeft": {
@@ -709,7 +766,16 @@ function FilmView({
   const chatOpen = !hidden && !folded.chat;
   const mediaOpen = !hidden && !folded.media && isVideo;
   const inspectorOpen = !hidden && !folded.inspector;
-  const bottom = isVideo ? tlH + 28 : 96;
+  const soundLane: SoundLaneData = {
+    status: sound.status,
+    peaks: sound.peaks,
+    on: sound.sound.on,
+    muted: sound.muted,
+    error: sound.error,
+    onRetry: () => void sound.render(),
+  };
+  // The motion timeline grows by the sound lane once there is one.
+  const bottom = isVideo ? tlH + 28 : showLane(soundLane) ? 126 : 96;
   const insets: Insets = hidden
     ? { top: 0, right: 0, bottom: 0, left: 0 }
     : {
@@ -907,8 +973,22 @@ function FilmView({
             folded={folded.inspector}
             onFold={(f) => setFolded((s) => ({ ...s, inspector: f }))}
             hidden={hidden}
-            style={isVideo ? { maxHeight: column } : undefined}
+            // It ends above the timeline, which grows with the sound lane.
+            style={{ maxHeight: isVideo ? column : winH - 68 - bottom - 12 }}
             editLength={isVideo && ed.edit ? editEnd(ed.edit) : undefined}
+            soundGroup={
+              <SoundGroup
+                sound={sound}
+                isVideo={isVideo}
+                claudeBusy={chat.turn.running}
+                onOn={setSoundOn}
+                onVolume={(v) => setSoundVolume(v)}
+                onPrompt={(prompt) => {
+                  setFolded((f) => ({ ...f, chat: false }));
+                  void chatView.send(prompt, { t: time(), pick: null });
+                }}
+              />
+            }
           />
         )}
         {isVideo ? (
@@ -922,6 +1002,7 @@ function FilmView({
             onHeight={setTimelineHeight}
             onUndo={() => void history.undo()}
             onRedo={history.redo}
+            sound={soundLane}
             className="right-4 bottom-4 left-4"
           />
         ) : (
@@ -930,6 +1011,8 @@ function FilmView({
             fps={film.fps}
             marks={film.marks}
             hidden={hidden}
+            sound={soundLane}
+            onMute={sound.setMuted}
             className="right-4 bottom-4 transition-[left,opacity,translate,scale,filter]"
             style={{ left: chatOpen ? 372 : 16 }}
           />

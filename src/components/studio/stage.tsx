@@ -18,6 +18,7 @@ export type Bridge = {
   attach: (frame: HTMLIFrameElement | null) => void;
   detach: (frame: HTMLIFrameElement | null) => void;
   post: (message: StageInbound | StageEditMessage) => void;
+  frame: () => HTMLIFrameElement | null; // the stage itself (same site), e.g. to quiet its sound
 };
 
 export function createBridge(): Bridge {
@@ -32,6 +33,7 @@ export function createBridge(): Bridge {
     post(message) {
       current?.contentWindow?.postMessage(message, window.location.origin);
     },
+    frame: () => current,
   };
 }
 
