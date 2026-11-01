@@ -477,7 +477,9 @@ export function Dashboard({
             <Skeleton data={shown} sample={SAMPLE_FILMS} id="studio-films" label="Loading your films">
               {(list) =>
                 list.length > 0 || folderCards.length > 0 ? (
-                  <ul className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
+                  <div className="flex flex-col gap-6">
+                    {folderCards.length ? (
+                      <ul aria-label="Folders" className="grid grid-cols-[repeat(auto-fill,minmax(128px,148px))] gap-x-3 gap-y-4">
                     {folderCards.map((x) => (
                       <FolderCard
                         key={x.id}
@@ -491,6 +493,10 @@ export function Dashboard({
                         onDelete={() => deleteFolder(x)}
                       />
                     ))}
+                      </ul>
+                    ) : null}
+                    {list.length ? (
+                      <ul className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
                     {list.map((f) => (
                       <FilmCard
                         key={f.id}
@@ -511,7 +517,9 @@ export function Dashboard({
                         }}
                       />
                     ))}
-                  </ul>
+                      </ul>
+                    ) : null}
+                  </div>
                 ) : q ? (
                   <Empty doodle={<ClapperDoodle className="h-[84px] w-[120px]" />} title={`No films match “${query.trim()}”`} note="Check the spelling, or search all your films.">
                     <button type="button" onClick={() => setQuery("")} className={cn(PILL_BUTTON, "mt-2 bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
@@ -746,7 +754,7 @@ function FolderCard({
         <span
           key={landed}
           className={cn(
-            "relative flex aspect-video w-full",
+            "relative flex aspect-[4/5] w-full",
             landed > 0 && "motion-safe:animate-[studio-folder-nod_420ms_cubic-bezier(0.23,1,0.32,1)]",
           )}
           skullet-block=""
@@ -754,17 +762,9 @@ function FolderCard({
           <FolderArt films={top} open={over} />
         </span>
         <span className="flex flex-col gap-0.5 px-1 pb-0.5">
-          <span className="flex items-baseline gap-2">
-            <span className={cn("flex min-w-0 flex-1 items-center gap-1.5 text-[12.5px] text-white/90", renaming && "invisible")}>
-              <TinyFolder open={over} className="shrink-0 self-center text-white/60" />
-              <span className="truncate">{folder.name}</span>
-            </span>
-            <span className="shrink-0 text-[11px] text-white/35" suppressHydrationWarning>
-              {latest && now ? ago(latest, now) : ""}
-            </span>
-          </span>
-          <span className="truncate text-[11.5px] text-white/40">
-            {over ? "Drop to add it here" : films.length ? `Folder · ${filmCount(films.length)}` : "Folder · empty"}
+          <span className={cn("truncate text-[12.5px] text-white/90", renaming && "invisible")}>{folder.name}</span>
+          <span className="truncate text-[11.5px] text-white/40" suppressHydrationWarning>
+            {over ? "Drop to add it here" : films.length ? `${filmCount(films.length)}${latest && now ? ` · ${ago(latest, now)}` : ""}` : "Empty"}
           </span>
         </span>
       </button>
@@ -801,8 +801,8 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
   return (
     <span aria-hidden="true" className="relative h-full w-full">
       {/* The back and its tab, top left: the card's own outline. */}
-      <svg viewBox="0 0 160 90" className="absolute inset-0 h-full w-full">
-        <path d="M0 10 Q0 0 10 0 H50 Q55 0 58 3.5 L61 7 Q62 8 64 8 H150 Q160 8 160 18 V80 Q160 90 150 90 H10 Q0 90 0 80 Z" fill="#232323" />
+      <svg viewBox="0 0 100 125" className="absolute inset-0 h-full w-full">
+        <path d="M0 9 Q0 0 9 0 H33 Q37 0 39.5 3 L42 6 Q43 7 45 7 H91 Q100 7 100 16 V116 Q100 125 91 125 H9 Q0 125 0 116 Z" fill="#232323" />
       </svg>
       {/* What's inside: the newest films, or one blank sheet. */}
       {sheets.map((f, i) => {
@@ -811,7 +811,7 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
           <span
             key={f?.id ?? "blank"}
             className={cn(
-              "absolute top-[17%] left-[9%] flex h-[54%] w-[82%] items-center justify-center overflow-hidden rounded-[8px] bg-[#333] shadow-[0_2px_10px_rgba(0,0,0,0.4)] transition-transform",
+              "absolute top-[13%] left-[10%] flex h-[42%] w-[80%] items-center justify-center overflow-hidden rounded-[8px] bg-[#333] shadow-[0_2px_10px_rgba(0,0,0,0.4)] transition-transform",
               EASE,
               open ? "-translate-y-[20%]" : "group-hover/card:-translate-y-[10%]",
             )}
@@ -832,7 +832,7 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
       {/* The front pocket: low on the left, stepping up to the right, the
           other way round from the tab. It tips open. */}
       <svg
-        viewBox="0 0 160 90"
+        viewBox="0 0 100 125"
         className={cn(
           "absolute inset-0 h-full w-full origin-bottom overflow-visible drop-shadow-[0_-4px_10px_rgba(0,0,0,0.3)] transition-transform [transform:perspective(700px)_rotateX(0deg)]",
           EASE,
@@ -840,15 +840,15 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
         )}
       >
         <path
-          d="M0 46 Q0 37 9 37 H54 Q59 37 62 33.5 L64.5 30.5 Q67.5 27 72 27 H151 Q160 27 160 36 V80 Q160 90 150 90 H10 Q0 90 0 80 Z"
+          d="M0 66 Q0 58 8 58 H34 Q38 58 40.5 55 L43 52 Q45.5 50 49 50 H92 Q100 50 100 58 V116 Q100 125 91 125 H9 Q0 125 0 116 Z"
           fill="#2f2f2f"
           stroke="rgb(255 255 255 / 0.07)"
           strokeWidth={0.6}
         />
         <g className="text-white/60">
-          <circle cx={74} cy={58} r={1.6} fill="currentColor" />
-          <circle cx={86} cy={58} r={1.6} fill="currentColor" />
-          <path d={open ? "M76.6 62 q3.4 4.6 6.8 0 Z" : "M77 62.4 q3 2.8 6 0"} stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
+          <circle cx={44} cy={88} r={1.6} fill="currentColor" />
+          <circle cx={56} cy={88} r={1.6} fill="currentColor" />
+          <path d={open ? "M46.6 92 q3.4 4.6 6.8 0 Z" : "M47 92.4 q3 2.8 6 0"} stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
         </g>
       </svg>
     </span>

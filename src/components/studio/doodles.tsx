@@ -78,8 +78,9 @@ export function VideoDoodle({ className }: { className?: string }) {
   );
 }
 
-// Make motion graphics: a prompt sent, and the title it asked for rising
-// in word by word.
+// Make motion graphics: the same screen, with the prompt box under it
+// where the clips would be. On hover the prompt is sent and the title rises
+// in on the screen, word by word.
 export function MotionDoodle({ className }: { className?: string }) {
   const id = useId();
   const word = "motion-safe:group-hover/doodle:animate-[studio-word-in_0.75s_cubic-bezier(0.23,1,0.32,1)_both] [transform-box:fill-box]";
@@ -87,24 +88,25 @@ export function MotionDoodle({ className }: { className?: string }) {
     <svg viewBox="0 0 320 180" aria-hidden="true" className={className}>
       <defs>
         <clipPath id={`${id}-line`}>
-          <rect x={60} y={44} width={200} height={34} />
+          <rect x={92} y={50} width={136} height={24} />
         </clipPath>
       </defs>
+      <rect x={92} y={26} width={136} height={77} rx={8} fill="#2e2e2e" />
       <g clipPath={`url(#${id}-line)`}>
-        <text x={157} y={70} fontSize={26} fontWeight={650} letterSpacing={-0.5} fill={INK} textAnchor="end" className={word} style={{ ...TYPE, animationDelay: "0.3s" }}>
+        <text x={171} y={69} fontSize={16} fontWeight={650} letterSpacing={-0.3} fill={INK} textAnchor="end" className={word} style={{ ...TYPE, animationDelay: "0.3s" }}>
           Launch
         </text>
-        <text x={164} y={70} fontSize={26} fontWeight={650} letterSpacing={-0.5} fill={INK} className={word} style={{ ...TYPE, animationDelay: "0.42s" }}>
+        <text x={176} y={69} fontSize={16} fontWeight={650} letterSpacing={-0.3} fill={INK} className={word} style={{ ...TYPE, animationDelay: "0.42s" }}>
           day
         </text>
       </g>
-      <rect x={70} y={112} width={180} height={30} rx={15} fill="#2e2e2e" />
-      <text x={85} y={130} fontSize={9} fill="rgb(255 255 255 / 0.75)" style={TYPE}>
+      <rect x={72} y={122} width={176} height={24} rx={12} fill="#2e2e2e" />
+      <text x={85} y={137} fontSize={8} fill="rgb(255 255 255 / 0.7)" style={TYPE}>
         Bring the title in
       </text>
       <g className="[transform-box:fill-box] origin-center motion-safe:group-hover/doodle:animate-[studio-press_0.4s_ease-out_both]">
-        <circle cx={235} cy={127} r={10} fill={INK} />
-        <path d="M235 131.5 V123 M231.2 126.6 L235 122.8 L238.8 126.6" stroke="#141414" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        <circle cx={236} cy={134} r={8} fill={INK} />
+        <path d="M236 137.6 V130.6 M232.9 133.5 L236 130.4 L239.1 133.5" stroke="#141414" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
       </g>
     </svg>
   );
