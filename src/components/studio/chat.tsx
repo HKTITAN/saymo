@@ -2,6 +2,7 @@
 
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { type Clock, formatTime, useClock } from "./clock";
+import { MultipleCrossCancelIcon } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
 import type { ChatMessage } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
@@ -123,6 +124,15 @@ export function ChatPanel({
         ))}
         {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
         {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
+        {chat.queue.length ? (
+          <Queue
+            queue={chat.queue}
+            paused={chat.paused && !turn.running}
+            onRemove={chat.removeQueued}
+            onClear={chat.clearQueue}
+            onResume={chat.resume}
+          />
+        ) : null}
         {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">
@@ -133,6 +143,7 @@ export function ChatPanel({
           onSend={send}
           onStop={chat.stop}
           running={turn.running}
+          queueing
           placeholder="Make the title come in from the left"
           chip={pinned ? chipLabel(pinned.pick, pinned.t) : null}
           onClearChip={onClearPick}
@@ -216,5 +227,53 @@ function PlayheadChip({ clock }: { clock: Clock }) {
       At
       <span className="font-mono text-white/75 tabular-nums">{formatTime(t)}</span>
     </span>
+  );
+}
+
+// Prompts waiting their turn, in order, each with the moment it was sent
+// from. Each can be taken back; Stop pauses them until you carry on.
+function Queue({
+  queue,
+  paused,
+  onRemove,
+  onClear,
+  onResume,
+}: {
+  queue: ChatState["queue"];
+  paused: boolean;
+  onRemove: (key: string) => void;
+  onClear: () => void;
+  onResume: () => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 ps-8" aria-label="Waiting prompts">
+      <p className="flex items-center gap-2 self-end text-[11px] text-white/40">
+        {paused ? "Paused" : queue.length === 1 ? "Next up" : `${queue.length} waiting`}
+        {paused ? (
+          <button type="button" onClick={onResume} className="cursor-pointer rounded-[5px] px-1 text-white/70 outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-ring">
+            Carry on
+          </button>
+        ) : null}
+        <button type="button" onClick={onClear} className="cursor-pointer rounded-[5px] px-1 text-white/55 outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-ring">
+          Clear
+        </button>
+      </p>
+      {queue.map((q, i) => (
+        <div key={q.key} className="group/q flex items-start justify-end gap-1.5">
+          <span className="pt-2 font-mono text-[10.5px] text-white/30 tabular-nums">{i + 1}</span>
+          <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] border border-white/[0.1] border-dashed px-3 py-2 text-[12.5px] text-white/55 leading-relaxed">
+            {q.prompt}
+          </p>
+          <button
+            type="button"
+            onClick={() => onRemove(q.key)}
+            aria-label={`Remove waiting prompt ${i + 1}`}
+            className="mt-1.5 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-white/35 opacity-0 outline-none transition-opacity hover:bg-white/[0.08] hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/q:opacity-100 [&_svg]:size-3.5"
+          >
+            <MultipleCrossCancelIcon aria-hidden="true" />
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }

@@ -76,6 +76,7 @@ export function Bubble({
         onChange={setDraft}
         onSend={send}
         running={chat.turn.running}
+        queueing
         autoFocus
         onEscape={onClose}
         maxRows={4}

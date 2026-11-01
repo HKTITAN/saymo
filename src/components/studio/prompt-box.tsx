@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { Hint } from "./panel";
 
 // Where a prompt is typed: in the chat panel and in the bubble on the film.
-// Enter sends, Shift+Enter starts a new line. Grows with its words.
+// Enter sends, Shift+Enter starts a new line. Grows with its words. While
+// Claude works, Enter adds the prompt to the queue (where the box allows it).
 
 export function PromptBox({
   value,
@@ -15,6 +16,7 @@ export function PromptBox({
   onSend,
   onStop,
   running,
+  queueing,
   placeholder,
   chip,
   meta,
@@ -31,6 +33,7 @@ export function PromptBox({
   onSend: () => void;
   onStop?: () => void;
   running: boolean;
+  queueing?: boolean; // while Claude works, Enter adds to the queue instead of waiting
   placeholder: string;
   chip?: string | null;
   meta?: React.ReactNode; // shown where the chip goes when there's no chip
@@ -57,7 +60,7 @@ export function PromptBox({
   const keys = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (!running && value.trim()) onSend();
+      if (value.trim() && (!running || queueing)) onSend();
     } else if (e.key === "Escape") {
       e.preventDefault();
       onEscape?.();
@@ -113,19 +116,20 @@ export function PromptBox({
               Stop
             </button>
           </Hint>
-        ) : (
-          <Hint label="Send" keys={["↵"]}>
+        ) : null}
+        {!running || queueing ? (
+          <Hint label={running ? "Add to the queue" : "Send"} keys={["↵"]}>
             <button
               type="button"
               onClick={onSend}
-              disabled={running || !value.trim()}
-              aria-label="Send to Claude"
+              disabled={!value.trim()}
+              aria-label={running ? "Add to the queue" : "Send to Claude"}
               className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[8px] bg-white text-[#141414] outline-none transition-[background-color,opacity,scale] duration-150 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.94] disabled:cursor-default disabled:bg-white/15 disabled:text-white/40 [&_svg]:size-4"
             >
               <ArrowUpIcon aria-hidden="true" />
             </button>
           </Hint>
-        )}
+        ) : null}
       </div>
     </div>
   );
