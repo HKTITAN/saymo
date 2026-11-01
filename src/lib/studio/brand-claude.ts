@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { attachmentNote } from "./attachments";
 import type { BrandKit } from "./brand";
 import { checkKit, kitDir, readBrand, restoreBrand, snapshotBrand, withBrand, writeBrand } from "./brands";
 import { CLAUDE_BIN, childEnv, explain, killGroup, MODEL, StreamReader } from "./claude";
-import type { ChatEvent, ChatMessage, Film } from "./contract";
+import type { Attachment, ChatEvent, ChatMessage, Film } from "./contract";
 import { figmaReady, pullFigma } from "./figma";
 import { ROOT } from "./films";
 import { fetchable, findLinks, LINK_LABEL, type SharedLink } from "./links";
@@ -62,7 +63,13 @@ export function siteOf(url: string | undefined): URL | null {
   }
 }
 
-export async function runBrandTurn(id: string, prompt: string, links: SharedLink[], emit: (event: ChatEvent) => void) {
+export async function runBrandTurn(
+  id: string,
+  prompt: string,
+  links: SharedLink[],
+  emit: (event: ChatEvent) => void,
+  attachments: Attachment[] = [],
+) {
   if (running.has(id)) {
     emit({ kind: "error", message: "Claude is still working on this kit. Wait for it, or stop it first." });
     return;
@@ -70,7 +77,7 @@ export async function runBrandTurn(id: string, prompt: string, links: SharedLink
   const turn: Running = { pid: null, stopped: false };
   running.set(id, turn);
   try {
-    await brandTurn(id, prompt, links, turn, emit);
+    await brandTurn(id, prompt, links, turn, emit, attachments);
   } catch (error) {
     emit({ kind: "error", message: `Something went wrong: ${String((error as Error)?.message ?? error)}` });
   } finally {
@@ -78,7 +85,14 @@ export async function runBrandTurn(id: string, prompt: string, links: SharedLink
   }
 }
 
-async function brandTurn(id: string, prompt: string, links: SharedLink[], turn: Running, emit: (event: ChatEvent) => void) {
+async function brandTurn(
+  id: string,
+  prompt: string,
+  links: SharedLink[],
+  turn: Running,
+  emit: (event: ChatEvent) => void,
+  attachments: Attachment[],
+) {
   const kit = await readBrand(id);
   if (!kit) {
     emit({ kind: "error", message: "That kit no longer exists." });
@@ -87,7 +101,12 @@ async function brandTurn(id: string, prompt: string, links: SharedLink[], turn: 
   const n = await withBrand(id, () => snapshotBrand(id));
   emit({ kind: "start", turn: n });
   const typed = links.filter((l) => !prompt.includes(l.url)).map((l) => l.url);
-  await addChat(id, { role: "you", text: typed.length ? `${prompt}\n\n${typed.join("\n")}` : prompt, at: new Date().toISOString() });
+  await addChat(id, {
+    role: "you",
+    text: typed.length ? `${prompt}\n\n${typed.join("\n")}` : prompt,
+    at: new Date().toISOString(),
+    ...(attachments.length ? { context: { t: 0, pick: null, attachments } } : {}),
+  });
 
   const dir = kitDir(id);
   // Figma files come in first, as a styles sheet and frame pictures.
@@ -121,6 +140,7 @@ async function brandTurn(id: string, prompt: string, links: SharedLink[], turn: 
       `<kit>${path.join(dir, "brand.json")}, named "${kit.name}".</kit>`,
       files.length ? `<shared-files>\n${files.join("\n")}\n</shared-files>` : "",
       notes.length ? `<links>\n${notes.join("\n")}\n</links>` : "",
+      attachmentNote(dir, attachments),
       `<request>\n${prompt}\n</request>`,
     ]
       .filter(Boolean)

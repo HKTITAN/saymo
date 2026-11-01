@@ -16,7 +16,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { DialButton, DialGroup, DialNote, DialSlider, DialText, LABEL, ROW, SURFACE } from "@/components/tool/dial";
 import type { BrandFont, BrandKit, BrandLogo, ColorRoles } from "@/lib/studio/brand";
-import type { ChatMessage } from "@/lib/studio/contract";
+import type { Attachment, ChatMessage } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { StudioError } from "./api";
 import { brandApi, brandFile, FOLDER_ACCEPTS, FONT_FILE, type KitFolder, LOGO_FILE } from "./brand-api";
@@ -28,6 +28,8 @@ import { fontName, KitDoc } from "./kit-doc";
 import { Skeleton } from "@/components/skeleton";
 import { Opening } from "./opening";
 import { PromptBox } from "./prompt-box";
+import { SentFiles } from "./sent-files";
+import { useAttachments } from "./use-attachments";
 
 // A brand kit's own page, at /studio?brand=<id>. The kit reads as a brand
 // book (kit-doc.tsx: colours, type, logos, line texture, rules, the long
@@ -344,6 +346,7 @@ export function KitPage({
       </div>
 
       <KitChat
+        kitId={id}
         chat={chat}
         folded={folded.chat}
         onFold={(f) => setFolded((s) => ({ ...s, chat: f }))}
@@ -929,19 +932,27 @@ function useKitChat(id: string, onKit: (kit: BrandKit) => void) {
   }, [id]);
 
   const send = useCallback(
-    async (prompt: string, url: string) => {
+    async (prompt: string, url: string, attachments: Attachment[] = []) => {
       const words = prompt.trim();
       if (!words || abort.current) return;
       const controller = new AbortController();
       abort.current = controller;
-      setMessages((m) => [...m, { role: "you", text: url ? `${words}\n\n${url}` : words, at: new Date().toISOString() }]);
+      setMessages((m) => [
+        ...m,
+        {
+          role: "you",
+          text: url ? `${words}\n\n${url}` : words,
+          at: new Date().toISOString(),
+          ...(attachments.length ? { context: { t: 0, pick: null, attachments } } : {}),
+        },
+      ]);
       setTurn({ ...IDLE, running: true });
       let text = "";
       let steps: string[] = [];
       try {
         await brandApi.chat(
           id,
-          { prompt: words, ...(url ? { url } : {}) },
+          { prompt: words, ...(url ? { url } : {}), ...(attachments.length ? { attachments } : {}) },
           (event) => {
             if (event.kind === "text") {
               text += event.text;
@@ -990,6 +1001,7 @@ function useKitChat(id: string, onKit: (kit: BrandKit) => void) {
 const KIT_IDEAS = ["Tidy the rules into short sentences", "Write the motion rules for this brand", "Fill in the colour ramps from the logo"];
 
 function KitChat({
+  kitId,
   chat,
   folded,
   onFold,
@@ -997,6 +1009,7 @@ function KitChat({
   openingRef,
   beforeSend,
 }: {
+  kitId: string;
   chat: ReturnType<typeof useKitChat>;
   folded: boolean;
   onFold: (f: boolean) => void;
@@ -1021,11 +1034,16 @@ function KitChat({
     list.current?.scrollTo({ top: list.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, turn.text, turn.steps.length]);
 
+  const files = useAttachments(`/api/studio/brands/${kitId}/attachments`);
+
   const send = async () => {
-    const words = draft;
+    const attached = await files.flush();
+    const words = draft.trim() || (attached.length ? "Have a look at what I attached." : "");
+    if (!words) return;
     setDraft("");
+    files.clear();
     await beforeSend();
-    void chat.send(words, "");
+    void chat.send(words, "", attached);
   };
   const step = turn.steps.at(-1) ?? "Reading the kit";
 
@@ -1079,9 +1097,12 @@ function KitChat({
         ) : null}
         {messages.map((m, i) =>
           m.role === "you" ? (
-            <p key={`${m.at}-${i}`} className="ms-8 self-end whitespace-pre-wrap break-words rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed">
-              {m.text}
-            </p>
+            <div key={`${m.at}-${i}`} className="ms-8 flex flex-col items-end gap-1 self-end">
+              <p className="whitespace-pre-wrap break-words rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed">
+                {m.text}
+              </p>
+              <SentFiles files={m.context?.attachments ?? []} urlOf={(path) => brandFile(kitId, path)} />
+            </div>
           ) : (
             <p key={`${m.at}-${i}`} className="pe-4 whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
               {m.text}
@@ -1102,7 +1123,15 @@ function KitChat({
         {undoNote ? <p className="text-[12.5px] text-white/50 leading-relaxed">{undoNote}</p> : null}
       </div>
       <div className="flex shrink-0 flex-col gap-1.5 px-2 pb-2">
-        <PromptBox value={draft} onChange={setDraft} onSend={() => void send()} onStop={chat.stop} running={turn.running} placeholder="Make the motion rules calmer, or paste a link" />
+        <PromptBox
+          value={draft}
+          onChange={setDraft}
+          onSend={() => void send()}
+          onStop={chat.stop}
+          running={turn.running}
+          attachments={files}
+          placeholder="Make the motion rules calmer, or paste a link"
+        />
       </div>
     </Panel>
   );

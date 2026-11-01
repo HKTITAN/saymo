@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { CARD } from "./panel";
 import { PromptBox } from "./prompt-box";
 import type { Fit } from "./stage";
+import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
 import { chipLabel, type Pinned } from "./words";
 
@@ -21,6 +22,7 @@ const subscribe = (cb: () => void) => {
 const viewport = () => `${window.innerWidth}x${window.innerHeight}`;
 
 export function Bubble({
+  filmId,
   fit,
   pinned,
   time,
@@ -28,6 +30,7 @@ export function Bubble({
   onClose,
   onSent,
 }: {
+  filmId: string;
   fit: Fit;
   pinned: Pinned | null;
   time: () => number;
@@ -57,10 +60,19 @@ export function Bubble({
   }
   top = Math.min(Math.max(16, top), vh - 150);
 
-  const send = () => {
-    const words = draft;
+  const files = useAttachments(`/api/studio/films/${filmId}/attachments`);
+
+  const send = async () => {
+    const attached = await files.flush();
+    const words = draft.trim() || (attached.length ? "Have a look at what I attached." : "");
+    if (!words) return;
     setDraft("");
-    void chat.send(words, { t: pinned?.t ?? time(), pick: pinned?.pick ?? null });
+    files.clear();
+    void chat.send(words, {
+      t: pinned?.t ?? time(),
+      pick: pinned?.pick ?? null,
+      ...(attached.length ? { attachments: attached } : {}),
+    });
     onSent();
   };
 
@@ -74,7 +86,8 @@ export function Bubble({
       <PromptBox
         value={draft}
         onChange={setDraft}
-        onSend={send}
+        onSend={() => void send()}
+        attachments={files}
         running={chat.turn.running}
         queueing
         autoFocus

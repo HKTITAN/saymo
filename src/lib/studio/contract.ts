@@ -182,6 +182,18 @@ export type ChatContext = {
   t: number; // where the playhead is, seconds
   pick: Picked | null; // what was pointed at, if anything
   selection?: string[]; // video films: ids of the timeline items selected (edit.ts Clip/Graphic ids)
+  attachments?: Attachment[]; // files attached to this message
+};
+
+// A file attached to a prompt (a reference picture, a brief), saved beside
+// the film in refs/ or the kit in guide/. POST it to
+// /api/studio/films/<id>/attachments or /api/studio/brands/<id>/attachments
+// (body = the file, `x-file-name`), then send what comes back with the prompt.
+export type AttachmentKind = "image" | "pdf" | "text" | "doc";
+export type Attachment = {
+  path: string; // relative to the film or kit folder: "refs/brief-1a2b3c.pdf"
+  name: string; // the file's own name, for the chip
+  kind: AttachmentKind;
 };
 
 export type ChatRequest = { prompt: string; context: ChatContext };

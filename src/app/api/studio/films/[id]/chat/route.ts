@@ -1,7 +1,8 @@
 import { connection } from "next/server";
 import { isRunning, readChat, runTurn, stopTurn } from "@/lib/studio/claude";
 import type { ChatContext, ChatEvent, ChatRequest } from "@/lib/studio/contract";
-import { allowed, readFilm, refused } from "@/lib/studio/films";
+import { checkAttachments } from "@/lib/studio/attachments";
+import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films";
 
 // The film's conversation with Claude. POST sends one message and streams
 // back what happens (text/event-stream, one ChatEvent per `data:` line);
@@ -23,8 +24,12 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/film
   const { id } = await ctx.params;
   if (!(await readFilm(id))) return missing();
   const body = (await request.json().catch(() => null)) as Partial<ChatRequest> | null;
-  const prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 8000) : "";
+  // Attachments must be files already saved in this film's refs/.
+  const attachments = await checkAttachments(filmDir(id), "refs", (body?.context as { attachments?: unknown } | undefined)?.attachments);
+  let prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 8000) : "";
+  if (!prompt.trim() && attachments.length) prompt = "Have a look at what I attached.";
   if (!prompt.trim()) return Response.json({ error: "Type what you'd like changed." }, { status: 400 });
+  const turnContext = { ...context(body?.context), ...(attachments.length ? { attachments } : {}) };
   if (isRunning(id)) {
     return Response.json({ error: "Claude is still working on this film. Wait for it, or stop it first." }, { status: 409 });
   }
@@ -41,7 +46,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/film
           open = false;
         }
       };
-      void runTurn(id, { prompt, context: context(body?.context) }, emit).finally(() => {
+      void runTurn(id, { prompt, context: turnContext }, emit).finally(() => {
         if (!open) return;
         open = false;
         controller.close();
