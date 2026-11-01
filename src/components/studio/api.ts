@@ -9,6 +9,7 @@ import {
   type Folder,
   type RenderStatus,
   STUDIO_HEADERS,
+  type Version,
 } from "@/lib/studio/contract";
 
 // The studio's calls to its own routes under /api/studio. Every request
@@ -70,6 +71,9 @@ export const api = {
   },
   stop: (id: string) => call<void>(`${film(id)}/chat`, { method: "DELETE" }),
   undo: (id: string) => call<Film>(`${film(id)}/undo`, send("POST")),
+  // The film after each prompt, newest first, and going back to one.
+  versions: async (id: string) => (await call<{ versions: Version[] }>(`${film(id)}/versions`)).versions,
+  restore: (id: string, n: number, t: number) => call<Film>(`${film(id)}/versions/${n}/restore`, send("POST", { t })),
   render: (id: string, quality: "draft" | "final") =>
     call<RenderStatus>(`${film(id)}/render`, send("POST", { quality })),
   renderStatus: (id: string) => call<RenderStatus>(`${film(id)}/render`),

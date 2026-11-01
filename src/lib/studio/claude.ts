@@ -8,7 +8,7 @@ import { attachmentNote } from "./attachments";
 import { atPlayhead } from "./captions";
 import type { Clip, Edit, Graphic } from "./edit";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "./brand-tokens";
-import { filmDir, readFilm, ROOT, snapshotFilm, withFilm, writeFilm } from "./films";
+import { filmDir, pruneVersions, readFilm, recordVersion, ROOT, snapshotFilm, wentBackTo, withFilm, writeFilm } from "./films";
 import { startSound } from "./sound-render";
 
 // The studio's chat: each prompt is one Claude Code turn, run headless on
@@ -50,6 +50,7 @@ export const CLAUDE_BIN = (() => {
 const historyDir = (id: string) => path.join(filmDir(id), ".history");
 const chatFile = (id: string) => path.join(historyDir(id), "chat.json");
 const undoneFlag = (id: string) => path.join(historyDir(id), "undone");
+const wentBackFlag = (id: string) => path.join(historyDir(id), "went-back");
 const logFile = (id: string) => path.join(historyDir(id), "last-turn.jsonl");
 
 export async function readChat(id: string): Promise<ChatMessage[]> {
@@ -68,15 +69,29 @@ async function addChat(id: string, message: ChatMessage) {
 }
 
 // Undo tells the next turn that the files went back, since Claude's own
-// memory of the conversation still has the change in it.
+// memory of the conversation still has the change in it. Undoing a step
+// back to an earlier version just returns the files to how Claude left them.
 export async function noteUndo(id: string) {
   await mkdir(historyDir(id), { recursive: true });
-  await writeFile(undoneFlag(id), new Date().toISOString());
+  if (existsSync(wentBackFlag(id))) await rm(wentBackFlag(id), { force: true });
+  else await writeFile(undoneFlag(id), new Date().toISOString());
   await addChat(id, { role: "you", text: "Undo the last change.", at: new Date().toISOString() });
 }
 
+// Going back to an earlier version tells the next turn the same way, and
+// says which version, in the chat too.
+export async function noteWentBack(id: string, about: string) {
+  await mkdir(historyDir(id), { recursive: true });
+  await writeFile(wentBackFlag(id), about);
+  await rm(undoneFlag(id), { force: true });
+  await addChat(id, { role: "you", text: wentBackTo(about), at: new Date().toISOString() });
+}
+
 const dropSnapshot = (id: string, n: number) =>
-  withFilm(id, () => rm(path.join(historyDir(id), String(n)), { recursive: true, force: true }));
+  withFilm(id, async () => {
+    await rm(path.join(historyDir(id), String(n)), { recursive: true, force: true });
+    await pruneVersions(id);
+  });
 
 // ─── Running turns ───────────────────────────────────────────────────────────
 
@@ -137,13 +152,19 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
     return;
   }
 
-  // The film as it is now, for undo.
-  const n = await withFilm(id, () => snapshotFilm(id));
+  // The film as it is now, for undo and the version history.
+  const n = await withFilm(id, async () => {
+    const taken = await snapshotFilm(id);
+    await recordVersion(id, taken, prompt, request.context.t);
+    return taken;
+  });
   emit({ kind: "start", turn: n });
   await addChat(id, { role: "you", text: prompt, at: new Date().toISOString(), context: request.context });
 
   const undone = existsSync(undoneFlag(id));
   await rm(undoneFlag(id), { force: true });
+  const wentBack = await readFile(wentBackFlag(id), "utf8").catch(() => null);
+  await rm(wentBackFlag(id), { force: true });
 
   const dir = filmDir(id);
   await rm(logFile(id), { force: true });
@@ -159,7 +180,7 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   // The exact command goes first in the turn's log, for debugging.
   await appendFile(logFile(id), `${JSON.stringify({ type: "studio_command", bin: CLAUDE_BIN, args })}\n`).catch(() => {});
   const edit = film.kind === "video" ? await editSummary(id, request.context.t) : null;
-  proc.stdin.end(userMessage(film, prompt, request.context, undone, edit));
+  proc.stdin.end(userMessage(film, prompt, request.context, undone, wentBack, edit));
 
   const limit = setTimeout(() => {
     turn.stopped = true;
@@ -406,7 +427,14 @@ async function editSummary(id: string, t: number): Promise<string> {
   return lines.join("\n");
 }
 
-function userMessage(film: Film, prompt: string, context: ChatContext, undone: boolean, edit: string | null) {
+function userMessage(
+  film: Film,
+  prompt: string,
+  context: ChatContext,
+  undone: boolean,
+  wentBack: string | null,
+  edit: string | null,
+) {
   const lines = [
     `<film>engine ${ENGINE_WORDS[film.engine]}, ${film.width}x${film.height}, ${film.fps} fps, ${film.duration} s, title "${film.title}"</film>`,
     `<playhead>They stopped the playhead at ${context.t.toFixed(2)} s (frame ${Math.round(context.t * film.fps)}). "Here", "now", "this moment" and "at this point" mean exactly that time; make timed changes relative to it.</playhead>`,
@@ -434,6 +462,11 @@ function userMessage(film: Film, prompt: string, context: ChatContext, undone: b
     lines.push(`<selected>On the timeline they have selected ${context.selection.join(", ")}. "This", "these" or "the selected" means them.</selected>`);
   }
   if (undone) lines.push("<note>They undid your previous change: the files are back to how they were before it.</note>");
+  if (wentBack) {
+    lines.push(
+      `<note>They went back to an earlier version of the film, ${wentBack}: the files are back to how they were then, so changes you made since are gone. Read the files again before changing them.</note>`,
+    );
+  }
   const attached = attachmentNote(filmDir(film.id), context.attachments ?? []);
   if (attached) lines.push(attached);
   lines.push(`<request>\n${prompt}\n</request>`);

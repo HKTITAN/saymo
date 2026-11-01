@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { constants } from "node:fs";
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { Engine, Film, FilmEdit, FilmSummary, Folder } from "./contract";
+import type { Engine, Film, FilmEdit, FilmSummary, Folder, Version } from "./contract";
 
 // Copies are APFS clones where the disk allows: instant, and no extra space
 // until one side changes. Matters once a film holds gigabytes of footage.
@@ -166,8 +166,10 @@ export async function duplicateFilm(id: string): Promise<Film | null> {
 // ─── History, for undo ───────────────────────────────────────────────────────
 
 // Copies the film as it is now into .history/<n>/ (n counting up) and
-// returns n. Called before each Claude turn. Keeps the last 30.
-export async function snapshotFilm(id: string): Promise<number> {
+// returns n. Called before each Claude turn, and before going back to an
+// earlier version. Keeps the last 30, never dropping `spare` (the version
+// being gone back to).
+export async function snapshotFilm(id: string, { spare }: { spare?: number } = {}): Promise<number> {
   const dir = filmDir(id);
   const turns = await historyTurns(id);
   const n = (turns.at(-1) ?? 0) + 1;
@@ -179,8 +181,9 @@ export async function snapshotFilm(id: string): Promise<number> {
     if (!keepInHistory(name)) continue;
     await cp(path.join(dir, name), path.join(snap, name), { ...CLONE, recursive: true });
   }
-  for (const old of turns.slice(0, Math.max(0, turns.length + 1 - 30))) {
-    await rm(path.join(historyDir(id), String(old)), { recursive: true, force: true });
+  const old = turns.filter((t) => t !== spare);
+  for (const t of old.slice(0, Math.max(0, old.length + 1 - 30))) {
+    await rm(path.join(historyDir(id), String(t)), { recursive: true, force: true });
   }
   return n;
 }
@@ -199,6 +202,16 @@ export async function restoreLast(id: string): Promise<Film | null> {
   const turns = await historyTurns(id);
   const n = turns.at(-1);
   if (n === undefined) return null;
+  const film = await putBack(id, n);
+  await rm(path.join(historyDir(id), String(n)), { recursive: true, force: true });
+  await pruneVersions(id);
+  return film;
+}
+
+// Copies snapshot n's files over the film. What a snapshot never holds
+// stays as it is: renders (out/), history, footage (media/) and the Claude
+// session.
+async function putBack(id: string, n: number): Promise<Film | null> {
   const dir = filmDir(id);
   const snap = path.join(historyDir(id), String(n));
   const session = (await readFilm(id))?.session;
@@ -206,8 +219,7 @@ export async function restoreLast(id: string): Promise<Film | null> {
     if (name === "out" || name === ".history" || !keepInHistory(name)) continue;
     await rm(path.join(dir, name), { recursive: true, force: true });
   }
-  await cp(snap, dir, { recursive: true });
-  await rm(snap, { recursive: true, force: true });
+  await cp(snap, dir, { ...CLONE, recursive: true });
   const film = await readFilm(id);
   if (!film) return null;
   const next = { ...film, session, updatedAt: new Date().toISOString() };
@@ -216,6 +228,143 @@ export async function restoreLast(id: string): Promise<Film | null> {
 }
 
 export const canUndo = async (id: string) => (await historyTurns(id)).length > 0;
+
+// ─── Versions: the film after each prompt ────────────────────────────────────
+
+// .history/versions.json has a row for each snapshot: what came right after
+// it was taken (the prompt sent, or going back to another version) and the
+// snapshot's own label. A snapshot holds the film as it stood after the
+// prompt before it, or the starting point for the first one. Labels are
+// worked out when the snapshot is taken, from the row before it, so
+// trimming old rows never changes one. Rows whose snapshot is gone (undone,
+// a turn that changed nothing, past the last 30) are dropped.
+type Made = { prompt: string; t: number }; // the prompt that made a version
+export type VersionRow = {
+  n: number;
+  at: string; // ISO, when the snapshot was taken
+  prompt: string; // what came next: the prompt, or "Went back to …"
+  context: { t: number }; // the playhead when that was asked
+  label: string; // the snapshot itself: "Start", "After: …", "Before going back to …"
+  made?: Made;
+  back?: { about: string; made?: Made }; // on a row that went back: where to
+};
+
+const versionsFile = (id: string) => path.join(historyDir(id), "versions.json");
+
+export async function readVersions(id: string): Promise<VersionRow[]> {
+  const turns = new Set(await historyTurns(id));
+  try {
+    const rows = JSON.parse(await readFile(versionsFile(id), "utf8")) as VersionRow[];
+    return Array.isArray(rows) ? rows.filter((r) => turns.has(r.n)).sort((a, b) => a.n - b.n) : [];
+  } catch {
+    return [];
+  }
+}
+
+// Written aside and renamed, so a crash never leaves half a file.
+async function writeVersions(id: string, rows: VersionRow[]) {
+  const turns = new Set(await historyTurns(id));
+  const file = versionsFile(id);
+  await mkdir(historyDir(id), { recursive: true });
+  await writeFile(`${file}.tmp`, `${JSON.stringify(rows.filter((r) => turns.has(r.n)), null, 2)}\n`);
+  await rename(`${file}.tmp`, file);
+}
+
+// Drops the rows whose snapshot is gone.
+export const pruneVersions = async (id: string) => writeVersions(id, await readVersions(id));
+
+// About 60 characters, cut between words.
+function shorten(text: string, max = 60) {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= max) return flat;
+  const cut = flat.slice(0, max);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).replace(/[\s.,;:!?-]+$/, "")}…`;
+}
+
+// What the film became after a row's prompt or going back.
+function after(row: VersionRow | undefined, earlier: boolean): { label: string; made?: Made } {
+  if (!row) return { label: earlier ? "An earlier version" : "Start" };
+  if (row.back) return { label: `Back to ${row.back.about}`, made: row.back.made };
+  return { label: `After: ${shorten(row.prompt)}`, made: { prompt: row.prompt, t: row.context.t } };
+}
+
+// Where going back went, by what the version holds: "the version after:
+// …" (the prompt that made it), "the start" or "an earlier version".
+function aboutOf(row: VersionRow | undefined) {
+  if (row?.made) return `the version after: ${shorten(row.made.prompt)}`;
+  if (!row || row.label.includes("earlier version")) return "an earlier version";
+  return "the start";
+}
+
+// "Went back to the start.", with no full stop after a shortened prompt.
+export const wentBackTo = (about: string) => `Went back to ${about}${about.endsWith("…") ? "" : "."}`;
+
+// Records snapshot n, taken just before `prompt` (asked with the playhead
+// at t). Call it in the same withFilm as the snapshot.
+export async function recordVersion(id: string, n: number, prompt: string, t: number, back?: VersionRow["back"]) {
+  const rows = (await readVersions(id)).filter((r) => r.n !== n);
+  const prev = rows.filter((r) => r.n < n).at(-1);
+  const earlier = !prev && (await historyTurns(id)).some((x) => x < n);
+  const was = after(prev, earlier);
+  const row: VersionRow = {
+    n,
+    at: new Date().toISOString(),
+    prompt,
+    context: { t },
+    label: back ? `Before going back to ${back.about}` : was.label,
+    ...(was.made ? { made: was.made } : {}),
+    ...(back ? { back } : {}),
+  };
+  await writeVersions(id, [...rows, row]);
+}
+
+// Every version, newest first, with the film as it is now at the top.
+export async function listVersions(id: string, film: Film): Promise<Version[]> {
+  const rows = await readVersions(id);
+  const byN = new Map(rows.map((r) => [r.n, r]));
+  const turns = await historyTurns(id);
+  const versions: Version[] = [];
+  for (const n of turns) {
+    const row = byN.get(n);
+    // Snapshots from before versions were recorded have no row.
+    const at = row?.at ?? (await stat(path.join(historyDir(id), String(n))).then((s) => s.mtime.toISOString(), () => film.updatedAt));
+    versions.push({
+      n,
+      at,
+      label: row?.label ?? "An earlier version",
+      prompt: row?.made?.prompt ?? null,
+      t: row?.made?.t ?? null,
+    });
+  }
+  // Now is the film after the newest row's prompt (or going back).
+  const now = rows.length ? after(rows.at(-1), false) : null;
+  versions.push({
+    n: null,
+    at: film.updatedAt,
+    label: "Now",
+    ...(now ? { detail: now.label } : {}),
+    prompt: now?.made?.prompt ?? null,
+    t: now?.made?.t ?? null,
+    current: true,
+  });
+  return versions.reverse();
+}
+
+// Puts the film back as it was in snapshot n. The film as it is now is
+// kept first, as a new version, so you can always come forward again.
+// Returns the film and where it went ("the version after: …"), or null if
+// there's no such version.
+export async function restoreVersion(id: string, n: number, t: number): Promise<{ film: Film; about: string } | null> {
+  if (!(await historyTurns(id)).includes(n)) return null;
+  const target = (await readVersions(id)).find((r) => r.n === n);
+  const about = aboutOf(target);
+  const back = { about, ...(target?.made ? { made: target.made } : {}) };
+  const m = await snapshotFilm(id, { spare: n });
+  await recordVersion(id, m, wentBackTo(about), t, back);
+  const film = await putBack(id, n);
+  return film ? { film, about } : null;
+}
 
 // ─── Only this machine ───────────────────────────────────────────────────────
 

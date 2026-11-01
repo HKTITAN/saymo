@@ -491,6 +491,12 @@ function FilmView({
         if (!error) history.forgetClaude();
         return error;
       },
+      // Going back is a step ⌘Z can take back, like a Claude turn.
+      restore: async (n: number, t: number) => {
+        const error = await chat.restore(n, t);
+        if (!error) history.recordClaude();
+        return error;
+      },
     }),
     [chat, history],
   );
