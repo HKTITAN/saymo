@@ -206,6 +206,11 @@ function bridge(options: BridgeOptions) {
             stage.register({
               seek: (s) => tl.seek(s, false),
               params(values) {
+                // The studio sends its values on every "ready"; if the page
+                // already runs with them, reloading would only send it round
+                // again (an endless flicker).
+                const now = w.__params ?? {};
+                if (Object.keys(values).every((k) => values[k] === now[k])) return;
                 stage.keepParams(values);
                 clearTimeout(timer);
                 timer = window.setTimeout(reload, 150);
