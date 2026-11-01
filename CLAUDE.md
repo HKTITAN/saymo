@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Aerchain speaker post: house rules
+# Motion Studio: house rules
 
 Read by every Claude working here, including the studio's chat. The owner is
 a visual designer; explain in plain words.

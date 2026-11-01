@@ -62,3 +62,4 @@ next-env.d.ts
 
 # connections: tokens and the film library working copy (never commit)
 /.studio
+/studio/hyperframes/**/.thumbnails/
