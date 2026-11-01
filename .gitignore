@@ -56,3 +56,6 @@ next-env.d.ts
 # films made in the studio, with their history and renders
 /films
 /studio/starters/**/.hyperframes/
+
+# brand kits made in the studio (may belong to clients)
+/brands

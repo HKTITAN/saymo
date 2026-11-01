@@ -56,6 +56,7 @@ export type Film = {
   session?: string; // Claude session id, so the chat continues
   kind?: "motion" | "video"; // video = an edit of footage (edit.ts); missing = motion
   sound?: { on: boolean; volume: number }; // sound design (sound.ts); missing = none yet
+  brand?: string; // brand kit id (brand.ts); missing = "aerchain"
 };
 
 // A film in the list.
