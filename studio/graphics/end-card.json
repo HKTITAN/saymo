@@ -1,0 +1,8 @@
+{
+  "label": "End card",
+  "duration": 4,
+  "params": [
+    { "key": "line", "label": "Line under the logo", "type": "text", "value": "aerchain.io" },
+    { "key": "ground", "label": "Background", "type": "choice", "value": "Black", "options": ["Black", "Stone"] }
+  ]
+}

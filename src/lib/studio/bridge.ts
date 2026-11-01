@@ -25,7 +25,8 @@ export function bridgeScript({ id, engine }: BridgeOptions) {
 // Runs in the stage page, not here: plain browser JavaScript.
 function bridge(options: BridgeOptions) {
   type Values = Record<string, number | string | boolean>;
-  type Adapter = { seek(t: number): void; params?(values: Values): void; reload?(): void };
+  // edit: a video film's timeline, sent live while it's being cut (edit.ts).
+  type Adapter = { seek(t: number): void; params?(values: Values): void; edit?(edit: unknown): void; reload?(): void };
   const w = window as unknown as {
     __film: { width: number; height: number; fps: number; duration: number };
     __params: Values;
@@ -153,11 +154,13 @@ function bridge(options: BridgeOptions) {
 
   window.addEventListener("message", (e) => {
     if (e.source !== window.parent || e.origin !== location.origin) return;
-    const m = (e.data ?? {}) as { type?: string; t?: number; params?: Values; on?: boolean };
+    const m = (e.data ?? {}) as { type?: string; t?: number; params?: Values; on?: boolean; edit?: unknown };
     if (m.type === "studio:seek") seek(Number(m.t));
     else if (m.type === "studio:point") setPointing(Boolean(m.on));
     else if (m.type === "studio:params" && m.params) {
       if (adapter?.params) adapter.params(m.params);
+    } else if (m.type === "studio:edit" && m.edit) {
+      adapter?.edit?.(m.edit);
     } else if (m.type === "studio:reload") {
       // Files changed: film.json's values are the truth again.
       store.set("params", null);

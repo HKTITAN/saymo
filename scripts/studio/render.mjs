@@ -10,16 +10,26 @@
 //   node scripts/studio/render.mjs <id> [--draft]
 //     A sample from studio/compositions.json into studio/out/.
 //
-// Every engine hands over lossless frames (PNGs, or an FFV1 master from
-// fframes), and one ffmpeg makes the files from them exactly as
+// A VIDEO film (an edit of footage, kind "video") renders from the original
+// files with its sound, and a final is only drawn at twice its size when
+// the footage has the pixels for it: every picture on the timeline must
+// have at least about twice the detail the frame needs (a 4K clip in a
+// 1080p film, say). Otherwise the final is the film's own size alone
+// (1080p.mp4), as blowing footage up only makes a bigger, softer file.
+//
+// A motion film's engine hands over lossless frames (PNGs, or an FFV1
+// master from fframes), and one ffmpeg makes the files from them exactly as
 // `npm run export` does: H.264 at CRF 14, tagged BT.709, the smaller copy
-// being the big frames at half size.
+// being the big frames at half size. A video film is encoded by Remotion
+// while it draws (with its sound, the same tags), as footage is long.
 //
 // Prints `progress <percent>` lines on stdout while it works, then
 // `wrote <path>` for each file. Engine output is shown only if it fails.
 
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync, rmSync } from "node:fs";
+import { stat } from "node:fs/promises";
+import http from "node:http";
 import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -35,9 +45,9 @@ const CARGO_TARGET = path.join(ROOT, "node_modules/.cache/studio-cargo");
 const TO_VIDEO =
   "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p," +
   "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv";
-const x264 = (level, draft = false) => [
+const x264 = (level, draft = false, tune = "animation") => [
   "-c:v", "libx264", "-preset", draft ? "veryfast" : "slow", "-crf", draft ? "18" : "14",
-  "-tune", "animation", "-level:v", level, "-movflags", "+faststart",
+  "-tune", tune, "-level:v", level, "-movflags", "+faststart",
 ];
 
 const args = process.argv.slice(2);
@@ -157,12 +167,23 @@ const ENGINES = {
       });
     } else {
       const spec = path.join(work, "spec.json");
-      await writeFile(spec, JSON.stringify({ width: job.width, height: job.height, fps: job.fps, duration: job.duration, params: job.params }));
+      await writeFile(
+        spec,
+        JSON.stringify({
+          width: job.width,
+          height: job.height,
+          fps: job.fps,
+          duration: job.duration,
+          params: job.params,
+          video: job.footage ? { output: path.join(work, "film.mp4"), draft } : null,
+        }),
+      );
       await run(process.execPath, ["scripts/film-frames.mjs", job.dir, frames, spec, "--scale", String(job.scale)], {
         cwd: path.join(ROOT, "studio/remotion"),
         onLine: remotionProgress,
       });
     }
+    if (job.footage) return { encoded: path.join(work, "film.mp4") };
     return { pngs: await pngsIn(frames) };
   },
 
@@ -250,7 +271,9 @@ async function encode(source, job, files) {
       "-y", "-loglevel", "error", "-progress", "pipe:1", "-nostats", ...input,
       "-filter_complex", graph,
       // Written under a .part name and renamed once complete, as export.mjs does.
-      ...outs.flatMap((f) => ["-map", f.label, "-r", String(fps), ...x264(level(f), draft), "-f", "mp4", `${f.path}.part`]),
+      ...outs.flatMap((f) => [
+        "-map", f.label, "-r", String(fps), ...x264(level(f), draft), "-f", "mp4", `${f.path}.part`,
+      ]),
     ],
     {
       onLine: (line) => {
@@ -303,7 +326,7 @@ async function lock(file) {
 
 const ENGINE_OF = { html: "hyperframes", react: "remotion", rust: "fframes" };
 // What a render copies: the film's own files, not its renders or history.
-const SKIP = new Set(["out", ".history", "node_modules", "target", ".hyperframes", "renders"]);
+const SKIP = new Set(["out", ".history", "node_modules", "target", ".hyperframes", "renders", "media"]);
 
 async function renderFilm(id) {
   if (!/^[a-z0-9]{8}$/.test(id)) throw new Error(`No film called ${id}`);
@@ -346,23 +369,52 @@ async function renderFilm(id) {
     params,
     scale: draft ? 1 : 2,
   };
+  let server = null;
+  if (film.kind === "video") {
+    // The edit and its files, served to the engine from here: the originals
+    // (photos as their web-ready copy), never the preview copies.
+    const edit = JSON.parse(await readFile(path.join(src, "edit.json"), "utf8"));
+    server = await serveMedia(path.join(dir, "media"));
+    const media = {};
+    for (const mid of await readdir(path.join(dir, "media")).catch(() => [])) {
+      const m = JSON.parse(await readFile(path.join(dir, "media", mid, "media.json"), "utf8").catch(() => "null"));
+      if (!m || m.status !== "ready") continue;
+      const file = m.kind === "image" ? m.proxy : m.original;
+      media[mid] = { src: `${server.url}/${mid}/${encodeURIComponent(file)}`, kind: m.kind, width: m.width, height: m.height, name: m.name };
+    }
+    job.params = { ...params, edit, media };
+    job.duration = Math.max(1 / film.fps, editEnd(edit));
+    job.footage = true;
+    if (!draft && !hasDetailFor2x(edit, media, film)) job.scale = 1;
+  }
   const engine = ENGINES[ENGINE_OF[film.engine]];
   if (!engine) throw new Error(`No engine for ${film.engine} films`);
-  const source = await engine(job, work);
+  let source;
+  try {
+    source = await engine(job, work);
+  } finally {
+    server?.close();
+  }
 
   const files = draft
     ? [{ path: path.join(out, "draft.mp4"), big: true }]
-    : [
-        { path: path.join(out, "4k.mp4"), big: true },
-        { path: path.join(out, "1080p.mp4"), big: false },
-      ];
-  await encode(source, job, files);
+    : job.scale === 2
+      ? [
+          { path: path.join(out, "4k.mp4"), big: true },
+          { path: path.join(out, "1080p.mp4"), big: false },
+        ]
+      : [{ path: path.join(out, "1080p.mp4"), big: false }];
+  // A final at the film's own size replaces any earlier twice-size file.
+  if (!draft && job.scale === 1) await rm(path.join(out, "4k.mp4"), { force: true });
+  if (source.encoded) await finishEncoded(source.encoded, job, files);
+  else await encode(source, job, files);
 
-  // The poster: the film at its "Cover" mark (or halfway), at its own size.
-  const cover = (film.marks ?? []).find((m) => /cover/i.test(m.label))?.t ?? film.duration / 2;
+  // The poster: the film at its "Cover" mark (or halfway; a third in for a
+  // video film, past any title card), at its own size.
+  const cover = (film.marks ?? []).find((m) => /cover/i.test(m.label))?.t ?? job.duration / (film.kind === "video" ? 3 : 2);
   const small = files.at(-1).path;
   await run("ffmpeg", [
-    "-y", "-loglevel", "error", "-ss", String(Math.min(cover, film.duration - 1 / film.fps)), "-i", small,
+    "-y", "-loglevel", "error", "-ss", String(Math.min(cover, job.duration - 1 / film.fps)), "-i", small,
     "-frames:v", "1", "-vf", `scale=${film.width}:${film.height}:flags=area`, path.join(out, "poster.png.part.png"),
   ]);
   await rename(path.join(out, "poster.png.part.png"), path.join(out, "poster.png"));
@@ -372,6 +424,90 @@ async function renderFilm(id) {
   for (const f of [...files.map((f) => f.path), path.join(out, "poster.png")]) {
     console.log(`wrote ${path.relative(ROOT, f)}`);
   }
+}
+
+// ─── Video films ────────────────────────────────────────────────────────────
+
+// Remotion has already encoded the film (at the job's scale, with sound):
+// the big file is that one; a smaller copy at the film's own size is the
+// same frames at half size, sound copied as it is.
+async function finishEncoded(file, job, files) {
+  for (const f of files) {
+    if (f.big || job.scale === 1) {
+      await cp(file, `${f.path}.part`);
+    } else {
+      await run("ffmpeg", [
+        "-y", "-loglevel", "error", "-i", file,
+        "-vf", `scale=${job.width}:${job.height}:flags=area,${TO_VIDEO}`,
+        ...x264("4.2", draft, "film"), "-c:a", "copy", "-f", "mp4", `${f.path}.part`,
+      ]);
+    }
+    await rename(`${f.path}.part`, f.path);
+  }
+  progress(1);
+}
+
+function editEnd(edit) {
+  let end = 0;
+  for (const track of edit.tracks) {
+    for (const item of track.items) {
+      const length = item.type === "clip" ? (item.to - item.from) / (item.speed ?? 1) : item.duration;
+      end = Math.max(end, item.start + length);
+    }
+  }
+  return end;
+}
+
+// Does every picture on the timeline have about twice the detail the frame
+// needs? A clip covers the frame, scaled by its zoom; it has enough when
+// its source pixels per frame pixel are at least ~1.8 (a touch of upscaling
+// at twice the size is invisible; more is not).
+function hasDetailFor2x(edit, media, film) {
+  for (const track of edit.tracks) {
+    if (track.hidden || track.kind === "audio") continue;
+    for (const item of track.items) {
+      if (item.type !== "clip") continue;
+      const m = media[item.media];
+      if (!m || m.kind === "audio" || !m.width || !m.height) continue;
+      const cover = Math.max(film.width / m.width, film.height / m.height) * Math.max(1, item.zoom ?? 1);
+      if (1 / cover < 1.8) return false;
+    }
+  }
+  return true;
+}
+
+// Serves a film's media folder on this Mac only, with byte ranges, for the
+// engine to read the originals from while it renders.
+function serveMedia(root) {
+  const server = http.createServer(async (req, res) => {
+    const rel = decodeURIComponent(new URL(req.url, "http://x").pathname).replace(/^\/+/, "");
+    const file = path.resolve(root, rel);
+    if (!file.startsWith(root + path.sep) || rel.split("/").some((s) => s.startsWith("."))) {
+      res.writeHead(404).end();
+      return;
+    }
+    const info = await stat(file).catch(() => null);
+    if (!info?.isFile()) {
+      res.writeHead(404).end();
+      return;
+    }
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "");
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, info.size - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), info.size - 1) : info.size - 1;
+      res.writeHead(206, { "Content-Length": end - start + 1, "Content-Range": `bytes ${start}-${end}/${info.size}`, "Accept-Ranges": "bytes" });
+      createReadStream(file, { start, end }).pipe(res);
+      return;
+    }
+    res.writeHead(200, { "Content-Length": info.size, "Accept-Ranges": "bytes" });
+    if (req.method === "HEAD") res.end();
+    else createReadStream(file).pipe(res);
+  });
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      resolve({ url: `http://127.0.0.1:${server.address().port}`, close: () => server.close() });
+    });
+  });
 }
 
 // ─── A sample from studio/compositions.json ─────────────────────────────────

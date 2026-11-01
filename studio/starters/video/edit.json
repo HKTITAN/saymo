@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "tracks": [
+    { "id": "v1", "kind": "video", "name": "Footage", "items": [] },
+    { "id": "g1", "kind": "graphics", "name": "Graphics", "items": [] },
+    { "id": "a1", "kind": "audio", "name": "Music", "items": [] }
+  ],
+  "captions": { "on": false, "style": "lines", "words": [], "position": "bottom" },
+  "background": "#141414"
+}
