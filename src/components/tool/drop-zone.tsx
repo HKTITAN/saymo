@@ -2,8 +2,8 @@
 
 import { ImageUpIcon } from "lucide-react";
 import { type Ref, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { DialButton } from "./dial";
 
 export const ACCEPT = "image/png,image/jpeg,image/webp,image/heic,image/heif,image/avif";
 
@@ -25,8 +25,8 @@ export function DropZone({
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-6 text-center transition-colors",
-        over && "border-ring bg-accent",
+        "flex flex-col items-center gap-2 rounded-[10px] border border-white/15 border-dashed bg-white/[0.02] px-4 py-6 text-center transition-colors",
+        over && "border-white/40 bg-white/[0.06]",
       )}
       onDragOver={(e) => {
         e.preventDefault();
@@ -40,18 +40,12 @@ export function DropZone({
         if (file && !busy) onFile(file);
       }}
     >
-      <ImageUpIcon className="size-5 text-muted-foreground" aria-hidden="true" />
-      <p className="font-medium text-sm">{busy ?? title}</p>
-      <p className="max-w-64 text-muted-foreground text-xs">{hint}</p>
-      <Button
-        className="mt-1"
-        size="sm"
-        variant="outline"
-        loading={Boolean(busy)}
-        onClick={() => input.current?.click()}
-      >
+      <ImageUpIcon className="size-5 text-white/40" aria-hidden="true" />
+      <p className="font-medium text-[12px] text-white/85">{busy ?? title}</p>
+      <p className="max-w-64 text-[11.5px] text-white/45 leading-relaxed">{hint}</p>
+      <DialButton className="mt-1 h-8 w-auto px-4" loading={Boolean(busy)} onClick={() => input.current?.click()}>
         Choose a file
-      </Button>
+      </DialButton>
       <FileInput ref={input} onFile={onFile} />
     </div>
   );

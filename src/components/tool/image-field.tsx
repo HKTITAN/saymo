@@ -1,15 +1,12 @@
 "use client";
 
 import { ExternalLinkIcon, SparklesIcon } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { PALETTE } from "@/components/post/palette";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import type { Placement, PostDoc, Take } from "@/lib/tool/doc";
 import { cn } from "@/lib/utils";
 import type { Problem } from "./api";
+import { DialButton, DialNote, DialSlider, DialText } from "./dial";
 import { DropZone, FileInput } from "./drop-zone";
 
 // The landmark on the right: make one with AI, upload one, name it and
@@ -38,19 +35,19 @@ export function ImageField({
   const replace = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-1.5">
       {image ? (
-        <div className="flex gap-3">
-          <Swatch src={image.x1} className="size-20 rounded-lg p-1.5" />
-          <div className="flex min-w-0 flex-col justify-between gap-2">
-            <p className="text-muted-foreground text-xs">{busy ?? image.note}</p>
-            <div className="flex gap-2">
-              <Button size="xs" variant="outline" disabled={Boolean(busy)} onClick={() => replace.current?.click()}>
+        <div className="flex gap-3 rounded-[10px] bg-white/[0.05] p-1.5">
+          <Swatch src={image.x1} className="size-20 rounded-[7px] p-1.5" />
+          <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5 pe-1">
+            <p className="text-[11.5px] text-white/50 leading-relaxed">{busy ?? image.note}</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              <DialButton className="h-7" disabled={Boolean(busy)} onClick={() => replace.current?.click()}>
                 Upload instead
-              </Button>
-              <Button size="xs" variant="ghost" disabled={Boolean(busy)} onClick={onRemove}>
+              </DialButton>
+              <DialButton className="h-7" disabled={Boolean(busy)} onClick={onRemove}>
                 Remove
-              </Button>
+              </DialButton>
             </div>
             <FileInput ref={replace} onFile={onUpload} />
           </div>
@@ -67,9 +64,9 @@ export function ImageField({
       <Generate busy={busy} onGenerate={onGenerate} />
 
       {takes.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="font-medium text-sm">Earlier tries</p>
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-1.5 pt-1">
+          <p className="px-1 text-[12px] text-white/65">Earlier tries</p>
+          <div className="flex flex-wrap gap-1.5">
             {takes.map((take) => {
               const current = image?.take === take.file;
               return (
@@ -77,8 +74,8 @@ export function ImageField({
                   key={take.file}
                   type="button"
                   className={cn(
-                    "cursor-pointer rounded-md outline-none ring-1 ring-border transition-shadow hover:ring-ring/60 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-64",
-                    current && "ring-2 ring-ring",
+                    "cursor-pointer rounded-[8px] outline-none ring-1 ring-white/10 transition-shadow hover:ring-white/30 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50",
+                    current && "ring-2 ring-white/70 hover:ring-white/70",
                   )}
                   aria-label={`Use ${take.name}`}
                   aria-pressed={current}
@@ -86,7 +83,7 @@ export function ImageField({
                   disabled={Boolean(busy)}
                   onClick={() => onUseTake(take.file)}
                 >
-                  <Swatch src={take.url} className="size-14 rounded-md p-1" />
+                  <Swatch src={take.url} className="size-14 rounded-[8px] p-1" />
                 </button>
               );
             })}
@@ -96,49 +93,35 @@ export function ImageField({
 
       {image && (
         <>
-          <Field>
-            <FieldLabel>Name</FieldLabel>
-            <Input value={image.name} onChange={(e) => onName(e.target.value)} />
-            <FieldDescription>Read out by screen readers in place of the image.</FieldDescription>
-          </Field>
-
-          <PlaceSlider
+          <div className="h-1.5" />
+          <DialText label="Name" value={image.name} onChange={onName} />
+          <DialNote>Read out by screen readers in place of the image.</DialNote>
+          <DialSlider
             label="Size"
             value={image.place.scale * 100}
             min={25}
             max={250}
-            unit="%"
+            format={(v) => `${Math.round(v)}%`}
             onChange={(v) => onPlace({ ...image.place, scale: Math.round(v) / 100 })}
           />
-          <PlaceSlider
+          <DialSlider
             label="Left and right"
             value={image.place.x}
             min={-460}
             max={460}
-            unit=" px"
+            format={(v) => `${Math.round(v)} px`}
             onChange={(v) => onPlace({ ...image.place, x: Math.round(v) })}
           />
-          <PlaceSlider
+          <DialSlider
             label="Up and down"
             value={image.place.y}
             min={-540}
             max={540}
-            unit=" px"
+            format={(v) => `${Math.round(v)} px`}
             onChange={(v) => onPlace({ ...image.place, y: Math.round(v) })}
           />
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-muted-foreground text-xs">
-              You can also drag it in the preview, and pinch to resize it.
-            </p>
-            <Button
-              size="xs"
-              variant="ghost"
-              className="shrink-0"
-              onClick={() => onPlace({ x: 0, y: 0, scale: 1 })}
-            >
-              Reset
-            </Button>
-          </div>
+          <DialButton onClick={() => onPlace({ x: 0, y: 0, scale: 1 })}>Reset position</DialButton>
+          <DialNote>You can also drag it in the preview, and pinch to resize it.</DialNote>
         </>
       )}
     </div>
@@ -169,10 +152,11 @@ function Generate({
   const [place, setPlace] = useState("");
   const [problem, setProblem] = useState<Problem | null>(null);
   const [making, setMaking] = useState(false);
+  const id = useId();
 
   return (
     <form
-      className="flex flex-col gap-2"
+      className="flex flex-col gap-1.5 pt-1"
       onSubmit={async (e) => {
         e.preventDefault();
         const words = place.trim();
@@ -182,79 +166,49 @@ function Generate({
         setMaking(false);
       }}
     >
-      <Field>
-        <FieldLabel>Make one with AI</FieldLabel>
-        <div className="flex w-full gap-2">
-          <Input
-            value={place}
-            placeholder="Dubai, or Burj Khalifa"
-            onChange={(e) => {
-              setPlace(e.target.value);
-              setProblem(null);
-            }}
-          />
-          <Button type="submit" loading={making} disabled={!place.trim() || (Boolean(busy) && !making)}>
-            <SparklesIcon aria-hidden="true" />
-            Generate
-          </Button>
-        </div>
-        <FieldDescription>
-          Type a city or a landmark. It comes back in the same black and white style as the towers, cut out
-          and ready. About 20 seconds and 4 cents of Vercel credit each.
-        </FieldDescription>
-      </Field>
+      <label
+        htmlFor={id}
+        className="flex h-9 w-full cursor-text items-center gap-3 rounded-[10px] bg-white/[0.05] px-3 text-[12px] transition-colors hover:bg-white/[0.07] has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+      >
+        <span className="shrink-0 text-white/65">Make one with AI</span>
+        <input
+          id={id}
+          value={place}
+          placeholder="Dubai, or Burj Khalifa"
+          onChange={(e) => {
+            setPlace(e.target.value);
+            setProblem(null);
+          }}
+          className="h-full min-w-0 flex-1 bg-transparent text-right text-white/90 outline-none placeholder:text-white/30"
+        />
+      </label>
+      <DialButton type="submit" loading={making} disabled={!place.trim() || (Boolean(busy) && !making)}>
+        <SparklesIcon aria-hidden="true" />
+        Generate
+      </DialButton>
+      <DialNote>
+        Type a city or a landmark. It comes back in the same black and white style as the towers, cut out and
+        ready. About 20 seconds and 4 cents of Vercel credit each.
+      </DialNote>
       {problem && (
-        <div className="flex flex-col items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/8 px-3 py-2.5" role="alert">
-          <p className="text-destructive-foreground text-xs">{problem.message}</p>
+        <div
+          className="flex flex-col items-start gap-2 rounded-[10px] bg-destructive/12 px-3 py-2.5"
+          role="alert"
+        >
+          <p className="text-[12px] text-destructive-foreground">{problem.message}</p>
           {problem.action && (
             <a
               href={problem.action.url}
               target="_blank"
               rel="noreferrer"
-              className={buttonVariants({ size: "xs", variant: "outline" })}
+              className="inline-flex h-7 items-center gap-1.5 rounded-[7px] bg-white/[0.08] px-2.5 text-[12px] text-white/85 outline-none hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-ring"
             >
               {problem.action.label}
-              <ExternalLinkIcon aria-hidden="true" />
+              <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
             </a>
           )}
         </div>
       )}
     </form>
-  );
-}
-
-function PlaceSlider({
-  label,
-  value,
-  min,
-  max,
-  unit,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  unit: string;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex justify-between text-sm">
-        <span className="font-medium">{label}</span>
-        <span className="text-muted-foreground tabular-nums">
-          {Math.round(value)}
-          {unit}
-        </span>
-      </div>
-      <Slider
-        aria-label={label}
-        min={min}
-        max={max}
-        step={1}
-        value={Math.min(max, Math.max(min, value))}
-        onValueChange={(v) => onChange((Array.isArray(v) ? v[0] : v) as number)}
-      />
-    </div>
   );
 }

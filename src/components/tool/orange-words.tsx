@@ -3,7 +3,8 @@
 import type { CSSProperties } from "react";
 import { PALETTE } from "@/components/post/palette";
 import { WORD } from "@/components/post/post";
-import { Toggle } from "@/components/ui/toggle";
+import { TogglePrimitive } from "@/components/ui/toggle";
+import { DialNote } from "./dial";
 
 // The location's own words, each a switch: on, it is set in orange on the
 // post. Only words that are there can be picked, so a pick always shows.
@@ -27,8 +28,8 @@ export function OrangeWords({
   const kept = value.filter((w) => words.some((word) => same(word, w)));
 
   return (
-    <div className="flex flex-col gap-2">
-      <p className="font-medium text-sm" id="orange-words">
+    <div className="flex flex-col gap-1.5 pt-1">
+      <p className="px-1 text-[12px] text-white/65" id="orange-words">
         Words in orange
       </p>
       {words.length > 0 ? (
@@ -38,28 +39,23 @@ export function OrangeWords({
           aria-labelledby="orange-words"
           style={{ "--orange": PALETTE.orange, "--ink": PALETTE.ink } as CSSProperties}
         >
-          {words.map((word) => {
-            const on = kept.some((w) => same(w, word));
-            return (
-              <Toggle
-                key={word}
-                variant="outline"
-                size="sm"
-                pressed={on}
-                onPressedChange={(pressed) =>
-                  onChange(pressed ? [...kept, word] : kept.filter((w) => !same(w, word)))
-                }
-                className="font-normal data-pressed:border-(--orange) data-pressed:bg-(--orange) data-pressed:text-(--ink) dark:data-pressed:bg-(--orange)"
-              >
-                {word}
-              </Toggle>
-            );
-          })}
+          {words.map((word) => (
+            <TogglePrimitive
+              key={word}
+              pressed={kept.some((w) => same(w, word))}
+              onPressedChange={(pressed) =>
+                onChange(pressed ? [...kept, word] : kept.filter((w) => !same(w, word)))
+              }
+              className="h-7 cursor-pointer rounded-[8px] bg-white/[0.05] px-2.5 text-[12px] text-white/80 outline-none transition-colors hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-ring data-pressed:bg-(--orange) data-pressed:text-(--ink) data-pressed:hover:bg-(--orange)"
+            >
+              {word}
+            </TogglePrimitive>
+          ))}
         </div>
       ) : (
-        <p className="text-muted-foreground text-xs">Type the location above first.</p>
+        <DialNote>Type the location above first.</DialNote>
       )}
-      <p className="text-muted-foreground text-xs">Tap words to set them in orange on the post, like the city.</p>
+      <DialNote>Tap words to set them in orange on the post, like the city.</DialNote>
     </div>
   );
 }

@@ -1,0 +1,256 @@
+"use client";
+
+import { Slider as SliderPrimitive } from "@base-ui/react/slider";
+import { ChevronDownIcon } from "lucide-react";
+import { type ReactNode, useId, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/utils";
+
+// The editor's controls, after Josh Puckett's DialKit: every control is one
+// quiet rounded row, its label on the left and its value on the right, and
+// a slider is the row itself, filled up to its value. Values are set in the
+// system's monospace so numbers don't jitter as they change.
+
+const ROW = "flex h-9 w-full items-center rounded-[10px] bg-white/[0.05] text-[12px] transition-colors";
+const LABEL = "shrink-0 text-white/65";
+const VALUE = "font-mono text-white/90 tabular-nums";
+
+// A titled group of rows that folds away.
+export function DialGroup({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const body = useId();
+  return (
+    <section className="flex flex-col gap-1.5">
+      <h2>
+        <button
+          type="button"
+          className="flex h-8 w-full cursor-pointer items-center justify-between rounded-md px-1 text-left font-medium text-[12px] text-white/85 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-expanded={open}
+          aria-controls={body}
+          onClick={() => setOpen((o) => !o)}
+        >
+          {title}
+          <ChevronDownIcon
+            className={cn("size-3.5 text-white/40 transition-transform duration-200", !open && "-rotate-90")}
+            aria-hidden="true"
+          />
+        </button>
+      </h2>
+      <div id={body} className={cn("flex flex-col gap-1.5", !open && "hidden")}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
+// A number: drag anywhere along the row, or use the arrow keys.
+export function DialSlider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  format = (v) => String(Math.round(v)),
+  disabled,
+  onChange,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  format?: (value: number) => string;
+  disabled?: boolean;
+  onChange: (value: number) => void;
+  onCommit?: (value: number) => void;
+}) {
+  const one = (v: number | readonly number[]) => (Array.isArray(v) ? v[0] : v) as number;
+  return (
+    <SliderPrimitive.Root
+      className="group/dial w-full"
+      value={Math.min(max, Math.max(min, value))}
+      min={min}
+      max={max}
+      step={step}
+      disabled={disabled}
+      onValueChange={(v) => onChange(one(v))}
+      onValueCommitted={(v) => onCommit?.(one(v))}
+    >
+      <SliderPrimitive.Control
+        className={cn(
+          ROW,
+          "relative cursor-ew-resize touch-none select-none overflow-hidden hover:bg-white/[0.07] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring data-disabled:cursor-default data-disabled:opacity-50",
+        )}
+      >
+        {/* The track sets its own `position: relative`, so a layer under the
+            words spans the row for it; the fill takes its height from it. */}
+        <div className="absolute inset-0">
+          <SliderPrimitive.Track className="size-full">
+            <SliderPrimitive.Indicator className="bg-white/[0.10] transition-colors group-data-[dragging]/dial:bg-white/[0.14]" />
+            <SliderPrimitive.Thumb
+              className="block h-full w-0.5 bg-white/45 opacity-0 transition-opacity group-hover/dial:opacity-100 group-data-[dragging]/dial:opacity-100"
+              getAriaLabel={() => label}
+            />
+          </SliderPrimitive.Track>
+        </div>
+        <span className={cn(LABEL, "pointer-events-none relative ps-3")}>{label}</span>
+        <span className={cn(VALUE, "pointer-events-none relative ms-auto pe-3")}>{format(value)}</span>
+      </SliderPrimitive.Control>
+    </SliderPrimitive.Root>
+  );
+}
+
+// Words, typed in place on the right of the row. Dates and times use the
+// browser's own pickers.
+export function DialText({
+  label,
+  value,
+  placeholder,
+  type = "text",
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  type?: "text" | "date" | "time";
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  return (
+    <label
+      htmlFor={id}
+      className={cn(
+        ROW,
+        "cursor-text gap-3 px-3 hover:bg-white/[0.07] has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+      )}
+    >
+      <span className={LABEL}>{label}</span>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "h-full bg-transparent text-right text-white/90 outline-none placeholder:text-white/30 [color-scheme:dark]",
+          // Date and time fields keep their own width and sit on the right.
+          type === "text" ? "min-w-0 flex-1" : "ms-auto font-mono tabular-nums",
+        )}
+      />
+    </label>
+  );
+}
+
+// Several lines of words, like the headline.
+export function DialTextArea({
+  label,
+  value,
+  rows = 4,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  rows?: number;
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  return (
+    <label
+      htmlFor={id}
+      className="flex cursor-text flex-col gap-1.5 rounded-[10px] bg-white/[0.05] px-3 pt-2.5 pb-2 text-[12px] transition-colors hover:bg-white/[0.07] has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"
+    >
+      <span className={LABEL}>{label}</span>
+      <textarea
+        id={id}
+        value={value}
+        rows={rows}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full resize-none bg-transparent text-[13px] text-white/90 leading-relaxed outline-none"
+      />
+    </label>
+  );
+}
+
+// On or off, as DialKit's "Off | On" pair.
+export function DialToggle({
+  label,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <div className={cn(ROW, "ps-3 pe-1", disabled && "opacity-50")}>
+      <span className={LABEL}>{label}</span>
+      <div className="ms-auto flex gap-0.5" role="radiogroup" aria-label={label}>
+        {[false, true].map((on) => (
+          <button
+            key={String(on)}
+            type="button"
+            role="radio"
+            aria-checked={checked === on}
+            disabled={disabled}
+            onClick={() => onChange(on)}
+            className={cn(
+              "h-7 cursor-pointer rounded-[7px] px-2.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default",
+              checked === on ? "bg-white/[0.13] text-white" : "text-white/45 hover:text-white/75",
+            )}
+          >
+            {on ? "On" : "Off"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// An action, as a full row.
+export function DialButton({
+  children,
+  type = "button",
+  disabled,
+  loading,
+  onClick,
+  className,
+}: {
+  children: ReactNode;
+  type?: "button" | "submit";
+  disabled?: boolean;
+  loading?: boolean;
+  onClick?: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type={type}
+      disabled={disabled || loading}
+      onClick={onClick}
+      className={cn(
+        ROW,
+        "cursor-pointer justify-center gap-2 px-3 text-white/80 outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50 [&_svg]:size-3.5",
+        className,
+      )}
+    >
+      {loading ? <Spinner className="size-3.5" /> : null}
+      {children}
+    </button>
+  );
+}
+
+// A small note under a group of rows.
+export function DialNote({ children }: { children: ReactNode }) {
+  return <p className="px-1 text-[11.5px] text-white/40 leading-relaxed">{children}</p>;
+}

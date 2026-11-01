@@ -31,6 +31,7 @@ function widest(lines: string[], size: number) {
       top: "0",
       visibility: "hidden",
       whiteSpace: "pre",
+      fontFamily: "var(--font-post)",
       fontWeight: "600",
       letterSpacing: "-0.01em",
     });

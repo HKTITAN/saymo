@@ -1,14 +1,11 @@
 "use client";
 
 import { ArrowLeftIcon, PauseIcon, PlayIcon, TriangleAlertIcon } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Kbd } from "@/components/ui/kbd";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { toastManager } from "@/components/ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { dateLines } from "@/lib/tool/dates";
@@ -24,6 +21,7 @@ import {
   toEdit,
 } from "@/lib/tool/doc";
 import { api, type Problem, ProblemError } from "./api";
+import { DialGroup, DialNote, DialText, DialTextArea } from "./dial";
 import { ExportControl } from "./export-control";
 import { fitHeadline, layoutProblems } from "./fit";
 import { ImageField } from "./image-field";
@@ -244,100 +242,95 @@ function Workspace({ initial }: { initial: PostDoc }) {
       <div className="flex min-h-0 flex-1">
         <aside className="w-100 shrink-0 border-r">
           <ScrollArea scrollFade>
-            <Section title="Animation">
-              <MotionPicker
-                value={motionOf(doc)}
-                onChange={(motion) => edit((d) => ({ ...d, motion }))}
-              />
-            </Section>
+            <div className="flex flex-col gap-5 px-4 py-4">
+              <DialGroup title="Animation">
+                <MotionPicker
+                  value={motionOf(doc)}
+                  onChange={(motion) => edit((d) => ({ ...d, motion }))}
+                />
+              </DialGroup>
 
-            <Section title="Headline">
-              <Field>
-                <FieldLabel>One line per row</FieldLabel>
-                <Textarea value={titleText} onChange={(e) => onTitle(e.target.value)} rows={4} />
-                <FieldDescription>
+              <DialGroup title="Headline">
+                <DialTextArea label="One line per row" value={titleText} onChange={onTitle} />
+                <DialNote>
                   The first line is set at full strength, the rest at 60%.
                   {doc.titleSize < 86 && ` Made smaller to fit: ${Math.round(doc.titleSize)} px instead of 86.`}
-                </FieldDescription>
-              </Field>
-            </Section>
+                </DialNote>
+              </DialGroup>
 
-            <Section title="Speaker">
-              <PhotoField photo={doc.photo} busy={busy.photo} onUpload={uploadPhoto} onChange={changePhoto} />
-              <TextField
-                label="Name"
-                value={doc.speaker.name}
-                onChange={(name) => edit((d) => ({ ...d, speaker: { ...d.speaker, name } }))}
-              />
-              <TextField
-                label="Role"
-                value={doc.speaker.role}
-                onChange={(role) => edit((d) => ({ ...d, speaker: { ...d.speaker, role } }))}
-              />
-              <TextField
-                label="Company"
-                value={doc.speaker.company}
-                onChange={(company) => edit((d) => ({ ...d, speaker: { ...d.speaker, company } }))}
-              />
-            </Section>
+              <DialGroup title="Speaker">
+                <PhotoField photo={doc.photo} busy={busy.photo} onUpload={uploadPhoto} onChange={changePhoto} />
+                <DialText
+                  label="Name"
+                  value={doc.speaker.name}
+                  onChange={(name) => edit((d) => ({ ...d, speaker: { ...d.speaker, name } }))}
+                />
+                <DialText
+                  label="Role"
+                  value={doc.speaker.role}
+                  onChange={(role) => edit((d) => ({ ...d, speaker: { ...d.speaker, role } }))}
+                />
+                <DialText
+                  label="Company"
+                  value={doc.speaker.company}
+                  onChange={(company) => edit((d) => ({ ...d, speaker: { ...d.speaker, company } }))}
+                />
+              </DialGroup>
 
-            <Section title="Date and time">
-              <div className="grid grid-cols-2 gap-3">
-                <PickField label="Starts" type="date" value={pick.start} onChange={(start) => onPick({ start })} />
-                <PickField label="Ends, if longer" type="date" value={pick.end} onChange={(end) => onPick({ end })} />
-                <PickField label="From" type="time" value={pick.time} onChange={(time) => onPick({ time })} />
-                <PickField label="Until" type="time" value={pick.endTime} onChange={(endTime) => onPick({ endTime })} />
-              </div>
-              <p className="text-muted-foreground text-xs">
-                Picking a date writes the two lines below, weekday included. You can still type over them.
-              </p>
-              <TextField
-                label="First line"
-                value={doc.date.lines[0]}
-                onChange={(v) => edit((d) => ({ ...d, date: { ...d.date, lines: [v, d.date.lines[1]] } }))}
-              />
-              <TextField
-                label="Second line"
-                value={doc.date.lines[1]}
-                onChange={(v) => edit((d) => ({ ...d, date: { ...d.date, lines: [d.date.lines[0], v] } }))}
-              />
-            </Section>
+              <DialGroup title="Date and time">
+                <DialText label="Starts" type="date" value={pick.start} onChange={(start) => onPick({ start })} />
+                <DialText label="Ends, if longer" type="date" value={pick.end} onChange={(end) => onPick({ end })} />
+                <DialText label="From" type="time" value={pick.time} onChange={(time) => onPick({ time })} />
+                <DialText label="Until" type="time" value={pick.endTime} onChange={(endTime) => onPick({ endTime })} />
+                <DialNote>Picking a date writes the two lines below, weekday included. You can still type over them.</DialNote>
+                <DialText
+                  label="First line"
+                  value={doc.date.lines[0]}
+                  onChange={(v) => edit((d) => ({ ...d, date: { ...d.date, lines: [v, d.date.lines[1]] } }))}
+                />
+                <DialText
+                  label="Second line"
+                  value={doc.date.lines[1]}
+                  onChange={(v) => edit((d) => ({ ...d, date: { ...d.date, lines: [d.date.lines[0], v] } }))}
+                />
+              </DialGroup>
 
-            <Section title="Location">
-              <TextField
-                label="First line"
-                value={doc.location.lines[0]}
-                onChange={(v) =>
-                  edit((d) => ({ ...d, location: { ...d.location, lines: [v, d.location.lines[1]] } }))
-                }
-              />
-              <TextField
-                label="Second line"
-                value={doc.location.lines[1]}
-                onChange={(v) =>
-                  edit((d) => ({ ...d, location: { ...d.location, lines: [d.location.lines[0], v] } }))
-                }
-              />
-              <OrangeWords
-                lines={doc.location.lines}
-                value={orangeOf(doc)}
-                onChange={(orange) => edit((d) => ({ ...d, location: { ...d.location, orange } }))}
-              />
-            </Section>
+              <DialGroup title="Location">
+                <DialText
+                  label="First line"
+                  value={doc.location.lines[0]}
+                  onChange={(v) =>
+                    edit((d) => ({ ...d, location: { ...d.location, lines: [v, d.location.lines[1]] } }))
+                  }
+                />
+                <DialText
+                  label="Second line"
+                  value={doc.location.lines[1]}
+                  onChange={(v) =>
+                    edit((d) => ({ ...d, location: { ...d.location, lines: [d.location.lines[0], v] } }))
+                  }
+                />
+                <OrangeWords
+                  lines={doc.location.lines}
+                  value={orangeOf(doc)}
+                  onChange={(orange) => edit((d) => ({ ...d, location: { ...d.location, orange } }))}
+                />
+              </DialGroup>
 
-            <Section title="Landmark">
-              <ImageField
-                image={doc.image}
-                takes={doc.takes ?? []}
-                busy={busy.image}
-                onUpload={uploadImage}
-                onGenerate={generateImage}
-                onUseTake={pickTake}
-                onRemove={removeImage}
-                onName={(name) => edit((d) => (d.image ? { ...d, image: { ...d.image, name } } : d))}
-                onPlace={(place) => edit((d) => (d.image ? { ...d, image: { ...d.image, place } } : d))}
-              />
-            </Section>
+              <DialGroup title="Landmark">
+                <ImageField
+                  image={doc.image}
+                  takes={doc.takes ?? []}
+                  busy={busy.image}
+                  onUpload={uploadImage}
+                  onGenerate={generateImage}
+                  onUseTake={pickTake}
+                  onRemove={removeImage}
+                  onName={(name) => edit((d) => (d.image ? { ...d, image: { ...d.image, name } } : d))}
+                  onPlace={(place) => edit((d) => (d.image ? { ...d, image: { ...d.image, place } } : d))}
+                />
+              </DialGroup>
+            </div>
           </ScrollArea>
         </aside>
 
@@ -386,54 +379,6 @@ function Workspace({ initial }: { initial: PostDoc }) {
         </section>
       </div>
     </main>
-  );
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-4 border-b px-5 py-5 last:border-b-0">
-      <h2 className="font-medium text-sm">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-function TextField({
-  label,
-  value,
-  description,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  description?: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <Field>
-      <FieldLabel>{label}</FieldLabel>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} />
-      {description && <FieldDescription>{description}</FieldDescription>}
-    </Field>
-  );
-}
-
-function PickField({
-  label,
-  type,
-  value,
-  onChange,
-}: {
-  label: string;
-  type: "date" | "time";
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <Field>
-      <FieldLabel>{label}</FieldLabel>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} style={{ colorScheme: "dark" }} />
-    </Field>
   );
 }
 

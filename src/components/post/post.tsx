@@ -174,7 +174,7 @@ export function Post({
   return (
     <div
       className="relative overflow-hidden"
-      style={{ width: POST_W, height: POST_H, background: PALETTE.stone }}
+      style={{ width: POST_W, height: POST_H, background: PALETTE.stone, fontFamily: "var(--font-post)" }}
       data-post
     >
       {/* Left: headline, when and where, and the speaker on stone */}

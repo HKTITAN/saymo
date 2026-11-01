@@ -12,8 +12,8 @@ export function MotionPicker({ value, onChange }: { value: MotionId; onChange: (
   const described = MOTION_BY_ID[shown ?? value];
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Animation">
+    <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label="Animation">
         {MOTIONS.map((m, i) => {
           const picked = m.id === value;
           return (
@@ -31,20 +31,20 @@ export function MotionPicker({ value, onChange }: { value: MotionId; onChange: (
             >
               <span
                 className={cn(
-                  "block overflow-hidden rounded-md ring-1 ring-border transition-shadow group-hover:ring-ring/60 group-focus-visible:ring-2 group-focus-visible:ring-ring",
-                  picked && "ring-2 ring-ring group-hover:ring-ring",
+                  "block overflow-hidden rounded-[8px] ring-1 ring-white/10 transition-shadow group-hover:ring-white/30 group-focus-visible:ring-2 group-focus-visible:ring-ring",
+                  picked && "ring-2 ring-white/70 group-hover:ring-white/70",
                 )}
               >
                 <Tile motion={m.id} playing={shown === m.id} />
               </span>
-              <span className={cn("text-xs", picked ? "font-medium text-foreground" : "text-muted-foreground")}>
+              <span className={cn("text-[12px]", picked ? "text-white/90" : "text-white/50")}>
                 {i + 1} {m.label}
               </span>
             </button>
           );
         })}
       </div>
-      <p className="min-h-8 text-muted-foreground text-xs">{described.hint}</p>
+      <p className="min-h-8 px-1 text-[11.5px] text-white/40 leading-relaxed">{described.hint}</p>
     </div>
   );
 }

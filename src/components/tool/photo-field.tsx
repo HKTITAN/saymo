@@ -1,12 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
-import { Switch } from "@/components/ui/switch";
 import type { Crop, PostDoc } from "@/lib/tool/doc";
+import { DialButton, DialSlider, DialToggle } from "./dial";
 import { DropZone, FileInput } from "./drop-zone";
 
 type Source = NonNullable<NonNullable<PostDoc["photo"]>["source"]>;
@@ -37,7 +34,7 @@ export function PhotoField({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-1.5">
       {photo.source && photo.crop ? (
         <Cropper
           key={photo.source.preview}
@@ -50,20 +47,16 @@ export function PhotoField({
         // eslint-disable-next-line @next/next/no-img-element
         <img src={photo.x2} alt="" className="size-40 rounded-lg" />
       )}
-      <div className="flex items-center justify-between gap-3">
-        <Label>
-          <Switch
-            checked={photo.plain}
-            disabled={Boolean(busy) || !photo.source}
-            onCheckedChange={(plain) => onChange({ plain })}
-          />
-          Plain grey background
-        </Label>
-        <Button size="sm" variant="outline" disabled={Boolean(busy)} onClick={() => replace.current?.click()}>
-          Replace photo
-        </Button>
-        <FileInput ref={replace} onFile={onUpload} />
-      </div>
+      <DialToggle
+        label="Plain grey background"
+        checked={photo.plain}
+        disabled={Boolean(busy) || !photo.source}
+        onChange={(plain) => onChange({ plain })}
+      />
+      <DialButton disabled={Boolean(busy)} onClick={() => replace.current?.click()}>
+        Replace photo
+      </DialButton>
+      <FileInput ref={replace} onFile={onUpload} />
     </div>
   );
 }
@@ -106,13 +99,12 @@ function Cropper({
   };
   const pct = (v: number, of: number) => `${(v / of) * 100}%`;
   const ratio = source.width / source.height;
-  const zoomOf = (v: number | readonly number[]) => (Array.isArray(v) ? v[0] : v) as number;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-1.5">
       <div
         ref={box}
-        className="relative mx-auto touch-none select-none overflow-hidden rounded-lg bg-muted"
+        className="relative mx-auto mb-1 touch-none select-none overflow-hidden rounded-[10px] bg-white/[0.05]"
         style={{ width: `min(100%, ${Math.round(280 * ratio)}px)`, aspectRatio: `${source.width} / ${source.height}` }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -163,21 +155,16 @@ function Cropper({
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex justify-between text-sm">
-          <span className="font-medium">Zoom</span>
-          <span className="text-muted-foreground tabular-nums">{(largest / crop.size).toFixed(1)}×</span>
-        </div>
-        <Slider
-          aria-label="Zoom"
-          min={1}
-          max={largest / smallest}
-          step={0.01}
-          value={largest / crop.size}
-          onValueChange={(v) => setCrop(zoomed(zoomOf(v)))}
-          onValueCommitted={(v) => onCommit(zoomed(zoomOf(v)))}
-        />
-      </div>
+      <DialSlider
+        label="Zoom"
+        value={largest / crop.size}
+        min={1}
+        max={largest / smallest}
+        step={0.01}
+        format={(v) => `${v.toFixed(1)}×`}
+        onChange={(v) => setCrop(zoomed(v))}
+        onCommit={(v) => onCommit(zoomed(v))}
+      />
     </div>
   );
 }
