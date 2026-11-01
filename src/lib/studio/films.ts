@@ -319,26 +319,57 @@ export async function recordVersion(id: string, n: number, prompt: string, t: nu
   await writeVersions(id, [...rows, row]);
 }
 
+// The prompts in the film's chat, oldest first.
+async function promptsOf(id: string): Promise<{ at: number; text: string; t: number | null }[]> {
+  try {
+    const raw = JSON.parse(await readFile(path.join(historyDir(id), "chat.json"), "utf8")) as unknown;
+    const list = Array.isArray(raw) ? raw : ((raw as { messages?: unknown[] })?.messages ?? []);
+    return (list as { role?: string; text?: string; at?: string; context?: { t?: number } }[])
+      .filter((m) => m.role === "you" && m.text && m.at)
+      .map((m) => ({ at: Date.parse(m.at as string), text: m.text as string, t: typeof m.context?.t === "number" ? m.context.t : null }))
+      .sort((x, y) => x.at - y.at);
+  } catch {
+    return [];
+  }
+}
+
 // Every version, newest first, with the film as it is now at the top.
 export async function listVersions(id: string, film: Film): Promise<Version[]> {
   const rows = await readVersions(id);
   const byN = new Map(rows.map((r) => [r.n, r]));
   const turns = await historyTurns(id);
+  const prompts = await promptsOf(id);
+  // A version saved before rows were kept is named from the chat: it was
+  // taken as a prompt was sent, so it holds the film after the prompt before.
+  const fromChat = (at: string) => {
+    const when = Date.parse(at) + 5000;
+    const sent = prompts.filter((p) => p.at <= when);
+    const made = sent.at(-2);
+    if (!sent.length) return null;
+    return made ? { label: `After: ${shorten(made.text)}`, prompt: made.text, t: made.t } : { label: "Start", prompt: null, t: null };
+  };
   const versions: Version[] = [];
   for (const n of turns) {
     const row = byN.get(n);
     // Snapshots from before versions were recorded have no row.
     const at = row?.at ?? (await stat(path.join(historyDir(id), String(n))).then((s) => s.mtime.toISOString(), () => film.updatedAt));
+    const guess = !row || row.label === "An earlier version" ? fromChat(at) : null;
     versions.push({
       n,
       at,
-      label: row?.label ?? "An earlier version",
-      prompt: row?.made?.prompt ?? null,
-      t: row?.made?.t ?? null,
+      label: guess?.label ?? row?.label ?? "An earlier version",
+      prompt: row?.made?.prompt ?? guess?.prompt ?? null,
+      t: row?.made?.t ?? guess?.t ?? null,
     });
   }
-  // Now is the film after the newest row's prompt (or going back).
-  const now = rows.length ? after(rows.at(-1), false) : null;
+  // Now is the film after the newest row's prompt (or going back), or
+  // after the chat's last prompt.
+  const last = prompts.at(-1);
+  const now = rows.length
+    ? after(rows.at(-1), false)
+    : last
+      ? { label: `After: ${shorten(last.text)}`, made: { prompt: last.text, t: last.t ?? 0 } }
+      : null;
   versions.push({
     n: null,
     at: film.updatedAt,
