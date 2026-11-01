@@ -161,12 +161,29 @@ function bridge(options: BridgeOptions) {
   // Enter finishes (Shift+Enter breaks the line where data-multiline is
   // set), Escape puts the words back, Tab moves to the next words on screen.
   let textOn = false;
-  let editing: { el: HTMLElement; key: string; before: string } | null = null;
+  // Words drawn whole are edited in place; words split into letters or
+  // words for their animation (each in its own span, often moved in 3D)
+  // are edited in a see-through box laid exactly over them in the same
+  // type, with the animated letters hidden until the edit is done.
+  let editing: { el: HTMLElement; key: string; before: string; box: HTMLDivElement | null; visibility: string } | null = null;
+  const valueOf = () => (editing ? textOf(editing.box ?? editing.el) : "");
+  const owns = (target: EventTarget | null) =>
+    Boolean(editing && target instanceof Node && (editing.el.contains(target) || editing.box?.contains(target)));
   let quiet: HTMLDivElement | null = null;
   const TEXT = "[data-param]";
   const textAt = (x: number, y: number) => {
-    const el = document.elementFromPoint(x, y);
-    return (el?.closest(TEXT) as HTMLElement | null) ?? null;
+    // Films stack their scenes; an empty, see-through layer of a later
+    // scene can sit over the words on screen. Look down through those to
+    // the first words that can be seen, stopping at anything painted.
+    for (const hit of document.elementsFromPoint(x, y)) {
+      const words = hit.closest(TEXT) as HTMLElement | null;
+      if (words && visible(words)) return words;
+      if (hit === document.body || hit === document.documentElement) break;
+      const s = getComputedStyle(hit);
+      const painted = (s.backgroundColor !== "rgba(0, 0, 0, 0)" && s.backgroundColor !== "transparent") || s.backgroundImage !== "none";
+      if (painted && visible(hit as HTMLElement)) break;
+    }
+    return null;
   };
   const hover = (el: Element | null) => {
     if (!quiet) {
@@ -185,7 +202,7 @@ function bridge(options: BridgeOptions) {
       return;
     }
     const r = el.getBoundingClientRect();
-    const editingNow = editing?.el === el;
+    const editingNow = Boolean(editing && (editing.el === el || editing.box === el));
     Object.assign(quiet.style, {
       display: "block",
       left: `${r.left - 4}px`,
@@ -214,12 +231,126 @@ function bridge(options: BridgeOptions) {
     (w.__studioStage as { keepParams(v: Values): void }).keepParams({ [key]: value });
     post({ type: "studio:param-edit", key, value, editing: isEditing });
   };
-  const startEdit = (el: HTMLElement, selectAll: boolean) => {
+  const startEdit = (el: HTMLElement, selectAll: boolean, at?: number) => {
     const key = el.getAttribute("data-param");
     if (!key) return;
     if (editing && editing.el !== el) finishEdit(true);
     if (editing) return;
-    editing = { el, key, before: String(w.__params[key] ?? textOf(el)) };
+    const before = String(w.__params[key] ?? textOf(el));
+    if (el.children.length) {
+      // Split into pieces: type into a box laid over the words instead,
+      // each letter in the look it is drawn in (a light word stays light,
+      // a bold one bold), at the size the camera shows it.
+      const r = el.getBoundingClientRect();
+      const k = el.offsetWidth ? r.width / el.offsetWidth : 1;
+      const px = (v: string) => (v.endsWith("px") ? `${parseFloat(v) * k}px` : v);
+      const ink: { style: Partial<CSSStyleDeclaration>; rect: DOMRect }[] = [];
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const parent = n.parentElement;
+        if (!parent) continue;
+        const c = getComputedStyle(parent);
+        const style: Partial<CSSStyleDeclaration> = {
+          color: c.color,
+          fontFamily: c.fontFamily,
+          fontSize: px(c.fontSize),
+          fontWeight: c.fontWeight,
+          fontStyle: c.fontStyle,
+          fontVariationSettings: c.fontVariationSettings,
+          letterSpacing: px(c.letterSpacing),
+        };
+        for (const ch of n.textContent ?? "") if (ch.trim()) ink.push({ style, rect: parent.getBoundingClientRect() });
+      }
+      const seen = ink.map((i) => i.rect).filter((b) => b.width > 0 && b.height > 0);
+      const left = seen.length ? Math.min(...seen.map((b) => b.left)) : r.left;
+      const right = seen.length ? Math.max(...seen.map((b) => b.right)) : r.right;
+      const top = seen.length ? Math.min(...seen.map((b) => b.top)) : r.top;
+      const bottom = seen.length ? Math.max(...seen.map((b) => b.bottom)) : r.bottom;
+      // Centred words grow both ways as you type; others grow from their edge.
+      const mid = (left + right) / 2;
+      const anchor = Math.abs(mid - (r.left + r.right) / 2) < r.width * 0.02 ? "center" : Math.abs(right - r.right) < 2 && left - r.left > 2 ? "right" : "left";
+
+      const box = document.createElement("div");
+      box.setAttribute("contenteditable", "plaintext-only");
+      box.spellcheck = false;
+      Object.assign(box.style, {
+        position: "fixed",
+        top: `${top}px`,
+        height: `${bottom - top}px`,
+        lineHeight: `${bottom - top}px`,
+        minWidth: "0.5em",
+        margin: "0",
+        padding: "0",
+        whiteSpace: "pre",
+        zIndex: "2147483645",
+        outline: "none",
+        caretColor: "#F55A00",
+        ...(ink[0]?.style ?? {}),
+      } as Partial<CSSStyleDeclaration>);
+      // Each letter of the words takes the look of the letter drawn in its
+      // place; spaces take the look of the letter before them.
+      let j = 0;
+      let run: HTMLSpanElement | null = null;
+      let runStyle: Partial<CSSStyleDeclaration> | undefined;
+      for (const ch of before) {
+        const style = ch.trim() ? (ink[Math.min(j++, ink.length - 1)]?.style ?? runStyle) : runStyle;
+        if (!run || style !== runStyle) {
+          run = document.createElement("span");
+          if (style) Object.assign(run.style, style);
+          box.append(run);
+          runStyle = style;
+        }
+        run.textContent += ch;
+      }
+      const place = () => {
+        const wdt = box.offsetWidth;
+        box.style.left = `${anchor === "center" ? mid - wdt / 2 : anchor === "right" ? right - wdt : left}px`;
+      };
+      document.documentElement.append(box);
+      place();
+      box.addEventListener("input", place);
+      editing = { el, key, before, box, visibility: el.style.visibility };
+      el.style.visibility = "hidden";
+      box.focus();
+      const sel = getSelection();
+      const range = document.createRange();
+      if (selectAll) range.selectNodeContents(box);
+      else {
+        // The caret goes after the same number of letters as were clicked past.
+        let need = at ?? Infinity;
+        let offset = before.length;
+        for (let i = 0; i < before.length; i++) {
+          if (need <= 0) {
+            offset = i;
+            break;
+          }
+          if (before[i].trim()) need--;
+        }
+        let rest = offset;
+        const texts = document.createTreeWalker(box, NodeFilter.SHOW_TEXT);
+        let placed = false;
+        for (let n = texts.nextNode(); n; n = texts.nextNode()) {
+          const len = n.textContent?.length ?? 0;
+          if (rest <= len) {
+            range.setStart(n, rest);
+            range.collapse(true);
+            placed = true;
+            break;
+          }
+          rest -= len;
+        }
+        if (!placed) {
+          range.selectNodeContents(box);
+          range.collapse(false);
+        }
+      }
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+      hover(box);
+      post({ type: "studio:param-edit", key, value: before, editing: true });
+      return;
+    }
+    editing = { el, key, before, box: null, visibility: el.style.visibility };
     el.setAttribute("contenteditable", "plaintext-only");
     el.style.outline = "none";
     el.style.cursor = "text";
@@ -239,12 +370,20 @@ function bridge(options: BridgeOptions) {
     const now = editing;
     if (!now) return;
     editing = null;
-    const { el, key, before } = now;
-    if (!keep) el.innerText = before;
-    el.removeAttribute("contenteditable");
-    el.style.cursor = "";
-    getSelection()?.removeAllRanges();
-    const value = keep ? textOf(el) : before;
+    const { el, key, before, box } = now;
+    let value: string;
+    if (box) {
+      value = keep ? textOf(box).replace(/\n+/g, " ") : before;
+      box.remove();
+      getSelection()?.removeAllRanges();
+      el.style.visibility = now.visibility;
+    } else {
+      if (!keep) el.innerText = before;
+      el.removeAttribute("contenteditable");
+      el.style.cursor = "";
+      getSelection()?.removeAllRanges();
+      value = keep ? textOf(el) : before;
+    }
     sendEdit(key, value, false);
     hover(null);
     // The film is built from its words, so it is rebuilt with the new ones
@@ -278,11 +417,28 @@ function bridge(options: BridgeOptions) {
       // Words can be clicked while the film plays too: the studio pauses it
       // as soon as editing starts.
       const el = textAt(e.clientX, e.clientY);
-      if (editing && editing.el.contains(e.target as Node)) return;
+      if (owns(e.target)) return;
       if (editing) finishEdit(true);
       // Made editable before the browser handles the press, so the caret
       // lands where the click was.
-      if (el) startEdit(el, false);
+      if (!el) return;
+      // The caret goes beside the letter that was clicked.
+      let caret: number | undefined;
+      const hit = e.target instanceof Element && e.target !== el && el.contains(e.target) ? e.target : null;
+      if (hit) {
+        // Counted in letters, not spaces: split words often draw their
+        // spaces as gaps rather than characters.
+        const range = document.createRange();
+        range.setStart(el, 0);
+        range.setEndBefore(hit);
+        const hr = hit.getBoundingClientRect();
+        const letters = (t: string) => t.replace(/\s/g, "").length;
+        caret = letters(range.toString()) + (e.clientX > hr.left + hr.width / 2 ? letters(hit.textContent ?? "") : 0);
+      }
+      startEdit(el, false, caret);
+      // The box over split words takes the press; stop the browser moving
+      // focus back to the hidden letters underneath.
+      if (editing?.box) e.preventDefault();
     },
     true,
   );
@@ -309,9 +465,9 @@ function bridge(options: BridgeOptions) {
   window.addEventListener(
     "input",
     (e) => {
-      if (!editing || !editing.el.contains(e.target as Node)) return;
-      sendEdit(editing.key, textOf(editing.el), true);
-      hover(editing.el);
+      if (!editing || !owns(e.target)) return;
+      sendEdit(editing.key, valueOf(), true);
+      hover(editing.box ?? editing.el);
     },
     true,
   );

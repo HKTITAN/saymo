@@ -177,7 +177,7 @@ export function PromptBox({
         rows={1}
         value={value}
         autoFocus={autoFocus}
-        placeholder={placeholder}
+        placeholder={running && queueing ? "Type the next change. It runs when this one is done." : placeholder}
         aria-label="Prompt for Claude"
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={keys}
