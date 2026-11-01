@@ -116,6 +116,10 @@
       "name": "music-beam-note",
       "variant": "stroke"
     },
+    "paperclip-vertical": {
+      "name": "paperclip-vertical",
+      "variant": "stroke"
+    },
     "pause-circle": {
       "name": "pause-circle",
       "variant": "stroke"

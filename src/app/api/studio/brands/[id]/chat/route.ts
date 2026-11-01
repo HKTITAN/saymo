@@ -1,5 +1,5 @@
 import { connection } from "next/server";
-import { isBrandRunning, readBrandChat, runBrandTurn, siteOf, stopBrandTurn } from "@/lib/studio/brand-claude";
+import { isBrandRunning, linksFor, readBrandChat, runBrandTurn, stopBrandTurn } from "@/lib/studio/brand-claude";
 import { readBrand } from "@/lib/studio/brands";
 import type { ChatEvent } from "@/lib/studio/contract";
 import { allowed, refused } from "@/lib/studio/films";
@@ -21,13 +21,16 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/bran
   if (!allowed(request)) return refused();
   const { id } = await ctx.params;
   if (!(await readBrand(id))) return missing();
-  const body = (await request.json().catch(() => null)) as { prompt?: unknown; url?: unknown } | null;
-  const prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 8000) : "";
+  // `links` (and the older single `url`) are extra links; any in the words
+  // count too.
+  const body = (await request.json().catch(() => null)) as { prompt?: unknown; url?: unknown; links?: unknown } | null;
+  const prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 20_000) : "";
   if (!prompt.trim()) return Response.json({ error: "Say what the kit should have." }, { status: 400 });
-  const url = siteOf(typeof body?.url === "string" && body.url.trim() ? body.url.trim() : undefined);
-  if (typeof body?.url === "string" && body.url.trim() && !url) {
-    return Response.json({ error: "That website address doesn't look right." }, { status: 400 });
-  }
+  const extra = [
+    ...(typeof body?.url === "string" ? [body.url] : []),
+    ...(Array.isArray(body?.links) ? body.links.filter((l): l is string => typeof l === "string").slice(0, 12) : []),
+  ];
+  const links = linksFor(prompt, extra);
   if (isBrandRunning(id)) return Response.json({ error: "Claude is still working on this kit." }, { status: 409 });
 
   const encoder = new TextEncoder();
@@ -42,7 +45,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/bran
           open = false;
         }
       };
-      void runBrandTurn(id, prompt, url, emit).finally(() => {
+      void runBrandTurn(id, prompt, links, emit).finally(() => {
         if (!open) return;
         open = false;
         controller.close();

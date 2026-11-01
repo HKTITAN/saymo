@@ -93,6 +93,9 @@ export function Studio() {
   const [kits, setKits] = useState<BrandSummary[] | null>(null);
   // A kit made from files opens with Claude reading them.
   const kitOpening = useRef<{ prompt: string; url: string } | null>(null);
+  // A kit Claude just made opens with its note on what it found.
+  const kitArrival = useRef<{ id: string; reply: string } | null>(null);
+  const [kitNote, setKitNote] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
@@ -138,17 +141,22 @@ export function Studio() {
       const kit = await brandApi.import(file);
       openKit(kit.id);
     });
-  // A kit from a guideline: make it, put the files in, then Claude builds it.
-  const makeKit = (name: string, files: File[], url: string) =>
-    start(async () => {
-      const kit = await brandApi.create(name);
-      for (const file of files) await brandApi.upload(kit.id, file);
-      kitOpening.current = {
-        prompt: `Build the ${name} brand kit from the files I added${url ? " and the website" : ""}: colours, fonts, logos, rules and notes.`,
-        url,
-      };
-      openKit(kit.id);
-    });
+  // Claude made a kit from what was shared: open it with its note.
+  const kitMade = (kitId: string, reply: string) => {
+    kitArrival.current = { id: kitId, reply };
+    openKit(kitId);
+  };
+  // The kit card was closed while Claude builds: it carries on, and the kit
+  // is already on the dashboard.
+  const kitHidden = (kitId: string | null) => {
+    void refreshKits();
+    if (kitId) setKitNote("Claude is still making the kit. Open it to watch.");
+  };
+  useEffect(() => {
+    if (!kitNote) return;
+    const t = setTimeout(() => setKitNote(null), 4000);
+    return () => clearTimeout(t);
+  }, [kitNote]);
 
   const create = async (
     width: number,
@@ -185,6 +193,7 @@ export function Studio() {
             key={kitId}
             id={kitId}
             openingRef={kitOpening}
+            arrivalRef={kitArrival}
             onHome={() => openFilm(null)}
             onOpenKit={(next) => openKit(next)}
             onGone={() => openKit(null, true)}
@@ -220,11 +229,19 @@ export function Studio() {
             onOpenKit={(next) => openKit(next)}
             onNewKit={newKit}
             onImportKit={importKit}
-            onMakeKit={makeKit}
+            onKitMade={kitMade}
+            onKitHidden={kitHidden}
           />
         ) : (
           <Missing onBack={() => openFilm(null, true)} />
         )}
+        {kitNote && onDashboard ? (
+          <div className="pointer-events-none absolute bottom-6 left-1/2 z-30 -translate-x-1/2">
+            <p className={cn(CARD, "flex h-9 items-center rounded-full px-4 text-[12px] text-white/85")} aria-live="polite">
+              <span className="studio-shimmer">{kitNote}</span>
+            </p>
+          </div>
+        ) : null}
       </main>
     </TooltipProvider>
   );

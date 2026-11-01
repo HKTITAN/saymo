@@ -1,14 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MultipleCrossCancelIcon, PlusIcon, UploadUpIcon } from "@/components/icons";
-import { DialText } from "@/components/tool/dial";
 import type { BrandSummary } from "@/lib/studio/brand";
 import type { FilmSummary } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
-import { KIT_ACCEPTS } from "./brand-api";
 import { Swatches } from "./brand-row";
 import { FirstFilm } from "./first-film";
+import { KitMaker } from "./kit-maker";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 
 // The studio's front page, at /studio: every film, and every brand kit.
@@ -16,7 +15,7 @@ import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 // changed by hand or by Claude. New films start from the same two ways as
 // before (edit a video, or describe motion graphics).
 
-type Overlay = null | "film" | "kit-files";
+type Overlay = null | "film" | "kit";
 
 export function Dashboard({
   films,
@@ -29,7 +28,8 @@ export function Dashboard({
   onOpenKit,
   onNewKit,
   onImportKit,
-  onMakeKit,
+  onKitMade,
+  onKitHidden,
 }: {
   films: FilmSummary[];
   kits: BrandSummary[] | null;
@@ -41,10 +41,25 @@ export function Dashboard({
   onOpenKit: (id: string) => void;
   onNewKit: () => void;
   onImportKit: (file: File) => void;
-  onMakeKit: (name: string, files: File[], url: string) => void;
+  onKitMade: (kitId: string, reply: string) => void;
+  onKitHidden: (kitId: string | null) => void;
 }) {
   const [overlay, setOverlay] = useState<Overlay>(films.length ? null : "film");
   const zip = useRef<HTMLInputElement>(null);
+
+  // Esc closes the new-film card (the kit card handles its own Esc, since
+  // it may need to ask first).
+  const closable = overlay === "film";
+  useEffect(() => {
+    if (!closable) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      e.preventDefault();
+      setOverlay(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [closable]);
 
   return (
     <>
@@ -120,10 +135,7 @@ export function Dashboard({
                 <UploadUpIcon aria-hidden="true" />
                 Import a kit
               </button>
-              <button type="button" disabled={busy} onClick={() => setOverlay("kit-files")} className={cn(PILL_BUTTON, "text-white/70 hover:bg-white/[0.07] hover:text-white")}>
-                Make a kit from files
-              </button>
-              <button type="button" disabled={busy} onClick={onNewKit} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
+              <button type="button" disabled={busy} onClick={() => setOverlay("kit")} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
                 <PlusIcon aria-hidden="true" />
                 New kit
               </button>
@@ -151,9 +163,23 @@ export function Dashboard({
           {overlay === "film" ? (
             <FirstFilm busy={busy} error={error} onStart={onStartFilm} onStartVideo={onStartVideo} />
           ) : (
-            <MakeKit busy={busy} onMake={onMakeKit} />
+            <KitMaker
+              onDone={(kitId, reply) => {
+                setOverlay(null);
+                onKitMade(kitId, reply);
+              }}
+              onClose={() => setOverlay(null)}
+              onHide={(kitId) => {
+                setOverlay(null);
+                onKitHidden(kitId);
+              }}
+              onBlank={() => {
+                setOverlay(null);
+                onNewKit();
+              }}
+            />
           )}
-          {overlay === "kit-files" || films.length ? (
+          {overlay === "film" ? (
             <Hint label="Close">
               <button type="button" onClick={() => setOverlay(null)} className={cn(CARD, ICON_BUTTON, "absolute top-4 right-4 size-11 rounded-[14px]")} aria-label="Close">
                 <MultipleCrossCancelIcon aria-hidden="true" />
@@ -201,94 +227,5 @@ function KitCard({ kit, onOpen }: { kit: BrandSummary; onOpen: () => void }) {
         <Swatches colors={kit.swatches} className="h-4" />
       </span>
     </button>
-  );
-}
-
-// Drop a guideline (PDF, screenshots) with logos and fonts, maybe a
-// website; Claude builds the kit from them.
-function MakeKit({ busy, onMake }: { busy: boolean; onMake: (name: string, files: File[], url: string) => void }) {
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
-  const [over, setOver] = useState(false);
-  const picker = useRef<HTMLInputElement>(null);
-  // Copied at once: the picker empties its live list right after.
-  const add = (list: FileList | null) => {
-    const picked = [...(list ?? [])];
-    setFiles((f) => [...f, ...picked].slice(0, 40));
-  };
-  return (
-    <div className="absolute inset-0 flex items-center justify-center p-6">
-      <section aria-labelledby="make-kit" className={cn(CARD, "flex w-full max-w-[540px] flex-col gap-4 p-5")}>
-        <div className="flex flex-col gap-1.5">
-          <h2 id="make-kit" className="font-medium text-[15px] text-white/95">
-            Make a kit from files
-          </h2>
-          <p className="text-[12.5px] text-white/55 leading-relaxed">
-            Drop the brand’s guideline (a PDF or screenshots), its logos and its font files. Claude reads them and fills in
-            the kit: colours, type, logos and rules. You can change anything afterwards.
-          </p>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <DialText label="Brand name" value={name} placeholder="Acme" onChange={setName} />
-          <DialText label="Website (optional)" value={url} placeholder="https://acme.com/brand" onChange={setUrl} />
-        </div>
-        <input
-          ref={picker}
-          type="file"
-          multiple
-          accept={KIT_ACCEPTS}
-          className="hidden"
-          tabIndex={-1}
-          onChange={(e) => {
-            add(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: a drop target; the button inside it is the keyboard way in */}
-        <div
-          onDragOver={(e) => {
-            if (!e.dataTransfer.types.includes("Files")) return;
-            e.preventDefault();
-            setOver(true);
-          }}
-          onDragLeave={() => setOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setOver(false);
-            add(e.dataTransfer.files);
-          }}
-          className={cn(
-            "flex min-h-32 flex-col items-center justify-center gap-2 rounded-[12px] border border-dashed p-4 text-center transition-colors",
-            over ? "border-white/50 bg-white/[0.07]" : "border-white/15 bg-white/[0.02]",
-          )}
-        >
-          {files.length ? (
-            <ul className="flex w-full flex-col gap-1 text-left">
-              {files.map((f, i) => (
-                <li key={`${f.name}-${i}`} className="flex items-center gap-2 text-[12px] text-white/70">
-                  <span className="min-w-0 flex-1 truncate">{f.name}</span>
-                  <span className="font-mono text-[11px] text-white/35 tabular-nums">{Math.max(1, Math.round(f.size / 1024))} KB</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-[12.5px] text-white/60">Drop a guideline, logos and fonts here</p>
-          )}
-          <button type="button" onClick={() => picker.current?.click()} className={cn(PILL_BUTTON, "mt-1 text-white/70 hover:bg-white/[0.07] hover:text-white")}>
-            <UploadUpIcon aria-hidden="true" />
-            {files.length ? "Add more files" : "Choose files"}
-          </button>
-        </div>
-        <button
-          type="button"
-          disabled={busy || (!files.length && !url.trim())}
-          onClick={() => onMake(name.trim() || "New brand", files, url.trim())}
-          className={cn(PILL_BUTTON, "self-end bg-white text-[#141414] hover:bg-white/90")}
-        >
-          Make the kit
-        </button>
-      </section>
-    </div>
   );
 }

@@ -1,17 +1,21 @@
 import { spawn } from "node:child_process";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { BrandKit } from "./brand";
 import { checkKit, kitDir, readBrand, restoreBrand, snapshotBrand, withBrand, writeBrand } from "./brands";
 import { CLAUDE_BIN, childEnv, explain, killGroup, MODEL, StreamReader } from "./claude";
 import type { ChatEvent, ChatMessage, Film } from "./contract";
+import { figmaReady, pullFigma } from "./figma";
 import { ROOT } from "./films";
+import { fetchable, findLinks, LINK_LABEL, type SharedLink } from "./links";
 
-// Claude building or tidying a brand kit: from the guideline files dropped
-// into the kit (guide/: PDFs, screenshots; fonts/ and logos/) and, if
-// given, one website. It may only write inside the kit's own folder, reads
+// Claude building or tidying a brand kit: from what the person shared (the
+// words they wrote; guide/: PDFs, screenshots, notes; fonts/ and logos/)
+// and the links in it. It may only write inside the kit's own folder, reads
 // the Aerchain kit as an example of a full one, and may fetch pages only
-// from that one website's domain. No shell.
+// from the domains of the websites, Framer sites and Notion pages shared.
+// Figma files are brought in by the server first (with FIGMA_TOKEN) as a
+// styles sheet and frame pictures in guide/. No shell.
 
 const TURN_LIMIT_MS = 15 * 60 * 1000;
 const history = (id: string) => path.join(kitDir(id), ".history");
@@ -42,6 +46,11 @@ export function stopBrandTurn(id: string) {
   return true;
 }
 
+// The links a turn works with: those in the words, plus any sent apart.
+export function linksFor(prompt: string, extra: string[]): SharedLink[] {
+  return findLinks([prompt, ...extra].join("\n")).slice(0, 12);
+}
+
 // Only http(s) websites; the domain it may fetch from.
 export function siteOf(url: string | undefined): URL | null {
   if (!url) return null;
@@ -53,7 +62,7 @@ export function siteOf(url: string | undefined): URL | null {
   }
 }
 
-export async function runBrandTurn(id: string, prompt: string, url: URL | null, emit: (event: ChatEvent) => void) {
+export async function runBrandTurn(id: string, prompt: string, links: SharedLink[], emit: (event: ChatEvent) => void) {
   if (running.has(id)) {
     emit({ kind: "error", message: "Claude is still working on this kit. Wait for it, or stop it first." });
     return;
@@ -61,7 +70,7 @@ export async function runBrandTurn(id: string, prompt: string, url: URL | null, 
   const turn: Running = { pid: null, stopped: false };
   running.set(id, turn);
   try {
-    await brandTurn(id, prompt, url, turn, emit);
+    await brandTurn(id, prompt, links, turn, emit);
   } catch (error) {
     emit({ kind: "error", message: `Something went wrong: ${String((error as Error)?.message ?? error)}` });
   } finally {
@@ -69,7 +78,7 @@ export async function runBrandTurn(id: string, prompt: string, url: URL | null, 
   }
 }
 
-async function brandTurn(id: string, prompt: string, url: URL | null, turn: Running, emit: (event: ChatEvent) => void) {
+async function brandTurn(id: string, prompt: string, links: SharedLink[], turn: Running, emit: (event: ChatEvent) => void) {
   const kit = await readBrand(id);
   if (!kit) {
     emit({ kind: "error", message: "That kit no longer exists." });
@@ -77,18 +86,41 @@ async function brandTurn(id: string, prompt: string, url: URL | null, turn: Runn
   }
   const n = await withBrand(id, () => snapshotBrand(id));
   emit({ kind: "start", turn: n });
-  await addChat(id, { role: "you", text: url ? `${prompt}\n\n${url.href}` : prompt, at: new Date().toISOString() });
+  const typed = links.filter((l) => !prompt.includes(l.url)).map((l) => l.url);
+  await addChat(id, { role: "you", text: typed.length ? `${prompt}\n\n${typed.join("\n")}` : prompt, at: new Date().toISOString() });
 
   const dir = kitDir(id);
+  // Figma files come in first, as a styles sheet and frame pictures.
+  const notes: string[] = [];
+  for (const link of links) {
+    if (link.kind === "figma") {
+      if (!figmaReady()) {
+        notes.push(`${link.url}: a Figma file. The studio has no Figma token, so it couldn't be opened; say so, and ask for the frames as PDF or PNG.`);
+        continue;
+      }
+      emit({ kind: "step", label: "Opening the Figma file" });
+      try {
+        notes.push(`${link.url}: ${await pullFigma(id, link.url)}`);
+      } catch (error) {
+        notes.push(`${link.url}: a Figma file that couldn't be opened (${(error as Error).message})`);
+      }
+    } else if (link.kind === "drive") notes.push(`${link.url}: a Google Drive or Docs link, which can't be opened from here; ask for the file to be downloaded and dropped in.`);
+    else if (link.kind === "video") notes.push(`${link.url}: a video link, which can't be watched from here.`);
+    else notes.push(`${link.url}: a ${LINK_LABEL[link.kind]} page you may fetch.`);
+  }
+  const sites = [...new Set(links.filter((l) => fetchable(l.kind)).map((l) => new URL(l.url).hostname))];
+  const files = await inventory(dir);
+
   const session = (await readFile(sessionFile(id), "utf8").catch(() => "")).trim() || undefined;
-  const args = brandArgs(id, session, url);
+  const args = brandArgs(id, session, sites);
   const proc = spawn(CLAUDE_BIN, args, { cwd: dir, env: childEnv(), stdio: ["pipe", "pipe", "pipe"], detached: true });
   turn.pid = proc.pid ?? null;
   if (turn.stopped && proc.pid) killGroup(proc.pid);
   proc.stdin.end(
     [
       `<kit>${path.join(dir, "brand.json")}, named "${kit.name}".</kit>`,
-      url ? `<website>${url.href} (you may fetch pages from ${url.hostname} only)</website>` : "",
+      files.length ? `<shared-files>\n${files.join("\n")}\n</shared-files>` : "",
+      notes.length ? `<links>\n${notes.join("\n")}\n</links>` : "",
       `<request>\n${prompt}\n</request>`,
     ]
       .filter(Boolean)
@@ -164,7 +196,18 @@ export async function undoBrand(id: string): Promise<BrandKit | null> {
   return kit;
 }
 
-function brandArgs(id: string, session: string | undefined, url: URL | null) {
+// What's in the kit's folders, so Claude knows what it was given.
+async function inventory(dir: string) {
+  const out: string[] = [];
+  for (const folder of ["guide", "fonts", "logos"]) {
+    for (const name of (await readdir(path.join(dir, folder)).catch(() => [])).sort()) {
+      if (!name.startsWith(".")) out.push(`${folder}/${name}`);
+    }
+  }
+  return out.slice(0, 80);
+}
+
+function brandArgs(id: string, session: string | undefined, sites: string[]) {
   const dir = kitDir(id);
   const root = `/${ROOT}`;
   const allow = [
@@ -175,7 +218,7 @@ function brandArgs(id: string, session: string | undefined, url: URL | null) {
     `Read(${root}/.claude/skills/**)`,
     "Skill",
     "TodoWrite",
-    ...(url ? [`WebFetch(domain:${url.hostname})`] : []),
+    ...sites.map((host) => `WebFetch(domain:${host})`),
   ];
   const deny = [`Edit(/${dir}/.history/**)`, `Read(${root}/**/.env*)`];
   const args = [
@@ -188,7 +231,7 @@ function brandArgs(id: string, session: string | undefined, url: URL | null) {
     "--permission-mode", "dontAsk",
     "--setting-sources", "project,local",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
-    "--tools", `Read,Edit,Write,Glob,Grep,Skill,TodoWrite${url ? ",WebFetch" : ""}`,
+    "--tools", `Read,Edit,Write,Glob,Grep,Skill,TodoWrite${sites.length ? ",WebFetch" : ""}`,
     "--allowedTools", ...allow,
     "--disallowedTools", ...deny,
     "--append-system-prompt", systemPrompt(id),
@@ -203,9 +246,11 @@ function systemPrompt(id: string) {
 
 The kit is ${dir}/ and the shell is already in it. Write only inside it. Its shape is BrandKit in ${path.join(ROOT, "src/lib/studio/brand.ts")}: read that first. A complete example is the Aerchain kit at ${path.join(ROOT, "studio/brands/aerchain/brand.json")}.
 
-What you have: guide/ holds what the person dropped in (guideline PDFs, screenshots, notes); fonts/ and logos/ hold their font and logo files. Read PDFs and images directly. If a website is given you may fetch pages from that one domain; nothing else on the web.
+What you have: the person's own words (often a loose brain dump: take every hint in it seriously), guide/ with what they dropped in (guideline PDFs, screenshots, notes, and a sheet plus frame pictures from any Figma file), and fonts/ and logos/ with their font and logo files. Read PDFs and images directly. Websites, Framer sites and Notion pages they shared: you may fetch pages from those domains only; nothing else on the web. A logo or font that sits in guide/ by mistake can be named in brand.json only once it is in logos/ or fonts/; say if one needs moving.
 
 Build brand.json from them: colour roles (background, surface, ink, muted, accent, onAccent, line) and the brand's full ramps with exact hex values; fonts (each file in fonts/ with family, role, weights); logos (each file in logos/ with kind and the ground it is drawn for); rules in four short lists (visual, motion, sound, words), one plain sentence each, in the brand's own words where it has them; texture (stroke and gap in px at 1080p) only if the brand has a line or grid system; and notes, a thorough Markdown guideline for whoever designs films with the kit. Only write what the sources show or clearly imply; where you infer (motion, sound), say so in notes. Never invent hex values: if a colour isn't given, sample it from a logo or screenshot and say you did. Keep "id" as "${id}". No shell commands are available.
 
-How to reply: work quietly, then end with two or three plain sentences on what the kit now holds and anything you couldn't find. Never use em dashes.`;
+Work in this order, saving brand.json as you go so the person sees the kit fill in: name and colours first, then fonts, then logos, then rules, then notes.
+
+How to reply: work quietly, then end with exactly two short paragraphs. The first starts "Found:" and says, in plain words, what the kit now holds and where it came from. The second starts "Guessed:" and names what you inferred or couldn't find (and any link you couldn't open). Never use em dashes.`;
 }

@@ -5,7 +5,7 @@
 // Plain TypeScript with no `@/` imports: scripts/studio/render.mjs imports
 // it straight from Node.
 
-import { cp, readdir, readFile, stat } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rename, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import type { BrandKit, BrandTokens } from "./brand";
 
@@ -22,11 +22,25 @@ const exists = (p: string) => stat(p).then(() => true, () => false);
 
 // The kits the studio ships (studio/brands/<id>/) are copied into brands/
 // the first time they're needed, so they can be edited like any other.
-export async function seedShipped(root: string) {
+// One copy at a time, even when several requests arrive together on the
+// first visit, and each kit appears whole: copied aside, then renamed in.
+const seeding = globalThis as { __brandSeed?: Promise<void> };
+export function seedShipped(root: string): Promise<void> {
+  seeding.__brandSeed ??= seed(root).finally(() => {
+    seeding.__brandSeed = undefined;
+  });
+  return seeding.__brandSeed;
+}
+
+async function seed(root: string) {
   for (const id of await readdir(shippedDir(root)).catch(() => [])) {
     if (!isBrandId(id) || (await exists(brandDir(root, id)))) continue;
     if (!(await exists(path.join(shippedDir(root), id, "brand.json")))) continue;
-    await cp(path.join(shippedDir(root), id), brandDir(root, id), { recursive: true });
+    await mkdir(brandsDir(root), { recursive: true });
+    const aside = `${brandDir(root, id)}.seeding-${process.pid}-${Date.now().toString(36)}`;
+    await cp(path.join(shippedDir(root), id), aside, { recursive: true });
+    // Another process (a render) may have got there first; keep theirs.
+    await rename(aside, brandDir(root, id)).catch(() => rm(aside, { recursive: true, force: true }));
   }
 }
 

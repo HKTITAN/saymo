@@ -1,7 +1,7 @@
 "use client";
 
 import { Popover } from "@base-ui/react/popover";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import {
   CopyIcon,
   DeleteDustbin01Icon,
@@ -12,7 +12,6 @@ import {
   MultipleCrossCancelIcon,
   PlusIcon,
   ThreeDotsMenuHorizontalIcon,
-  UploadUpIcon,
 } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { DialButton, DialGroup, DialNote, DialSlider, DialText, LABEL, ROW, SURFACE } from "@/components/tool/dial";
@@ -20,17 +19,19 @@ import type { BrandFont, BrandKit, BrandLogo, ColorRoles } from "@/lib/studio/br
 import type { ChatMessage } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { StudioError } from "./api";
-import { brandApi, brandFile, FONT_FILE, KIT_ACCEPTS, LOGO_FILE } from "./brand-api";
+import { brandApi, brandFile, FOLDER_ACCEPTS, FONT_FILE, type KitFolder, LOGO_FILE } from "./brand-api";
 import { ColorRow } from "./color-row";
 import { undoKey } from "./history";
 import { Choice } from "./inspector";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON, Panel } from "./panel";
+import { fontName, KitDoc } from "./kit-doc";
 import { PromptBox } from "./prompt-box";
 
-// A brand kit's own page, at /studio?brand=<id>. The kit is laid out as a
-// specimen board (colours, type, logos, line texture, rules, notes); the
-// panels float over it: Claude on the left, the kit's settings on the right.
-// Every change shows at once and saves a moment later; ⌘Z undoes it.
+// A brand kit's own page, at /studio?brand=<id>. The kit reads as a brand
+// book (kit-doc.tsx: colours, type, logos, line texture, rules, the long
+// guideline); the panels float over it: Claude on the left, the kit's
+// settings on the right. Every change shows at once and saves a moment
+// later; ⌘Z undoes it.
 
 const ROLES: { key: keyof ColorRoles; label: string; note: string }[] = [
   { key: "background", label: "Background", note: "The ground most films sit on" },
@@ -53,12 +54,14 @@ type Step = { label: string; before: BrandKit; at: number };
 export function KitPage({
   id,
   openingRef,
+  arrivalRef,
   onHome,
   onOpenKit,
   onGone,
 }: {
   id: string;
   openingRef: React.RefObject<{ prompt: string; url: string } | null>;
+  arrivalRef: React.RefObject<{ id: string; reply: string } | null>;
   onHome: () => void;
   onOpenKit: (id: string) => void;
   onGone: () => void;
@@ -72,6 +75,14 @@ export function KitPage({
   const [uploading, setUploading] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [version, setVersion] = useState(() => Date.now().toString(36));
+  // A kit Claude just made opens with its note on what it found and guessed.
+  const [arrival, setArrival] = useState<string | null>(null);
+  useEffect(() => {
+    const a = arrivalRef.current;
+    if (!a || a.id !== id) return;
+    arrivalRef.current = null;
+    setArrival(a.reply || null);
+  }, [arrivalRef, id]);
   const kitRef = useRef<BrandKit | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undo = useRef<Step[]>([]);
@@ -139,6 +150,22 @@ export function KitPage({
     setVersion(Date.now().toString(36));
   });
 
+  // While Claude works, the page follows the kit as it's written.
+  const running = chat.running;
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => {
+      brandApi
+        .get(id)
+        .then((k) => {
+          kitRef.current = k;
+          setKit(k);
+        })
+        .catch(() => {});
+    }, 1500);
+    return () => clearInterval(t);
+  }, [running, id]);
+
   const step = useCallback(
     async (direction: "undo" | "redo") => {
       const from = direction === "undo" ? undo.current : redo.current;
@@ -174,6 +201,7 @@ export function KitPage({
         return;
       }
       if (e.key.toLowerCase() === "h" && !e.metaKey && !e.ctrlKey && !e.altKey) setHidden((h) => !h);
+      if (e.key === "Escape" && !e.defaultPrevented) setNote(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -187,14 +215,14 @@ export function KitPage({
 
   // Dropped or chosen files go into the kit; fonts and logos join it.
   const upload = useCallback(
-    async (files: File[]) => {
+    async (files: File[], folder?: KitFolder) => {
       if (!files.length) return;
       await flush();
       const added: { font: string[]; logo: string[] } = { font: [], logo: [] };
       for (const [i, file] of files.entries()) {
         setUploading(`Adding ${file.name} (${i + 1} of ${files.length})`);
         try {
-          const { file: path } = await brandApi.upload(id, file);
+          const { file: path } = await brandApi.upload(id, file, folder);
           if (path.startsWith("fonts/") && FONT_FILE.test(path)) added.font.push(path);
           else if (path.startsWith("logos/") && LOGO_FILE.test(path)) added.logo.push(path);
         } catch (e) {
@@ -256,7 +284,34 @@ export function KitPage({
         void upload([...e.dataTransfer.files]);
       }}
     >
-      <Board kit={kit} version={version} hidden={hidden} folded={folded} />
+      <KitDoc
+        kit={kit}
+        version={version}
+        left={hidden || folded.chat ? 24 : 372}
+        right={hidden || folded.kit ? 24 : 352}
+        arrival={arrival}
+        onDismissArrival={() => setArrival(null)}
+        change={change}
+        onCopy={(hex) => {
+          void navigator.clipboard?.writeText(hex).then(
+            () => setNote(`Copied ${hex}`),
+            () => setNote(hex),
+          );
+        }}
+        onOpenPanel={(group) => {
+          setHidden(false);
+          setFolded((f) => ({ ...f, kit: false }));
+          // Open that group in the Kit panel and bring it into view.
+          requestAnimationFrame(() => {
+            const panel = document.querySelector<HTMLElement>('section[aria-label="Kit"]');
+            const button = [...(panel?.querySelectorAll<HTMLButtonElement>("h2 > button") ?? [])].find((b) => b.textContent?.trim() === group);
+            if (!button) return;
+            if (button.getAttribute("aria-expanded") === "false") button.click();
+            button.scrollIntoView({ behavior: "smooth", block: "start" });
+            button.focus({ preventScroll: true });
+          });
+        }}
+      />
 
       <TopBar
         kit={kit}
@@ -343,7 +398,6 @@ const nameFrom = (file: string) =>
 
 // Loads each of the kit's fonts under its own name ("kit <id> <family>") so
 // two kits with a font of the same name never mix.
-const fontName = (kit: BrandKit, family: string) => `kit ${kit.id} ${family}`;
 
 function useKitFonts(kit: BrandKit | null, version: string) {
   useEffect(() => {
@@ -365,257 +419,6 @@ function useKitFonts(kit: BrandKit | null, version: string) {
       for (const face of faces) document.fonts.delete(face);
     };
   }, [kit, version]);
-}
-
-// ─── The specimen board ───────────────────────────────────────────────────────
-
-function Board({ kit, version, hidden, folded }: { kit: BrandKit; version: string; hidden: boolean; folded: { chat: boolean; kit: boolean } }) {
-  const r = kit.colors.roles;
-  const display = kit.fonts.find((f) => f.role === "display") ?? kit.fonts[0];
-  const text = kit.fonts.find((f) => f.role === "text") ?? display;
-  const family = (f: BrandFont | undefined) => (f ? `"${fontName(kit, f.family)}", system-ui` : "system-ui");
-  const left = hidden || folded.chat ? 24 : 372;
-  const right = hidden || folded.kit ? 24 : 352;
-  return (
-    <div className="absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="flex flex-col gap-12 pt-24 pb-24 transition-[padding] duration-300" style={{ paddingLeft: left, paddingRight: right }}>
-        <header className="flex flex-col gap-2">
-          <p className="text-[12px] text-white/40">Brand kit</p>
-          <h1 className="text-[56px] text-white leading-none" style={{ fontFamily: family(display), fontWeight: 600 }}>
-            {kit.name}
-          </h1>
-          {kit.source ? <p className="max-w-[640px] text-[12.5px] text-white/45 leading-relaxed">{kit.source}</p> : null}
-        </header>
-
-        <Section title="Colour roles">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-2">
-            {ROLES.map((role) => (
-              <div key={role.key} className="flex flex-col overflow-hidden rounded-[12px] bg-white/[0.04]">
-                <div className="h-24" style={{ background: r[role.key] }} />
-                <div className="flex flex-col gap-0.5 p-2.5">
-                  <span className="text-[12px] text-white/85">{role.label}</span>
-                  <span className="font-mono text-[11px] text-white/45 tabular-nums">{r[role.key]}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        {kit.colors.ramps.length ? (
-          <Section title="Colour ramps">
-            <div className="flex flex-col gap-4">
-              {kit.colors.ramps.map((ramp, i) => (
-                <div key={`${ramp.name}-${i}`} className="flex flex-col gap-1.5">
-                  <span className="text-[12px] text-white/70">{ramp.name}</span>
-                  <div className="flex overflow-hidden rounded-[10px]">
-                    {ramp.steps.map((s, j) => (
-                      <div key={`${s.hex}-${j}`} className="group relative h-14 flex-1" style={{ background: s.hex }} title={`${s.name} ${s.hex}`}>
-                        <span className="absolute inset-x-0 bottom-1 hidden text-center font-mono text-[9.5px] text-white mix-blend-difference group-hover:block">
-                          {s.hex}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
-        ) : null}
-
-        <Section title="Type">
-          {kit.fonts.length ? (
-            <div className="flex flex-col gap-3">
-              {kit.fonts.map((f, i) => (
-                <div key={`${f.file}-${f.role}-${i}`} className="flex flex-col gap-3 rounded-[14px] p-5" style={{ background: r.surface, color: r.ink }}>
-                  <span className="text-[11.5px] opacity-60" style={{ fontFamily: "system-ui" }}>
-                    {f.family} · {f.role === "display" ? "Display" : f.role === "text" ? "Text" : "Mono"} · weights {f.weights}
-                  </span>
-                  <span className="text-[64px] leading-none" style={{ fontFamily: family(f), fontWeight: f.role === "display" ? 600 : 400 }}>
-                    Aa Bb Cc 0123
-                  </span>
-                  <span className="max-w-[720px] text-[18px] leading-snug" style={{ fontFamily: family(f) }}>
-                    Every rate, risk and approval, scattered, until one moment resolves them.
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <Empty>No fonts yet. Drop font files anywhere on this page.</Empty>
-          )}
-        </Section>
-
-        <Section title="Logos">
-          {kit.logos.length ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2">
-              {kit.logos.map((l, i) => (
-                <div key={`${l.file}-${i}`} className="flex flex-col overflow-hidden rounded-[12px] bg-white/[0.04]">
-                  <div className="grid h-32 grid-cols-2">
-                    {(["light", "dark"] as const).map((ground) => (
-                      <div
-                        key={ground}
-                        className={cn("flex items-center justify-center p-5", l.on !== "any" && l.on !== ground && "opacity-25")}
-                        style={{ background: ground === "light" ? r.surface : r.background }}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element -- the kit's own logo file */}
-                        <img src={brandFile(kit.id, l.file, version)} alt="" className="max-h-full max-w-full object-contain" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 p-2.5">
-                    <span className="min-w-0 flex-1 truncate text-[12px] text-white/85">{l.name}</span>
-                    <span className="text-[11px] text-white/40">{l.on === "any" ? "Any ground" : l.on === "light" ? "Light grounds" : "Dark grounds"}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <Empty>No logos yet. Drop SVG or PNG logos anywhere on this page.</Empty>
-          )}
-        </Section>
-
-        {kit.texture ? (
-          <Section title="Line texture">
-            <div className="flex flex-col gap-2">
-              <LineField kit={kit} />
-              <p className="text-[12px] text-white/45">
-                <span className="font-mono tabular-nums">
-                  {kit.texture.stroke} px lines, {kit.texture.gap} px gaps
-                </span>
-                {kit.texture.note ? ` · ${kit.texture.note}` : null}
-              </p>
-            </div>
-          </Section>
-        ) : null}
-
-        <Section title="Rules">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
-            {RULES.map((group) => (
-              <div key={group.key} className="flex flex-col gap-2">
-                <span className="text-[12px] text-white/70">{group.label}</span>
-                {kit.rules[group.key].length ? (
-                  <ol className="flex flex-col gap-1.5">
-                    {kit.rules[group.key].map((rule, i) => (
-                      <li key={`${i}-${rule.slice(0, 12)}`} className="flex gap-2 text-[12.5px] text-white/75 leading-relaxed">
-                        <span className="w-4 shrink-0 font-mono text-[11px] text-white/30 tabular-nums">{i + 1}</span>
-                        {rule}
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="text-[12px] text-white/35">None yet.</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Section>
-
-        {kit.notes ? (
-          <Section title="Guideline">
-            <Notes text={kit.notes} fontFamily={family(text)} />
-          </Section>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="font-medium text-[13px] text-white/90">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-function Empty({ children }: { children: ReactNode }) {
-  return <p className="rounded-[12px] bg-white/[0.03] px-4 py-6 text-[12.5px] text-white/45">{children}</p>;
-}
-
-// The kit's line field: its texture in its line and accent colours, the
-// accent arriving from the right as a staircase.
-function LineField({ kit }: { kit: BrandKit }) {
-  const t = kit.texture;
-  if (!t) return null;
-  const r = kit.colors.roles;
-  const W = 960;
-  const pitch = t.stroke + t.gap;
-  const rows = Math.max(6, Math.floor(180 / pitch));
-  const field = (hex: string) => t.fields?.[hex.toUpperCase()] ?? { lit: hex, gap: r.background };
-  const accent = field(r.accent);
-  return (
-    <svg viewBox={`0 0 ${W} ${rows * pitch}`} className="w-full max-w-[960px] overflow-hidden rounded-[12px]" role="img" aria-label="The kit's line texture">
-      <rect width={W} height={rows * pitch} fill={r.background} />
-      {Array.from({ length: rows }, (_, i) => {
-        const y = i * pitch;
-        const from = W - Math.round(((rows - i) / rows) * W * 0.6);
-        return (
-          <g key={i}>
-            <rect y={y + t.gap / 2} width={W} height={t.stroke} fill={r.line} />
-            <rect x={from} y={y} width={W - from} height={pitch} fill={accent.gap} />
-            <rect x={from} y={y + t.gap / 2} width={W - from} height={t.stroke} fill={accent.lit} />
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-// The guideline in Markdown: headings, lists and paragraphs, nothing more.
-function Notes({ text, fontFamily }: { text: string; fontFamily: string }) {
-  const blocks: ReactNode[] = [];
-  let list: string[] = [];
-  const flushList = () => {
-    if (!list.length) return;
-    blocks.push(
-      <ul key={`ul-${blocks.length}`} className="flex list-disc flex-col gap-1 ps-5">
-        {list.map((l, i) => (
-          <li key={i}>{inline(l)}</li>
-        ))}
-      </ul>,
-    );
-    list = [];
-  };
-  for (const raw of text.split("\n")) {
-    const line = raw.trim();
-    if (!line) {
-      flushList();
-      continue;
-    }
-    if (/^[-*] /.test(line)) {
-      list.push(line.slice(2));
-      continue;
-    }
-    flushList();
-    const h = /^(#{1,4})\s+(.*)$/.exec(line);
-    if (h) {
-      const size = h[1].length === 1 ? "text-[20px]" : h[1].length === 2 ? "text-[16px]" : "text-[14px]";
-      blocks.push(
-        <p key={`h-${blocks.length}`} className={cn("pt-3 font-medium text-white/90", size)}>
-          {h[2]}
-        </p>,
-      );
-    } else blocks.push(<p key={`p-${blocks.length}`}>{inline(line)}</p>);
-  }
-  flushList();
-  return (
-    <div className="flex max-w-[760px] flex-col gap-2.5 text-[13.5px] text-white/70 leading-relaxed" style={{ fontFamily }}>
-      {blocks}
-    </div>
-  );
-}
-
-// **bold** inside a line.
-function inline(line: string) {
-  return line.split(/(\*\*[^*]+\*\*)/).map((part, i) =>
-    part.startsWith("**") && part.endsWith("**") ? (
-      <strong key={i} className="font-semibold text-white/90">
-        {part.slice(2, -2)}
-      </strong>
-    ) : (
-      part
-    ),
-  );
 }
 
 // ─── Top left: home, the kit's name, its menu ────────────────────────────────
@@ -789,25 +592,13 @@ function KitSettings({
 }: {
   kit: BrandKit;
   change: (label: string, fn: (k: BrandKit) => BrandKit) => void;
-  onUpload: (files: File[]) => Promise<void>;
+  onUpload: (files: File[], folder?: KitFolder) => Promise<void>;
   uploading: string | null;
 }) {
-  const picker = useRef<HTMLInputElement>(null);
   const r = kit.colors.roles;
   return (
     <>
-      <input
-        ref={picker}
-        type="file"
-        multiple
-        accept={KIT_ACCEPTS}
-        className="hidden"
-        tabIndex={-1}
-        onChange={(e) => {
-          void onUpload([...(e.target.files ?? [])]);
-          e.target.value = "";
-        }}
-      />
+      <AddToKit uploading={uploading} onUpload={onUpload} />
       <DialGroup title="Colours">
         {ROLES.map((role) => (
           <ColorRow
@@ -937,11 +728,6 @@ function KitSettings({
         {!kit.logos.length ? <DialNote>Drop SVG or PNG logos on the page, or choose them below.</DialNote> : null}
       </DialGroup>
 
-      <DialButton loading={!!uploading} onClick={() => picker.current?.click()}>
-        <UploadUpIcon aria-hidden="true" />
-        Add fonts, logos or a guideline
-      </DialButton>
-
       <DialGroup title="Line texture" defaultOpen={false}>
         {kit.texture ? (
           <>
@@ -986,6 +772,83 @@ function KitSettings({
         </DialGroup>
       ))}
     </>
+  );
+}
+
+// Adding to the kit: one quiet row that takes dropped files, with three
+// small targets that each open the right picker and file what's chosen in
+// the right place.
+const TARGETS: { folder: KitFolder; label: string; hint: string }[] = [
+  { folder: "fonts", label: "Fonts", hint: "TTF, OTF" },
+  { folder: "logos", label: "Logos", hint: "SVG, PNG" },
+  { folder: "guide", label: "Guideline", hint: "PDF, images" },
+];
+
+function AddToKit({ uploading, onUpload }: { uploading: string | null; onUpload: (files: File[], folder?: KitFolder) => Promise<void> }) {
+  const [over, setOver] = useState(false);
+  const pickers = useRef<Partial<Record<KitFolder, HTMLInputElement | null>>>({});
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: a drop target; the three buttons are the keyboard way in
+    <div
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes("Files")) return;
+        e.preventDefault();
+        e.stopPropagation();
+        setOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setOver(false);
+        void onUpload([...e.dataTransfer.files]);
+      }}
+      className={cn(
+        "flex flex-col gap-1.5 rounded-[12px] p-1.5 transition-colors",
+        over ? "bg-white/[0.1] ring-1 ring-white/30" : "bg-white/[0.04]",
+      )}
+    >
+      <div className="flex h-7 items-center gap-2 px-1.5">
+        <span className="font-medium text-[12px] text-white/85">Add to the kit</span>
+        <span className="ms-auto truncate text-[11px] text-white/35">
+          {uploading ? <span className="studio-shimmer">{uploading}</span> : over ? "Drop to add" : "or drop files here"}
+        </span>
+      </div>
+      <div className="grid grid-cols-3 gap-1">
+        {TARGETS.map((t) => (
+          <Fragment key={t.folder}>
+            <input
+              ref={(el) => {
+                pickers.current[t.folder] = el;
+              }}
+              type="file"
+              multiple
+              accept={FOLDER_ACCEPTS[t.folder]}
+              className="hidden"
+              tabIndex={-1}
+              onChange={(e) => {
+                void onUpload([...(e.target.files ?? [])], t.folder);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              disabled={!!uploading}
+              onClick={() => pickers.current[t.folder]?.click()}
+              className="flex cursor-pointer flex-col items-start gap-0.5 rounded-[9px] bg-white/[0.05] px-2.5 py-2 text-left outline-none transition-colors hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-50"
+            >
+              <span className="flex items-center gap-1 text-[12px] text-white/90 [&_svg]:size-3 [&_svg]:text-white/45">
+                <PlusIcon aria-hidden="true" />
+                {t.label}
+              </span>
+              <span className="text-[10.5px] text-white/35">{t.hint}</span>
+            </button>
+          </Fragment>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1136,7 +999,7 @@ function KitChat({
   beforeSend: () => Promise<void>;
 }) {
   const [draft, setDraft] = useState("");
-  const [url, setUrl] = useState("");
+  const [undoNote, setUndoNote] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const { messages, turn } = chat;
 
@@ -1156,7 +1019,7 @@ function KitChat({
     const words = draft;
     setDraft("");
     await beforeSend();
-    void chat.send(words, url.trim());
+    void chat.send(words, "");
   };
   const step = turn.steps.at(-1) ?? "Reading the kit";
 
@@ -1169,13 +1032,27 @@ function KitChat({
       className="top-[68px] bottom-4 left-4 w-[340px]"
       pillClassName="top-[68px] left-4"
       bodyClassName="flex flex-col"
+      actions={
+        messages.some((m) => m.role === "claude") ? (
+          <Hint label="Undo Claude’s last change" keys={["⌘", "Z"]}>
+            <button
+              type="button"
+              disabled={turn.running}
+              onClick={async () => setUndoNote(await chat.undo())}
+              className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}
+            >
+              Undo
+            </button>
+          </Hint>
+        ) : null
+      }
     >
       <div ref={list} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {!messages.length && !turn.running ? (
           <div className="flex flex-col gap-2.5">
             <p className="text-[12.5px] text-white/55 leading-relaxed">
               Ask Claude to build or tidy this kit. It reads the files you add (a guideline PDF, screenshots, logos, fonts)
-              and, if you give one, the brand’s website.
+              and any links you paste: the website, Framer or Notion pages, a Figma file.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {KIT_IDEAS.map((idea) => (
@@ -1208,10 +1085,10 @@ function KitChat({
           </div>
         ) : null}
         {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
+        {undoNote ? <p className="text-[12.5px] text-white/50 leading-relaxed">{undoNote}</p> : null}
       </div>
       <div className="flex shrink-0 flex-col gap-1.5 px-2 pb-2">
-        <DialText label="Website" value={url} placeholder="Optional" onChange={setUrl} />
-        <PromptBox value={draft} onChange={setDraft} onSend={() => void send()} onStop={chat.stop} running={turn.running} placeholder="Make the motion rules calmer" />
+        <PromptBox value={draft} onChange={setDraft} onSend={() => void send()} onStop={chat.stop} running={turn.running} placeholder="Make the motion rules calmer, or paste a link" />
       </div>
     </Panel>
   );
