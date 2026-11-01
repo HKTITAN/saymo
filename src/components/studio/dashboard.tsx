@@ -323,7 +323,9 @@ function FilmCard({
             <Popover.Popup
               className={cn(
                 SURFACE,
-                "flex w-[232px] origin-(--transform-origin) flex-col p-1 outline-none transition-[scale,opacity] duration-150 ease-out data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-starting-style:scale-[0.97] data-starting-style:opacity-0",
+                "flex origin-(--transform-origin) flex-col p-1 outline-none transition-[scale,opacity,width] duration-150 ease-out data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-starting-style:scale-[0.97] data-starting-style:opacity-0",
+                // Just wide enough for its three actions; the delete check needs room for its sentence.
+                view === "list" ? "w-[156px]" : "w-[248px]",
               )}
             >
               {view === "list" ? (
