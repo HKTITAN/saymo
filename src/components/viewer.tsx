@@ -1,8 +1,8 @@
 "use client";
 
-import { DownloadIcon, PauseIcon, PlayIcon } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ExportStage } from "@/components/export-stage";
+import { DownloadDownIcon, PauseCircleIcon, PlayCircleIcon } from "@/components/icons";
 import { MOTION_BY_ID, MOTIONS, type MotionId } from "@/components/post/lines";
 import { Post, POST_H, POST_W } from "@/components/post/post";
 import { post } from "@/content/post";
@@ -100,20 +100,20 @@ function Showcase() {
 
   return (
     <TooltipProvider>
-      <main className="flex h-dvh flex-col bg-background text-foreground">
+      <main className="flex h-dvh flex-col bg-background font-sans text-white">
         <header className="flex items-center justify-between gap-6 px-6 pt-5 pb-4">
-          <div className="flex items-baseline gap-3">
-            <h1 className="font-medium text-sm">Speaker post</h1>
-            <p className="text-muted-foreground text-sm">
+          <div className="flex min-w-0 items-baseline gap-3">
+            <h1 className="shrink-0 font-medium text-[13px] text-white/90">Speaker post</h1>
+            <p className="truncate text-[12px] text-white/40">
               {post.speaker.name} on SpendOS
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex shrink-0 items-center gap-4">
             <p
-              className="text-muted-foreground text-xs transition-opacity duration-700"
+              className="text-[11.5px] text-white/40 transition-opacity duration-700"
               style={{ opacity: hint ? 1 : 0 }}
             >
-              Space to pause, B to compare before and after
+              Press Space to pause, B to compare before and after
             </p>
             <ToggleGroup
               size="sm"
@@ -126,7 +126,7 @@ function Showcase() {
               {COMPARE.map((c) => (
                 <Tooltip key={c.id}>
                   <TooltipTrigger render={<ToggleGroupItem value={c.id} />}>{c.label}</TooltipTrigger>
-                  <TooltipPopup className="max-w-64" side="bottom">
+                  <TooltipPopup className="max-w-80" side="bottom">
                     <span className="flex items-center gap-2">
                       {c.hint}
                       <Kbd>B</Kbd>
@@ -172,7 +172,7 @@ function Showcase() {
                     />
                   }
                 >
-                  {playing ? <PauseIcon /> : <PlayIcon />}
+                  {playing ? <PauseCircleIcon aria-hidden="true" /> : <PlayCircleIcon aria-hidden="true" />}
                 </ToolbarButton>
                 <TooltipPopup>
                   <span className="flex items-center gap-2">
@@ -183,7 +183,7 @@ function Showcase() {
               </Tooltip>
             </ToolbarGroup>
             <ToolbarSeparator orientation="vertical" />
-            <span className="flex items-center px-2 text-muted-foreground text-xs tabular-nums">
+            <span className="flex items-center px-2 font-mono text-[11.5px] text-white/45 tabular-nums">
               {current.duration}s loop
             </span>
             <ToolbarSeparator orientation="vertical" />
@@ -195,11 +195,11 @@ function Showcase() {
                 className={buttonVariants({ variant: "ghost" })}
                 render={<TooltipTrigger render={<a />} />}
               >
-                <DownloadIcon aria-hidden="true" />
+                <DownloadDownIcon aria-hidden="true" className="size-3.5" />
                 Download 4K
               </ToolbarLink>
               <TooltipPopup>
-                {current.label} as a 3840 × 2160 video, 60 fps
+                {current.label} as a 3840 × 2160 video at 60 fps
               </TooltipPopup>
             </Tooltip>
           </Toolbar>

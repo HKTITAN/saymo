@@ -1,24 +1,65 @@
 "use client";
 
 import { Toast } from "@base-ui/react/toast";
-import {
-  CircleAlertIcon,
-  CircleCheckIcon,
-  InfoIcon,
-  LoaderCircleIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
 import type React from "react";
+import {
+  AlertCircleIcon,
+  AlertTriangleIcon,
+  CheckTickCircleIcon,
+  InformationCircleIcon,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+
+// Toasts in the DialKit language: a dark rounded panel, a small status icon
+// and two lines of quiet system type.
 
 const TOAST_ICONS = {
-  error: CircleAlertIcon,
-  info: InfoIcon,
-  loading: LoaderCircleIcon,
-  success: CircleCheckIcon,
-  warning: TriangleAlertIcon,
+  error: AlertCircleIcon,
+  info: InformationCircleIcon,
+  loading: Spinner,
+  success: CheckTickCircleIcon,
+  warning: AlertTriangleIcon,
 } as const;
+
+const ICON_TONE =
+  "size-4 in-data-[type=error]:text-[#ff9592] in-data-[type=info]:text-white/55 in-data-[type=loading]:size-3.5 in-data-[type=loading]:text-white/70 in-data-[type=success]:text-[#4cc38a] in-data-[type=warning]:text-[#f1a10d]";
+
+function ToastBody({
+  Icon,
+  action,
+}: {
+  Icon: ((props: { className?: string }) => React.ReactNode) | null;
+  action: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <>
+      <div className="flex min-w-0 gap-2.5">
+        {Icon && (
+          <div
+            className="flex h-[1.4em] shrink-0 items-center [&_svg]:pointer-events-none"
+            data-slot="toast-icon"
+          >
+            <Icon className={ICON_TONE} />
+          </div>
+        )}
+
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <Toast.Title
+            className="font-medium text-white/90 leading-[1.4]"
+            data-slot="toast-title"
+          />
+          <Toast.Description
+            className="text-[12px] text-white/50 leading-normal"
+            data-slot="toast-description"
+          />
+        </div>
+      </div>
+      {action}
+    </>
+  );
+}
 
 type SwipeDirection = "up" | "down" | "left" | "right";
 
@@ -99,7 +140,7 @@ function Toasts({
             <Toast.Root
               key={toast.id}
               className={cn(
-                "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-lg border bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(1%*max(0,var(--toast-index,0))))] not-dark:bg-clip-padding text-popover-foreground shadow-lg/5 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s,background-color_.5s] before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] data-expanded:bg-popover dark:bg-[color-mix(in_srgb,var(--popover),var(--color-black)_calc(6%*max(0,var(--toast-index,0))))] dark:data-expanded:bg-popover dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+                "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-[14px] border border-white/[0.07] bg-[color-mix(in_srgb,#1a1a1a,#000_calc(8%*max(0,var(--toast-index,0))))] font-sans text-white shadow-2xl shadow-black/50 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s,background-color_.5s] data-expanded:bg-[#1a1a1a]",
                 // Base positioning using data-position
                 "data-[position*=right]:right-0 data-[position*=right]:left-auto",
                 "data-[position*=left]:right-auto data-[position*=left]:left-0",
@@ -148,36 +189,20 @@ function Toasts({
               swipeDirection={swipeDirection}
               toast={toast}
             >
-              <Toast.Content className="pointer-events-auto flex items-center justify-between gap-1.5 overflow-hidden px-3.5 py-3 text-sm transition-opacity duration-250 data-behind:not-data-expanded:pointer-events-none data-behind:opacity-0 data-expanded:opacity-100">
-                <div className="flex gap-2">
-                  {Icon && (
-                    <div
-                      className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
-                      data-slot="toast-icon"
-                    >
-                      <Icon className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-0.5">
-                    <Toast.Title
-                      className="font-medium"
-                      data-slot="toast-title"
-                    />
-                    <Toast.Description
-                      className="text-muted-foreground"
-                      data-slot="toast-description"
-                    />
-                  </div>
-                </div>
-                {toast.actionProps && (
-                  <Toast.Action
-                    className={buttonVariants({ size: "xs" })}
-                    data-slot="toast-action"
-                  >
-                    {toast.actionProps.children}
-                  </Toast.Action>
-                )}
+              <Toast.Content className="pointer-events-auto flex items-center justify-between gap-3 overflow-hidden px-3.5 py-3 text-[12.5px] transition-opacity duration-250 data-behind:not-data-expanded:pointer-events-none data-behind:opacity-0 data-expanded:opacity-100">
+                <ToastBody
+                  Icon={Icon}
+                  action={
+                    toast.actionProps && (
+                      <Toast.Action
+                        className={buttonVariants({ size: "xs", variant: "secondary" })}
+                        data-slot="toast-action"
+                      >
+                        {toast.actionProps.children}
+                      </Toast.Action>
+                    )
+                  }
+                />
               </Toast.Content>
             </Toast.Root>
           );
@@ -222,10 +247,10 @@ function AnchoredToasts({
             >
               <Toast.Root
                 className={cn(
-                  "relative text-balance border bg-popover not-dark:bg-clip-padding text-popover-foreground text-xs transition-[scale,opacity] before:pointer-events-none before:absolute before:inset-0 before:shadow-[0_1px_--theme(--color-black/4%)] data-ending-style:opacity-0 data-starting-style:opacity-0 motion-safe:data-ending-style:scale-98 motion-safe:data-starting-style:scale-98 dark:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+                  "relative text-balance border border-white/[0.07] bg-[#1a1a1a] font-sans text-white transition-[scale,opacity] data-ending-style:opacity-0 data-starting-style:opacity-0 motion-safe:data-ending-style:scale-97 motion-safe:data-starting-style:scale-97",
                   tooltipStyle
-                    ? "rounded-md shadow-md/5 before:rounded-[calc(var(--radius-md)-1px)]"
-                    : "rounded-lg shadow-lg/5 before:rounded-[calc(var(--radius-lg)-1px)]",
+                    ? "rounded-[8px] text-[11.5px] shadow-lg shadow-black/40"
+                    : "rounded-[14px] text-[12.5px] shadow-2xl shadow-black/50",
                   upsertReplayClassName(toast),
                 )}
                 {...toastData?.rootProps}
@@ -233,40 +258,24 @@ function AnchoredToasts({
                 toast={toast}
               >
                 {tooltipStyle ? (
-                  <Toast.Content className="pointer-events-auto px-2 py-1">
+                  <Toast.Content className="pointer-events-auto px-2 py-1 text-white/85">
                     <Toast.Title data-slot="toast-title" />
                   </Toast.Content>
                 ) : (
-                  <Toast.Content className="pointer-events-auto flex items-center justify-between gap-1.5 overflow-hidden px-3.5 py-3 text-sm">
-                    <div className="flex gap-2">
-                      {Icon && (
-                        <div
-                          className="[&>svg]:h-lh [&>svg]:w-4 [&_svg]:pointer-events-none [&_svg]:shrink-0"
-                          data-slot="toast-icon"
-                        >
-                          <Icon className="in-data-[type=loading]:animate-spin in-data-[type=error]:text-destructive in-data-[type=info]:text-info in-data-[type=success]:text-success in-data-[type=warning]:text-warning in-data-[type=loading]:opacity-80" />
-                        </div>
-                      )}
-
-                      <div className="flex flex-col gap-0.5">
-                        <Toast.Title
-                          className="font-medium"
-                          data-slot="toast-title"
-                        />
-                        <Toast.Description
-                          className="text-muted-foreground"
-                          data-slot="toast-description"
-                        />
-                      </div>
-                    </div>
-                    {toast.actionProps && (
-                      <Toast.Action
-                        className={buttonVariants({ size: "xs" })}
-                        data-slot="toast-action"
-                      >
-                        {toast.actionProps.children}
-                      </Toast.Action>
-                    )}
+                  <Toast.Content className="pointer-events-auto flex items-center justify-between gap-3 overflow-hidden px-3.5 py-3">
+                    <ToastBody
+                      Icon={Icon}
+                      action={
+                        toast.actionProps && (
+                          <Toast.Action
+                            className={buttonVariants({ size: "xs", variant: "secondary" })}
+                            data-slot="toast-action"
+                          >
+                            {toast.actionProps.children}
+                          </Toast.Action>
+                        )
+                      }
+                    />
                   </Toast.Content>
                 )}
               </Toast.Root>

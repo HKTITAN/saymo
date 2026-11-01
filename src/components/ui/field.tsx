@@ -4,13 +4,15 @@ import { Field as FieldPrimitive } from "@base-ui/react/field";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+// A labelled control, in DialKit's quiet type: a small label above, a note
+// or an error below.
 export function Field({
   className,
   ...props
 }: FieldPrimitive.Root.Props): React.ReactElement {
   return (
     <FieldPrimitive.Root
-      className={cn("flex flex-col items-start gap-2", className)}
+      className={cn("flex flex-col items-start gap-1.5", className)}
       data-slot="field"
       {...props}
     />
@@ -24,7 +26,7 @@ export function FieldLabel({
   return (
     <FieldPrimitive.Label
       className={cn(
-        "inline-flex items-center gap-2 font-medium text-base/4.5 text-foreground data-disabled:opacity-64 sm:text-sm/4",
+        "inline-flex items-center gap-2 px-1 text-[12px] text-white/65 data-disabled:opacity-50",
         className,
       )}
       data-slot="field-label"
@@ -52,7 +54,7 @@ export function FieldDescription({
 }: FieldPrimitive.Description.Props): React.ReactElement {
   return (
     <FieldPrimitive.Description
-      className={cn("text-muted-foreground text-xs", className)}
+      className={cn("px-1 text-[11.5px] text-white/40 leading-relaxed", className)}
       data-slot="field-description"
       {...props}
     />
@@ -65,7 +67,7 @@ export function FieldError({
 }: FieldPrimitive.Error.Props): React.ReactElement {
   return (
     <FieldPrimitive.Error
-      className={cn("text-destructive-foreground text-xs", className)}
+      className={cn("px-1 text-[11.5px] text-[#ff9592] leading-relaxed", className)}
       data-slot="field-error"
       {...props}
     />

@@ -4,6 +4,9 @@ import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+// On and off as DialKit's "Off | On" pair: one switch, its thumb the lit
+// half that slides to the current side. Name it with a label, as before;
+// the two words are only for the eye.
 export function Switch({
   className,
   ...props
@@ -11,18 +14,28 @@ export function Switch({
   return (
     <SwitchPrimitive.Root
       className={cn(
-        "inline-flex h-[calc(var(--thumb-size)+2px)] w-[calc(var(--thumb-size)*2-2px)] shrink-0 items-center rounded-full p-px outline-none transition-[background-color,box-shadow] duration-200 [--thumb-size:--spacing(5)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background data-disabled:cursor-not-allowed data-checked:bg-primary data-unchecked:bg-input data-disabled:opacity-64 sm:[--thumb-size:--spacing(4)]",
+        "relative inline-grid h-7 shrink-0 cursor-pointer select-none grid-cols-2 items-center rounded-[8px] bg-white/[0.05] p-0.5 font-sans text-[11.5px] outline-none transition-colors hover:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-ring data-disabled:cursor-default data-disabled:opacity-50",
         className,
       )}
       data-slot="switch"
       {...props}
     >
       <SwitchPrimitive.Thumb
-        className={cn(
-          "pointer-events-none block aspect-square h-full origin-left in-[[role=switch]:active,[data-slot=label]:active,[data-slot=field-label]:active]:not-data-disabled:scale-x-110 in-[[role=switch]:active,[data-slot=label]:active,[data-slot=field-label]:active]:rounded-[var(--thumb-size)/calc(var(--thumb-size)*1.1)] rounded-(--thumb-size) bg-background shadow-sm/5 will-change-transform [transition:translate_.15s,border-radius_.15s,scale_.1s_.1s,transform-origin_.15s] data-checked:origin-[var(--thumb-size)_50%] data-checked:translate-x-[calc(var(--thumb-size)-4px)] rtl:origin-right rtl:data-checked:origin-left rtl:data-checked:-translate-x-[calc(var(--thumb-size)-4px)]",
-        )}
+        className="pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-[6px] bg-white/[0.13] transition-[left] duration-150 ease-out data-checked:left-1/2"
         data-slot="switch-thumb"
       />
+      <span
+        aria-hidden="true"
+        className="relative px-2 text-center text-white transition-colors in-data-checked:text-white/45"
+      >
+        Off
+      </span>
+      <span
+        aria-hidden="true"
+        className="relative px-2 text-center text-white/45 transition-colors in-data-checked:text-white"
+      >
+        On
+      </span>
     </SwitchPrimitive.Root>
   );
 }

@@ -11,10 +11,19 @@ export class ProblemError extends Error {
 }
 
 async function call<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init);
+  let res: Response;
+  try {
+    res = await fetch(url, init);
+  } catch {
+    // No answer at all: the tool's server is not running.
+    throw new ProblemError({ message: "Unable to reach the tool. Check that it is still running, then try again." });
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ProblemError({ message: body.error ?? `Something went wrong (${res.status}).`, action: body.action });
+    throw new ProblemError({
+      message: body.error ?? `The tool answered with error ${res.status}. Try again in a moment.`,
+      action: body.action,
+    });
   }
   return body as T;
 }

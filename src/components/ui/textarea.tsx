@@ -11,6 +11,8 @@ export type TextareaProps = React.ComponentPropsWithoutRef<"textarea"> &
     unstyled?: boolean;
   };
 
+// Several lines of words in a DialKit block: the same quiet fill as a row,
+// growing with what is typed.
 export function Textarea({
   className,
   size = "default",
@@ -23,7 +25,7 @@ export function Textarea({
       className={
         cn(
           !unstyled &&
-            "relative inline-grid w-full rounded-lg border border-input bg-background not-dark:bg-clip-padding text-base shadow-xs/5 ring-ring/24 transition-shadow before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-lg)-1px)] has-focus-visible:has-aria-invalid:border-destructive/64 has-focus-visible:has-aria-invalid:ring-destructive/16 has-aria-invalid:border-destructive/36 has-focus-visible:border-ring has-disabled:opacity-64 has-[:disabled,:focus-visible,[aria-invalid]]:shadow-none has-focus-visible:ring-[3px] not-has-disabled:has-not-focus-visible:not-has-aria-invalid:before:shadow-[0_1px_--theme(--color-black/4%)] sm:text-sm dark:bg-input/32 dark:has-aria-invalid:ring-destructive/24 dark:not-has-disabled:has-not-focus-visible:not-has-aria-invalid:before:shadow-[0_-1px_--theme(--color-white/6%)]",
+            "relative inline-grid w-full rounded-[10px] bg-white/[0.05] transition-colors hover:bg-white/[0.07] has-focus-visible:bg-white/[0.08] has-focus-visible:ring-2 has-focus-visible:ring-ring has-aria-invalid:ring-1 has-aria-invalid:ring-[#e5484d]/60 has-focus-visible:has-aria-invalid:ring-2 has-disabled:opacity-50",
           className,
         ) || undefined
       }
@@ -40,11 +42,9 @@ export function Textarea({
         render={(defaultProps: React.ComponentProps<"textarea">) => (
           <textarea
             className={cn(
-              "field-sizing-content min-h-17.5 w-full rounded-[inherit] px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)] text-foreground outline-none placeholder:text-muted-foreground/72 max-sm:min-h-20.5",
-              size === "sm" &&
-                "min-h-16.5 px-[calc(--spacing(2.5)-1px)] py-[calc(--spacing(1)-1px)] max-sm:min-h-19.5",
-              size === "lg" &&
-                "min-h-18.5 py-[calc(--spacing(2)-1px)] max-sm:min-h-21.5",
+              "field-sizing-content min-h-20 w-full resize-none rounded-[inherit] bg-transparent px-3 py-2.5 text-[13px] text-white/90 leading-relaxed outline-none placeholder:text-white/30",
+              size === "sm" && "min-h-16 px-2.5 py-2 text-[12px]",
+              size === "lg" && "min-h-24 py-3",
             )}
             data-slot="textarea"
             {...mergeProps(defaultProps, props)}

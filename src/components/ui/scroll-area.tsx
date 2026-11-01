@@ -4,6 +4,9 @@ import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+// Scrolls without a visible scrollbar, as DialKit panels do: the wheel,
+// trackpad, touch and keys all still scroll. `scrollFade` softens the edge
+// where more content waits, which is the only hint that there is more.
 export function ScrollArea({
   className,
   children,
@@ -27,7 +30,7 @@ export function ScrollArea({
     >
       <ScrollAreaPrimitive.Viewport
         className={cn(
-          "h-full rounded-[inherit] outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          "h-full rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
           overscrollContain &&
             "data-has-overflow-y:overscroll-y-contain data-has-overflow-x:overscroll-x-contain",
           scrollFade &&
@@ -45,13 +48,12 @@ export function ScrollArea({
           {children}
         </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>
-      <ScrollBar orientation="vertical" />
-      <ScrollBar orientation="horizontal" />
-      <ScrollAreaPrimitive.Corner data-slot="scroll-area-corner" />
     </ScrollAreaPrimitive.Root>
   );
 }
 
+// Kept for callers that place a bar themselves. It stays invisible, so no
+// scrollbar ever shows.
 export function ScrollBar({
   className,
   orientation = "vertical",
@@ -60,17 +62,14 @@ export function ScrollBar({
   return (
     <ScrollAreaPrimitive.Scrollbar
       className={cn(
-        "m-1 flex opacity-0 transition-opacity delay-300 data-[orientation=horizontal]:h-1.5 data-[orientation=vertical]:w-1.5 data-[orientation=horizontal]:flex-col data-hovering:opacity-100 data-scrolling:opacity-100 data-hovering:delay-0 data-scrolling:delay-0 data-hovering:duration-100 data-scrolling:duration-100",
+        "pointer-events-none invisible flex data-[orientation=horizontal]:h-0 data-[orientation=vertical]:w-0",
         className,
       )}
       data-slot="scroll-area-scrollbar"
       orientation={orientation}
       {...props}
     >
-      <ScrollAreaPrimitive.Thumb
-        className="relative flex-1 rounded-full bg-foreground/20"
-        data-slot="scroll-area-thumb"
-      />
+      <ScrollAreaPrimitive.Thumb data-slot="scroll-area-thumb" />
     </ScrollAreaPrimitive.Scrollbar>
   );
 }

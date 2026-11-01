@@ -4,6 +4,7 @@ import { Toolbar as ToolbarPrimitive } from "@base-ui/react/toolbar";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+// A floating row of actions, in the same dark rounded panel as the menus.
 export function Toolbar({
   className,
   ...props
@@ -11,7 +12,7 @@ export function Toolbar({
   return (
     <ToolbarPrimitive.Root
       className={cn(
-        "relative flex gap-2 rounded-xl border bg-card not-dark:bg-clip-padding p-1 text-card-foreground",
+        "relative flex items-center gap-1 rounded-[12px] border border-white/[0.07] bg-[#171717] p-1 text-white/85",
         className,
       )}
       data-slot="toolbar"
@@ -79,7 +80,7 @@ export function ToolbarSeparator({
   return (
     <ToolbarPrimitive.Separator
       className={cn(
-        "shrink-0 bg-border data-[orientation=horizontal]:my-0.5 data-[orientation=vertical]:my-1.5 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:not-[[class^='h-']]:not-[[class*='_h-']]:self-stretch",
+        "shrink-0 bg-white/[0.08] data-[orientation=horizontal]:my-0.5 data-[orientation=vertical]:my-2 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px data-[orientation=vertical]:not-[[class^='h-']]:not-[[class*='_h-']]:self-stretch",
         className,
       )}
       data-slot="toolbar-separator"

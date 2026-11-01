@@ -231,6 +231,12 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    /* No visible scrollbars anywhere, as in DialKit; the wheel, trackpad,
+       touch and keys all still scroll. */
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
   }
   body {
     @apply bg-background text-foreground;

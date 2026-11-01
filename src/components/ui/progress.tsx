@@ -4,6 +4,9 @@ import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
+// Progress as a DialKit row: the row itself fills up to the value, with the
+// label on the left and the percent on the right, like a slider you can't
+// drag. With no children it is the bare filling row.
 export function Progress({
   className,
   children,
@@ -11,7 +14,10 @@ export function Progress({
 }: ProgressPrimitive.Root.Props): React.ReactElement {
   return (
     <ProgressPrimitive.Root
-      className={cn("flex w-full flex-col gap-2", className)}
+      className={cn(
+        "relative flex h-9 w-full items-center overflow-hidden rounded-[10px] bg-white/[0.05] text-[12px]",
+        className,
+      )}
       data-slot="progress"
       {...props}
     >
@@ -32,23 +38,22 @@ export function ProgressLabel({
 }: ProgressPrimitive.Label.Props): React.ReactElement {
   return (
     <ProgressPrimitive.Label
-      className={cn("font-medium text-sm", className)}
+      className={cn("relative truncate ps-3 pe-2 text-white/65", className)}
       data-slot="progress-label"
       {...props}
     />
   );
 }
 
+// The track spans the whole row under the words. Its height is set so the
+// indicator, which inherits it, fills the row from top to bottom.
 export function ProgressTrack({
   className,
   ...props
 }: ProgressPrimitive.Track.Props): React.ReactElement {
   return (
     <ProgressPrimitive.Track
-      className={cn(
-        "block h-1.5 w-full overflow-hidden rounded-full bg-input",
-        className,
-      )}
+      className={cn("absolute inset-0 h-full overflow-hidden", className)}
       data-slot="progress-track"
       {...props}
     />
@@ -61,7 +66,10 @@ export function ProgressIndicator({
 }: ProgressPrimitive.Indicator.Props): React.ReactElement {
   return (
     <ProgressPrimitive.Indicator
-      className={cn("bg-primary transition-all duration-500", className)}
+      className={cn(
+        "bg-white/[0.10] transition-[width] duration-500 ease-out",
+        className,
+      )}
       data-slot="progress-indicator"
       {...props}
     />
@@ -74,7 +82,10 @@ export function ProgressValue({
 }: ProgressPrimitive.Value.Props): React.ReactElement {
   return (
     <ProgressPrimitive.Value
-      className={cn("text-sm tabular-nums", className)}
+      className={cn(
+        "relative ms-auto shrink-0 pe-3 font-mono text-white/90 tabular-nums",
+        className,
+      )}
       data-slot="progress-value"
       {...props}
     />

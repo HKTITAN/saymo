@@ -1,10 +1,18 @@
 "use client";
 
-import { ChevronDownIcon, DownloadIcon, FilmIcon, RotateCwIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ChevronDownIcon, DownloadDownIcon, RefreshIcon, VideoCallIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { Menu, MenuGroup, MenuGroupLabel, MenuLinkItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
-import { Progress } from "@/components/ui/progress";
+import {
+  Menu,
+  MenuGroup,
+  MenuGroupLabel,
+  MenuLinkItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuTrigger,
+} from "@/components/ui/menu";
+import { Progress, ProgressIndicator, ProgressLabel, ProgressTrack, ProgressValue } from "@/components/ui/progress";
 import { toastManager } from "@/components/ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import type { ExportStatus, PostDoc } from "@/lib/tool/doc";
@@ -44,7 +52,7 @@ export function ExportControl({ doc, flush }: { doc: PostDoc; flush: () => Promi
       await flush();
       setStatus(await api.startExport(doc.id));
     } catch (error) {
-      toastManager.add({ type: "error", title: "Could not start the video", description: (error as Error).message });
+      toastManager.add({ type: "error", title: "Unable to start the video", description: (error as Error).message });
     } finally {
       setStarting(false);
     }
@@ -53,81 +61,106 @@ export function ExportControl({ doc, flush }: { doc: PostDoc; flush: () => Promi
   if (!status) return null;
 
   if (status.state === "running" || status.state === "queued") {
-    const percent = status.state === "running" ? status.percent : 0;
-    const elapsed = status.state === "running" && status.startedAt ? now - Date.parse(status.startedAt) : 0;
-    const left =
-      status.state === "queued"
-        ? "Waiting for another video to finish"
-        : percent >= 99
-          ? "Finishing"
-          : percent >= 5
-            ? minutes((elapsed / percent) * (100 - percent))
-            : "Starting";
+    const running = status.state === "running";
+    const percent = running ? status.percent : 0;
+    const elapsed = running && status.startedAt ? now - Date.parse(status.startedAt) : 0;
+    const left = !running
+      ? "Waiting for another video to finish"
+      : percent >= 99
+        ? "Finishing"
+        : percent >= 5
+          ? minutes((elapsed / percent) * (100 - percent))
+          : "Starting";
     return (
-      <div className="flex w-60 flex-col gap-1.5" aria-live="polite">
-        <div className="flex justify-between text-xs">
-          <span className="font-medium">Making the 4K video</span>
-          <span className="text-muted-foreground tabular-nums">{percent}%</span>
-        </div>
-        <Progress value={percent} aria-label="Making the 4K video" />
-        <span className="text-muted-foreground text-xs">{left}</span>
+      <div className="flex items-center gap-3">
+        <span className="text-[11.5px] text-white/40" aria-live="polite">
+          {left}
+        </span>
+        {/* A DialKit row filling up to the percent. */}
+        <Progress value={percent} className="h-7 w-56 rounded-[8px]">
+          <ProgressTrack>
+            <ProgressIndicator />
+          </ProgressTrack>
+          <ProgressLabel>{running ? "Making 4K video" : "Waiting to start"}</ProgressLabel>
+          {running && <ProgressValue />}
+        </Progress>
       </div>
     );
   }
 
-  const ready = Boolean(doc.photo && doc.speaker.name.trim());
-  const make = (label: string, again = false) =>
-    ready ? (
-      <Tooltip>
-        <TooltipTrigger
-          render={<Button variant={again ? "outline" : "default"} loading={starting} onClick={start} />}
-        >
-          {again ? <RotateCwIcon aria-hidden="true" /> : <FilmIcon aria-hidden="true" />}
-          {label}
-        </TooltipTrigger>
-        <TooltipPopup>3840 × 2160 and 1920 × 1080 at 60 fps, plus stills. Takes about 4 minutes.</TooltipPopup>
-      </Tooltip>
+  const name = doc.speaker.name.trim();
+  const missing =
+    !name && !doc.photo
+      ? "Add the speaker's name and photo first"
+      : !doc.photo
+        ? "Add the speaker's photo first"
+        : !name
+          ? "Add the speaker's name first"
+          : null;
+
+  // The first video, or another go: a remade video is the quieter button
+  // when a download sits beside it.
+  const make = (label: string, { again = false, quiet = false } = {}) => {
+    const icon = again ? (
+      <RefreshIcon aria-hidden="true" className="size-3.5" />
     ) : (
+      <VideoCallIcon aria-hidden="true" className="size-3.5" />
+    );
+    return missing ? (
       <>
-        <span className="text-muted-foreground text-xs">Add the speaker&apos;s name and photo first</span>
-        <Button disabled>
-          <FilmIcon aria-hidden="true" />
+        <span className="text-[11.5px] text-white/40">{missing}</span>
+        <Button size="sm" disabled>
+          {icon}
           {label}
         </Button>
       </>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger
+          render={<Button size="sm" variant={quiet ? "outline" : "default"} loading={starting} onClick={start} />}
+        >
+          {icon}
+          {label}
+        </TooltipTrigger>
+        <TooltipPopup side="bottom" className="max-w-80">
+          Makes the video in 4K and Full HD at 60 fps, with a still of each. Takes about 4 minutes.
+        </TooltipPopup>
+      </Tooltip>
     );
+  };
 
   if (status.state === "done") {
     const outdated = doc.updatedAt > status.docUpdatedAt;
     const { files } = status;
-    const item = (name: string, label: string, size: string) => (
-      <MenuLinkItem href={downloadUrl(doc.id, name)} download={name}>
+    const item = (file: string, label: string, size: string) => (
+      <MenuLinkItem href={downloadUrl(doc.id, file)} download={file}>
         <span className="flex-1">{label}</span>
-        <span className="text-muted-foreground text-xs tabular-nums">{size}</span>
+        <span className="font-mono text-[11px] text-white/40 tabular-nums">{size}</span>
       </MenuLinkItem>
     );
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         {outdated && (
           <>
-            <span className="text-muted-foreground text-xs">Edited since this video</span>
-            {make("Make again", true)}
+            <span className="me-1.5 text-[11.5px] text-white/40">Edited since this video</span>
+            {make("Make again", { again: true, quiet: true })}
           </>
         )}
         <Menu>
-          <MenuTrigger render={<Button variant={outdated ? "outline" : "default"} />}>
-            <DownloadIcon aria-hidden="true" />
+          <MenuTrigger render={<Button size="sm" variant={outdated ? "outline" : "default"} />}>
+            <DownloadDownIcon aria-hidden="true" className="size-3.5" />
             Download
-            <ChevronDownIcon aria-hidden="true" />
+            <ChevronDownIcon aria-hidden="true" className="-me-0.5 size-3.5 opacity-60" />
           </MenuTrigger>
-          <MenuPopup align="end" className="min-w-64">
+          <MenuPopup align="end" className="min-w-60">
             <MenuGroup>
-              <MenuGroupLabel>Video, 60 fps</MenuGroupLabel>
+              <MenuGroupLabel>Video at 60 fps</MenuGroupLabel>
               {item(files.video4k, "4K", "3840 × 2160")}
               {item(files.video, "Full HD", "1920 × 1080")}
             </MenuGroup>
+            <MenuSeparator />
             <MenuGroup>
-              <MenuGroupLabel>Still</MenuGroupLabel>
+              <MenuGroupLabel>Still image</MenuGroupLabel>
               {item(files.image4k, "4K", "3840 × 2160")}
               {item(files.image, "Full HD", "1920 × 1080")}
             </MenuGroup>
@@ -140,11 +173,25 @@ export function ExportControl({ doc, flush }: { doc: PostDoc; flush: () => Promi
   return (
     <div className="flex items-center gap-3">
       {status.state === "failed" && (
-        <span className="max-w-64 truncate text-destructive-foreground text-xs" title={status.error}>
-          The last export failed: {status.error}
-        </span>
+        // Long errors are cut short here and shown whole on hover.
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span
+                // Focusable, so the whole error can be read from the keyboard too.
+                tabIndex={0}
+                className="max-w-72 cursor-default truncate rounded-[4px] text-[11.5px] text-[#ff9592] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            }
+          >
+            Unable to make the video: {status.error}
+          </TooltipTrigger>
+          <TooltipPopup side="bottom" className="max-w-96">
+            {status.error}
+          </TooltipPopup>
+        </Tooltip>
       )}
-      {make(status.state === "failed" ? "Try again" : "Make 4K video")}
+      {status.state === "failed" ? make("Try again", { again: true }) : make("Make 4K video")}
     </div>
   );
 }
