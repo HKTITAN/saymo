@@ -248,3 +248,34 @@
     @apply font-sans;
   }
 }
+/* The studio chat's working line: a soft light passing over the words. */
+.studio-shimmer {
+  background: linear-gradient(
+      90deg,
+      rgb(255 255 255 / 0.35) 0%,
+      rgb(255 255 255 / 0.35) 35%,
+      rgb(255 255 255 / 0.85) 50%,
+      rgb(255 255 255 / 0.35) 65%,
+      rgb(255 255 255 / 0.35) 100%
+    )
+    0 0 / 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: studio-shimmer 1.8s linear infinite;
+}
+@keyframes studio-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .studio-shimmer {
+    animation: none;
+    color: rgb(255 255 255 / 0.6);
+    background: none;
+  }
+}

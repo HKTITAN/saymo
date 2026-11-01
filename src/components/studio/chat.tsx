@@ -172,7 +172,6 @@ function Message({ message }: { message: ChatMessage }) {
   }
   return (
     <div className="flex flex-col gap-1.5 pe-4">
-      {message.steps?.length ? <Steps steps={message.steps} /> : null}
       {message.text ? (
         <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">{message.text}</p>
       ) : null}
@@ -180,42 +179,20 @@ function Message({ message }: { message: ChatMessage }) {
   );
 }
 
-function Steps({ steps, live }: { steps: string[]; live?: boolean }) {
-  return (
-    <ul className="flex flex-col gap-1">
-      {steps.map((s, i) => {
-        const current = live && i === steps.length - 1;
-        return (
-          <li
-            key={`${s}-${i}`}
-            className={cn(
-              "flex items-center gap-2 text-[11.5px]",
-              current ? "text-white/70" : "text-white/35",
-            )}
-          >
-            {current ? (
-              <Spinner className="size-3 text-white/50" />
-            ) : (
-              <span className="mx-[3px] size-1.5 rounded-full bg-white/20" aria-hidden="true" />
-            )}
-            {s}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 function Live({ text, steps, resumed }: { text: string; steps: string[]; resumed: boolean }) {
+  // One line that shimmers and changes in place as Claude moves from step
+  // to step, so the chat doesn't fill up with a list of steps.
+  const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
   return (
     <div className="flex flex-col gap-1.5 pe-4" aria-live="polite">
-      {steps.length ? (
-        <Steps steps={steps} live={!text} />
-      ) : (
-        <p className="flex items-center gap-2 text-[11.5px] text-white/50">
-          <Spinner className="size-3" /> {resumed ? "Still working on your last request" : "Reading the film"}
-        </p>
-      )}
+      <p className="h-4 overflow-hidden text-[11.5px]">
+        <span
+          key={`${steps.length}-${step}`}
+          className="studio-shimmer block animate-in fade-in slide-in-from-bottom-1 duration-200"
+        >
+          {step}
+        </span>
+      </p>
       {text ? <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">{text}</p> : null}
     </div>
   );
