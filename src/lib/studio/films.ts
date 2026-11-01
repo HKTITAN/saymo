@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { constants } from "node:fs";
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { Engine, Film, FilmEdit, FilmSummary } from "./contract";
+import type { Engine, Film, FilmEdit, FilmSummary, Folder } from "./contract";
 
 // Copies are APFS clones where the disk allows: instant, and no extra space
 // until one side changes. Matters once a film holds gigabytes of footage.
@@ -62,6 +62,7 @@ export async function listFilms(): Promise<FilmSummary[]> {
       title: f.title,
       engine: f.engine,
       kind: f.kind ?? "motion",
+      folder: f.folder,
       width: f.width,
       height: f.height,
       duration: f.duration,
@@ -126,8 +127,13 @@ export async function editFilm(id: string, edit: FilmEdit): Promise<Film | null>
   return withFilm(id, async () => {
     const film = await readFilm(id);
     if (!film) return null;
-    const { params, ...rest } = edit;
-    const next: Film = { ...film, ...rest, updatedAt: new Date().toISOString() };
+    const { params, folder, ...rest } = edit;
+    // Filing a film in a folder isn't an edit of the film: it keeps its
+    // "last edited" time, so the list order doesn't jump.
+    const edited = Object.keys(rest).length > 0 || params !== undefined;
+    const next: Film = { ...film, ...rest, updatedAt: edited ? new Date().toISOString() : film.updatedAt };
+    if (folder === null) delete next.folder;
+    else if (folder !== undefined) next.folder = folder;
     if (params) {
       next.params = film.params.map((p) => (p.key in params ? { ...p, value: params[p.key] } : p));
     }
@@ -248,3 +254,63 @@ export function allowed(request: Request) {
 }
 
 export const refused = () => new Response("The studio only answers its own page on this computer.", { status: 403 });
+
+// ─── Folders ──────────────────────────────────────────────────────────────────
+
+// films/folders.json: the folders on the home page, in the order they were
+// made. A film names its folder by id, so renaming a folder touches nothing
+// else.
+const foldersFile = path.join(FILMS_DIR, "folders.json");
+
+export async function listFolders(): Promise<Folder[]> {
+  try {
+    const raw = JSON.parse(await readFile(foldersFile, "utf8")) as { folders?: Folder[] };
+    return Array.isArray(raw.folders) ? raw.folders.filter((f) => isId(f.id) && typeof f.name === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeFolders(folders: Folder[]) {
+  await mkdir(FILMS_DIR, { recursive: true });
+  await writeFile(`${foldersFile}.tmp`, `${JSON.stringify({ folders }, null, 2)}\n`);
+  await rename(`${foldersFile}.tmp`, foldersFile);
+}
+
+// One change to the folder list at a time.
+const withFolders = <T,>(job: () => Promise<T>) => withFilm("folders", job);
+
+export function createFolder(name: string): Promise<Folder> {
+  return withFolders(async () => {
+    const folders = await listFolders();
+    const folder: Folder = { id: newId(), name, createdAt: new Date().toISOString() };
+    await writeFolders([...folders, folder]);
+    return folder;
+  });
+}
+
+export function renameFolder(id: string, name: string): Promise<Folder | null> {
+  return withFolders(async () => {
+    const folders = await listFolders();
+    const folder = folders.find((f) => f.id === id);
+    if (!folder) return null;
+    folder.name = name;
+    await writeFolders(folders);
+    return folder;
+  });
+}
+
+// Removes a folder; its films stay, back under All films.
+export function deleteFolder(id: string): Promise<boolean> {
+  return withFolders(async () => {
+    const folders = await listFolders();
+    if (!folders.some((f) => f.id === id)) return false;
+    await writeFolders(folders.filter((f) => f.id !== id));
+    const ids = (await readdir(FILMS_DIR).catch(() => [])).filter(isId);
+    for (const filmId of ids) {
+      const film = await readFilm(filmId);
+      if (film?.folder === id) await editFilm(filmId, { folder: null });
+    }
+    return true;
+  });
+}

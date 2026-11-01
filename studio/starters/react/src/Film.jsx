@@ -89,11 +89,15 @@ export default function Film({ figure = 40, unit = "%", label = "faster sourcing
           }}
         >
           {counted}
-          <span style={{ color: accent }}>{unit}</span>
+          <span data-param="unit" style={{ color: accent }}>
+            {unit}
+          </span>
         </div>
         <div style={{ overflow: "hidden", marginTop: 16 }}>
           <div
             data-part="label"
+            // Bound to the "label" param, so it can be edited on the film.
+            data-param="label"
             style={{ fontSize: 56, fontWeight: 400, transform: `translateY(${rise * 110}%)`, fontVariationSettings: '"opsz" 56' }}
           >
             {label}

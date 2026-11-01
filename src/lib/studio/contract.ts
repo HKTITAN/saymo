@@ -57,10 +57,15 @@ export type Film = {
   kind?: "motion" | "video"; // video = an edit of footage (edit.ts); missing = motion
   sound?: { on: boolean; volume: number }; // sound design (sound.ts); missing = none yet
   brand?: string; // brand kit id (brand.ts); missing = "aerchain"
+  folder?: string; // the folder (project) it's filed in; missing = none
 };
 
+// A folder on the studio's home page, for grouping films by project.
+// films/folders.json holds the list, so a folder can exist while empty.
+export type Folder = { id: string; name: string; createdAt: string };
+
 // A film in the list.
-export type FilmSummary = Pick<Film, "id" | "title" | "engine" | "kind" | "width" | "height" | "duration" | "updatedAt"> & {
+export type FilmSummary = Pick<Film, "id" | "title" | "engine" | "kind" | "folder" | "width" | "height" | "duration" | "updatedAt"> & {
   poster: string | null; // URL of a still, if one has been made
 };
 
@@ -100,7 +105,13 @@ export type StageInbound =
   | { type: "studio:seek"; t: number } // seconds, clamped to [0, duration]
   | { type: "studio:params"; params: Record<string, Param["value"]> } // live values
   | { type: "studio:point"; on: boolean } // pointing mode: clicks pick, not play
-  | { type: "studio:reload" }; // the film's files changed
+  | { type: "studio:reload" } // the film's files changed
+  // Words on the film can be edited in place while it is paused. A text
+  // param is bound to its element with `data-param="<key>"` (html films;
+  // react films put the same attribute on the element through a prop).
+  | { type: "studio:text"; on: boolean } // paused and not pointing: words are editable
+  | { type: "studio:find-param"; key: string } // when is this text first on screen?
+  | { type: "studio:focus-param"; key: string }; // start editing it now
 
 export type Picked = {
   x: number; // film pixels
@@ -115,10 +126,17 @@ export type Picked = {
 };
 
 export type StageOutbound =
-  | { type: "studio:ready"; duration: number; fps: number; width: number; height: number }
+  // `texts`: the text params bound to an element on the page (data-param),
+  // so the studio knows which words can be edited on the film.
+  | { type: "studio:ready"; duration: number; fps: number; width: number; height: number; texts?: string[] }
   | { type: "studio:picked"; pick: Picked } // a click in pointing mode
   | { type: "studio:error"; message: string } // the film failed to load or threw
-  | { type: "studio:loading" }; // e.g. a rust draft is being made
+  | { type: "studio:loading" } // e.g. a rust draft is being made
+  // Words typed into a data-param element: live while `editing`, then once
+  // more with `editing: false` when the edit is finished (one ⌘Z step).
+  | { type: "studio:param-edit"; key: string; value: string; editing: boolean }
+  // The answer to find-param: the first time it shows, or null if never.
+  | { type: "studio:param-at"; key: string; t: number | null };
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 //
@@ -151,7 +169,13 @@ export const STUDIO_HEADERS = { "x-studio": "1" } as const;
 
 export type FilmEdit = Partial<Pick<Film, "title" | "width" | "height" | "fps" | "duration" | "sound" | "brand">> & {
   params?: Record<string, Param["value"]>; // new values by key
+  folder?: string | null; // file it in a folder, or null to take it out
 };
+
+// GET    /api/studio/folders              → Folder[]
+// POST   /api/studio/folders  {name}      → Folder
+// PATCH  /api/studio/folders/<id> {name}  → Folder
+// DELETE /api/studio/folders/<id>         → 204 (its films go back to All films)
 
 // What Claude is told along with the words, so "make this bigger" works.
 export type ChatContext = {

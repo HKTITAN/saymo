@@ -74,11 +74,13 @@ export function Stage({
   version,
   pointing,
   ownPick = false,
+  words = false,
   onMessage,
 }: {
   id: string;
   engine: Engine;
   ownPick?: boolean; // the studio works out what was clicked
+  words?: boolean; // the film's words can be clicked and edited in place
   width: number;
   height: number;
   fit: Fit;
@@ -147,7 +149,9 @@ export function Stage({
         width={width}
         height={height}
         className="block border-0"
-        style={{ width, height, pointerEvents: pointing && !overlay ? "auto" : "none" }}
+        // The film takes the pointer while pointing, and whenever its words
+        // can be edited in place (motion films).
+        style={{ width, height, pointerEvents: (pointing && !overlay) || (words && !pointing) ? "auto" : "none" }}
         onLoad={() => {
           bridge.attach(ref.current);
           bridge.post({ type: "studio:point", on: pointing });

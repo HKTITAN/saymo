@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { api, StudioError } from "./api";
 import { Bubble, PickOutline } from "./bubble";
 import { ChatPanel } from "./chat";
-import { createClock } from "./clock";
+import { createClock, useClock } from "./clock";
 import { EditInspector } from "./edit-inspector";
 import { addGraphic, addMedia, endOf, type Item } from "./edit-ops";
 import { FilmsMenu } from "./films-menu";
@@ -81,6 +81,10 @@ const titleFrom = (prompt: string) => {
 
 // A video film is named after its first file: "Interview with Darshan.mov"
 // becomes "Interview with Darshan".
+// Words typed on the film travel from the stage handler to where they are
+// saved and undone.
+const WORDS_EVENT = "studio:words";
+
 const titleFromFile = (name: string) => {
   const words = name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : "Untitled video";
@@ -330,6 +334,8 @@ function FilmView({
   const [values, setValues] = useState<Values>({});
   const [version, setVersion] = useState(0);
   const [status, setStatus] = useState<StageStatus>({ state: "loading" });
+  // The text params the film binds to its words (editable on the film).
+  const [texts, setTexts] = useState<string[]>([]);
   const [pointing, setPointing] = useState(false);
   const [pinned, setPinned] = useState<Pinned | null>(null);
   const [bubble, setBubble] = useState(false);
@@ -510,6 +516,7 @@ function FilmView({
       switch (m.type) {
         case "studio:ready":
           setStatus({ state: "ready" });
+          setTexts(m.texts ?? []);
           if (filmRef.current?.kind === "video") {
             const edit = edRef.current?.edit;
             if (edit) bridge.post({ type: "studio:edit", edit });
@@ -534,10 +541,24 @@ function FilmView({
           setBubble(true);
           break;
         }
+        case "studio:param-edit":
+          // Handled below, where the saving and ⌘Z live.
+          window.dispatchEvent(new CustomEvent(WORDS_EVENT, { detail: { key: m.key, value: m.value, editing: m.editing } }));
+          break;
+        case "studio:param-at":
+          // Jump to where the words are on screen, then edit them there.
+          clock.pause();
+          if (m.t !== null) clock.seek(m.t);
+          setTimeout(() => bridge.post({ type: "studio:focus-param", key: m.key }), 60);
+          break;
       }
     },
     [bridge, clock, pickFromEdit],
   );
+
+  // Words typed on the film: shown there already, so only remembered and
+  // saved here; the finished edit is one step for ⌘Z.
+  const wordsBefore = useRef<{ key: string; value: Param["value"] } | null>(null);
 
   // ─── Changes by hand, each one a step for ⌘Z ─────────────────────────────
 
@@ -578,6 +599,67 @@ function FilmView({
     }
     applyParam(key, value);
   };
+
+  const takeWords = useCallback(
+    (key: string, value: string, editing: boolean) => {
+      const param = filmRef.current?.params.find((p) => p.key === key);
+      if (!param) return;
+      if (!wordsBefore.current || wordsBefore.current.key !== key) {
+        wordsBefore.current = { key, value: valuesRef.current[key] ?? param.value };
+        clock.pause();
+      }
+      const next = { ...valuesRef.current, [key]: value };
+      valuesRef.current = next;
+      setValues(next);
+      pending.current[key] = value;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(async () => {
+        const params = pending.current;
+        pending.current = {};
+        const saved = await api.edit(id, { params }).catch(() => null);
+        if (saved) setFilm(saved);
+      }, 400);
+      if (editing) return;
+      const before = wordsBefore.current.value;
+      wordsBefore.current = null;
+      // Keys go back to the studio (Space plays, ⌘Z undoes) once typing ends.
+      if (document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
+      if (before !== value) {
+        history.record({
+          label: `${param.label}: “${value.slice(0, 40)}”`,
+          group: `words-${key}-${Date.now()}`,
+          undo: () => {
+            const now = valuesRef.current[key];
+            applyParam(key, before);
+            return () => applyParam(key, now);
+          },
+        });
+      }
+    },
+    [applyParam, clock, history, id],
+  );
+  useEffect(() => {
+    const take = (e: Event) => {
+      const { key, value, editing } = (e as CustomEvent<{ key: string; value: string; editing: boolean }>).detail;
+      takeWords(key, value, editing);
+    };
+    window.addEventListener(WORDS_EVENT, take);
+    // A click on the film that isn't on its words leaves the keys with the
+    // studio, so Space and the other shortcuts keep working.
+    let later = 0;
+    const away = () => {
+      window.clearTimeout(later);
+      later = window.setTimeout(() => {
+        if (!wordsBefore.current && document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
+      }, 150);
+    };
+    window.addEventListener("blur", away);
+    return () => {
+      window.removeEventListener(WORDS_EVENT, take);
+      window.removeEventListener("blur", away);
+      window.clearTimeout(later);
+    };
+  }, [takeWords]);
 
   const applySize = useCallback(
     async (width: number, height: number) => {
@@ -735,6 +817,22 @@ function FilmView({
     );
     if (made) ed.setSelected(new Set([made]));
   };
+
+  // Words on a motion film are editable on the film whenever it is paused
+  // and nothing else (pointing) is using the clicks.
+  const playing = useClock(clock, (s) => s.playing);
+  const wordsEditable = !playing && !pointing && !isVideo && status.state === "ready";
+  useEffect(() => {
+    bridge.post({ type: "studio:text", on: wordsEditable });
+  }, [bridge, wordsEditable]);
+  // From the panel: jump to where those words are on screen and edit them.
+  const editWords = useCallback(
+    (key: string) => {
+      clock.pause();
+      bridge.post({ type: "studio:find-param", key });
+    },
+    [bridge, clock],
+  );
 
   // Sound On | Off and volume: shown at once, saved a moment later, each a
   // step for ⌘Z (a volume drag is one step).
@@ -957,6 +1055,7 @@ function FilmView({
         version={version}
         pointing={pointing}
         ownPick={isVideo}
+        words={!isVideo && texts.length > 0}
         onMessage={onStage}
       />
 
@@ -1107,6 +1206,8 @@ function FilmView({
             film={film}
             values={values}
             onParam={setParam}
+            onWords={isVideo ? undefined : editWords}
+            texts={texts}
             onSize={setSize}
             onBrand={setBrand}
             onDuration={setDuration}
