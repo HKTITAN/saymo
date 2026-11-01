@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Skeleton, SkeletonProvider } from "@/components/skeleton";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { RenameField } from "./rename";
-import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
 import { motionOf, type PostDoc, type PostSummary, postName, toContent } from "@/lib/tool/doc";
 import { api } from "./api";
@@ -27,6 +27,24 @@ import { openPost } from "./nav";
 
 // What an unnamed post is called, here and in the editor's header.
 const UNNAMED = "New speaker";
+
+// What the loading shapes are measured from: three cards of a typical post.
+const SAMPLE_DOC: PostDoc = {
+  id: "sample00",
+  createdAt: "",
+  updatedAt: "",
+  title: ["SpendOS: the operating", "system for procurement"],
+  titleSize: 86,
+  speaker: { name: "Speaker name", role: "Role", company: "Company" },
+  date: { lines: ["Tuesday & Wednesday,", "20th & 21st October 2026"], pick: null },
+  location: { lines: ["Sheraton Petaling Jaya,", "Kuala Lumpur"] },
+  photo: null,
+  image: null,
+};
+const SAMPLE_POSTS: PostSummary[] = ["sample01", "sample02", "sample03"].map((id) => ({
+  doc: { ...SAMPLE_DOC, id },
+  export: { state: "none" },
+}));
 
 // Every post made in the tool, newest first. A post opens in the editor;
 // "Add post" starts the next speaker for the same event.
@@ -121,6 +139,7 @@ export function Dashboard() {
   );
 
   return (
+    <SkeletonProvider>
     <main className="min-h-dvh bg-background font-sans text-white">
       <header className="flex items-center justify-between gap-6 px-6 pt-5 pb-4">
         <div className="flex min-w-0 items-baseline gap-3">
@@ -137,31 +156,33 @@ export function Dashboard() {
         </div>
       </header>
 
-      {posts === null ? (
-        <div className="flex justify-center py-24">
-          <Spinner className="text-white/50" />
-        </div>
-      ) : posts.length === 0 ? (
-        <div className="mx-auto flex max-w-72 flex-col items-center gap-1.5 py-24 text-center">
-          <p className="font-medium text-[13px] text-white/90">No posts yet</p>
-          <p className="text-[12px] text-white/45 leading-relaxed">
-            Each post announces one speaker and comes with its own 4K video.
-          </p>
-          <div className="mt-3">{addPost}</div>
-        </div>
-      ) : (
-        <ul className="grid gap-3 px-6 pb-10 sm:grid-cols-2 xl:grid-cols-3">
-          {posts.map((p) => (
-            <PostCard
-              key={p.doc.id}
-              summary={p}
-              onDuplicate={() => create(p.doc.id, "copy")}
-              onRename={(name) => rename(p.doc, name)}
-              onDelete={() => setDeleting(p.doc)}
-            />
-          ))}
-        </ul>
-      )}
+      {/* While the list loads, three cards are drawn as quiet shapes that
+          take exactly the room the real ones will. */}
+      <Skeleton data={posts} sample={SAMPLE_POSTS} id="tool-posts" label="Loading the posts">
+        {(list) =>
+          list.length === 0 ? (
+            <div className="mx-auto flex max-w-72 flex-col items-center gap-1.5 py-24 text-center">
+              <p className="font-medium text-[13px] text-white/90">No posts yet</p>
+              <p className="text-[12px] text-white/45 leading-relaxed">
+                Each post announces one speaker and comes with its own 4K video.
+              </p>
+              <div className="mt-3">{addPost}</div>
+            </div>
+          ) : (
+            <ul className="grid gap-3 px-6 pb-10 sm:grid-cols-2 xl:grid-cols-3">
+              {list.map((p) => (
+                <PostCard
+                  key={p.doc.id}
+                  summary={p}
+                  onDuplicate={() => create(p.doc.id, "copy")}
+                  onRename={(name) => rename(p.doc, name)}
+                  onDelete={() => setDeleting(p.doc)}
+                />
+              ))}
+            </ul>
+          )
+        }
+      </Skeleton>
 
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogPopup>
@@ -189,6 +210,7 @@ export function Dashboard() {
         </AlertDialogPopup>
       </AlertDialog>
     </main>
+    </SkeletonProvider>
   );
 }
 
@@ -277,6 +299,8 @@ function PostCard({
               variant="ghost"
               size="icon-sm"
               aria-label={`More actions for ${name}`}
+              // Only shown on hover, so it has no loading shape either.
+              skullet-ignore=""
               // Shown with the pointer over the card, so it never sits on
               // the logo in the thumbnail otherwise.
               className="absolute top-3.5 right-3.5 bg-black/55 text-white/85 opacity-0 backdrop-blur-md transition-opacity hover:bg-black/70 hover:text-white focus-visible:opacity-100 group-hover:opacity-100 data-popup-open:bg-black/70 data-popup-open:opacity-100"
@@ -324,6 +348,8 @@ function Thumbnail({ content, motion, playing }: { content: PostContent; motion:
       ref={box}
       className="relative aspect-video w-full overflow-hidden rounded-[10px] bg-white/[0.04]"
       aria-hidden="true"
+      // While loading, the preview is one quiet block, not a faint copy of a post.
+      skullet-block=""
     >
       {fit.scale > 0 && (
         <div
