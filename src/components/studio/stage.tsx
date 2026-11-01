@@ -117,11 +117,26 @@ export function Stage({
   // and passes on only where it was.
   const overlay = pointing && (engine === "rust" || ownPick);
 
+  // The frame is drawn at its size on screen and glides to a new size and
+  // place (a new frame size, or panels folding); the film inside is drawn
+  // at its own pixels and scaled. When the frame's shape changes the film
+  // is rebuilt, so it fades in once the frame has settled instead of
+  // stretching on the way.
   return (
     <div
-      className="absolute top-0 left-0 origin-top-left overflow-hidden rounded-[3px] bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.06)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]"
-      style={{ width, height, transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.scale})` }}
+      className="absolute top-0 left-0 overflow-hidden rounded-[3px] bg-[#141414] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.06)] transition-[transform,width,height] duration-[450ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+      style={{ width: fit.width, height: fit.height, transform: `translate(${fit.x}px, ${fit.y}px)` }}
     >
+      <div
+        key={`${width}x${height}`}
+        className="relative origin-top-left transition-transform duration-[450ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        style={{
+          width,
+          height,
+          transform: `scale(${fit.scale})`,
+          animation: "studio-frame-in 260ms ease-out 300ms both",
+        }}
+      >
       <iframe
         key={version}
         ref={ref}
@@ -155,6 +170,7 @@ export function Stage({
           }}
         />
       ) : null}
+      </div>
     </div>
   );
 }
