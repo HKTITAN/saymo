@@ -4,6 +4,7 @@ import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/prom
 import { homedir } from "node:os";
 import path from "node:path";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./contract";
+import { attachmentNote } from "./attachments";
 import { atPlayhead } from "./captions";
 import type { Clip, Edit, Graphic } from "./edit";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "./brand-tokens";
@@ -273,6 +274,8 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     // Footage is never changed, and the big files are never read (the
     // media tool reports on them); stills, thumbnails and JSON stay readable.
     `Edit(/${dir}/media/**)`,
+    // What they attach is theirs: read it, never change it.
+    `Edit(/${dir}/refs/**)`,
     // A rust film's build script is the studio's own (it runs code when the
     // film is built); Claude may not change it.
     `Edit(/${dir}/build.rs)`,
@@ -431,6 +434,8 @@ function userMessage(film: Film, prompt: string, context: ChatContext, undone: b
     lines.push(`<selected>On the timeline they have selected ${context.selection.join(", ")}. "This", "these" or "the selected" means them.</selected>`);
   }
   if (undone) lines.push("<note>They undid your previous change: the files are back to how they were before it.</note>");
+  const attached = attachmentNote(filmDir(film.id), context.attachments ?? []);
+  if (attached) lines.push(attached);
   lines.push(`<request>\n${prompt}\n</request>`);
   // Repeated every turn, since a conversation keeps its first system prompt.
   lines.push("<reply>Work silently. Then answer in at most two short plain sentences (under 35 words), no lists or formatting. Ask one short question only if you truly can't guess.</reply>");

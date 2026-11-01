@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { isBrandRunning, linksFor, readBrandChat, runBrandTurn, stopBrandTurn } from "@/lib/studio/brand-claude";
-import { readBrand } from "@/lib/studio/brands";
+import { checkAttachments } from "@/lib/studio/attachments";
+import { kitDir, readBrand } from "@/lib/studio/brands";
 import type { ChatEvent } from "@/lib/studio/contract";
 import { allowed, refused } from "@/lib/studio/films";
 
@@ -23,8 +24,11 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/bran
   if (!(await readBrand(id))) return missing();
   // `links` (and the older single `url`) are extra links; any in the words
   // count too.
-  const body = (await request.json().catch(() => null)) as { prompt?: unknown; url?: unknown; links?: unknown } | null;
-  const prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 20_000) : "";
+  const body = (await request.json().catch(() => null)) as { prompt?: unknown; url?: unknown; links?: unknown; attachments?: unknown } | null;
+  // Attachments must be files already saved in this kit's guide/.
+  const attachments = await checkAttachments(kitDir(id), "guide", body?.attachments);
+  let prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 20_000) : "";
+  if (!prompt.trim() && attachments.length) prompt = "Have a look at what I attached.";
   if (!prompt.trim()) return Response.json({ error: "Say what the kit should have." }, { status: 400 });
   const extra = [
     ...(typeof body?.url === "string" ? [body.url] : []),
@@ -45,7 +49,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/bran
           open = false;
         }
       };
-      void runBrandTurn(id, prompt, links, emit).finally(() => {
+      void runBrandTurn(id, prompt, links, emit, attachments).finally(() => {
         if (!open) return;
         open = false;
         controller.close();

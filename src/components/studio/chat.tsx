@@ -8,6 +8,8 @@ import type { ChatMessage } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { Hint, PILL_BUTTON, Panel } from "./panel";
 import { PromptBox } from "./prompt-box";
+import { SentFiles } from "./sent-files";
+import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
 import { chipLabel, type Pinned } from "./words";
 
@@ -17,6 +19,7 @@ import { chipLabel, type Pinned } from "./words";
 const IDEAS = ["Make it loop smoothly", "Slow the opening down", "Add a title that types in"];
 
 export function ChatPanel({
+  filmId,
   chat,
   pinned,
   time,
@@ -30,6 +33,7 @@ export function ChatPanel({
   inputRef,
   style,
 }: {
+  filmId: string;
   chat: ChatState;
   pinned: Pinned | null;
   time: () => number;
@@ -55,10 +59,19 @@ export function ChatPanel({
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length, turn.text, turn.steps.length]);
 
-  const send = () => {
-    const words = draft;
+  const files = useAttachments(`/api/studio/films/${filmId}/attachments`);
+
+  const send = async () => {
+    const attached = await files.flush();
+    const words = draft.trim() || (attached.length ? "Have a look at what I attached." : "");
+    if (!words) return;
     setDraft("");
-    void chat.send(words, { t: pinned?.t ?? time(), pick: pinned?.pick ?? null });
+    files.clear();
+    void chat.send(words, {
+      t: pinned?.t ?? time(),
+      pick: pinned?.pick ?? null,
+      ...(attached.length ? { attachments: attached } : {}),
+    });
     onClearPick();
   };
 
@@ -120,7 +133,7 @@ export function ChatPanel({
           </div>
         ) : null}
         {messages.map((m, i) => (
-          <Message key={`${m.at}-${i}`} message={m} />
+          <Message key={`${m.at}-${i}`} message={m} filmId={filmId} />
         ))}
         {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
         {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
@@ -140,7 +153,8 @@ export function ChatPanel({
           inputRef={inputRef}
           value={draft}
           onChange={setDraft}
-          onSend={send}
+          onSend={() => void send()}
+          attachments={files}
           onStop={chat.stop}
           running={turn.running}
           queueing
@@ -170,7 +184,7 @@ export function ChatPanel({
   );
 }
 
-function Message({ message }: { message: ChatMessage }) {
+function Message({ message, filmId }: { message: ChatMessage; filmId: string }) {
   if (message.role === "you") {
     return (
       <div className="flex flex-col items-end gap-1 ps-8">
@@ -186,6 +200,7 @@ function Message({ message }: { message: ChatMessage }) {
         <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed">
           {message.text}
         </p>
+        <SentFiles files={message.context?.attachments ?? []} urlOf={(path) => `/studio/stage/${filmId}/${path}`} />
       </div>
     );
   }
@@ -269,6 +284,11 @@ function Queue({
           <span className="pt-2 font-mono text-[10.5px] text-white/30 tabular-nums">{i + 1}</span>
           <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] border border-white/[0.1] border-dashed px-3 py-2 text-[12.5px] text-white/55 leading-relaxed">
             {q.prompt}
+            {q.context.attachments?.length ? (
+              <span className="mt-1 block text-[11px] text-white/35">
+                {q.context.attachments.length === 1 ? "With 1 file" : `With ${q.context.attachments.length} files`}
+              </span>
+            ) : null}
           </p>
           <button
             type="button"

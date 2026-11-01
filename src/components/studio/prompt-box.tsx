@@ -1,14 +1,17 @@
 "use client";
 
-import { type KeyboardEvent, type ReactNode, type RefObject, useLayoutEffect, useRef } from "react";
-import { ArrowUpIcon, MultipleCrossCancelIcon } from "@/components/icons";
+import { type KeyboardEvent, type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from "react";
+import { ArrowUpIcon, MultipleCrossCancelIcon, PaperclipVerticalIcon } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { Hint } from "./panel";
+import { ACCEPT, type Attachments, KIND_LABEL } from "./use-attachments";
 
 // Where a prompt is typed: in the chat panel and in the bubble on the film.
 // Enter sends, Shift+Enter starts a new line. Grows with its words. While
 // Claude works, Enter adds the prompt to the queue (where the box allows it).
+// With `attachments`, files can come along too: the paperclip, a drop onto
+// the box, or a pasted screenshot.
 
 export function PromptBox({
   value,
@@ -27,6 +30,7 @@ export function PromptBox({
   onEscape,
   maxRows = 6,
   className,
+  attachments,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -44,9 +48,15 @@ export function PromptBox({
   onEscape?: () => void;
   maxRows?: number;
   className?: string;
+  attachments?: Attachments;
 }) {
   const own = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? own;
+  const picker = useRef<HTMLInputElement>(null);
+  const [over, setOver] = useState(false);
+  // Sends (or queues, while Claude works) once there are words or files and
+  // every file is in.
+  const canSend = (!running || Boolean(queueing)) && !attachments?.uploading && Boolean(value.trim() || attachments?.hasFiles);
 
   // Fit the box to its lines, up to maxRows.
   useLayoutEffect(() => {
@@ -60,20 +70,91 @@ export function PromptBox({
   const keys = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (value.trim() && (!running || queueing)) onSend();
+      if (canSend) onSend();
     } else if (e.key === "Escape") {
       e.preventDefault();
       onEscape?.();
     }
   };
 
+  const filesOf = (list: FileList | null | undefined) => [...(list ?? [])];
+
   return (
     <div
       className={cn(
         "flex flex-col gap-1.5 rounded-[12px] bg-white/[0.06] p-1.5 transition-colors has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-white/15",
+        over && "bg-white/[0.09] ring-1 ring-white/30",
         className,
       )}
+      onDragOver={
+        attachments
+          ? (e) => {
+              if (!e.dataTransfer.types.includes("Files")) return;
+              e.preventDefault();
+              setOver(true);
+            }
+          : undefined
+      }
+      onDragLeave={attachments ? () => setOver(false) : undefined}
+      onDrop={
+        attachments
+          ? (e) => {
+              if (!e.dataTransfer.types.includes("Files")) return;
+              // Claimed here, so the studio doesn't treat them as footage.
+              e.preventDefault();
+              setOver(false);
+              attachments.add(filesOf(e.dataTransfer.files));
+            }
+          : undefined
+      }
     >
+      {attachments?.items.length ? (
+        <ul className="flex flex-wrap gap-1">
+          {attachments.items.map((a) => (
+            <li
+              key={a.key}
+              className={cn(
+                "flex h-7 max-w-full items-center gap-1.5 rounded-[8px] bg-white/[0.07] ps-1 pe-0.5 text-[11.5px] text-white/80",
+                a.error && "bg-[#ff9592]/10 text-[#ff9592]",
+              )}
+              title={a.error ?? a.name}
+            >
+              {a.preview ? (
+                // biome-ignore lint/performance/noImgElement: a local preview of a file being attached
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={a.preview} alt="" className="size-5 shrink-0 rounded-[4px] object-cover" />
+              ) : (
+                <span className="flex h-5 shrink-0 items-center rounded-[4px] bg-white/[0.08] px-1 font-medium text-[10px] text-white/60 uppercase tracking-[0.04em]">
+                  {KIND_LABEL[a.kind]}
+                </span>
+              )}
+              <span className={cn("max-w-40 truncate", !a.done && !a.error && "text-white/50")}>{a.name}</span>
+              <button
+                type="button"
+                onClick={() => attachments.remove(a.key)}
+                aria-label={`Remove ${a.name}`}
+                className="inline-flex size-5 cursor-pointer items-center justify-center rounded-[5px] text-white/40 outline-none hover:bg-white/[0.08] hover:text-white focus-visible:ring-1 focus-visible:ring-white/40 [&_svg]:size-3"
+              >
+                <MultipleCrossCancelIcon aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {attachments?.uploading ? (
+        <p className="px-1.5 text-[11.5px]" aria-live="polite">
+          <span className="studio-shimmer">
+            {attachments.items.filter((a) => !a.done && !a.error).length === 1
+              ? "Attaching the file"
+              : `Attaching ${attachments.items.filter((a) => !a.done && !a.error).length} files`}
+          </span>
+        </p>
+      ) : null}
+      {attachments?.notice ? (
+        <p className="px-1.5 text-[11.5px] text-[#ff9592] leading-relaxed" aria-live="polite">
+          {attachments.notice}
+        </p>
+      ) : null}
       {chip ? (
         <span className="flex h-6 max-w-full items-center gap-1 self-start rounded-[7px] bg-[#F55A00]/15 ps-2 pe-1 text-[11.5px] text-[#ff9a5c]">
           <span className="truncate">{chip}</span>
@@ -100,9 +181,46 @@ export function PromptBox({
         aria-label="Prompt for Claude"
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={keys}
+        onPaste={
+          attachments
+            ? (e) => {
+                const files = filesOf(e.clipboardData.files);
+                if (!files.length) return;
+                e.preventDefault();
+                attachments.add(files);
+              }
+            : undefined
+        }
         className="w-full resize-none bg-transparent px-1.5 py-1 text-[13px] text-white/90 leading-[19px] outline-none placeholder:text-white/30"
       />
       <div className="flex items-center gap-1">
+        {attachments ? (
+          <>
+            <Hint label="Attach images, PDFs or documents">
+              <button
+                type="button"
+                onClick={() => picker.current?.click()}
+                aria-label="Attach files"
+                className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-white/55 outline-none transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4"
+              >
+                <PaperclipVerticalIcon aria-hidden="true" />
+              </button>
+            </Hint>
+            <input
+              ref={picker}
+              type="file"
+              multiple
+              accept={ACCEPT}
+              className="hidden"
+              tabIndex={-1}
+              onChange={(e) => {
+                const files = filesOf(e.target.files);
+                e.target.value = "";
+                attachments.add(files);
+              }}
+            />
+          </>
+        ) : null}
         {tools}
         <span className="ms-auto" />
         {running && onStop ? (
@@ -122,7 +240,7 @@ export function PromptBox({
             <button
               type="button"
               onClick={onSend}
-              disabled={!value.trim()}
+              disabled={!canSend}
               aria-label={running ? "Add to the queue" : "Send to Claude"}
               className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[8px] bg-white text-[#141414] outline-none transition-[background-color,opacity,scale] duration-150 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.94] disabled:cursor-default disabled:bg-white/15 disabled:text-white/40 [&_svg]:size-4"
             >

@@ -6,6 +6,7 @@ import { SIZES } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { CARD, PILL_BUTTON } from "./panel";
 import { PromptBox } from "./prompt-box";
+import { useAttachments } from "./use-attachments";
 import { ACCEPTS, isMediaFile } from "./video-api";
 
 // What the studio shows before there are any films: two ways to start.
@@ -22,11 +23,13 @@ export function FirstFilm({
 }: {
   busy: boolean;
   error: string | null;
-  onStart: (prompt: string | null, width: number, height: number) => void;
+  onStart: (prompt: string | null, width: number, height: number, files?: File[]) => void;
   onStartVideo: (files: File[], width: number, height: number) => void;
 }) {
   const [kind, setKind] = useState<Kind>("video");
   const [draft, setDraft] = useState("");
+  // Files picked before the film exists; they go in once it does.
+  const attached = useAttachments(null);
   const [size, setSize] = useState<(typeof SIZES)[number]>(SIZES[0]);
   const [over, setOver] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
@@ -151,7 +154,11 @@ export function FirstFilm({
             <PromptBox
               value={draft}
               onChange={setDraft}
-              onSend={() => onStart(draft, size.width, size.height)}
+              onSend={() => {
+                const picked = attached.items.filter((a) => !a.error).map((a) => a.file);
+                onStart(draft.trim() || (picked.length ? "Have a look at what I attached." : draft), size.width, size.height, picked);
+              }}
+              attachments={attached}
               running={busy}
               autoFocus
               maxRows={5}

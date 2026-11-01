@@ -1,5 +1,5 @@
 import type { BrandKit, BrandSummary } from "@/lib/studio/brand";
-import { type ChatEvent, type ChatMessage, STUDIO_HEADERS } from "@/lib/studio/contract";
+import { type Attachment, type ChatEvent, type ChatMessage, STUDIO_HEADERS } from "@/lib/studio/contract";
 import { StudioError, streamEvents } from "./api";
 
 // The studio's calls for brand kits (/api/studio/brands). Like the film
@@ -53,7 +53,7 @@ export const brandApi = {
     if (!res?.ok) return { messages: [] as ChatMessage[], running: false };
     return { messages: ((await res.json().catch(() => [])) ?? []) as ChatMessage[], running: res.headers.get("x-studio-running") === "1" };
   },
-  chat: (id: string, body: { prompt: string; url?: string; links?: string[] }, onEvent: (event: ChatEvent) => void, signal?: AbortSignal) =>
+  chat: (id: string, body: { prompt: string; url?: string; links?: string[]; attachments?: Attachment[] }, onEvent: (event: ChatEvent) => void, signal?: AbortSignal) =>
     streamEvents(`${kit(id)}/chat`, body, onEvent, signal),
   stop: (id: string) => call<void>(`${kit(id)}/chat`, { method: "DELETE" }),
   undo: (id: string) => call<BrandKit>(`${kit(id)}/undo`, json("POST")),

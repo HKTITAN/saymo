@@ -31,6 +31,7 @@ import { type SoundLaneData, showLane } from "./sound-lane";
 import { soundApi, soundOf } from "./sound-api";
 import { createBridge, type Insets, Stage, type StageStatus, useFit } from "./stage";
 import { Timeline } from "./timeline";
+import { attachFiles } from "./use-attachments";
 import { useChat } from "./use-chat";
 import { useEdit } from "./use-edit";
 import { useSound } from "./use-sound";
@@ -102,6 +103,7 @@ export function Studio() {
   // A prompt to send, or footage to bring in, as soon as a new film opens.
   const opening = useRef<string | null>(null);
   const openingFiles = useRef<File[] | null>(null);
+  const openingAttach = useRef<File[] | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -161,12 +163,18 @@ export function Studio() {
   const create = async (
     width: number,
     height: number,
-    { prompt = null, kind = "motion", files = null }: { prompt?: string | null; kind?: "motion" | "video"; files?: File[] | null } = {},
+    {
+      prompt = null,
+      kind = "motion",
+      files = null,
+      attach = null,
+    }: { prompt?: string | null; kind?: "motion" | "video"; files?: File[] | null; attach?: File[] | null } = {},
   ) => {
     const title = kind === "video" ? titleFromFile(files?.[0]?.name ?? "") : prompt ? titleFrom(prompt) : "Untitled film";
     const film = await api.create({ title, width, height, ...(kind === "video" ? { kind } : {}) });
     opening.current = prompt?.trim() || null;
     openingFiles.current = files?.length ? files : null;
+    openingAttach.current = attach?.length ? attach : null;
     await refresh();
     openFilm(film.id);
   };
@@ -207,6 +215,7 @@ export function Studio() {
             setHidden={setHidden}
             firstPromptRef={opening}
             firstFilesRef={openingFiles}
+            firstAttachRef={openingAttach}
             onRefresh={refresh}
             onOpen={(next) => openFilm(next)}
             onCreate={(w, h, kind) => create(w, h, { kind })}
@@ -237,7 +246,7 @@ export function Studio() {
               await api.remove(fid).catch(() => undefined);
               await refresh();
             }}
-            onStartFilm={(prompt, w, h) => start(() => create(w, h, { prompt }))}
+            onStartFilm={(prompt, w, h, attach?: File[]) => start(() => create(w, h, { prompt, attach }))}
             onStartVideo={(files, w, h) => start(() => create(w, h, { kind: "video", files }))}
             onOpenKit={(next) => openKit(next)}
             onNewKit={newKit}
@@ -306,6 +315,7 @@ function FilmView({
   hidden,
   setHidden,
   firstPromptRef,
+  firstAttachRef,
   firstFilesRef,
   onRefresh,
   onOpen,
@@ -319,6 +329,7 @@ function FilmView({
   hidden: boolean;
   setHidden: (fn: (h: boolean) => boolean) => void;
   firstPromptRef: React.RefObject<string | null>;
+  firstAttachRef: React.RefObject<File[] | null>;
   firstFilesRef: React.RefObject<File[] | null>;
   onRefresh: () => Promise<void>;
   onOpen: (id: string) => void;
@@ -468,14 +479,20 @@ function FilmView({
       sent.current = true;
       const prompt = firstPromptRef.current;
       firstPromptRef.current = null;
-      void chatView.send(prompt, { t: 0, pick: null });
+      // Files attached to the first prompt go in now the film exists.
+      const toAttach = firstAttachRef.current;
+      firstAttachRef.current = null;
+      void (async () => {
+        const attachments = toAttach?.length ? await attachFiles(`/api/studio/films/${id}/attachments`, toAttach) : [];
+        void chatView.send(prompt, { t: 0, pick: null, ...(attachments.length ? { attachments } : {}) });
+      })();
     } else if (firstFilesRef.current && film.kind === "video") {
       sent.current = true;
       const files = firstFilesRef.current;
       firstFilesRef.current = null;
       void ed.importFiles(files, { append: true });
     }
-  }, [film, firstPromptRef, firstFilesRef, chatView, ed]);
+  }, [film, firstPromptRef, firstFilesRef, firstAttachRef, chatView, ed, id]);
 
   // What's under a click on a video film: the top visible graphic playing
   // now, else the top clip of footage.
@@ -874,9 +891,12 @@ function FilmView({
     };
     const drop = (e: DragEvent) => {
       if (!hasFiles(e)) return;
+      // Dropped onto a prompt box: those files are attachments, not footage.
+      const claimed = e.defaultPrevented;
       e.preventDefault();
       depth = 0;
       setDropping(false);
+      if (claimed) return;
       const files = [...(e.dataTransfer?.files ?? [])].filter(isMediaFile);
       const empty = !edRef.current?.edit?.tracks.some((t) => t.items.length);
       if (files.length) {
@@ -1024,6 +1044,7 @@ function FilmView({
         ) : null}
         {bubble ? (
           <Bubble
+            filmId={id}
             fit={fit}
             pinned={pinned}
             time={time}
@@ -1064,6 +1085,7 @@ function FilmView({
         />
         <RenderControl id={id} hidden={hidden} onHide={() => setHidden(() => true)} />
         <ChatPanel
+          filmId={id}
           chat={chatView}
           pinned={bubble ? null : pinned}
           time={time}
