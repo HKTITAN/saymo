@@ -75,9 +75,10 @@ The Aerchain kit's values are the ones below. For another brand, its kit wins ov
 Unless asked otherwise, films look like Aerchain:
 
 - Colours from `src/components/post/palette.ts`: black `#1E1E1E` with `#141414` lines, orange `#F55A00` with `#DB5000`, stone `#D3CCBF` with `#C2BAAC`, light stone `#E9E5DD` for type on black. Orange is the accent: use it once, at the point of action.
-- Every colour field is a flat field of horizontal lines on a 12px pitch: an 8px line and darker 2px gaps. Lines are continuous flat strokes, one colour each, and move in one direction; colour arrives from the right.
+- Grounds are flat colour (black `#141414`, stone `#E9E5DD`), never a full-frame scanline or line-field wallpaper. Lines appear only as a purposeful graphic. Lines are continuous flat strokes, one colour each, and move in one direction; colour arrives from the right.
 - Type is Bricolage Grotesque (SemiBold 600 for headlines, tracking about -1%, the `opsz` axis set to the size). A copy of the font is in `studio/remotion/public/fonts/BricolageGrotesque-Variable.ttf`; copy it into the film.
-- Flat: no gradients, glows, drop shadows, glass or 3D. Motion is calm and exact: ease out on arrival, nothing bounces.
+- Flat colour (no gradients, glows, drop shadows or glass), but real 3D camera work is welcome: dolly, orbit, depth layouts, fly-throughs. Motion is exact: ease out on arrival, nothing bounces. Words come with visuals, not alone.
+- **Peak-end rule: the start and the end are the best parts of every film.** People remember a film by its peak and its last moment, so the first two seconds hook (no slow fade from black) and the final scene lands hard and holds. Spend the most craft there; never let a film trail off.
 - For principles of timing and choreography see **motion-design**. For faux product UI (app windows, dashboards, cursors) see **stageshow**.
 - Words on screen: plain English, sentence case, no em dashes.
 
