@@ -296,3 +296,13 @@
     }
   }
 }
+
+/* A folder on the studio's home page nods when a film is dropped into it. */
+@keyframes studio-folder-nod {
+  40% {
+    scale: 0.97;
+  }
+  to {
+    scale: 1;
+  }
+}

@@ -178,7 +178,7 @@ export function Dashboard({
     keepFolder(id);
   };
   const folder = (folderId && folders?.find((f) => f.id === folderId)) || null;
-  const folderName = (id: string | null) => (id ? (folders?.find((f) => f.id === id)?.name ?? "a folder") : "All films");
+  const folderName = (id: string | null) => (id ? (folders?.find((f) => f.id === id)?.name ?? "a folder") : "Films");
 
   const say = (text: string) => setFlash({ text, key: Date.now() });
   useEffect(() => {
@@ -251,7 +251,7 @@ export function Dashboard({
     await api.removeFolder(target.id).catch(() => undefined);
     goFolder(null);
     await Promise.all([loadFolders(), onRefresh()]);
-    say(`Deleted the folder “${target.name}”. Its films are in All films.`);
+    say(`Deleted the folder “${target.name}”. Its films are back in Films.`);
   };
 
   // ─── Keys: ⌘Z undoes, / finds a film, Esc closes the new-film card ──────
@@ -294,9 +294,13 @@ export function Dashboard({
     films === null
       ? null
       : films
-          .filter((f) => (!folder || f.folder === folder.id) && (!q || f.title.toLowerCase().includes(q)))
+          .filter((f) => (folder ? f.folder === folder.id : q || !f.folder) && (!q || f.title.toLowerCase().includes(q)))
           .sort(sort === "name" ? (a, b) => a.title.localeCompare(b.title) : (a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const inView = folder ? (counts.get(folder.id) ?? 0) : (films?.length ?? 0);
+  // At the top level, folders sit in the grid before the films not in one.
+  const folderCards = !folder && !q ? (folders ?? []) : [];
+  const inFolder = (id: string) =>
+    (films ?? []).filter((f) => f.folder === id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   return (
     <>
@@ -371,15 +375,15 @@ export function Dashboard({
 
         <div className="mx-auto flex max-w-[1240px] flex-col gap-10 px-6 pt-3 pb-20">
           {/* The two ways to start. */}
-          <section aria-label="Start a film" className="grid gap-3 sm:grid-cols-2">
+          <section aria-label="Start a film" className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
             <StartCard
-              doodle={<VideoDoodle className="h-[72px] w-[120px]" />}
+              doodle={<VideoDoodle className="h-[66%] w-auto" />}
               title="Edit a video"
               note="Cut your footage, photos and music into a film."
               onClick={() => setOverlay("video")}
             />
             <StartCard
-              doodle={<MotionDoodle className="h-[72px] w-[120px]" />}
+              doodle={<MotionDoodle className="h-[66%] w-auto" />}
               title="Make motion graphics"
               note="Describe a film in a sentence and Claude makes it."
               onClick={() => setOverlay("motion")}
@@ -392,7 +396,7 @@ export function Dashboard({
               <header className="flex h-8 items-center gap-1.5 px-1">
                 {folder ? (
                   <>
-                    <Hint label="All films">
+                    <Hint label="Films">
                       <button type="button" aria-label="Back to all films" onClick={() => goFolder(null)} className={cn(ICON_BUTTON, "-ms-1.5")}>
                         <ArrowLeftIcon aria-hidden="true" />
                       </button>
@@ -423,13 +427,31 @@ export function Dashboard({
                     <span className="ms-1 font-mono text-[11.5px] text-white/35 tabular-nums">{films?.length ?? ""}</span>
                   </>
                 )}
-                {dragging ? <span className="ms-auto text-[11.5px] text-white/45">Drop it on a folder</span> : null}
+                <span className="ms-auto flex items-center gap-2">
+                  {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder</span> : null}
+                  {naming ? (
+                    <RenameField
+                      value=""
+                      placeholder="Launch films"
+                      className="h-8 w-[180px] rounded-[10px] px-2.5 text-[12px]"
+                      onDone={(name) => {
+                        setNaming(false);
+                        if (name) void newFolder(name);
+                      }}
+                    />
+                  ) : (
+                    <button type="button" onClick={() => setNaming(true)} className={cn(PILL_BUTTON, "text-white/70 hover:bg-white/[0.07] hover:text-white")}>
+                      <PlusIcon aria-hidden="true" />
+                      New folder
+                    </button>
+                  )}
+                </span>
               </header>
 
               <ul aria-label="Folders" className="flex flex-wrap items-center gap-1.5">
                 <li>
                   <FolderChip
-                    label="All films"
+                    label="Films"
                     count={films ? films.length : null}
                     current={!folder}
                     onOpen={() => goFolder(null)}
@@ -448,43 +470,34 @@ export function Dashboard({
                     />
                   </li>
                 ))}
-                <li>
-                  {naming ? (
-                    <RenameField
-                      value=""
-                      placeholder="Launch films"
-                      className="h-8 w-[160px] rounded-[10px] px-2.5 text-[12px]"
-                      onDone={(name) => {
-                        setNaming(false);
-                        if (name) void newFolder(name);
-                      }}
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setNaming(true)}
-                      className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[10px] px-2.5 text-[12px] text-white/45 outline-none transition-colors hover:bg-white/[0.05] hover:text-white/80 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5"
-                    >
-                      <PlusIcon aria-hidden="true" />
-                      New folder
-                    </button>
-                  )}
-                </li>
               </ul>
               {problem ? <p className="px-1 text-[12px] text-[#ff9592]">{problem}</p> : null}
             </div>
 
             <Skeleton data={shown} sample={SAMPLE_FILMS} id="studio-films" label="Loading your films">
               {(list) =>
-                list.length > 0 ? (
+                list.length > 0 || folderCards.length > 0 ? (
                   <ul className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
+                    {folderCards.map((x) => (
+                      <FolderCard
+                        key={x.id}
+                        folder={x}
+                        films={inFolder(x.id)}
+                        now={now}
+                        dragging={dragging !== null}
+                        onOpen={() => goFolder(x.id)}
+                        onDrop={(id) => moveById(id, x.id)}
+                        onRename={(name) => renameFolder(x, name)}
+                        onDelete={() => deleteFolder(x)}
+                      />
+                    ))}
                     {list.map((f) => (
                       <FilmCard
                         key={f.id}
                         film={f}
                         now={now}
                         folders={folders ?? []}
-                        folderLabel={!folder && f.folder ? folderName(f.folder) : null}
+                        folderLabel={!folder && f.folder ? folderName(f.folder) : null /* only while searching */}
                         dragged={dragging === f.id}
                         onDrag={(on) => setDragging(on ? f.id : null)}
                         onOpen={() => onOpenFilm(f.id)}
@@ -643,20 +656,23 @@ export function Dashboard({
   );
 }
 
-// One way to start a film: a small drawing, what it is, what it takes.
+// One way to start a film: a tile the size of a film, its drawing on top
+// and what it is below.
 function StartCard({ doodle, title, note, onClick }: { doodle: ReactNode; title: string; note: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group/doodle flex cursor-pointer items-center gap-5 rounded-[16px] bg-white/[0.03] p-3 pe-5 text-left outline-none ring-1 ring-white/[0.06] transition-[background-color,box-shadow,scale] duration-200 ease-out hover:bg-white/[0.05] hover:ring-white/[0.1] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
+      className="group/doodle flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color,scale] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
     >
-      <span className="flex h-[96px] w-[156px] shrink-0 items-center justify-center rounded-[12px] bg-[#0b0b0b] ring-1 ring-white/[0.05]">{doodle}</span>
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="font-medium text-[13px] text-white/90">{title}</span>
-        <span className="text-[12px] text-white/45 leading-relaxed">{note}</span>
+      <span className="relative flex aspect-video w-full items-center justify-center rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+        {doodle}
+        <PlusIcon className="absolute top-2.5 right-2.5 size-4 text-white/30 transition-colors group-hover/doodle:text-white/75" aria-hidden="true" />
       </span>
-      <PlusIcon className="size-4 shrink-0 text-white/30 transition-colors group-hover/doodle:text-white/75" aria-hidden="true" />
+      <span className="flex flex-col gap-0.5 px-1 pb-0.5">
+        <span className="text-[12.5px] text-white/90">{title}</span>
+        <span className="text-pretty text-[11.5px] text-white/40 leading-snug">{note}</span>
+      </span>
     </button>
   );
 }
@@ -670,6 +686,166 @@ function Empty({ doodle, title, note, children }: { doodle: ReactNode; title: st
       <p className="max-w-[360px] text-[12px] text-white/45 leading-relaxed">{note}</p>
       {children}
     </div>
+  );
+}
+
+// A folder in the grid, the size of a film: the films inside peek out as a
+// small fanned stack. Drop a film on it to file it; the stack spreads to
+// make room while one is dragged over. The ••• menu renames or deletes it.
+function FolderCard({
+  folder,
+  films,
+  now,
+  dragging,
+  onOpen,
+  onDrop,
+  onRename,
+  onDelete,
+}: {
+  folder: Folder;
+  films: FilmSummary[];
+  now: number;
+  dragging: boolean;
+  onOpen: () => void;
+  onDrop: (filmId: string) => void;
+  onRename: (name: string) => void;
+  onDelete: () => Promise<void>;
+}) {
+  const [over, setOver] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [landed, setLanded] = useState(0); // bumps when a film lands, for a small nod
+  const top = films.slice(0, 3);
+  const latest = films[0]?.updatedAt;
+  return (
+    <li
+      className="group/card group/doodle relative"
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes(FILM_DRAG)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
+      }}
+      onDrop={(e) => {
+        const id = e.dataTransfer.getData(FILM_DRAG);
+        setOver(false);
+        if (!id) return;
+        e.preventDefault();
+        setLanded((n) => n + 1);
+        onDrop(id);
+      }}
+    >
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={`Open the folder ${folder.name}`}
+        className={cn(
+          "flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-ring [&_*]:pointer-events-none",
+          over ? "bg-white/[0.07] ring-1 ring-white/40" : dragging ? "bg-white/[0.03] outline-1 outline-dashed outline-white/20" : "hover:bg-white/[0.04]",
+        )}
+      >
+        <span
+          key={landed}
+          className={cn(
+            "relative flex aspect-video w-full",
+            landed > 0 && "motion-safe:animate-[studio-folder-nod_420ms_cubic-bezier(0.23,1,0.32,1)]",
+          )}
+          skullet-block=""
+        >
+          <FolderArt films={top} open={over} />
+        </span>
+        <span className="flex flex-col gap-0.5 px-1 pb-0.5">
+          <span className="flex items-baseline gap-2">
+            <span className={cn("flex min-w-0 flex-1 items-center gap-1.5 text-[12.5px] text-white/90", renaming && "invisible")}>
+              <TinyFolder open={over} className="shrink-0 self-center text-white/60" />
+              <span className="truncate">{folder.name}</span>
+            </span>
+            <span className="shrink-0 text-[11px] text-white/35" suppressHydrationWarning>
+              {latest && now ? ago(latest, now) : ""}
+            </span>
+          </span>
+          <span className="truncate text-[11.5px] text-white/40">
+            {over ? "Drop to add it here" : films.length ? `Folder · ${filmCount(films.length)}` : "Folder · empty"}
+          </span>
+        </span>
+      </button>
+
+      {renaming ? (
+        <RenameField
+          value={folder.name}
+          className="absolute right-2 bottom-[28px] left-2 h-6 text-[12.5px]"
+          onDone={(name) => {
+            setRenaming(false);
+            if (name) onRename(name);
+          }}
+        />
+      ) : null}
+
+      <div className="absolute top-3.5 right-3.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/card:opacity-100 has-[[data-popup-open]]:opacity-100 [&_button]:bg-black/55 [&_button]:backdrop-blur-md">
+        <FolderMenu folder={folder} count={films.length} onRename={() => setRenaming(true)} onDelete={onDelete} />
+      </div>
+    </li>
+  );
+}
+
+// A folder drawn as a folder: a back with a tab, the films inside peeking
+// out as small stills, and a front pocket with a face. Hovering (or a film
+// dragged over it) tips the front open and lifts the stills.
+const SHEETS = [
+  { rotate: -3, x: -3 },
+  { rotate: 3, x: 3 },
+  { rotate: 0, x: 0 },
+];
+const EASE = "duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
+function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
+  const sheets = films.length ? films.slice().reverse() : [null];
+  return (
+    <span aria-hidden="true" className="relative h-full w-full">
+      {/* The back and its tab: the card's own outline. */}
+      <span className="absolute top-0 left-0 h-[16%] w-[40%] rounded-t-[12px] bg-[#232323]" />
+      <span className="absolute inset-x-0 top-[9%] bottom-0 rounded-[14px] rounded-tl-none bg-[#232323]" />
+      {/* What's inside: the newest films, or one blank sheet. */}
+      {sheets.map((f, i) => {
+        const at = SHEETS[SHEETS.length - sheets.length + i];
+        return (
+          <span
+            key={f?.id ?? "blank"}
+            className={cn(
+              "absolute top-[16%] left-[10%] flex h-[56%] w-[80%] items-center justify-center overflow-hidden rounded-[8px] bg-[#333] shadow-[0_2px_10px_rgba(0,0,0,0.4)] transition-transform",
+              EASE,
+              open ? "-translate-y-[22%]" : "group-hover/card:-translate-y-[12%]",
+            )}
+            style={{ rotate: `${at.rotate * (open ? 1.5 : 1)}deg`, translate: `${at.x * (open ? 1.5 : 1)}% 0` }}
+          >
+            {f?.poster ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a local still of the film
+              <img src={f.poster} alt="" draggable={false} className="h-full w-full object-cover" />
+            ) : (
+              <span className="flex w-[60%] flex-col gap-[5px]">
+                <span className="h-[4px] w-[70%] rounded-full bg-white/[0.14]" />
+                <span className="h-[4px] w-full rounded-full bg-white/[0.08]" />
+              </span>
+            )}
+          </span>
+        );
+      })}
+      {/* The front pocket, which tips open. */}
+      <span
+        className={cn(
+          "absolute inset-x-0 bottom-0 flex h-[62%] origin-bottom items-center justify-center rounded-[14px] bg-[#2e2e2e] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_-6px_18px_rgba(0,0,0,0.3)] transition-transform [transform:perspective(700px)_rotateX(0deg)]",
+          EASE,
+          open ? "[transform:perspective(700px)_rotateX(-22deg)_scaleX(0.95)]" : "group-hover/card:[transform:perspective(700px)_rotateX(-10deg)_scaleX(0.97)]",
+        )}
+      >
+        <svg viewBox="0 0 28 14" className="h-[16%] text-white/60">
+          <circle cx={7} cy={4} r={2} fill="currentColor" />
+          <circle cx={21} cy={4} r={2} fill="currentColor" />
+          <path d={open ? "M10.5 8.5 q3.5 5 7 0 Z" : "M11 9 q3 3 6 0"} stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
+        </svg>
+      </span>
+    </span>
   );
 }
 
@@ -807,7 +983,7 @@ function FolderMenu({ folder, count, onRename, onDelete }: { folder: Folder; cou
                 title={`Delete the folder “${folder.name}”?`}
                 body={
                   count > 0
-                    ? `Only the folder goes. Its ${filmCount(count)} stay in the studio, under All films.`
+                    ? `Only the folder goes. Its ${filmCount(count)} move back to Films.`
                     : "It’s empty, so only the folder goes."
                 }
                 action="Delete folder"
@@ -912,7 +1088,7 @@ function FilmCard({
   film: FilmSummary;
   now: number;
   folders: Folder[];
-  folderLabel: string | null; // the folder it's in, shown under All films
+  folderLabel: string | null; // the folder it's in, shown in search results
   dragged: boolean;
   onDrag: (on: boolean) => void;
   onOpen: () => void;

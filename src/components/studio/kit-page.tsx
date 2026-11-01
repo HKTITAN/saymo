@@ -533,7 +533,7 @@ function TopBar({
         </Hint>
         <Popover.Portal>
           <Popover.Positioner side="bottom" align="start" sideOffset={10} collisionPadding={12} className="z-50">
-            <Popover.Popup className={cn(SURFACE, POPUP, "flex w-[260px] flex-col gap-0.5 p-1.5")}>
+            <Popover.Popup className={cn(SURFACE, POPUP, "flex flex-col gap-0.5 p-1.5", confirm ? "w-[260px]" : "w-max min-w-[156px]")}>
               {confirm ? (
                 <div className="flex flex-col gap-2 p-2">
                   <p className="font-medium text-[13px] text-white/90">Delete “{kit.name}”?</p>

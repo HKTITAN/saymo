@@ -83,7 +83,7 @@ export function FilmsMenu({
           </Hint>
           <Popover.Portal>
             <Popover.Positioner side="bottom" align="start" sideOffset={10} collisionPadding={12} className="z-50">
-              <Popover.Popup className={cn(SURFACE, POPUP, "flex flex-col gap-0.5 p-1", view === "list" ? "w-[176px]" : "w-[260px]")}>
+              <Popover.Popup className={cn(SURFACE, POPUP, "flex flex-col gap-0.5 p-1", view === "list" ? "w-max min-w-[156px]" : "w-[260px]")}>
                 {view === "list" ? (
                   <>
                     <button type="button" className={ITEM} disabled={busy} onClick={() => run(onDuplicate)}>
