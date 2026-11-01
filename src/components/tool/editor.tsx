@@ -1,35 +1,27 @@
 "use client";
 
-import { ArrowLeftIcon, PauseIcon, PlayIcon, TriangleAlertIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangleIcon, ArrowLeftIcon } from "@/components/icons";
+import { MOTIONS } from "@/components/post/lines";
+import { HEADLINE, type PostHandle, type PostPart } from "@/components/post/post";
 import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { toastManager } from "@/components/ui/toast";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { dateLines } from "@/lib/tool/dates";
-import { MOTIONS } from "@/components/post/lines";
-import {
-  type Crop,
-  type DatePick,
-  type DocEdit,
-  motionOf,
-  orangeOf,
-  type PostDoc,
-  toContent,
-  toEdit,
-} from "@/lib/tool/doc";
+import { type Crop, type DatePick, type DocEdit, motionOf, type PostDoc, toContent, toEdit } from "@/lib/tool/doc";
 import { api, type Problem, ProblemError } from "./api";
-import { DialGroup, DialNote, DialText, DialTextArea } from "./dial";
+import { createPickerHandle, DateIconTrigger, DatePicker, TimePicker } from "./date-picker";
+import { DialGroup, DialNote } from "./dial";
 import { ExportControl } from "./export-control";
-import { fitHeadline, layoutProblems } from "./fit";
+import { layoutProblems } from "./fit";
 import { ImageField } from "./image-field";
+import { EditingContext, InlineField, tidy, titleLines, useInlineEditing } from "./inline-edit";
 import { MotionPicker } from "./motion-picker";
 import { openPost } from "./nav";
-import { OrangeWords } from "./orange-words";
 import { PhotoField } from "./photo-field";
 import { Preview } from "./preview";
+import { Timeline } from "./timeline";
 
 export function Editor({ id }: { id: string }) {
   const [doc, setDoc] = useState<PostDoc | null>(null);
@@ -44,7 +36,7 @@ export function Editor({ id }: { id: string }) {
       <main className="flex h-dvh flex-col items-center justify-center gap-3 bg-background text-foreground">
         <p className="text-sm">This post no longer exists.</p>
         <Button variant="outline" onClick={() => openPost(null)}>
-          All posts
+          Back to all posts
         </Button>
       </main>
     );
@@ -66,18 +58,19 @@ const failed = (title: string, error: unknown) =>
 
 function Workspace({ initial }: { initial: PostDoc }) {
   const [doc, setDoc] = useState(initial);
-  // The headline box keeps the rows as typed; the post gets the filled ones.
-  const [titleText, setTitleText] = useState(initial.title.join("\n"));
   const [playing, setPlaying] = useState(
     () => !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
   const [busy, setBusy] = useState<{ photo: string | null; image: string | null }>({ photo: null, image: null });
   const [problems, setProblems] = useState<string[]>([]);
   const postRef = useRef<HTMLDivElement>(null);
+  const postHandle = useRef<PostHandle>(null);
+  const [calendar] = useState(createPickerHandle);
   const saver = useSaver(doc.id, (updatedAt) => setDoc((d) => ({ ...d, updatedAt: later(d.updatedAt, updatedAt) })));
   const { schedule, flush } = saver;
 
-  // Every edit shows at once and is saved a moment later.
+  // Every edit shows at once and is saved a moment later, tidied: no empty
+  // headline lines, no spaces at the ends of lines.
   const dirty = useRef(false);
   const edit = useCallback((change: (d: PostDoc) => PostDoc) => {
     dirty.current = true;
@@ -86,8 +79,11 @@ function Workspace({ initial }: { initial: PostDoc }) {
   useEffect(() => {
     if (!dirty.current) return;
     dirty.current = false;
-    schedule(toEdit(doc));
+    schedule(toEdit(tidy(doc)));
   }, [doc, schedule]);
+
+  const editing = useInlineEditing(doc, edit);
+  const motion = motionOf(doc);
 
   // What does not fit, checked once the post has drawn with its own type.
   useEffect(() => {
@@ -102,7 +98,7 @@ function Workspace({ initial }: { initial: PostDoc }) {
     };
   }, [doc]);
 
-  // Space pauses and 1 to 4 pick the animation, unless it is typing or
+  // Space plays and pauses and 1 to 4 pick the animation, unless typing or
   // pressing a control.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -119,16 +115,6 @@ function Workspace({ initial }: { initial: PostDoc }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [edit]);
-
-  const onTitle = (text: string) => {
-    setTitleText(text);
-    const lines = text
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const titleSize = fitHeadline(lines);
-    edit((d) => ({ ...d, title: lines, titleSize }));
-  };
 
   const pick = doc.date.pick ?? NO_PICK;
   const onPick = (change: Partial<DatePick>) => {
@@ -149,48 +135,48 @@ function Workspace({ initial }: { initial: PostDoc }) {
     }
   };
   const uploadPhoto = (file: File) =>
-    withBusy("photo", "Framing the face", async () => {
+    withBusy("photo", "Framing the face…", async () => {
       try {
         const r = await api.uploadPhoto(doc.id, file);
         setDoc((d) => ({ ...d, photo: r.photo, updatedAt: later(d.updatedAt, r.updatedAt) }));
         if (r.note) toastManager.add({ type: "info", title: r.note });
       } catch (error) {
-        failed("That photo could not be used", error);
+        failed("Unable to use that photo", error);
       }
     });
   const changePhoto = (change: { crop?: Crop; plain?: boolean }) =>
-    withBusy("photo", "Updating the photo", async () => {
+    withBusy("photo", "Updating the photo…", async () => {
       try {
         const r = await api.changePhoto(doc.id, change);
         setDoc((d) => ({ ...d, photo: r.photo, updatedAt: later(d.updatedAt, r.updatedAt) }));
         if (r.note) toastManager.add({ type: "info", title: r.note });
       } catch (error) {
-        failed("The photo could not be updated", error);
+        failed("Unable to update the photo", error);
       }
     });
   const uploadImage = (file: File) =>
-    withBusy("image", "Cutting out the landmark", async () => {
+    withBusy("image", "Cutting out the landmark…", async () => {
       try {
         const r = await api.uploadImage(doc.id, file);
         setDoc((d) => ({ ...d, image: r.image, updatedAt: later(d.updatedAt, r.updatedAt) }));
       } catch (error) {
-        failed("That image could not be used", error);
+        failed("Unable to use that image", error);
       }
     });
   const removeImage = () =>
-    withBusy("image", "Removing", async () => {
+    withBusy("image", "Removing the landmark…", async () => {
       try {
         const r = await api.removeImage(doc.id);
         setDoc((d) => ({ ...d, image: null, updatedAt: later(d.updatedAt, r.updatedAt) }));
       } catch (error) {
-        failed("The image could not be removed", error);
+        failed("Unable to remove the landmark", error);
       }
     });
   // What went wrong is shown beside the box it was typed in, with the page
   // that fixes it, rather than in a passing toast.
   const generateImage = async (place: string) => {
     let problem: Problem | null = null;
-    await withBusy("image", `Making ${place}, about 20 seconds`, async () => {
+    await withBusy("image", `Making ${place}. This takes about 20 seconds.`, async () => {
       try {
         const r = await api.generateImage(doc.id, place);
         setDoc((d) => ({ ...d, image: r.image, takes: r.takes, updatedAt: later(d.updatedAt, r.updatedAt) }));
@@ -203,17 +189,28 @@ function Workspace({ initial }: { initial: PostDoc }) {
     return problem;
   };
   const pickTake = (file: string) =>
-    withBusy("image", "Switching", async () => {
+    withBusy("image", "Switching to that try…", async () => {
       try {
         const r = await api.useTake(doc.id, file);
         setDoc((d) => ({ ...d, image: r.image, updatedAt: later(d.updatedAt, r.updatedAt) }));
       } catch (error) {
-        failed("That earlier try could not be used", error);
+        failed("Unable to switch to that try", error);
       }
     });
 
+  // Each piece of text on the post edits in place; the date's icon opens
+  // the calendar.
+  const wrap = (part: PostPart, node: ReactNode) =>
+    part === "date.icon" ? (
+      <DateIconTrigger handle={calendar}>{node}</DateIconTrigger>
+    ) : (
+      <InlineField part={part}>{node}</InlineField>
+    );
+  const onPlace = (place: NonNullable<PostDoc["image"]>["place"]) =>
+    edit((d) => (d.image ? { ...d, image: { ...d.image, place } } : d));
+
   return (
-    <main className="flex h-dvh flex-col bg-background text-foreground">
+    <main className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
       <header className="flex min-h-16 items-center justify-between gap-6 border-b px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Button
@@ -233,88 +230,73 @@ function Workspace({ initial }: { initial: PostDoc }) {
               saver.state === "failed" ? "text-destructive-foreground text-xs" : "text-muted-foreground text-xs"
             }
           >
-            {saver.state === "saving" ? "Saving" : saver.state === "failed" ? "Not saved, edit again to retry" : "Saved"}
+            {saver.state === "saving"
+              ? "Saving changes…"
+              : saver.state === "failed"
+                ? "Changes not saved. Make any change to try again."
+                : "Changes saved"}
           </span>
         </div>
         <ExportControl doc={doc} flush={flush} />
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="w-100 shrink-0 border-r">
+        <section className="flex min-w-0 flex-1 flex-col gap-4 p-6">
+          <div className="min-h-0 flex-1">
+            <EditingContext value={editing}>
+              <Preview
+                content={toContent({ ...doc, title: titleLines(doc) })}
+                motion={motion}
+                handle={postHandle}
+                wrap={wrap}
+                postRef={postRef}
+                onPlace={onPlace}
+              />
+            </EditingContext>
+          </div>
+          <Timeline motion={motion} playing={playing} onPlaying={setPlaying} post={postHandle} />
+          {problems.length > 0 && (
+            <ul className="flex flex-col gap-1 text-warning-foreground text-xs" aria-live="polite">
+              {problems.map((p) => (
+                <li key={p} className="flex items-center gap-2">
+                  <AlertTriangleIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                  {p}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <aside className="w-100 shrink-0 border-l">
           <ScrollArea scrollFade>
             <div className="flex flex-col gap-5 px-4 py-4">
               <DialGroup title="Animation">
-                <MotionPicker
-                  value={motionOf(doc)}
-                  onChange={(motion) => edit((d) => ({ ...d, motion }))}
-                />
+                <MotionPicker value={motion} onChange={(m) => edit((d) => ({ ...d, motion: m }))} />
               </DialGroup>
 
-              <DialGroup title="Headline">
-                <DialTextArea label="One line per row" value={titleText} onChange={onTitle} />
-                <DialNote>
-                  The first line is set at full strength, the rest at 60%.
-                  {doc.titleSize < 86 && ` Made smaller to fit: ${Math.round(doc.titleSize)} px instead of 86.`}
-                </DialNote>
-              </DialGroup>
-
-              <DialGroup title="Speaker">
-                <PhotoField photo={doc.photo} busy={busy.photo} onUpload={uploadPhoto} onChange={changePhoto} />
-                <DialText
-                  label="Name"
-                  value={doc.speaker.name}
-                  onChange={(name) => edit((d) => ({ ...d, speaker: { ...d.speaker, name } }))}
-                />
-                <DialText
-                  label="Role"
-                  value={doc.speaker.role}
-                  onChange={(role) => edit((d) => ({ ...d, speaker: { ...d.speaker, role } }))}
-                />
-                <DialText
-                  label="Company"
-                  value={doc.speaker.company}
-                  onChange={(company) => edit((d) => ({ ...d, speaker: { ...d.speaker, company } }))}
-                />
+              <DialGroup title="Words">
+                <ul className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.03] px-3 py-2.5 text-[11.5px] text-white/55 leading-relaxed">
+                  <li>Click any words on the post to change them.</li>
+                  <li>In the headline, Enter starts a new line.</li>
+                  <li>To set words in orange, select them in the location.</li>
+                </ul>
+                {doc.titleSize < HEADLINE.size && (
+                  <DialNote>
+                    The headline is set at {Math.round(doc.titleSize)} px instead of {HEADLINE.size}, so it fits.
+                  </DialNote>
+                )}
               </DialGroup>
 
               <DialGroup title="Date and time">
-                <DialText label="Starts" type="date" value={pick.start} onChange={(start) => onPick({ start })} />
-                <DialText label="Ends, if longer" type="date" value={pick.end} onChange={(end) => onPick({ end })} />
-                <DialText label="From" type="time" value={pick.time} onChange={(time) => onPick({ time })} />
-                <DialText label="Until" type="time" value={pick.endTime} onChange={(endTime) => onPick({ endTime })} />
-                <DialNote>Picking a date writes the two lines below, weekday included. You can still type over them.</DialNote>
-                <DialText
-                  label="First line"
-                  value={doc.date.lines[0]}
-                  onChange={(v) => edit((d) => ({ ...d, date: { ...d.date, lines: [v, d.date.lines[1]] } }))}
-                />
-                <DialText
-                  label="Second line"
-                  value={doc.date.lines[1]}
-                  onChange={(v) => edit((d) => ({ ...d, date: { ...d.date, lines: [d.date.lines[0], v] } }))}
-                />
+                <DatePicker handle={calendar} pick={pick} onPick={onPick} />
+                <TimePicker pick={pick} onPick={onPick} />
+                <DialNote>
+                  Picking writes the date lines on the post. You can still change their words there.
+                </DialNote>
               </DialGroup>
 
-              <DialGroup title="Location">
-                <DialText
-                  label="First line"
-                  value={doc.location.lines[0]}
-                  onChange={(v) =>
-                    edit((d) => ({ ...d, location: { ...d.location, lines: [v, d.location.lines[1]] } }))
-                  }
-                />
-                <DialText
-                  label="Second line"
-                  value={doc.location.lines[1]}
-                  onChange={(v) =>
-                    edit((d) => ({ ...d, location: { ...d.location, lines: [d.location.lines[0], v] } }))
-                  }
-                />
-                <OrangeWords
-                  lines={doc.location.lines}
-                  value={orangeOf(doc)}
-                  onChange={(orange) => edit((d) => ({ ...d, location: { ...d.location, orange } }))}
-                />
+              <DialGroup title="Speaker photo">
+                <PhotoField photo={doc.photo} busy={busy.photo} onUpload={uploadPhoto} onChange={changePhoto} />
               </DialGroup>
 
               <DialGroup title="Landmark">
@@ -327,56 +309,12 @@ function Workspace({ initial }: { initial: PostDoc }) {
                   onUseTake={pickTake}
                   onRemove={removeImage}
                   onName={(name) => edit((d) => (d.image ? { ...d, image: { ...d.image, name } } : d))}
-                  onPlace={(place) => edit((d) => (d.image ? { ...d, image: { ...d.image, place } } : d))}
+                  onPlace={onPlace}
                 />
               </DialGroup>
             </div>
           </ScrollArea>
         </aside>
-
-        <section className="flex min-w-0 flex-1 flex-col gap-4 p-6">
-          <div className="min-h-0 flex-1">
-            <Preview
-              content={toContent(doc)}
-              motion={motionOf(doc)}
-              playing={playing}
-              postRef={postRef}
-              onPlace={(place) => edit((d) => (d.image ? { ...d, image: { ...d.image, place } } : d))}
-            />
-          </div>
-          <footer className="flex min-h-9 items-center gap-4">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={playing ? "Pause" : "Play"}
-                    onClick={() => setPlaying((p) => !p)}
-                  />
-                }
-              >
-                {playing ? <PauseIcon /> : <PlayIcon />}
-              </TooltipTrigger>
-              <TooltipPopup>
-                <span className="flex items-center gap-2">
-                  {playing ? "Pause" : "Play"}
-                  <Kbd>Space</Kbd>
-                </span>
-              </TooltipPopup>
-            </Tooltip>
-            {problems.length > 0 && (
-              <ul className="flex flex-col gap-1 text-warning-foreground text-xs" aria-live="polite">
-                {problems.map((p) => (
-                  <li key={p} className="flex items-center gap-2">
-                    <TriangleAlertIcon className="size-3.5 shrink-0" aria-hidden="true" />
-                    {p}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </footer>
-        </section>
       </div>
     </main>
   );

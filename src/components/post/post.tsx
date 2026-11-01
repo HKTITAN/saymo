@@ -1,7 +1,7 @@
 "use client";
 
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Fragment, useEffect, useImperativeHandle, useRef, type Ref } from "react";
+import { Fragment, type ReactNode, useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import { post } from "@/content/post";
 import { cn } from "@/lib/utils";
 import type { PostContent } from "./content";
@@ -28,6 +28,20 @@ export function headlineBox(size: number) {
 }
 
 export type PostHandle = { renderAt: (seconds: number) => void };
+
+// The parts of the post the tool lets you change in place: each headline
+// line, the speaker's name, role and company, each line of the date and
+// the location, and the date's icon, which opens the calendar.
+export type PostPart =
+  | `title.${number}`
+  | "name"
+  | "role"
+  | "company"
+  | `date.${number}`
+  | `location.${number}`
+  | "date.icon";
+
+const asIs = (_part: PostPart, node: ReactNode) => node;
 
 // Ordinal endings after a number (20th, 21st) set small and raised, their
 // tops level with the figures. Tailwind's base styles already keep a <sup>
@@ -101,6 +115,9 @@ type PostProps = {
   look?: Look;
   // The words and images; the original post unless the tool passes its own.
   content?: PostContent;
+  // The tool's editing: each part is handed over and drawn as returned.
+  // Left out, every part is drawn as it is.
+  wrap?: (part: PostPart, node: ReactNode) => ReactNode;
   ref?: Ref<PostHandle>;
 };
 
@@ -111,6 +128,7 @@ export function Post({
   live = true,
   look,
   content = post,
+  wrap = asIs,
   ref,
 }: PostProps) {
   const shownLook: Look = look ?? "refined";
@@ -125,7 +143,13 @@ export function Post({
     drawPanel(ctx, motion, seconds, shownLook);
   };
 
-  useImperativeHandle(ref, () => ({ renderAt: render }));
+  // A moment set from outside is remembered, so a resize redraws it.
+  useImperativeHandle(ref, () => ({
+    renderAt: (seconds: number) => {
+      elapsed.current = seconds;
+      render(seconds);
+    },
+  }));
 
   // Size the canvas backing store to the pixels it actually covers.
   useEffect(() => {
@@ -195,7 +219,7 @@ export function Post({
               which still reads at 4.4:1 on stone when the post is seen small. */}
           {title.map((line, i) => (
             <span key={i} className={cn("block whitespace-nowrap", i > 0 && "opacity-60")}>
-              {line}
+              {wrap(`title.${i}`, line)}
             </span>
           ))}
         </h1>
@@ -215,8 +239,8 @@ export function Post({
           }}
           data-part="event"
         >
-          {event.map((item) => (
-            <div key={item.id} className="flex items-center" style={{ gap: 16 }}>
+          {event.map((item) => {
+            const tile = (
               <div
                 className="flex shrink-0 items-center justify-center"
                 style={{
@@ -234,32 +258,37 @@ export function Post({
                   aria-hidden="true"
                 />
               </div>
-              <div>
-                <p
-                  className="font-medium uppercase"
-                  style={{ fontSize: 12, lineHeight: 1.2, letterSpacing: "0.16em", color: PALETTE.muted }}
-                >
-                  {item.label}
-                </p>
-                <p
-                  className="font-semibold"
-                  style={{
-                    fontSize: 20,
-                    lineHeight: 1.2,
-                    letterSpacing: "-0.01em",
-                    marginTop: 5,
-                    color: PALETTE.ink,
-                  }}
-                >
-                  {item.lines.map((line, i) => (
-                    <span key={i} className="block whitespace-nowrap">
-                      {accented(line, item.accent)}
-                    </span>
-                  ))}
-                </p>
+            );
+            return (
+              <div key={item.id} className="flex items-center" style={{ gap: 16 }}>
+                {item.id === "date" ? wrap("date.icon", tile) : tile}
+                <div>
+                  <p
+                    className="font-medium uppercase"
+                    style={{ fontSize: 12, lineHeight: 1.2, letterSpacing: "0.16em", color: PALETTE.muted }}
+                  >
+                    {item.label}
+                  </p>
+                  <p
+                    className="font-semibold"
+                    style={{
+                      fontSize: 20,
+                      lineHeight: 1.2,
+                      letterSpacing: "-0.01em",
+                      marginTop: 5,
+                      color: PALETTE.ink,
+                    }}
+                  >
+                    {item.lines.map((line, i) => (
+                      <span key={i} className="block whitespace-nowrap">
+                        {wrap(`${item.id}.${i}`, accented(line, item.accent))}
+                      </span>
+                    ))}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div
@@ -291,14 +320,14 @@ export function Post({
               className="font-medium"
               style={{ fontSize: 30, lineHeight: 1.2, letterSpacing: "-0.01em", color: PALETTE.ink }}
             >
-              {speaker.name}
+              {wrap("name", speaker.name)}
             </p>
             <p
               style={{ fontSize: 24, lineHeight: 1.35, marginTop: 6, color: PALETTE.muted }}
             >
-              {speaker.role}
+              {wrap("role", speaker.role)}
               <br />
-              {speaker.company}
+              {wrap("company", speaker.company)}
             </p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { ExternalLinkIcon, SparklesIcon } from "lucide-react";
 import { useId, useRef, useState } from "react";
+import { ExternalLinkSquareIcon } from "@/components/icons";
 import { PALETTE } from "@/components/post/palette";
 import type { Placement, PostDoc, Take } from "@/lib/tool/doc";
 import { cn } from "@/lib/utils";
@@ -43,10 +43,10 @@ export function ImageField({
             <p className="text-[11.5px] text-white/50 leading-relaxed">{busy ?? image.note}</p>
             <div className="grid grid-cols-2 gap-1.5">
               <DialButton className="h-7" disabled={Boolean(busy)} onClick={() => replace.current?.click()}>
-                Upload instead
+                Upload a photo
               </DialButton>
               <DialButton className="h-7" disabled={Boolean(busy)} onClick={onRemove}>
-                Remove
+                Remove landmark
               </DialButton>
             </div>
             <FileInput ref={replace} onFile={onUpload} />
@@ -54,8 +54,8 @@ export function ImageField({
         </div>
       ) : (
         <DropZone
-          title="Landmark"
-          hint="Drop a photo of the place here, or make one with AI below. A photo's background is removed for you; a PNG that is already cut out keeps its own edges."
+          title="Drop a photo of the place here"
+          hint="Its background is removed for you. A PNG that is already cut out keeps its own edges. Or make one with AI below."
           busy={busy}
           onFile={onUpload}
         />
@@ -121,7 +121,7 @@ export function ImageField({
             onChange={(v) => onPlace({ ...image.place, y: Math.round(v) })}
           />
           <DialButton onClick={() => onPlace({ x: 0, y: 0, scale: 1 })}>Reset position</DialButton>
-          <DialNote>You can also drag it in the preview, and pinch to resize it.</DialNote>
+          <DialNote>You can also drag it on the post. To resize it there, pinch, or hold ⌘ and scroll.</DialNote>
         </>
       )}
     </div>
@@ -183,12 +183,11 @@ function Generate({
         />
       </label>
       <DialButton type="submit" loading={making} disabled={!place.trim() || (Boolean(busy) && !making)}>
-        <SparklesIcon aria-hidden="true" />
         Generate
       </DialButton>
       <DialNote>
-        Type a city or a landmark. It comes back in the same black and white style as the towers, cut out and
-        ready. About 20 seconds and 4 cents of Vercel credit each.
+        Type a city or a landmark. It comes back cut out, in the same black and white style as the towers. Each
+        one takes about 20 seconds and 4 cents of Vercel credit.
       </DialNote>
       {problem && (
         <div
@@ -204,7 +203,7 @@ function Generate({
               className="inline-flex h-7 items-center gap-1.5 rounded-[7px] bg-white/[0.08] px-2.5 text-[12px] text-white/85 outline-none hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-ring"
             >
               {problem.action.label}
-              <ExternalLinkIcon className="size-3.5" aria-hidden="true" />
+              <ExternalLinkSquareIcon className="size-3.5" aria-hidden="true" />
             </a>
           )}
         </div>

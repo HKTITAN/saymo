@@ -25,8 +25,8 @@ export function PhotoField({
   if (!photo) {
     return (
       <DropZone
-        title="Speaker photo"
-        hint="Drop a photo here. The face is framed and the background made plain grey for you."
+        title="Drop a photo here"
+        hint="The face is framed for you, and the background can be made plain grey."
         busy={busy}
         onFile={onUpload}
       />
@@ -74,6 +74,10 @@ function Cropper({
 }) {
   const box = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; crop: Crop } | null>(null);
+  // Zoom is centred on the middle of the square as it was when the zoom
+  // started, so zooming in and back out puts the square back in place even
+  // after an edge has nudged it.
+  const centre = useRef<{ x: number; y: number } | null>(null);
   // The crop follows the pointer here, and is made on the server on release.
   const [crop, setCrop] = useState(saved);
   const [lastSaved, setLastSaved] = useState(saved);
@@ -92,10 +96,10 @@ function Cropper({
       size,
     };
   };
-  // Zoom keeps the crop's centre where it is.
   const zoomed = (zoom: number) => {
+    const c = (centre.current ??= { x: crop.x + crop.size / 2, y: crop.y + crop.size / 2 });
     const size = largest / zoom;
-    return clamp({ x: crop.x + (crop.size - size) / 2, y: crop.y + (crop.size - size) / 2, size });
+    return clamp({ x: c.x - size / 2, y: c.y - size / 2, size });
   };
   const pct = (v: number, of: number) => `${(v / of) * 100}%`;
   const ratio = source.width / source.height;
@@ -104,26 +108,28 @@ function Cropper({
     <div className="flex flex-col gap-1.5">
       <div
         ref={box}
-        className="relative mx-auto mb-1 touch-none select-none overflow-hidden rounded-[10px] bg-white/[0.05]"
+        className="relative mx-auto mb-1 touch-none select-none overflow-hidden rounded-[4px] bg-white/[0.05]"
         style={{ width: `min(100%, ${Math.round(280 * ratio)}px)`, aspectRatio: `${source.width} / ${source.height}` }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={source.preview} alt="" className="absolute inset-0 size-full" draggable={false} />
+        {/* The frame is drawn inside the square, so it stays on the photo
+            even when the square sits against an edge. */}
         <div
-          className="absolute cursor-move outline-2 outline-white/90 focus-visible:outline-ring"
+          className="absolute cursor-move rounded-[2px] shadow-[inset_0_0_0_2px_rgb(255_255_255/0.9),0_0_0_9999px_rgb(0_0_0/0.55)] outline-none focus-visible:shadow-[inset_0_0_0_3px_rgb(255_255_255),0_0_0_9999px_rgb(0_0_0/0.55)]"
           style={{
             left: pct(crop.x, source.width),
             top: pct(crop.y, source.height),
             width: pct(crop.size, source.width),
             height: pct(crop.size, source.height),
-            boxShadow: "0 0 0 9999px rgb(0 0 0 / 0.55)",
           }}
           role="group"
-          aria-label="Photo crop. Drag to move it, or use the arrow keys."
+          aria-label="Photo crop. Drag it, or use the arrow keys, to move it."
           tabIndex={0}
           onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
             drag.current = { x: e.clientX, y: e.clientY, crop };
+            centre.current = null;
           }}
           onPointerMove={(e) => {
             const d = drag.current;
@@ -143,6 +149,7 @@ function Cropper({
             const move = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
             if (!move) return;
             e.preventDefault();
+            centre.current = null;
             setCrop(clamp({ ...crop, x: crop.x + move[0], y: crop.y + move[1] }));
           }}
           onKeyUp={(e) => {
@@ -163,7 +170,10 @@ function Cropper({
         step={0.01}
         format={(v) => `${v.toFixed(1)}×`}
         onChange={(v) => setCrop(zoomed(v))}
-        onCommit={(v) => onCommit(zoomed(v))}
+        onCommit={(v) => {
+          onCommit(zoomed(v));
+          centre.current = null;
+        }}
       />
     </div>
   );
