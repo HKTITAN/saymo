@@ -250,6 +250,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
     `Bash(${check})`,
     `Bash(${draft})`,
     `Bash(${media} *)`,
+    `Bash(${voiceTool(id)} *)`,
     "Skill",
     "TodoWrite",
   ];
@@ -293,6 +294,8 @@ function childEnv(): NodeJS.ProcessEnv {
   for (const key of keep) if (process.env[key]) env[key] = process.env[key] as string;
   for (const [key, value] of Object.entries(process.env)) if (key.startsWith("LC_") && value) env[key] = value;
   env.HYPERFRAMES_NO_TELEMETRY = "1";
+  // Where the voiceover tool reaches the studio itself.
+  env.STUDIO_ORIGIN = `http://localhost:${process.env.PORT ?? "3200"}`;
   return env;
 }
 
@@ -333,8 +336,14 @@ You can't open the footage files. To hear, see and measure them, run one of thes
   ${tool} silences <media> [min-seconds] [threshold-dB]
   ${tool} scenes <media> [sensitivity]
   ${tool} frames <media> <t> [t ...]   (then Read the stills it names)
-  ${tool} faces <media> [every-seconds]`;
+  ${tool} faces <media> [every-seconds]
+
+For a voiceover, write the words to voice/<name>.txt in the film, then run exactly:
+  ${voiceTool(id)} <voice> <words-per-minute> voice/<name>.txt
+Voices: Rishi (Indian English, male, the default), Tara (Indian English, female), Aman (Indian English, male), Lekha (Hindi, female); pace 175 is normal. It lands in the film's media; place it on an audio track and transcribe it for captions.`;
 }
+
+const voiceTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/voice.mjs")} ${id}`;
 
 // A short picture of a video film's edit, sent with each message, so "the
 // second clip" or "the lower third" makes sense.

@@ -40,7 +40,16 @@ export const videoApi = {
   transcript: (id: string, media: Media) => call<Word[]>(mediaUrl(id, media.id, media.transcript ?? "transcript.json")),
   peaks: (id: string, media: Media) => call<number[]>(mediaUrl(id, media.id, media.peaks ?? "peaks.json")),
   graphics: () => call<GraphicInfo[]>("/api/studio/graphics"),
+  voices: () => call<{ voices: VoiceInfo[]; defaultVoice: string }>("/api/studio/voices"),
+  voiceover: (id: string, body: { text: string; voice: string; rate: number }) =>
+    call<Media>(`${film(id)}/voice`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
 };
+
+export type VoiceInfo = { id: string; label: string; accent: string; language: string; installed: boolean };
 
 // Sends one file as the request body, reporting how much has gone (0..1).
 // XHR rather than fetch, because fetch can't tell how an upload is going.

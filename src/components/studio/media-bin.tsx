@@ -9,6 +9,7 @@ import { formatTime } from "./clock";
 import { Hint, ICON_BUTTON, PILL_BUTTON, Panel } from "./panel";
 import type { EditState } from "./use-edit";
 import { ACCEPTS, mediaUrl, videoApi } from "./video-api";
+import { VoiceoverButton } from "./voiceover";
 
 // The bin: the footage, photos and sound brought into this film, and the
 // studio's graphics. Drag one onto the timeline, or double-click to put it
@@ -63,11 +64,14 @@ export function MediaBin({
       style={style}
       bodyClassName="flex min-h-0 flex-col"
       actions={
-        <Hint label="Add footage, photos or sound">
-          <button type="button" className={ICON_BUTTON} onClick={() => picker.current?.click()} aria-label="Add files">
-            <UploadUpIcon aria-hidden="true" />
-          </button>
-        </Hint>
+        <>
+          <VoiceoverButton id={id} onMade={() => void ed.refreshMedia()} />
+          <Hint label="Add footage, photos or sound">
+            <button type="button" className={ICON_BUTTON} onClick={() => picker.current?.click()} aria-label="Add files">
+              <UploadUpIcon aria-hidden="true" />
+            </button>
+          </Hint>
+        </>
       }
     >
       {/* The system's file chooser, opened by the button above. */}

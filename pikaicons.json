@@ -84,6 +84,10 @@
       "name": "layer-three",
       "variant": "stroke"
     },
+    "mic-on": {
+      "name": "mic-on",
+      "variant": "stroke"
+    },
     "minus-default": {
       "name": "minus-default",
       "variant": "stroke"
