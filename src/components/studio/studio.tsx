@@ -18,6 +18,7 @@ import { EditInspector } from "./edit-inspector";
 import { addGraphic, addMedia, endOf, type Item } from "./edit-ops";
 import { FilmsMenu } from "./films-menu";
 import { brandApi } from "./brand-api";
+import { SkeletonProvider } from "@/components/skeleton";
 import { Dashboard } from "./dashboard";
 import { undoKey, useHistory } from "./history";
 import { Inspector, type Values } from "./inspector";
@@ -165,10 +166,17 @@ export function Studio() {
   const create = async (
     width: number,
     height: number,
-    { prompt = null, kind = "motion", files = null }: { prompt?: string | null; kind?: "motion" | "video"; files?: File[] | null } = {},
+    {
+      prompt = null,
+      kind = "motion",
+      files = null,
+      folder = null,
+    }: { prompt?: string | null; kind?: "motion" | "video"; files?: File[] | null; folder?: string | null } = {},
   ) => {
     const title = kind === "video" ? titleFromFile(files?.[0]?.name ?? "") : prompt ? titleFrom(prompt) : "Untitled film";
     const film = await api.create({ title, width, height, ...(kind === "video" ? { kind } : {}) });
+    // Started inside a folder: it's filed there.
+    if (folder) await api.edit(film.id, { folder }).catch(() => undefined);
     opening.current = prompt?.trim() || null;
     openingFiles.current = files?.length ? files : null;
     await refresh();
@@ -187,9 +195,11 @@ export function Studio() {
     }
   };
 
-  if (id === null || kitId === null || films === null) return <div className="fixed inset-0 bg-[#0b0b0b]" />;
+  // The home page draws its loading shapes; a film or kit waits for the list.
+  if (id === null || kitId === null || (films === null && (id || kitId))) return <div className="fixed inset-0 bg-[#0b0b0b]" />;
 
   return (
+    <SkeletonProvider>
     <TooltipProvider delay={400}>
       <main className="fixed inset-0 overflow-hidden bg-[#0b0b0b] font-sans text-white antialiased">
         {kitId ? (
@@ -202,11 +212,11 @@ export function Studio() {
             onOpenKit={(next) => openKit(next)}
             onGone={() => openKit(null, true)}
           />
-        ) : id && films.some((f) => f.id === id) ? (
+        ) : id && films?.some((f) => f.id === id) ? (
           <FilmView
             key={id}
             id={id}
-            films={films}
+            films={films ?? []}
             hidden={hidden}
             setHidden={setHidden}
             firstPromptRef={opening}
@@ -241,8 +251,13 @@ export function Studio() {
               await api.remove(fid).catch(() => undefined);
               await refresh();
             }}
-            onStartFilm={(prompt, w, h) => start(() => create(w, h, { prompt }))}
-            onStartVideo={(files, w, h) => start(() => create(w, h, { kind: "video", files }))}
+            onMoveFilm={async (fid, folder) => {
+              setFilms((list) => list?.map((x) => (x.id === fid ? { ...x, folder: folder ?? undefined } : x)) ?? null);
+              await api.edit(fid, { folder }).catch(() => refresh());
+            }}
+            onRefresh={refresh}
+            onStartFilm={(prompt, w, h, folder) => start(() => create(w, h, { prompt, folder }))}
+            onStartVideo={(files, w, h, folder) => start(() => create(w, h, { kind: "video", files, folder }))}
             onOpenKit={(next) => openKit(next)}
             onNewKit={newKit}
             onImportKit={importKit}
@@ -261,6 +276,7 @@ export function Studio() {
         ) : null}
       </main>
     </TooltipProvider>
+    </SkeletonProvider>
   );
 }
 
