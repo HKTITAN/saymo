@@ -494,3 +494,59 @@ export function deleteFolder(id: string): Promise<boolean> {
     return true;
   });
 }
+
+// ─── Words changed on the film that aren't a text param ───────────────────
+//
+// Any words on the film can be clicked and retyped. When the old words appear
+// exactly once in the film's own files, they're swapped there directly (the
+// film as it was is kept as a version first, so it can be undone). Otherwise
+// it's not clear which copy to change, and the caller asks Claude instead.
+
+const WORD_FILES = /\.(html|js|jsx|mjs|ts|tsx|css)$/;
+const SKIP_DIRS = new Set(["node_modules", ".history", "out", "sound", "assets", "refs", "media", ".hyperframes", "dist", "target", "public"]);
+
+async function filmTextFiles(dir: string, base = dir): Promise<string[]> {
+  const found: string[] = [];
+  for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+    if (entry.name.startsWith(".") && entry.isDirectory()) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (!SKIP_DIRS.has(entry.name)) found.push(...(await filmTextFiles(full, base)));
+    } else if (WORD_FILES.test(entry.name)) found.push(full);
+  }
+  return found;
+}
+
+// Where `from` sits as whole words (not inside a longer word).
+function wordsAt(text: string, from: string): number[] {
+  const at: number[] = [];
+  const edge = /[\p{L}\p{N}_]/u;
+  for (let i = text.indexOf(from); i !== -1; i = text.indexOf(from, i + from.length)) {
+    if (edge.test(text[i - 1] ?? "") || edge.test(text[i + from.length] ?? "")) continue;
+    at.push(i);
+  }
+  return at;
+}
+
+export async function replaceWords(id: string, from: string, to: string, t: number): Promise<"done" | "ask"> {
+  const old = from.trim();
+  const next = to.trim();
+  if (!old || old === next) return "done";
+  // Characters that would need escaping in code are left to Claude.
+  if (/["'`\\<>&{}$]/.test(next) || /["'`\\<>&{}$]/.test(old)) return "ask";
+  const files = await filmTextFiles(filmDir(id));
+  const hits: { file: string; text: string; at: number }[] = [];
+  for (const file of files) {
+    const text = await readFile(file, "utf8");
+    for (const at of wordsAt(text, old)) hits.push({ file, text, at });
+    if (hits.length > 1) return "ask";
+  }
+  if (hits.length !== 1) return "ask";
+  const [hit] = hits;
+  await withFilm(id, async () => {
+    const n = await snapshotFilm(id);
+    await recordVersion(id, n, `Changed “${old}” to “${next}” on the film`, t);
+    await writeFile(hit.file, hit.text.slice(0, hit.at) + next + hit.text.slice(hit.at + old.length));
+  });
+  return "done";
+}

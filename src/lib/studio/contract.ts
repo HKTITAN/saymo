@@ -136,6 +136,8 @@ export type StageOutbound =
   // Words typed into a data-param element: live while `editing`, then once
   // more with `editing: false` when the edit is finished (one ⌘Z step).
   | { type: "studio:param-edit"; key: string; value: string; editing: boolean }
+  | { type: "studio:text-edit"; from: string; to: string }
+  | { type: "studio:text-editing"; on: boolean } // words that aren't a text param are being typed
   // The answer to find-param: the first time it shows, or null if never.
   | { type: "studio:param-at"; key: string; t: number | null };
 

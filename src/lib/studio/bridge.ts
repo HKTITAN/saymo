@@ -165,12 +165,24 @@ function bridge(options: BridgeOptions) {
   // words for their animation (each in its own span, often moved in 3D)
   // are edited in a see-through box laid exactly over them in the same
   // type, with the animated letters hidden until the edit is done.
-  let editing: { el: HTMLElement; key: string; before: string; box: HTMLDivElement | null; visibility: string } | null = null;
+  let editing: { el: HTMLElement; key: string | null; before: string; box: HTMLDivElement | null; visibility: string } | null = null;
   const valueOf = () => (editing ? textOf(editing.box ?? editing.el) : "");
   const owns = (target: EventTarget | null) =>
     Boolean(editing && target instanceof Node && (editing.el.contains(target) || editing.box?.contains(target)));
   let quiet: HTMLDivElement | null = null;
   const TEXT = "[data-param]";
+  // Any other words on the film: the element holding them, or for letters
+  // split into inline pieces, the nearest block that holds the whole line.
+  const freeText = (hit: Element): HTMLElement | null => {
+    if (!(hit instanceof HTMLElement) || hit === document.body || hit === document.documentElement) return null;
+    if (hit.closest("[data-studio-ui]") || hit.closest("[data-studio-box]")) return null;
+    if (![...hit.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim())) return null;
+    let n: HTMLElement = hit;
+    while (n.parentElement && n.parentElement !== document.body && getComputedStyle(n).display.startsWith("inline")) n = n.parentElement;
+    const line = textOf(n).trim();
+    const pick = line && line.length <= 160 ? n : hit;
+    return visible(pick) ? pick : null;
+  };
   const textAt = (x: number, y: number) => {
     // Films stack their scenes; an empty, see-through layer of a later
     // scene can sit over the words on screen. Look down through those to
@@ -178,6 +190,8 @@ function bridge(options: BridgeOptions) {
     for (const hit of document.elementsFromPoint(x, y)) {
       const words = hit.closest(TEXT) as HTMLElement | null;
       if (words && visible(words)) return words;
+      const free = freeText(hit);
+      if (free) return free;
       if (hit === document.body || hit === document.documentElement) break;
       const s = getComputedStyle(hit);
       const painted = (s.backgroundColor !== "rgba(0, 0, 0, 0)" && s.backgroundColor !== "transparent") || s.backgroundImage !== "none";
@@ -188,6 +202,7 @@ function bridge(options: BridgeOptions) {
   const hover = (el: Element | null) => {
     if (!quiet) {
       quiet = document.createElement("div");
+      quiet.setAttribute("data-studio-ui", "");
       quiet.style.cssText =
         "position:fixed;pointer-events:none;z-index:2147483646;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 0 2px rgba(0,0,0,.35);display:none";
       document.documentElement.append(quiet);
@@ -233,11 +248,12 @@ function bridge(options: BridgeOptions) {
   };
   const startEdit = (el: HTMLElement, selectAll: boolean, at?: number) => {
     const key = el.getAttribute("data-param");
-    if (!key) return;
     if (editing && editing.el !== el) finishEdit(true);
     if (editing) return;
-    const before = String(w.__params[key] ?? textOf(el));
-    if (el.children.length) {
+    const before = key ? String(w.__params[key] ?? textOf(el)) : textOf(el).trim();
+    // Words that aren't a text param are always typed in a box over them,
+    // so the film's own markup is never changed by hand.
+    if (el.children.length || !key) {
       // Split into pieces: type into a box laid over the words instead,
       // each letter in the look it is drawn in (a light word stays light,
       // a bold one bold), at the size the camera shows it.
@@ -271,6 +287,7 @@ function bridge(options: BridgeOptions) {
       const anchor = Math.abs(mid - (r.left + r.right) / 2) < r.width * 0.02 ? "center" : Math.abs(right - r.right) < 2 && left - r.left > 2 ? "right" : "left";
 
       const box = document.createElement("div");
+      box.setAttribute("data-studio-box", "");
       box.setAttribute("contenteditable", "plaintext-only");
       box.spellcheck = false;
       Object.assign(box.style, {
@@ -346,8 +363,20 @@ function bridge(options: BridgeOptions) {
       }
       sel?.removeAllRanges();
       sel?.addRange(range);
+      // The click that opened it can move focus back to the page as it
+      // finishes; take it back, with the caret where it was put.
+      const keep = () => {
+        if (editing?.box !== box || document.activeElement === box) return;
+        box.focus();
+        const again = getSelection();
+        again?.removeAllRanges();
+        again?.addRange(range);
+      };
+      setTimeout(keep, 0);
+      window.addEventListener("pointerup", () => setTimeout(keep, 0), { once: true, capture: true });
       hover(box);
-      post({ type: "studio:param-edit", key, value: before, editing: true });
+      if (key) post({ type: "studio:param-edit", key, value: before, editing: true });
+      else post({ type: "studio:text-editing", on: true });
       return;
     }
     editing = { el, key, before, box: null, visibility: el.style.visibility };
@@ -383,6 +412,17 @@ function bridge(options: BridgeOptions) {
       el.style.cursor = "";
       getSelection()?.removeAllRanges();
       value = keep ? textOf(el) : before;
+    }
+    if (!key) {
+      hover(null);
+      post({ type: "studio:text-editing", on: false });
+      // Not a text param: the studio changes the words in the film's files
+      // (or asks Claude to), then reloads the film.
+      if (keep && value.trim() && value.trim() !== before) {
+        if (!el.children.length) el.textContent = value.trim();
+        post({ type: "studio:text-edit", from: before, to: value.trim() });
+      }
+      return;
     }
     sendEdit(key, value, false);
     hover(null);
@@ -466,7 +506,7 @@ function bridge(options: BridgeOptions) {
     "input",
     (e) => {
       if (!editing || !owns(e.target)) return;
-      sendEdit(editing.key, valueOf(), true);
+      if (editing.key) sendEdit(editing.key, valueOf(), true);
       hover(editing.box ?? editing.el);
     },
     true,

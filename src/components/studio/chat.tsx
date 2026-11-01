@@ -1,6 +1,6 @@
 "use client";
 
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { type RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { type Clock, formatTime, useClock } from "./clock";
 import { MultipleCrossCancelIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
@@ -61,47 +61,69 @@ export function ChatPanel({
   const { messages, turn } = chat;
   const claudeTurns = messages.filter((m) => m.role === "claude").length;
 
-  // The chat sits at its newest message: when a film opens, when a prompt
-  // is sent, and as replies, pictures and the queue grow, unless you've
-  // scrolled up to read something (then it stays put until you come back
-  // down or send).
+  // The chat opens at your most recent prompt, and goes back to it when you
+  // send one: the prompt sits at the top with Claude's reply growing under
+  // it, or the chat's end shows if that's nearer. Scroll up to read, and it
+  // stays put until you come back down or send again.
   const stuck = useRef(true);
-  useEffect(() => {
+  const toLatest = useCallback(() => {
     const el = list.current;
-    if (!el) return;
-    const toEnd = () => {
-      if (stuck.current) el.scrollTop = el.scrollHeight;
-    };
-    const onScroll = () => {
-      stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-    };
-    const sizes = new ResizeObserver(toEnd);
-    const watch = () => {
-      sizes.disconnect();
-      sizes.observe(el);
-      for (const child of el.children) sizes.observe(child);
-    };
-    const changes = new MutationObserver(() => {
-      watch();
-      toEnd();
-    });
-    el.addEventListener("scroll", onScroll, { passive: true });
-    changes.observe(el, { childList: true, subtree: true, characterData: true });
-    watch();
-    toEnd();
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      sizes.disconnect();
-      changes.disconnect();
-    };
+    if (!el || !stuck.current) return;
+    const end = el.scrollHeight - el.clientHeight;
+    const prompts = el.querySelectorAll<HTMLElement>('[data-chat-role="you"]');
+    const last = prompts[prompts.length - 1];
+    const top = last ? last.getBoundingClientRect().top - el.getBoundingClientRect().top + el.scrollTop - 12 : end;
+    el.scrollTop = Math.max(0, Math.min(end, top));
   }, []);
+  const watching = useRef<(() => void) | null>(null);
+  const listRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      list.current = el;
+      watching.current?.();
+      watching.current = null;
+      if (!el) return;
+      // Only your own scrolling unsticks it; reaching the end sticks it again.
+      const onWheel = (e: WheelEvent) => {
+        if (e.deltaY < 0) stuck.current = false;
+      };
+      const onTouch = () => {
+        stuck.current = false;
+      };
+      const onScroll = () => {
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 24) stuck.current = true;
+      };
+      const sizes = new ResizeObserver(toLatest);
+      const watch = () => {
+        sizes.disconnect();
+        sizes.observe(el);
+        for (const child of el.children) sizes.observe(child);
+      };
+      const changes = new MutationObserver(() => {
+        watch();
+        toLatest();
+      });
+      el.addEventListener("wheel", onWheel, { passive: true });
+      el.addEventListener("touchmove", onTouch, { passive: true });
+      el.addEventListener("scroll", onScroll, { passive: true });
+      changes.observe(el, { childList: true, subtree: true, characterData: true });
+      watch();
+      toLatest();
+      watching.current = () => {
+        el.removeEventListener("wheel", onWheel);
+        el.removeEventListener("touchmove", onTouch);
+        el.removeEventListener("scroll", onScroll);
+        sizes.disconnect();
+        changes.disconnect();
+      };
+    },
+    [toLatest],
+  );
   const lastRole = messages.at(-1)?.role;
   useEffect(() => {
-    // A film just opened, or you just sent a prompt: back to the end.
+    // A film just opened, or you just sent a prompt: back to it.
     stuck.current = true;
-    const el = list.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [filmId, chat.loaded, messages.length, lastRole, chat.queue.length]);
+    toLatest();
+  }, [filmId, chat.loaded, messages.length, lastRole, chat.queue.length, toLatest]);
 
   const files = useAttachments(`/api/studio/films/${filmId}/attachments`);
 
@@ -163,7 +185,7 @@ export function ChatPanel({
         </>
       }
     >
-      <div ref={list} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3">
+      <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3">
         {!chat.loaded ? (
           // The chat so far is on its way: two messages' worth of shapes.
           <Skeleton loading label="Loading the chat">
@@ -249,7 +271,7 @@ export function ChatPanel({
 function Message({ message, filmId }: { message: ChatMessage; filmId: string }) {
   if (message.role === "you") {
     return (
-      <div className="flex flex-col items-end gap-1 ps-8">
+      <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">
         {message.context?.pick ? (
           <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
             {chipLabel(message.context.pick, message.context.t)}

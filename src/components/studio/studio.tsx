@@ -553,6 +553,19 @@ function FilmView({
     [clock],
   );
 
+  // Words retyped on the film that aren't a text param: swapped in the
+  // film's files when they appear there once (kept as a version, so it can
+  // be undone), otherwise handed to Claude as a prompt.
+  const changeWordsRef = useRef<(from: string, to: string) => Promise<void>>(async () => {});
+  useEffect(() => {
+    changeWordsRef.current = async (from, to) => {
+      const t = clock.get().t;
+      const res = await api.words(id, from, to, t).catch(() => ({ result: "ask" as const }));
+      if (res.result === "done") reloadStage();
+      else await chat.send(`Change the words “${from}” to “${to}”.`, { t, pick: null });
+    };
+  });
+  const changeWords = (from: string, to: string) => changeWordsRef.current(from, to);
   const onStage = useCallback(
     (m: StageOutbound) => {
       switch (m.type) {
@@ -587,6 +600,14 @@ function FilmView({
           // Handled below, where the saving and ⌘Z live.
           window.dispatchEvent(new CustomEvent(WORDS_EVENT, { detail: { key: m.key, value: m.value, editing: m.editing } }));
           break;
+        case "studio:text-editing":
+          // Typing into words that aren't a text param: keep the keys there.
+          freeWords.current = m.on;
+          if (m.on) clock.pause();
+          break;
+        case "studio:text-edit":
+          void changeWords(m.from, m.to);
+          break;
         case "studio:param-at":
           // Jump to where the words are on screen, then edit them there.
           clock.pause();
@@ -601,6 +622,7 @@ function FilmView({
   // Words typed on the film: shown there already, so only remembered and
   // saved here; the finished edit is one step for ⌘Z.
   const wordsBefore = useRef<{ key: string; value: Param["value"] } | null>(null);
+  const freeWords = useRef(false);
 
   // ─── Changes by hand, each one a step for ⌘Z ─────────────────────────────
 
@@ -692,7 +714,7 @@ function FilmView({
     const away = () => {
       window.clearTimeout(later);
       later = window.setTimeout(() => {
-        if (!wordsBefore.current && document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
+        if (!wordsBefore.current && !freeWords.current && document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur();
       }, 150);
     };
     window.addEventListener("blur", away);

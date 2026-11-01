@@ -71,6 +71,9 @@ export const api = {
   },
   stop: (id: string) => call<void>(`${film(id)}/chat`, { method: "DELETE" }),
   undo: (id: string) => call<Film>(`${film(id)}/undo`, send("POST")),
+  // Words retyped on the film that aren't a text param.
+  words: (id: string, from: string, to: string, t: number) =>
+    call<{ result: "done" | "ask" }>(`${film(id)}/words`, send("POST", { from, to, t })),
   // The film after each prompt, newest first, and going back to one.
   versions: async (id: string) => (await call<{ versions: Version[] }>(`${film(id)}/versions`)).versions,
   restore: (id: string, n: number, t: number) => call<Film>(`${film(id)}/versions/${n}/restore`, send("POST", { t })),
