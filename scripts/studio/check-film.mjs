@@ -41,6 +41,13 @@ const run = (cmd, args, opts = {}) =>
     });
   });
 
+// The sound design, if the film has one: the score loads, plays and sounds
+// the same each time it renders (sound.mjs --check renders it twice).
+if (existsSync(path.join(dir, "sound/score.js"))) {
+  const code = await run(process.execPath, [path.join(ROOT, "scripts/studio/sound.mjs"), film.id, "--check"]);
+  if (code !== 0) process.exit(code);
+}
+
 // Bundles the film exactly as the studio's stage does (its component, its
 // own graphics and the shared kit and library): catches typos, bad JSX and
 // missing imports.

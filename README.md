@@ -211,6 +211,39 @@ fframes needs Rust (rustup.rs) and `brew install pkgconf nasm ninja`; its
 first build takes about 2.5 minutes. Remotion and HyperFrames render with
 Google Chrome.
 
+### Sound design
+
+Every film can have a sound track, composed as code in
+`films/<id>/sound/score.js` (the contract is `src/lib/studio/sound.ts`):
+
+- **Music** in [Strudel](https://strudel.cc) (pattern-based live-coding
+  music; its synths only, nothing is downloaded) for beds, pulses and
+  rhythm.
+- **Effects** in [Tone.js](https://tonejs.github.io) at exact film times,
+  for hits on the film's moments: air arriving from the right with a
+  colour, a tick as a line lands, one bright note when orange lands.
+
+`node scripts/studio/sound.mjs <id>` plays the score in headless Chrome
+into offline audio contexts (never to speakers), so a 5 second film's sound
+renders in 1 to 3 seconds. It writes `sound/sound.wav` (48 kHz stereo,
+exactly the film's length, about -16 LUFS with peaks under -1.5 dBTP),
+`peaks.json` and `status.json`, then prints what it hears: loudness, and
+each onset with the film moment it lands on (Claude reads this to check its
+work). `--check` renders twice and fails if the score isn't repeatable.
+
+The studio renders a film's sound when it is made, after a Claude turn that
+changed it, and a moment after its length, values or (for a video film) its
+edit change; it waits its turn with video renders (one heavy job at a time,
+`src/lib/studio/heavy.ts`). Every render mixes the sound in at the film's
+`sound.volume`; in a video film it goes under the footage's own sound, and
+its music dips under speech by itself. Starters come with a score; the
+**aerchain-sound-design** skill teaches Claude the Aerchain sonic language.
+
+Set up once: `npm ci --prefix studio/sound`. Licences: Strudel is
+**AGPL-3.0**, fine for this in-house tool; offering the studio to people
+outside Aerchain as a hosted service would oblige publishing its source.
+Tone.js is MIT. The rendered audio is ours to use anywhere.
+
 The first experiments are still here: `studio/compositions.json` lists the
 same 4 second "Aerchain bands" film made in each engine, rendered with
 `node scripts/studio/render.mjs <id> [--draft]` into `studio/out/`.

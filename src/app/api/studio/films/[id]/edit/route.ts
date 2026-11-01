@@ -1,5 +1,6 @@
 import { checkEdit, readEdit, saveEdit } from "@/lib/studio/edit-store";
 import { allowed, readFilm, refused } from "@/lib/studio/films";
+import { soundLater } from "@/lib/studio/sound-render";
 
 // A video film's edit (edit.ts): its tracks, clips, graphics and captions.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/films/[id]/edit">) {
@@ -20,5 +21,7 @@ export async function PUT(request: Request, ctx: RouteContext<"/api/studio/films
   const edit = await checkEdit(id, await request.json().catch(() => null));
   if (typeof edit === "string") return Response.json({ error: edit }, { status: 400 });
   const saved = await saveEdit(id, edit);
+  // The sound follows the cut: its length, the graphics, who speaks when.
+  if (saved) soundLater(id);
   return saved ? Response.json(saved) : Response.json({ error: "That film no longer exists." }, { status: 404 });
 }

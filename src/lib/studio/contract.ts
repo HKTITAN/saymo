@@ -149,7 +149,7 @@ export type StageOutbound =
 // Headers every studio request from the page sends.
 export const STUDIO_HEADERS = { "x-studio": "1" } as const;
 
-export type FilmEdit = Partial<Pick<Film, "title" | "width" | "height" | "fps" | "duration">> & {
+export type FilmEdit = Partial<Pick<Film, "title" | "width" | "height" | "fps" | "duration" | "sound">> & {
   params?: Record<string, Param["value"]>; // new values by key
 };
 

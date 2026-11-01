@@ -4,6 +4,7 @@ import { readFile, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { RenderStatus } from "./contract";
 import { outDir, ROOT } from "./films";
+import { claim, release } from "./heavy";
 import { draftIsCurrent, newestChange } from "./stage";
 
 // Renders films with `scripts/studio/render.mjs --film <id> [--draft]`, one
@@ -38,6 +39,8 @@ export function startRender(id: string, quality: Quality) {
 
 function next() {
   if (jobs.running || !jobs.queue.length) return;
+  // A sound render may be using Chrome; this waits its turn.
+  if (!claim("render", next)) return;
   const job = jobs.queue.shift()!;
   jobs.running = { ...job, progress: 0 };
   const dir = outDir(job.id);
@@ -78,6 +81,7 @@ function next() {
       await record(job.id, { state: "failed", message: plain(said), at }).catch(() => {});
     }
     jobs.running = null;
+    release("render");
     next();
   };
   child.on("exit", (code) => done(code === 0));

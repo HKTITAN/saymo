@@ -5,6 +5,7 @@
   "height": 1080,
   "fps": 60,
   "duration": 5,
+  "sound": { "on": true, "volume": 1 },
   "params": [
     { "key": "headline", "label": "Headline", "type": "text", "value": "Drawn line by line." },
     { "key": "accent", "label": "Accent colour", "type": "color", "value": "#F55A00" },

@@ -106,6 +106,8 @@ If there's no transcript, say so. The person can press Transcribe in the studio.
 
 ## Music and sound
 
+Two kinds: a music FILE the person brought in (an `audio` track, below), or sound design you compose (`sound/score.js`: a bed that dips under speech on its own, and hits on the graphics). For the second, load the **aerchain-sound-design** skill; after re-cutting, render the sound again and check the hits still land on the graphics and miss the words.
+
 - Music goes on its own `audio` track.
 - Under speech, music sits low: `volume` 0.08 to 0.15. Without speech it can rise to 0.5 to 0.8.
 - Fade music in and out (`fadeIn` 0.5 s, `fadeOut` 1 to 2 s), and end it with the video.

@@ -326,7 +326,7 @@ async function lock(file) {
 
 const ENGINE_OF = { html: "hyperframes", react: "remotion", rust: "fframes" };
 // What a render copies: the film's own files, not its renders or history.
-const SKIP = new Set(["out", ".history", "node_modules", "target", ".hyperframes", "renders", "media"]);
+const SKIP = new Set(["out", ".history", "node_modules", "target", ".hyperframes", "renders", "media", "sound"]);
 
 async function renderFilm(id) {
   if (!/^[a-z0-9]{8}$/.test(id)) throw new Error(`No film called ${id}`);
@@ -408,6 +408,7 @@ async function renderFilm(id) {
   if (!draft && job.scale === 1) await rm(path.join(out, "4k.mp4"), { force: true });
   if (source.encoded) await finishEncoded(source.encoded, job, files);
   else await encode(source, job, files);
+  await addSound(id, film, job, files);
 
   // The poster: the film at its "Cover" mark (or halfway; a third in for a
   // video film, past any title card), at its own size.
@@ -425,6 +426,63 @@ async function renderFilm(id) {
     console.log(`wrote ${path.relative(ROOT, f)}`);
   }
 }
+
+// ─── Sound design ───────────────────────────────────────────────────────────
+
+// Mixes the film's sound design (sound/sound.wav, see sound.ts) into each
+// file, at film.sound.volume, ending with the film. A motion film is silent
+// until then; a video film's own sound (its footage) stays on top, the
+// design under it (its music already dips under speech). A sound older
+// than its score (or a video film's edit), or of another length, is
+// rendered again first.
+async function addSound(id, film, job, files) {
+  if (!film.sound?.on) return;
+  const dir = path.join(ROOT, "films", id, "sound");
+  if (!existsSync(path.join(dir, "score.js"))) return;
+  const wav = path.join(dir, "sound.wav");
+  if (!(await soundIsCurrent(id, film, job.duration))) {
+    await run(process.execPath, [path.join(ROOT, "scripts/studio/sound.mjs"), id, "--quiet"]);
+  }
+  if (!existsSync(wav)) return;
+  const volume = Math.max(0, Math.min(1.5, film.sound.volume ?? 1));
+  const length = job.duration.toFixed(4);
+  for (const f of files) {
+    const own = await hasAudio(f.path);
+    const graph = own
+      ? `[1:a]volume=${volume},apad,atrim=end=${length}[s];[0:a][s]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95:level=false[a]`
+      : `[1:a]volume=${volume},apad,atrim=end=${length},alimiter=limit=0.95:level=false[a]`;
+    await run("ffmpeg", [
+      "-y", "-loglevel", "error", "-i", f.path, "-i", wav,
+      "-filter_complex", graph, "-map", "0:v", "-map", "[a]",
+      "-c:v", "copy", "-c:a", "aac", "-b:a", "256k", "-ar", "48000", "-t", length,
+      "-movflags", "+faststart", "-f", "mp4", `${f.path}.part`,
+    ]);
+    await rename(`${f.path}.part`, f.path);
+  }
+}
+
+async function soundIsCurrent(id, film, duration) {
+  const dir = path.join(ROOT, "films", id);
+  const time = async (p) => (await stat(p).catch(() => null))?.mtimeMs ?? null;
+  const wav = await time(path.join(dir, "sound/sound.wav"));
+  const score = await time(path.join(dir, "sound/score.js"));
+  if (wav === null || score === null || wav < score) return false;
+  if (film.kind === "video") {
+    const edit = await time(path.join(dir, "edit.json"));
+    if (edit !== null && wav < edit) return false;
+  }
+  const status = JSON.parse(await readFile(path.join(dir, "sound/status.json"), "utf8").catch(() => "{}"));
+  return status.state === "ready" && Math.abs((status.duration ?? 0) - duration) < 0.01;
+}
+
+const hasAudio = (file) =>
+  new Promise((resolve) => {
+    const p = spawn("ffprobe", ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", file]);
+    let out = "";
+    p.stdout.on("data", (c) => (out += c));
+    p.on("close", () => resolve(out.trim().length > 0));
+    p.on("error", () => resolve(false));
+  });
 
 // ─── Video films ────────────────────────────────────────────────────────────
 
