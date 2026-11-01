@@ -224,6 +224,19 @@ export function Studio() {
             busy={starting}
             error={startError}
             onOpenFilm={(next) => openFilm(next)}
+            onRenameFilm={async (fid, title) => {
+              setFilms((list) => list?.map((x) => (x.id === fid ? { ...x, title } : x)) ?? null);
+              await api.edit(fid, { title }).catch(() => undefined);
+              await refresh();
+            }}
+            onDuplicateFilm={async (fid) => {
+              await api.duplicate(fid).catch(() => undefined);
+              await refresh();
+            }}
+            onDeleteFilm={async (fid) => {
+              await api.remove(fid).catch(() => undefined);
+              await refresh();
+            }}
             onStartFilm={(prompt, w, h) => start(() => create(w, h, { prompt }))}
             onStartVideo={(files, w, h) => start(() => create(w, h, { kind: "video", files }))}
             onOpenKit={(next) => openKit(next)}
