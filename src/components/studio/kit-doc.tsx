@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { MultipleCrossCancelIcon, PencilEditIcon, PlusIcon } from "@/components/icons";
+import { CopyIcon, MultipleCrossCancelIcon, PencilEditIcon, PlusIcon } from "@/components/icons";
 import type { BrandFont, BrandKit, ColorRoles } from "@/lib/studio/brand";
 import { cn } from "@/lib/utils";
 import { brandFile } from "./brand-api";
@@ -145,15 +145,21 @@ export function KitDoc({
                   key={role.key}
                   type="button"
                   onClick={() => onCopy(r[role.key])}
-                  className="group flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
                   aria-label={`${role.label} ${r[role.key]}, copy`}
                 >
                   <span className="h-20 shadow-[inset_0_-1px_0_rgba(255,255,255,0.05)]" style={{ background: r[role.key] }} />
+                  {/* Copy, in the swatch's top right corner, shown on hover. */}
+                  <span
+                    className="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-[8px] bg-black/45 text-white/90 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 [&_svg]:size-3.5"
+                    aria-hidden="true"
+                  >
+                    <CopyIcon />
+                  </span>
                   <span className="flex flex-col gap-0.5 p-3">
                     <span className="font-medium text-[13px]">{role.label}</span>
                     <span className="font-mono text-[11.5px] text-[#706b62] tabular-nums">
                       {r[role.key]}
-                      <span className="ms-2 opacity-0 transition-opacity group-hover:opacity-100">Copy</span>
                     </span>
                     <span className="text-[11.5px] text-white/45 leading-snug">{role.note}</span>
                   </span>
