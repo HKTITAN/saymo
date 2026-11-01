@@ -1,5 +1,6 @@
 "use client";
 
+import { Kbd } from "@/components/ui/kbd";
 import { useId, useRef, useState } from "react";
 import { ExternalLinkSquareIcon } from "@/components/icons";
 import { PALETTE } from "@/components/post/palette";
@@ -121,7 +122,9 @@ export function ImageField({
             onChange={(v) => onPlace({ ...image.place, y: Math.round(v) })}
           />
           <DialButton onClick={() => onPlace({ x: 0, y: 0, scale: 1 })}>Reset position</DialButton>
-          <DialNote>You can also drag it on the post. To resize it there, pinch, or hold ⌘ and scroll.</DialNote>
+          <DialNote>
+            You can also drag it on the post. To resize it there, pinch, or hold <Kbd>⌘</Kbd> and scroll.
+          </DialNote>
         </>
       )}
     </div>

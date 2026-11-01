@@ -1,5 +1,6 @@
 "use client";
 
+import { Kbd } from "@/components/ui/kbd";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangleIcon, ArrowLeftIcon, EyeOffIcon, EyeOnIcon } from "@/components/icons";
 import { MOTIONS } from "@/components/post/lines";
@@ -418,7 +419,9 @@ function Workspace({ initial }: { initial: PostDoc }) {
               <DialGroup title="Words">
                 <ul className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.03] px-3 py-2.5 text-[11.5px] text-white/55 leading-relaxed">
                   <li>Click any words on the post to change them.</li>
-                  <li>In the headline, Enter starts a new line.</li>
+                  <li>
+                    In the headline, <Kbd>Enter</Kbd> starts a new line.
+                  </li>
                   <li>To set words in orange, select them in the location.</li>
                 </ul>
                 {doc.titleSize < HEADLINE.size && (

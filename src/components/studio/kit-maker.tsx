@@ -1,5 +1,6 @@
 "use client";
 
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpIcon, CheckTickCircleIcon, MultipleCrossCancelIcon, PaperclipVerticalIcon } from "@/components/icons";
 import type { BrandKit } from "@/lib/studio/brand";
@@ -243,7 +244,13 @@ export function KitMaker({
                   maxLength={80}
                   className="h-7 w-44 min-w-0 rounded-[8px] bg-transparent px-2 text-[12px] text-white/80 outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
                 />
-                <span className="ms-auto hidden text-[11px] text-white/30 sm:inline">⌘↵ to send</span>
+                <span className="ms-auto hidden items-center gap-1.5 text-[11px] text-white/35 sm:inline-flex">
+                  <KbdGroup>
+                    <Kbd>⌘</Kbd>
+                    <Kbd>↵</Kbd>
+                  </KbdGroup>
+                  to send
+                </span>
                 <Hint label="Make the kit" keys={["⌘", "↵"]}>
                   <button
                     type="button"
