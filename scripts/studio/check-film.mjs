@@ -41,22 +41,15 @@ const run = (cmd, args, opts = {}) =>
     });
   });
 
-// Bundles one React file with esbuild, against the studio's Remotion
-// install: catches typos, bad JSX and missing imports.
-const bundle = (entry) =>
-  run(
-    path.join(ROOT, "studio/hyperframes/node_modules/.bin/esbuild"),
-    [
-      entry,
-      "--bundle",
-      "--format=esm",
-      "--jsx=automatic",
-      "--loader:.js=jsx",
-      "--log-level=warning",
-      `--outfile=${path.join(tmpdir(), `studio-check-${film.id}-${path.basename(entry)}.js`)}`,
-    ],
-    { env: { ...process.env, NODE_PATH: path.join(ROOT, "studio/remotion/node_modules") } },
-  );
+// Bundles the film exactly as the studio's stage does (its component, its
+// own graphics and the shared kit and library): catches typos, bad JSX and
+// missing imports.
+const bundleStage = () =>
+  run(process.execPath, [
+    path.join(ROOT, "scripts/studio/stage-bundle.mjs"),
+    dir,
+    path.join(tmpdir(), `studio-check-${film.id}.js`),
+  ]);
 
 if (film.kind === "video") {
   const problems = checkEdit();
@@ -69,15 +62,10 @@ if (film.kind === "video") {
   console.log("The edit is sound: every clip fits its footage, nothing overlaps, graphics and captions check out.");
   // The film's own graphics must bundle, as must its component if it has one.
   const graphicsDir = path.join(dir, "graphics");
-  const own = existsSync(graphicsDir)
-    ? readdirSync(graphicsDir).filter((f) => /\.jsx?$/.test(f)).map((f) => path.join(graphicsDir, f))
-    : [];
-  const component = path.join(dir, "src/Film.jsx");
-  for (const file of [...own, ...(existsSync(component) ? [component] : [])]) {
-    const code = await bundle(file);
-    if (code !== 0) process.exit(code);
-  }
-  if (own.length) console.log(`The film's own graphics bundle cleanly (${own.length}).`);
+  const own = existsSync(graphicsDir) ? readdirSync(graphicsDir).filter((f) => /\.jsx?$/.test(f)) : [];
+  const code = await bundleStage();
+  if (code !== 0) process.exit(code);
+  console.log(`The film bundles cleanly${own.length ? `, with its own graphics (${own.length})` : ""}.`);
   process.exit(0);
 }
 
@@ -95,7 +83,7 @@ if (film.engine === "html") {
 if (film.engine === "react") {
   const entry = path.join(dir, "src/Film.jsx");
   if (!existsSync(entry)) fail("src/Film.jsx is missing: a react film's component lives there.");
-  const code = await bundle(entry);
+  const code = await bundleStage();
   if (code === 0) console.log("The component bundles cleanly.");
   process.exit(code);
 }
@@ -105,20 +93,33 @@ if (film.engine === "rust") {
   // proc-macro crates of the film's own, no network (only crates already
   // downloaded), and writes only to the film, cargo's cache and temp.
   const manifest = readFileSync(path.join(dir, "Cargo.toml"), "utf8");
-  if (existsSync(path.join(dir, "build.rs")) || /^\s*build\s*=/m.test(manifest) || /proc-macro\s*=\s*true/.test(manifest)) {
-    fail("Studio films can't have build scripts or proc-macros. Remove build.rs / `build =` / `proc-macro`.");
+  // The one build script allowed is the studio's own, unchanged (it turns
+  // film.json and params.json into constants).
+  const ownBuild = path.join(dir, "build.rs");
+  const studioBuild = readFileSync(path.join(ROOT, "studio/starters/rust/build.rs"), "utf8");
+  const buildOk = !existsSync(ownBuild) || readFileSync(ownBuild, "utf8") === studioBuild;
+  const buildLine = manifest.match(/^\s*build\s*=\s*"([^"]*)"/m);
+  if (!buildOk || (buildLine && buildLine[1] !== "build.rs") || /proc-macro\s*=\s*true/.test(manifest)) {
+    fail("Studio films can only use the studio's own build.rs, unchanged, and no proc-macros.");
   }
   const cargoHome = process.env.CARGO_HOME ?? path.join(homedir(), ".cargo");
+  // The same build folder the stage and renders use, so the engine's large
+  // dependencies (Skia) are already built and nothing needs downloading.
+  const target = path.join(ROOT, "node_modules/.cache/studio-cargo");
   const profile = [
     "(version 1)",
     "(allow default)",
     "(deny network*)",
     "(deny file-write*)",
-    `(allow file-write* (subpath ${JSON.stringify(dir)}) (subpath ${JSON.stringify(cargoHome)})`,
+    `(allow file-write* (subpath ${JSON.stringify(dir)}) (subpath ${JSON.stringify(cargoHome)}) (subpath ${JSON.stringify(target)})`,
     '  (subpath "/private/tmp") (subpath "/private/var/folders") (literal "/dev/null"))',
   ].join("\n");
   const cargo = existsSync(path.join(cargoHome, "bin/cargo")) ? path.join(cargoHome, "bin/cargo") : "cargo";
-  process.exit(await run("sandbox-exec", ["-p", profile, cargo, "build", "--release", "--offline", "--quiet"]));
+  process.exit(
+    await run("sandbox-exec", ["-p", profile, cargo, "build", "--release", "--offline", "--quiet"], {
+      env: { ...process.env, CARGO_TARGET_DIR: target },
+    }),
+  );
 }
 
 fail(`Unknown engine "${film.engine}" in film.json.`);

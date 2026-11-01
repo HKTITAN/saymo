@@ -261,6 +261,9 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"])
     // Footage is never changed, and the big files are never read (the
     // media tool reports on them); stills, thumbnails and JSON stay readable.
     `Edit(/${dir}/media/**)`,
+    // A rust film's build script is the studio's own (it runs code when the
+    // film is built); Claude may not change it.
+    `Edit(/${dir}/build.rs)`,
     ...FOOTAGE_FILES.map((f) => `Read(/${dir}/media/**/${f})`),
   ];
   const args = [
