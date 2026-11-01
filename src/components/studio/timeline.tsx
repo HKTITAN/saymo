@@ -109,15 +109,24 @@ export function Timeline({
         className="relative h-10 min-w-0 flex-1 cursor-ew-resize touch-none select-none overflow-hidden rounded-[10px] bg-white/[0.05] outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <div className="absolute inset-y-0 left-0 bg-white/[0.07]" style={{ width: `${share * 100}%` }} />
-        {marks.map((m) => {
-          const x = duration > 0 ? (m.t / duration) * 100 : 0;
-          return (
-            <div key={`${m.t}-${m.label}`} className="pointer-events-none absolute inset-y-0" style={{ left: `${x}%` }}>
-              <div className="absolute inset-y-0 w-px bg-white/15" />
-              <span className="absolute bottom-1.5 left-1.5 whitespace-nowrap text-[10.5px] text-white/40">{m.label}</span>
-            </div>
-          );
-        })}
+        {[...marks]
+          .sort((a, b) => a.t - b.t)
+          .map((m, i, sorted) => {
+            const at = (t: number) => (duration > 0 ? (Math.min(t, duration) / duration) * 100 : 0);
+            // Each name gets the room up to the next mark, so close moments
+            // shorten their names instead of running into each other.
+            const room = at(sorted[i + 1]?.t ?? duration) - at(m.t);
+            return (
+              <div
+                key={`${m.t}-${m.label}`}
+                className="pointer-events-none absolute inset-y-0"
+                style={{ left: `${at(m.t)}%`, width: `${room}%` }}
+              >
+                <div className="absolute inset-y-0 w-px bg-white/15" />
+                <span className="absolute right-1 bottom-1.5 left-1.5 truncate text-[10.5px] text-white/40">{m.label}</span>
+              </div>
+            );
+          })}
         <div
           className="pointer-events-none absolute inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_3px_rgba(0,0,0,0.25)]"
           style={{ left: `${share * 100}%` }}

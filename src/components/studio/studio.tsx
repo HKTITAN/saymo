@@ -209,12 +209,18 @@ function FilmView({
     let live = true;
     api
       .get(id)
-      .then((f) => live && adopt(f))
+      .then((f) => {
+        if (!live) return;
+        adopt(f);
+        // Open on the cover frame, where the film is fully in view, rather
+        // than on its first frame, which is often empty.
+        clock.seek(f.marks.find((m) => m.label === "Cover")?.t ?? 0);
+      })
       .catch((e) => live && setLoadError(e instanceof StudioError ? e.message : "Unable to open this film."));
     return () => {
       live = false;
     };
-  }, [id, adopt]);
+  }, [id, adopt, clock]);
 
   const reloadStage = useCallback(() => {
     setStatus({ state: "loading" });
