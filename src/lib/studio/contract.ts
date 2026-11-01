@@ -55,6 +55,7 @@ export type Film = {
   updatedAt: string; // ISO
   session?: string; // Claude session id, so the chat continues
   kind?: "motion" | "video"; // video = an edit of footage (edit.ts); missing = motion
+  sound?: { on: boolean; volume: number }; // sound design (sound.ts); missing = none yet
 };
 
 // A film in the list.
