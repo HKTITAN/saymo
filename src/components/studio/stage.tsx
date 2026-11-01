@@ -126,7 +126,7 @@ export function Stage({
   // stretching on the way.
   return (
     <div
-      className="absolute top-0 left-0 overflow-hidden rounded-[3px] bg-[#141414] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8),0_0_0_1px_rgba(255,255,255,0.06)] transition-[transform,width,height] duration-[450ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+      className="absolute top-0 left-0 overflow-hidden rounded-[3px] bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] transition-[transform,width,height] duration-[450ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       style={{ width: fit.width, height: fit.height, transform: `translate(${fit.x}px, ${fit.y}px)` }}
     >
       <div
@@ -135,7 +135,10 @@ export function Stage({
         style={{
           width,
           height,
-          transform: `scale(${fit.scale})`,
+          // A hair larger than the frame, from just outside its corner, so
+          // rounding never leaves a sub-pixel seam of the frame showing at
+          // an edge (it read as a thin light line).
+          transform: `translate(-0.5px, -0.5px) scale(${Math.max((fit.width + 1) / width, (fit.height + 1) / height)})`,
           animation: "studio-frame-in 260ms ease-out 300ms both",
         }}
       >
