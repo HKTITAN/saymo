@@ -5,7 +5,8 @@ import path from "node:path";
 import { bridgeScript, STAGE_STYLE } from "./bridge";
 import type { Film } from "./contract";
 import { FILMS_DIR, filmDir, outDir, ROOT } from "./films";
-import { globalsScript, paramValues, prepareHtml } from "./inject";
+import { globalsScript, paramValues, prepareHtml, scriptJson } from "./inject";
+import { listMedia } from "./media";
 
 // The stage: one page per film that plays it at its own pixel size, for the
 // studio to scale, seek and point at. Every engine gets the same bridge
@@ -30,10 +31,31 @@ export async function stagePage(film: Film): Promise<string> {
   if (film.engine === "react") {
     const key = await sourceKey(film.id);
     // Files under public/ are the film's staticFile()s.
-    const statics = `<script>window.remotion_staticBase=${JSON.stringify(`${stageBase(film.id)}public`.replace(/\/$/, ""))};</script>`;
+    const statics =
+      `<script>window.remotion_staticBase=${JSON.stringify(`${stageBase(film.id)}public`.replace(/\/$/, ""))};</script>` +
+      (film.kind === "video" ? await videoGlobals(film) : "");
     return `<!doctype html><html><head>${head(film, statics)}</head><body><div id="root"></div><script src="${stageBase(film.id)}__stage.js?v=${key}"></script></body></html>`;
   }
   return rustPage(film);
+}
+
+// A video film's stage starts with its edit (edit.json) and the preview
+// copies of its files; the studio then sends the edit live as it changes.
+async function videoGlobals(film: Film) {
+  const edit = await readFile(path.join(filmDir(film.id), "edit.json"), "utf8")
+    .then((t) => JSON.parse(t))
+    .catch(() => null);
+  return `<script>window.__filmId=${scriptJson(film.id)};window.__edit=${scriptJson(edit)};window.__media=${scriptJson(await previewMedia(film.id))};</script>`;
+}
+
+// Where the stage finds each ready file: its preview copy.
+export async function previewMedia(id: string) {
+  const out: Record<string, { src: string; kind: string; width: number | null; height: number | null; name: string }> = {};
+  for (const m of await listMedia(id)) {
+    if (m.status !== "ready" || !m.proxy) continue;
+    out[m.id] = { src: `/api/studio/films/${id}/media/${m.id}/${m.proxy}`, kind: m.kind, width: m.width, height: m.height, name: m.name };
+  }
+  return out;
 }
 
 function errorPage(film: Film, message: string) {
@@ -43,22 +65,26 @@ function errorPage(film: Film, message: string) {
 // ─── React: the stage bundle ──────────────────────────────────────────────────
 
 // Changes whenever any file the bundle reads changes: everything but the
-// film's statics, renders and history.
-const SKIP = new Set(["out", ".history", "public", "node_modules", "target"]);
+// film's statics, renders, history and footage, plus the studio's graphics
+// and kit. A video film's edit.json reaches the stage on its own, so it
+// isn't part of the bundle.
+const SKIP = new Set(["out", ".history", "public", "node_modules", "target", "media"]);
+const SHARED = [path.join(ROOT, "studio/graphics"), path.join(ROOT, "studio/kit")];
 async function sourceKey(id: string) {
   const hash = createHash("sha1");
-  const walk = async (dir: string) => {
-    for (const entry of (await readdir(dir, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
-      if (SKIP.has(entry.name) || entry.name.startsWith(".")) continue;
+  const walk = async (dir: string, base: string) => {
+    for (const entry of (await readdir(dir, { withFileTypes: true }).catch(() => [])).sort((a, b) => a.name.localeCompare(b.name))) {
+      if (SKIP.has(entry.name) || entry.name.startsWith(".") || entry.name === "edit.json") continue;
       const p = path.join(dir, entry.name);
-      if (entry.isDirectory()) await walk(p);
+      if (entry.isDirectory()) await walk(p, base);
       else {
         const s = await stat(p);
-        hash.update(`${path.relative(filmDir(id), p)}:${s.size}:${s.mtimeMs}\n`);
+        hash.update(`${path.relative(base, p)}:${s.size}:${s.mtimeMs}\n`);
       }
     }
   };
-  await walk(filmDir(id));
+  await walk(filmDir(id), filmDir(id));
+  for (const dir of SHARED) await walk(dir, ROOT);
   return hash.digest("hex").slice(0, 12);
 }
 

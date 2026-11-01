@@ -7,7 +7,7 @@ const ENGINES: Engine[] = ["html", "react", "rust"];
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const size = (v: unknown) => (Number.isInteger(v) && (v as number) >= 16 && (v as number) <= 4096 && (v as number) % 2 === 0 ? (v as number) : null);
 
-export type NewFilm = { title?: string; engine?: Engine; width?: number; height?: number };
+export type NewFilm = { title?: string; engine?: Engine; kind?: "motion" | "video"; width?: number; height?: number };
 
 export function newFilm(body: unknown): NewFilm | string {
   if (body === null || body === undefined) return {};
@@ -20,6 +20,10 @@ export function newFilm(body: unknown): NewFilm | string {
   if (body.engine !== undefined) {
     if (!ENGINES.includes(body.engine as Engine)) return "That isn't a kind of film the studio makes.";
     out.engine = body.engine as Engine;
+  }
+  if (body.kind !== undefined) {
+    if (body.kind !== "motion" && body.kind !== "video") return "A film is either motion or a video edit.";
+    out.kind = body.kind;
   }
   for (const k of ["width", "height"] as const) {
     if (body[k] === undefined) continue;

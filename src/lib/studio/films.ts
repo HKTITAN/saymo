@@ -1,7 +1,12 @@
 import { randomBytes } from "node:crypto";
+import { constants } from "node:fs";
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Engine, Film, FilmEdit, FilmSummary } from "./contract";
+
+// Copies are APFS clones where the disk allows: instant, and no extra space
+// until one side changes. Matters once a film holds gigabytes of footage.
+const CLONE = { mode: constants.COPYFILE_FICLONE };
 
 // The studio's films live in films/<id>/: film.json plus whatever the
 // film's engine needs (see contract.ts). Nothing else stores them, so the
@@ -75,17 +80,23 @@ export const newId = () =>
 // build output and installs.
 const SKIP = new Set(["node_modules", "target", "out", ".history", ".hyperframes"]);
 const keep = (src: string) => !SKIP.has(path.basename(src));
+// What undo leaves alone: imported footage (media/) never changes once it's
+// in, so snapshots skip it and restoring keeps it.
+const keepInHistory = (name: string) => keep(name) && name !== "media";
 
 export async function createFilm({
   title = "Untitled film",
-  engine = "html",
+  engine: asked = "html",
+  kind = "motion",
   width = 1920,
   height = 1080,
-}: { title?: string; engine?: Engine; width?: number; height?: number } = {}): Promise<Film> {
+}: { title?: string; engine?: Engine; kind?: "motion" | "video"; width?: number; height?: number } = {}): Promise<Film> {
   const id = newId();
   const dir = filmDir(id);
+  // A video film is an edit of footage, played by a React film (edit.ts).
+  const engine: Engine = kind === "video" ? "react" : asked;
   await mkdir(FILMS_DIR, { recursive: true });
-  await cp(path.join(STARTERS_DIR, engine), dir, { recursive: true, filter: keep });
+  await cp(path.join(STARTERS_DIR, kind === "video" ? "video" : engine), dir, { recursive: true, filter: keep });
   // The starter's film.json supplies params, marks, fps and duration.
   const starter = (await readFilm(id)) ?? ({} as Partial<Film>);
   const now = new Date().toISOString();
@@ -98,6 +109,7 @@ export async function createFilm({
     id,
     title,
     engine,
+    ...(kind === "video" ? { kind } : {}),
     width,
     height,
     createdAt: now,
@@ -133,6 +145,7 @@ export async function duplicateFilm(id: string): Promise<Film | null> {
   const copy = newId();
   const skip = new Set(["out", ".history"]);
   await cp(filmDir(id), filmDir(copy), {
+    ...CLONE,
     recursive: true,
     filter: (src) => !skip.has(path.basename(src)) || path.dirname(src) !== filmDir(id),
   });
@@ -155,8 +168,8 @@ export async function snapshotFilm(id: string): Promise<number> {
   // Entry by entry: copying the folder whole into its own .history/ is
   // copying a folder into itself, which cp refuses.
   for (const name of await readdir(dir)) {
-    if (!keep(name)) continue;
-    await cp(path.join(dir, name), path.join(snap, name), { recursive: true });
+    if (!keepInHistory(name)) continue;
+    await cp(path.join(dir, name), path.join(snap, name), { ...CLONE, recursive: true });
   }
   for (const old of turns.slice(0, Math.max(0, turns.length + 1 - 30))) {
     await rm(path.join(historyDir(id), String(old)), { recursive: true, force: true });
@@ -182,7 +195,7 @@ export async function restoreLast(id: string): Promise<Film | null> {
   const snap = path.join(historyDir(id), String(n));
   const session = (await readFilm(id))?.session;
   for (const name of await readdir(dir)) {
-    if (name === "out" || name === ".history" || !keep(name)) continue;
+    if (name === "out" || name === ".history" || !keepInHistory(name)) continue;
     await rm(path.join(dir, name), { recursive: true, force: true });
   }
   await cp(snap, dir, { recursive: true });
