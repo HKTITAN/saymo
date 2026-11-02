@@ -1084,9 +1084,10 @@ function FilmView({
     : {
         // Folded panels leave a pill under the top bar; keep the film below it.
         top: folded.chat || folded.inspector ? 116 : 72,
-        right: inspectorOpen ? 320 : 24,
+        // Both side panels are 320 wide, 16 from the edge, with 16 of air.
+        right: inspectorOpen ? 352 : 24,
         bottom,
-        left: chatOpen || mediaOpen ? 372 : 24,
+        left: chatOpen || mediaOpen ? 352 : 24,
       };
   const fit = useFit(film?.width ?? 1920, film?.height ?? 1080, insets);
 
@@ -1254,7 +1255,7 @@ function FilmView({
             folded={folded.media}
             onFold={(f) => setFolded((s) => ({ ...s, media: f }))}
             hidden={hidden}
-            className="bottom-[var(--above-timeline)] left-4 w-[340px]"
+            className="bottom-[var(--above-timeline)] left-4 w-[320px]"
             pillClassName="bottom-[var(--above-timeline)] left-4"
             style={{ height: binH }}
           />
@@ -1324,7 +1325,7 @@ function FilmView({
             sound={soundLane}
             onMute={sound.setMuted}
             className="right-4 bottom-4 transition-[left,opacity,translate,scale,filter]"
-            style={{ left: chatOpen ? 372 : 16 }}
+            style={{ left: chatOpen ? 352 : 16 }}
           />
         )}
 

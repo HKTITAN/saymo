@@ -154,7 +154,7 @@ export function ChatPanel({
       onFold={onFold}
       hidden={hidden}
       className={cn(
-        "top-[68px] left-4 w-[340px] transition-[height,opacity,translate,scale,filter] [interpolate-size:allow-keywords]",
+        "top-[68px] left-4 w-[320px] transition-[height,opacity,translate,scale,filter] [interpolate-size:allow-keywords]",
         turn.running ? "h-[calc(100dvh-84px)]" : "h-auto max-h-[calc(100dvh-84px)]",
       )}
       pillClassName="top-[68px] left-4"

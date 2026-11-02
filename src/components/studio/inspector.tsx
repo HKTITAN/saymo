@@ -64,7 +64,7 @@ export function Inspector({
       folded={folded}
       onFold={onFold}
       hidden={hidden}
-      className="top-[68px] right-4 max-h-[calc(100dvh-160px)] w-[288px]"
+      className="top-[68px] right-4 max-h-[calc(100dvh-160px)] w-[320px]"
       pillClassName="top-[68px] right-4"
       style={style}
       bodyClassName="flex flex-col gap-4 overflow-y-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

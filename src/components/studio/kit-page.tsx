@@ -1053,7 +1053,7 @@ function KitChat({
       folded={folded}
       onFold={onFold}
       hidden={hidden}
-      className="top-[68px] bottom-4 left-4 w-[340px]"
+      className="top-[68px] bottom-4 left-4 w-[320px]"
       pillClassName="top-[68px] left-4"
       bodyClassName="flex flex-col"
       actions={

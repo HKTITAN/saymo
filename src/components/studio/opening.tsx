@@ -21,7 +21,7 @@ export function Opening({ what }: { what: "film" | "kit" }) {
       </div>
 
       {/* Claude, on the left. */}
-      <div className={cn(CARD, "absolute top-[68px] left-4 flex w-[340px] flex-col gap-3 p-4")}>
+      <div className={cn(CARD, "absolute top-[68px] left-4 flex w-[320px] flex-col gap-3 p-4")}>
         <Skeleton loading>
           <div className="flex flex-col gap-3">
             <p className="text-[12.5px]">Claude</p>
@@ -36,7 +36,7 @@ export function Opening({ what }: { what: "film" | "kit" }) {
       </div>
 
       {/* The settings, on the right. */}
-      <div className={cn(CARD, "absolute top-[68px] right-4 flex flex-col gap-2 p-3", what === "film" ? "w-[288px]" : "w-[320px]")}>
+      <div className={cn(CARD, "absolute top-[68px] right-4 flex flex-col gap-2 p-3", "w-[320px]")}>
         <Skeleton loading>
           <div className="flex flex-col gap-2">
             <p className="px-1 py-1 text-[12px]">{what === "film" ? "Film" : "Kit"}</p>
