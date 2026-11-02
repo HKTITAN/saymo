@@ -14,11 +14,11 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
 - **The preview draws text exactly like the render**: the stage now adds the text style HyperFrames uses (2026-11-03).
 - **Every size**: one render makes 16:9, 1:1, 4:5 and 9:16, each laid out for its frame (2026-11-03).
 - **Try 3**: three versions of one prompt at once, only when asked, then pick one (2026-11-03).
+- **References library**: saved pictures, clips, sounds, notes and links, with folders and tags, ready to attach to any prompt (2026-11-03).
 
 ## In progress
 
 - **Motion Studio as a Mac app** (from Pond). Built in Swift in `desktop/`, kept local and off GitHub until the owner says to push it. Left: signing, updates, Homebrew, a real icon (see `desktop/README.md`).
-- **The references library** (being built, 2026-11-03).
 
 ## Bigger features
 
