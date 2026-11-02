@@ -337,6 +337,15 @@
     translate: 0 0;
   }
 }
+/* Write a script: each line is written in from the left. */
+@keyframes studio-write {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}
 @keyframes studio-fade-in {
   from {
     opacity: 0;

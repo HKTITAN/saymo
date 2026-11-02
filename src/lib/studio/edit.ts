@@ -61,7 +61,25 @@ export type Clip = {
   zoom?: number; // 1 = just covers
   x?: number; // 0.5 = centred
   y?: number;
+  // The part of the frame the clip fills, as 0..1 of the frame (missing =
+  // all of it). The clip covers this box the way it would cover the frame,
+  // and nothing of it shows outside: a speaker on the top half of a
+  // half-and-half reel is { x: 0, y: 0, w: 1, h: 0.5 }.
+  box?: Box;
 };
+
+export type Box = { x: number; y: number; w: number; h: number };
+
+// A box that fits in the frame and isn't too small to see, or null.
+export function cleanBox(raw: unknown): Box | null {
+  if (!raw || typeof raw !== "object") return null;
+  const b = raw as Record<string, unknown>;
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : Number.NaN);
+  const [x, y, w, h] = [n(b.x), n(b.y), n(b.w), n(b.h)];
+  if (![x, y, w, h].every((v) => v >= 0 && v <= 1)) return null;
+  if (w < 0.05 || h < 0.05 || x + w > 1.0001 || y + h > 1.0001) return null;
+  return { x, y, w, h };
+}
 
 // A motion graphic on the film: one of the studio's own (studio/graphics/)
 // or one Claude wrote for this film (films/<id>/graphics/<name>.jsx).

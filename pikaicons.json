@@ -12,6 +12,10 @@
       "name": "alert-triangle",
       "variant": "stroke"
     },
+    "arrow-down": {
+      "name": "arrow-down",
+      "variant": "stroke"
+    },
     "arrow-left": {
       "name": "arrow-left",
       "variant": "stroke"

@@ -1,5 +1,6 @@
 export { AlertCircleIcon } from "./alert-circle"
 export { AlertTriangleIcon } from "./alert-triangle"
+export { ArrowDownIcon } from "./arrow-down"
 export { ArrowLeftIcon } from "./arrow-left"
 export { ArrowUpIcon } from "./arrow-up"
 export { CalendarIcon } from "./calendar-default"
