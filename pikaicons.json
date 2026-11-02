@@ -80,6 +80,10 @@
       "name": "eye-on",
       "variant": "stroke"
     },
+    "file-default": {
+      "name": "file-default",
+      "variant": "stroke"
+    },
     "folder-default": {
       "name": "folder-default",
       "variant": "stroke"
