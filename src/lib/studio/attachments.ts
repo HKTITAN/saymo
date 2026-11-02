@@ -6,13 +6,18 @@ import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { Attachment, AttachmentKind } from "./contract";
+import { slidesForAttachment, SlidesError } from "./slides";
+import { MAX_DECK_BYTES } from "./slides-shared";
 
 // Files attached to a prompt: a reference picture, a brief as a PDF, notes.
 // They're saved beside the film (refs/) or the kit (guide/) so Claude can
 // open them with Read; images and PDFs it reads directly, and a Word file is
 // turned into plain text first. A film's prompts also take sound files, as
-// references Claude hears with the listening tool (listen.ts). Nothing else
-// is accepted.
+// references Claude hears with the listening tool (listen.ts), and slide
+// decks: a PDF, PowerPoint, Keynote or OpenDocument file attached to a
+// film is also turned into slides in refs/<name>-slides/ (a PNG, the words
+// and the notes of each, in slides.json), so "add these slides as a
+// section" works. Nothing else is accepted.
 
 export const MAX_BYTES = 25 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 50 * 1024 * 1024; // about 5 minutes of CD-quality WAV
@@ -37,7 +42,13 @@ const KINDS: Record<string, AttachmentKind> = {
 // Sound references, for films only.
 export const AUDIO_EXTS = ["mp3", "wav", "m4a", "aif", "aiff", "aac", "ogg", "flac"];
 const AUDIO: Record<string, AttachmentKind> = Object.fromEntries(AUDIO_EXTS.map((e) => [e, "audio"]));
-const kindsFor = (folder: "refs" | "guide") => (folder === "refs" ? { ...KINDS, ...AUDIO } : KINDS);
+// Slide decks, for films only.
+export const DECK_EXTS = ["pptx", "ppt", "key", "odp"];
+const DECKS: Record<string, AttachmentKind> = Object.fromEntries(DECK_EXTS.map((e) => [e, "slides"]));
+const kindsFor = (folder: "refs" | "guide") => (folder === "refs" ? { ...KINDS, ...AUDIO, ...DECKS } : KINDS);
+// The pages of a PDF attached to a film that become slides (a long brief
+// isn't a deck).
+const ATTACHED_PAGES = 60;
 
 export class AttachmentError extends Error {}
 
@@ -90,10 +101,10 @@ export async function saveAttachment(
   const ext = path.extname(clean).slice(1).toLowerCase();
   const kind = kindsFor(folder)[ext];
   if (!kind) {
-    const what = folder === "refs" ? "a sound, an image, a PDF, a Word file or plain text" : "an image, a PDF, a Word file or plain text";
+    const what = folder === "refs" ? "a sound, slides, an image, a PDF, a Word file or plain text" : "an image, a PDF, a Word file or plain text";
     throw new AttachmentError(`Claude can't open .${ext || "?"} files. Attach ${what}.`);
   }
-  const limit = kind === "audio" ? MAX_AUDIO_BYTES : MAX_BYTES;
+  const limit = kind === "audio" ? MAX_AUDIO_BYTES : kind === "slides" ? MAX_DECK_BYTES : MAX_BYTES;
   const dir = path.join(root, folder);
   await mkdir(dir, { recursive: true });
   const file = safeName(clean, ext);
@@ -138,9 +149,21 @@ export async function saveAttachment(
     } else {
       await rename(part, final);
     }
+    // A deck (or a PDF that may be one) attached to a film: its slides too.
+    if (folder === "refs" && (kind === "slides" || kind === "pdf")) {
+      try {
+        await slidesForAttachment(root, final, clean, { maxPages: ATTACHED_PAGES });
+      } catch (error) {
+        // A PDF is still read as it is; a deck that can't be opened is no use.
+        if (kind === "slides") {
+          throw new AttachmentError(error instanceof SlidesError ? error.message : `${clean} couldn't be opened. Export it as a PDF and attach that.`);
+        }
+      }
+    }
   } catch (error) {
     await rm(part, { force: true });
     await rm(final, { force: true });
+    await rm(slidesFolder(final), { recursive: true, force: true });
     if (error instanceof AttachmentError) throw error;
     throw new AttachmentError(`${clean} couldn't be opened. Try saving it as a PDF or an image.`);
   }
@@ -161,7 +184,8 @@ export async function checkAttachments(root: string, folder: "refs" | "guide", r
     // A sound is whatever its file says it is; nothing else can claim to be one.
     const sound = folder === "refs" && AUDIO_EXTS.includes(path.extname(a.path).slice(1).toLowerCase());
     const claimed = Object.values(KINDS).includes(a.kind as AttachmentKind) ? (a.kind as AttachmentKind) : "text";
-    const kind: AttachmentKind = sound ? "audio" : claimed;
+    const deck = folder === "refs" && DECK_EXTS.includes(path.extname(a.path).slice(1).toLowerCase());
+    const kind: AttachmentKind = sound ? "audio" : deck ? "slides" : claimed;
     const name = typeof a.name === "string" && a.name.trim() ? a.name.trim().slice(0, 120) : path.basename(a.path);
     const seconds = kind === "audio" && typeof a.seconds === "number" && Number.isFinite(a.seconds) && a.seconds > 0 ? a.seconds : undefined;
     out.push({ path: a.path, name, kind, ...(seconds ? { seconds } : {}) });
@@ -169,11 +193,30 @@ export async function checkAttachments(root: string, folder: "refs" | "guide", r
   return out;
 }
 
+// Where an attached deck's slides are: refs/<file name>-slides/.
+const slidesFolder = (file: string) => `${file.slice(0, file.length - path.extname(file).length)}-slides`;
+
 // What Claude is told about them, with each file's full path to Read.
 // Sounds are left out: Read can't open them, and listen.ts says how to hear them.
 export function attachmentNote(root: string, all: Attachment[]) {
   const list = all.filter((a) => a.kind !== "audio");
   if (!list.length) return "";
-  const lines = list.map((a) => `- ${path.join(root, a.path)} (${a.kind}, attached as "${a.name}")`);
-  return `<attachments>\nThey attached these files to this message. Open each one with Read before you act on the request: images and PDFs read directly, Word files were turned into text.\n${lines.join("\n")}\n</attachments>`;
+  let decks = false;
+  const lines = list.map((a) => {
+    const full = path.join(root, a.path);
+    const json = path.join(slidesFolder(full), "slides.json");
+    const slides = existsSync(json) ? json : null;
+    if (slides) decks = true;
+    if (a.kind === "slides") {
+      return slides
+        ? `- ${slides} (a slide deck attached as "${a.name}": the deck itself can't be read, so open this instead; it lists each slide's picture, words and speaker notes)`
+        : `- "${a.name}" (a slide deck that couldn't be opened)`;
+    }
+    const also = slides ? `; its pages are also slides in ${slides}, each with a picture, its words and notes` : "";
+    return `- ${full} (${a.kind}, attached as "${a.name}"${also})`;
+  });
+  const how = decks
+    ? ` To use slides in the film, follow the "Slides to video" section of the aerchain-film skill; the slide pictures can be used straight from refs/ by their relative paths.`
+    : "";
+  return `<attachments>\nThey attached these files to this message. Open each one with Read before you act on the request: images and PDFs read directly, Word files were turned into text.${how}\n${lines.join("\n")}\n</attachments>`;
 }

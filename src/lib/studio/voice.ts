@@ -63,17 +63,27 @@ export async function makeVoiceover(
   if (!(await installedVoices()).has(voice)) {
     throw new MediaError(`${voice} isn't installed on this Mac. Add it in System Settings, Accessibility, Spoken Content.`);
   }
-  const wpm = Math.round(Math.min(RATE.max, Math.max(RATE.min, rate)));
   const work = await mkdtemp(path.join(tmpdir(), "studio-voice-"));
   try {
-    const script = path.join(work, "words.txt");
     const sound = path.join(work, "voice.aiff");
-    await writeFile(script, words);
-    // From a file, never the command line, so the words can't be read as options.
-    await run("say", ["-v", voice, "-r", String(wpm), "-f", script, "-o", sound]);
+    await sayTo(words, voice, rate, sound);
     const label = (name?.trim() || `Voiceover ${voice} ${words.split(" ").slice(0, 5).join(" ")}`).slice(0, 80);
     const body = Readable.toWeb(createReadStream(sound)) as unknown as ReadableStream<Uint8Array>;
     return await importMedia(id, `${label.replace(/[\\/:*?"<>|.]/g, "")}.aiff`, body);
+  } finally {
+    await rm(work, { recursive: true, force: true });
+  }
+}
+
+// Reads words aloud into an AIFF file at `out`. The words go through a
+// file, never the command line, so they can't be read as options.
+export async function sayTo(words: string, voice: string, rate: number, out: string) {
+  const wpm = Math.round(Math.min(RATE.max, Math.max(RATE.min, rate)));
+  const work = await mkdtemp(path.join(tmpdir(), "studio-say-"));
+  try {
+    const script = path.join(work, "words.txt");
+    await writeFile(script, words);
+    await run("say", ["-v", voice, "-r", String(wpm), "-f", script, "-o", out]);
   } finally {
     await rm(work, { recursive: true, force: true });
   }

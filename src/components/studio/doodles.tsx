@@ -171,6 +171,47 @@ export function ReelDoodle({ className }: { className?: string }) {
   );
 }
 
+// Turn slides into a video: a slide on top of its deck, a title, points
+// and a small chart. On hover the deck behind slips away, the slide's parts
+// come in one by one, and a progress bar runs under it: the slide is now a
+// frame of a film.
+export function SlidesDoodle({ className }: { className?: string }) {
+  const id = useId();
+  const write = "origin-left [transform-box:fill-box] motion-safe:group-hover/doodle:animate-[studio-write_0.45s_cubic-bezier(0.23,1,0.32,1)_both]";
+  const rise = "[transform-box:fill-box] motion-safe:group-hover/doodle:animate-[studio-word-in_0.6s_cubic-bezier(0.23,1,0.32,1)_both]";
+  const deck = "transition-[translate,opacity] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none motion-safe:group-hover/doodle:opacity-0";
+  return (
+    <svg viewBox="0 0 320 180" aria-hidden="true" className={className}>
+      <defs>
+        <clipPath id={`${id}-chart`}>
+          <rect x={176} y={50} width={40} height={40} />
+        </clipPath>
+      </defs>
+      <rect x={104} y={18} width={136} height={77} rx={8} fill="#1d1d1d" className={cn(deck, "motion-safe:group-hover/doodle:translate-x-[-12px] motion-safe:group-hover/doodle:translate-y-[8px]")} />
+      <rect x={98} y={22} width={136} height={77} rx={8} fill="#262626" className={cn(deck, "motion-safe:group-hover/doodle:translate-x-[-6px] motion-safe:group-hover/doodle:translate-y-[4px]")} />
+      <rect x={92} y={26} width={136} height={77} rx={8} fill="#2e2e2e" />
+      <rect x={104} y={38} width={58} height={7} rx={3.5} fill={INK} className={write} style={{ animationDelay: "0.05s" }} />
+      {[0, 1, 2].map((i) => (
+        <g key={i}>
+          <circle cx={106} cy={58 + i * 11} r={1.8} fill="rgb(255 255 255 / 0.45)" />
+          <rect x={111} y={56 + i * 11} width={[42, 34, 38][i]} height={4} rx={2} fill="rgb(255 255 255 / 0.3)" className={write} style={{ animationDelay: `${0.25 + i * 0.16}s` }} />
+        </g>
+      ))}
+      <g clipPath={`url(#${id}-chart)`}>
+        {[16, 26, 36].map((h, i) => (
+          <rect key={h} x={180 + i * 12} y={90 - h} width={8} height={h} rx={2} fill={i === 2 ? INK : "#4a4a4a"} className={rise} style={{ animationDelay: `${0.6 + i * 0.12}s` }} />
+        ))}
+      </g>
+      <rect x={92} y={116} width={136} height={4} rx={2} fill="#2e2e2e" />
+      <rect x={92} y={116} width={136} height={4} rx={2} fill={INK} className="origin-left scale-x-[0.18] [transform-box:fill-box] motion-safe:group-hover/doodle:animate-[studio-write_1.3s_linear_both]" />
+      <g className="[transform-box:fill-box] origin-center motion-safe:group-hover/doodle:animate-[studio-press_0.4s_ease-out_both]">
+        <circle cx={160} cy={140} r={9} fill="#2e2e2e" />
+        <path d="M157.6 136.4 Q157 136 157 136.8 V143.2 Q157 144 157.6 143.6 L163.1 140.6 Q163.7 140 163.1 139.4 Z" fill={INK} />
+      </g>
+    </svg>
+  );
+}
+
 // No films yet: a clapperboard with a face, whose arm opens on hover.
 export function ClapperDoodle({ className }: { className?: string }) {
   return (

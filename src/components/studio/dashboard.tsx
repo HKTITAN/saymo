@@ -28,12 +28,13 @@ import type { FilmSummary, Folder } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { api } from "./api";
 import { Swatches } from "./brand-row";
-import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, StudioMark, TinyFolder, VideoDoodle } from "./doodles";
+import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, TinyFolder, VideoDoodle } from "./doodles";
 import { FirstFilm } from "./first-film";
 import { undoKey, useHistory } from "./history";
 import { KitMaker } from "./kit-maker";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { ReelFlow } from "./reel-flow";
+import { SlidesFlow } from "./slides-flow";
 
 // The studio's home page, at /studio. At the top, the ways to start a film
 // (edit a video, make motion graphics, write a script, record a reel).
@@ -41,7 +42,7 @@ import { ReelFlow } from "./reel-flow";
 // grid, and a film moves to a folder by dragging it onto one or from its •••
 // menu. ⌘Z undoes moves and renames. Last, the brand kits.
 
-type Overlay = null | "video" | "motion" | "kit" | "script" | "reel" | "rules";
+type Overlay = null | "video" | "motion" | "kit" | "script" | "reel" | "slides" | "rules";
 type Sort = "edited" | "name";
 
 // What a dragged film carries, so only films can be dropped on folders.
@@ -264,7 +265,7 @@ export function Dashboard({
   // ─── Keys: ⌘Z undoes, / finds a film, Esc closes the new-film card ──────
 
   useEffect(() => {
-    if (overlay === "kit" || overlay === "script" || overlay === "reel") return; // these cards handle their own keys
+    if (overlay === "kit" || overlay === "script" || overlay === "reel" || overlay === "slides") return; // these cards handle their own keys
     const onKey = (e: KeyboardEvent) => {
       if (overlay) {
         if (e.key !== "Escape" || e.defaultPrevented) return;
@@ -410,6 +411,12 @@ export function Dashboard({
               title="Record a reel"
               note="Read your script to camera; the prompter follows your voice."
               onClick={() => setOverlay("reel")}
+            />
+            <StartCard
+              doodle={<SlidesDoodle className="absolute inset-0 h-full w-full" />}
+              title="Turn slides into a video"
+              note="Bring in a deck; Claude brings each slide to life."
+              onClick={() => setOverlay("slides")}
             />
           </section>
 
@@ -674,6 +681,8 @@ export function Dashboard({
                 onNewKit();
               }}
             />
+          ) : overlay === "slides" ? (
+            <SlidesFlow folder={folder?.id ?? null} onClose={() => setOverlay(null)} onOpenFilm={onOpenNewFilm} />
           ) : overlay === "script" || overlay === "reel" ? (
             <ReelFlow
               start={overlay}

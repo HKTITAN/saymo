@@ -35,6 +35,15 @@ The first line of `films/<id>/out/render-log.txt` says what a render chose. To o
 | `STUDIO_WORKERS=4` | Draws 4 frames at once. Lower it if your Mac slows down during renders. |
 | `STUDIO_ENCODER=x264` | Never uses the hardware encoder. |
 
+## Slides
+
+"Turn slides into a video" takes a PDF, PowerPoint (.pptx, .ppt), Keynote (.key), OpenDocument (.odp) or pictures of slides. From Google Slides, choose File, Download, then PDF or PowerPoint.
+
+- **PDF and pictures** work on any Mac. Setup installs poppler, which draws PDF pages faster; without it the Mac's own PDF reader is used.
+- **PowerPoint**: the words, speaker notes, pictures and chart data are read straight from the file. To draw the slides themselves, the studio uses LibreOffice if it's installed (`brew install --cask libreoffice`, optional, about 700 MB), else Keynote. With neither, it asks you to drop a PDF export of the same deck too, which fills in the pictures.
+- **Keynote** files are exported by Keynote itself, with their presenter notes. The first time, macOS asks whether your terminal may control Keynote: choose Allow. If Keynote shows a window of its own when it opens (a welcome or sign-in window), close it once and try again, or export a PDF from Keynote (File, Export To, PDF).
+- To stop the studio opening Keynote at all, add `STUDIO_KEYNOTE=off` to `.env.local`.
+
 Some things happen the first time you use them:
 
 - **Transcribing speech:** the speech model (about 1.6 GB) is downloaded and built, which takes a few minutes. After that, a minute of speech takes a few seconds.

@@ -45,6 +45,17 @@ else
   printf '        To fix it: brew reinstall ffmpeg\n'
 fi
 
+# Turning slides into a video works without these; with them it's faster
+# (poppler draws PDF pages) and PowerPoint and OpenDocument files are drawn
+# without Keynote (LibreOffice, about 700 MB, so it's left to you).
+if command -v pdftoppm >/dev/null; then ok "poppler already installed (PDF slides)"; else brew install poppler; fi
+if command -v soffice >/dev/null || [[ -d "/Applications/LibreOffice.app" ]]; then
+  ok "LibreOffice already installed (PowerPoint slides)"
+else
+  printf '  optional: to turn PowerPoint and OpenDocument files into slides without Keynote,\n'
+  printf '            run: brew install --cask libreoffice\n'
+fi
+
 step "3. The app's packages"
 npm ci --no-audit --no-fund
 
