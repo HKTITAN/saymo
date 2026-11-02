@@ -1,3 +1,5 @@
+import { restoreCarryOns } from "@/lib/studio/carry-on";
+import { runAutoTurn } from "@/lib/studio/claude";
 import { allowed, createFilm, listFilms, refused } from "@/lib/studio/films";
 import { startSound } from "@/lib/studio/sound-render";
 import { newFilm } from "@/lib/studio/validate";
@@ -5,6 +7,8 @@ import { newFilm } from "@/lib/studio/validate";
 // The studio's films, newest first.
 export async function GET(request: Request) {
   if (!allowed(request)) return refused();
+  // After a restart, films waiting to carry on by themselves pick up again.
+  void restoreCarryOns(runAutoTurn);
   return Response.json(await listFilms());
 }
 

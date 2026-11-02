@@ -218,7 +218,7 @@ export async function runCodex(o: {
     steps: reader.steps,
     changedAny: reader.changedAny,
     problem,
-    raw: [reader.failure, reader.lastError, stderr].filter(Boolean).join("\n"),
+    raw: [reader.failureRaw, reader.failure, reader.lastError, stderr].filter(Boolean).join("\n"),
   };
 }
 
@@ -253,6 +253,7 @@ export class CodexReader {
   reply = "";
   steps: string[] = [];
   failure: string | null = null;
+  failureRaw: string | null = null; // Codex's own words when it failed
   lastError: string | null = null;
   changedAny = false;
   private before: Promise<Map<string, string>>;
@@ -276,7 +277,8 @@ export class CodexReader {
       case "item.completed":
         return this.completed(msg.item ?? {});
       case "turn.failed":
-        this.failure = explainCodex(String(msg.error?.message ?? "the turn failed"));
+        this.failureRaw = String(msg.error?.message ?? "the turn failed");
+        this.failure = explainCodex(this.failureRaw);
         return;
       case "error":
         this.lastError = String(msg.message ?? "");

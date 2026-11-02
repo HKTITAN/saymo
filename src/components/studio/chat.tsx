@@ -294,7 +294,7 @@ function CarryOnNote({ carryOn, onCancel }: { carryOn: { reason: "time" | "limit
         )}
       </p>
       <p className="text-white/40">
-        {carryOn.reason === "time" ? "The last turn reached the 15-minute limit. " : "You can close the studio; it picks up when the limit resets. "}
+        {carryOn.reason === "time" ? "The last turn reached the 15-minute limit. " : "You can close this page; keep the studio running and it picks up when the limit resets. "}
         <button type="button" onClick={onCancel} className="cursor-pointer text-white/70 underline-offset-2 hover:text-white hover:underline">
           {"Don't carry on"}
         </button>

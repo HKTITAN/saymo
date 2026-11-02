@@ -389,7 +389,7 @@ async function runClaude(
     steps: reader.steps,
     changedAny: reader.changedAny,
     problem,
-    raw: [reader.failure, reader.lastError, stderr].filter(Boolean).join("\n"),
+    raw: [reader.failureRaw, reader.failure, reader.lastError, stderr].filter(Boolean).join("\n"),
   };
 }
 
@@ -679,6 +679,7 @@ export class StreamReader {
   failure: string | null = null;
   changedAny = false;
   lastError: string | null = null;
+  failureRaw: string | null = null; // the AI's own words when it failed (a usage limit's reset time is in them)
   private tools = new Map<string, { name: string; file: string | null }>();
   private textBlocks = 0;
   private openText = false;
@@ -707,7 +708,10 @@ export class StreamReader {
     }
     if (msg.type === "result") {
       if (msg.session_id) this.session = msg.session_id;
-      if (msg.is_error) this.failure = this.explainer(String(msg.result ?? msg.subtype ?? ""));
+      if (msg.is_error) {
+        this.failureRaw = String(msg.result ?? msg.subtype ?? "");
+        this.failure = this.explainer(this.failureRaw);
+      }
     }
   }
 
