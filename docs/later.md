@@ -10,11 +10,15 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
 
 - Claude's music lane on video edits is now called **Score**, so it doesn't clash with your own Music track (2026-11-03).
 - A slide film's voiceover has its own **Voiceover** lane on the timeline, editable like Music and Effects: volume, mute, reset, and Change with Claude (2026-11-03).
+- **Sphere carousel** part for HTML films: cards on a turning sphere with lines to a centre card (2026-11-03).
+- **The preview draws text exactly like the render**: the stage now adds the text style HyperFrames uses (2026-11-03).
+- **Every size**: one render makes 16:9, 1:1, 4:5 and 9:16, each laid out for its frame (2026-11-03).
+- **Try 3**: three versions of one prompt at once, only when asked, then pick one (2026-11-03).
 
 ## In progress
 
 - **Motion Studio as a Mac app** (from Pond). Built in Swift in `desktop/`, kept local and off GitHub until the owner says to push it. Left: signing, updates, Homebrew, a real icon (see `desktop/README.md`).
-- Being built now (2026-11-03): the sphere carousel part, one film in every size, three versions at once (only when asked or the button is pressed), the references library, and the preview drawing text exactly like the render.
+- **The references library** (being built, 2026-11-03).
 
 ## Bigger features
 
