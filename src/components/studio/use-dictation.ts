@@ -31,7 +31,7 @@ import { MicError, Recorder } from "./dictation-recorder";
 export type DictationSettings = { language: DictationLanguage; script: HindiScript; accuracy: Accuracy };
 const KEY = "studio.dictation";
 // Roman letters by default: how most people type Hinglish prompts.
-const DEFAULTS: DictationSettings = { language: "auto", script: "roman", accuracy: "fast" };
+const DEFAULTS: DictationSettings = { language: "auto", script: "roman", accuracy: "best" };
 let settings: DictationSettings | null = null;
 const settingsListeners = new Set<() => void>();
 
