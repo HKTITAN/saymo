@@ -1,7 +1,7 @@
 "use client";
 
 import { Popover } from "@base-ui/react/popover";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowLeftIcon,
   ChevronLeftIcon,
@@ -758,7 +758,7 @@ function FolderCard({
           )}
           skullet-block=""
         >
-          <FolderArt open={over} />
+          <FolderArt films={films} open={over} />
         </span>
         <span className="flex flex-col gap-0.5 px-1 pb-0.5">
           <span className={cn("truncate text-[12.5px] text-white/90", renaming && "invisible")}>{folder.name}</span>
@@ -788,23 +788,54 @@ function FolderCard({
 
 // A folder drawn the Windows way, standing up and seen from the side: the
 // back with a small tab low on its right, and the cover swung open on the
-// left. Hovering (or a film dragged over it) swings the cover wider.
+// left. The newest films inside peek out of the top as stills. Hovering (or
+// a film dragged over it) swings the cover wider and lifts them.
 const EASE = "duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
-function FolderArt({ open }: { open: boolean }) {
+const SHEETS = [
+  { x: 35, y: 3, rotate: -6 },
+  { x: 41, y: 1, rotate: 5 },
+  { x: 38, y: 4, rotate: -1 },
+];
+function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
+  const id = useId();
+  const inside = films.slice(0, 3).reverse();
   return (
     <svg viewBox="0 0 100 125" aria-hidden="true" className="absolute inset-0 h-full w-full overflow-visible">
-      <g transform="translate(1 3)">
+      <defs>
+        <clipPath id={`${id}-sheet`}>
+          <rect width={36} height={23} rx={3} />
+        </clipPath>
+      </defs>
+      <g transform="translate(1 6)">
         {/* The back and its tab. */}
-        <path d="M84.3 88.5 L95 90.4 L84.3 95.6 Z" fill="rgb(0 0 0 / 0.45)" />
+        <path d="M84.3 88 L95 90.2 L84.3 95.6 Z" fill="rgb(0 0 0 / 0.45)" />
         <path
-          d="M16 6.6 H76.7 Q78.7 6.6 78.7 8.6 V60.5 Q78.7 62.5 80.5 63.6 L82.5 64.8 Q84.3 65.9 84.3 68 V93.6 Q84.3 95.6 82.3 95.6 H14 V8.6 Q14 6.6 16 6.6 Z"
+          d="M19 6.6 H73.7 Q78.7 6.6 78.7 11.6 V59.5 Q78.7 62.5 81 64 L82 64.7 Q84.3 66.2 84.3 69 V90.6 Q84.3 95.6 79.3 95.6 H19 Q14 95.6 14 90.6 V11.6 Q14 6.6 19 6.6 Z"
           fill="#2c2c2c"
         />
-        <g className="text-white/60">
-          <circle cx={56} cy={50} r={1.7} fill="currentColor" />
-          <circle cx={67} cy={50} r={1.7} fill="currentColor" />
-          <path d={open ? "M58.8 54.2 q2.7 4.4 5.4 0 Z" : "M59 54.6 q2.5 2.6 5 0"} stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" fill={open ? "currentColor" : "none"} />
-        </g>
+        {/* The films inside. */}
+        {inside.map((f, i) => {
+          const at = SHEETS[SHEETS.length - inside.length + i];
+          return (
+            <g
+              key={f.id}
+              className={cn("transition-transform", EASE, open ? "-translate-y-[7px]" : "group-hover/card:-translate-y-[3px]")}
+            >
+              <g transform={`translate(${at.x} ${at.y}) rotate(${at.rotate} 18 11.5)`}>
+                <rect width={36} height={23} rx={3} fill="#3f3f3f" />
+                {f.poster ? (
+                  <image href={f.poster} width={36} height={23} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-sheet)`} />
+                ) : (
+                  <>
+                    <rect x={6} y={8} width={16} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.16)" />
+                    <rect x={6} y={13} width={24} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.09)" />
+                  </>
+                )}
+                <rect width={36} height={23} rx={3} fill="none" stroke="rgb(0 0 0 / 0.35)" strokeWidth={0.6} />
+              </g>
+            </g>
+          );
+        })}
         {/* The cover, swung open toward you. */}
         <g
           className={cn(
@@ -813,8 +844,8 @@ function FolderArt({ open }: { open: boolean }) {
             open ? "scale-x-[1.35]" : "group-hover/card:scale-x-[1.15]",
           )}
         >
-          <path d="M37.8 104 L48 105.6 L37.8 112.4 Z" fill="rgb(0 0 0 / 0.45)" />
-          <path d="M14 7.8 Q14 6.2 15.4 7.1 L36.4 23 Q37.8 24 37.8 25.6 V110.6 Q37.8 112.6 36.2 111.5 L15 96.4 Q14 95.7 14 94.4 Z" fill="#3b3b3b" />
+          <path d="M37.8 103.5 L48 105.4 L37.8 112 Z" fill="rgb(0 0 0 / 0.45)" />
+          <path d="M14 10 Q14 5.5 17.6 8.2 L35 21.6 Q37.8 23.8 37.8 27.3 V107.6 Q37.8 113.4 33.6 110.4 L17.4 98.6 Q14 96.2 14 92 Z" fill="#3b3b3b" />
         </g>
       </g>
     </svg>

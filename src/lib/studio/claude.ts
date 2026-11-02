@@ -36,7 +36,11 @@ const ENGINE_WORDS: Record<Film["engine"], string> = {
 };
 
 const TURN_LIMIT_MS = 15 * 60 * 1000;
-export const MODEL = process.env.STUDIO_MODEL ?? "opus";
+// Everyone's studio uses the same Claude by default: Opus 5.5 at high effort,
+// named exactly so an older alias can't pick an older model on someone's Mac.
+// STUDIO_MODEL and STUDIO_EFFORT in .env.local change it for one machine.
+export const MODEL = process.env.STUDIO_MODEL ?? "claude-opus-5-5";
+export const EFFORT = process.env.STUDIO_EFFORT ?? "high";
 
 export const CLAUDE_BIN = (() => {
   const own = path.join(homedir(), ".local/bin/claude");
@@ -313,7 +317,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     "--verbose",
     "--include-partial-messages",
     "--model", MODEL,
-    "--effort", "high",
+    "--effort", EFFORT,
     "--permission-mode", "dontAsk",
     "--setting-sources", "project,local",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
@@ -334,6 +338,8 @@ export function childEnv(): NodeJS.ProcessEnv {
   for (const key of keep) if (process.env[key]) env[key] = process.env[key] as string;
   for (const [key, value] of Object.entries(process.env)) if (key.startsWith("LC_") && value) env[key] = value;
   env.HYPERFRAMES_NO_TELEMETRY = "1";
+  // The same effort as the flag, so a person's own Claude settings don't lower it.
+  env.CLAUDE_CODE_EFFORT_LEVEL = EFFORT;
   // Where the voiceover tool reaches the studio itself.
   env.STUDIO_ORIGIN = `http://localhost:${process.env.PORT ?? "3200"}`;
   return env;

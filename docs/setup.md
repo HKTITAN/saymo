@@ -8,7 +8,7 @@ Motion Studio runs on your own Mac. Each person on the team installs it once and
 - Node.js 22 or newer
 - Google Chrome (renders and exports use it)
 - Apple's command line tools (`xcode-select --install`), for the background remover and face finder
-- [Claude Code](https://claude.com/claude-code), signed in. The studio's chat runs on your Claude plan, so its requests count against your usage.
+- [Claude Code](https://claude.com/claude-code), signed in. The studio's chat runs on your Claude plan, so its requests count against your usage. Every studio turn uses Claude Opus 5.5 at high effort, so keep Claude Code up to date (`claude update`). To change it on one Mac, set `STUDIO_MODEL` or `STUDIO_EFFORT` in `.env.local`.
 
 ## Install
 

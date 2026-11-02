@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { Hint, PILL_BUTTON, Panel } from "./panel";
 import { PromptBox } from "./prompt-box";
 import { SentFiles } from "./sent-files";
+import { ClaudeAtWork } from "./mascot";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
 import { VersionsButton } from "./versions";
@@ -157,6 +158,7 @@ export function ChatPanel({
         turn.running ? "h-[calc(100dvh-84px)]" : "h-auto max-h-[calc(100dvh-84px)]",
       )}
       pillClassName="top-[68px] left-4"
+      pillMark={turn.running ? <ClaudeAtWork /> : undefined}
       style={style}
       bodyClassName="flex flex-col"
       actions={

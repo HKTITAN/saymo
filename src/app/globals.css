@@ -382,3 +382,41 @@
     scale: 1.1 0.9;
   }
 }
+
+/* Claude's pixel mascot in the folded Claude pill while it works. */
+@keyframes studio-clawd-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -0.5px;
+  }
+}
+@keyframes studio-clawd-step {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -0.8px;
+  }
+}
+@keyframes studio-clawd-blink {
+  0%,
+  90%,
+  100% {
+    scale: 1 1;
+  }
+  93% {
+    scale: 1 0.15;
+  }
+}
+@keyframes studio-clawd-scrub {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 11.2px 0;
+  }
+}

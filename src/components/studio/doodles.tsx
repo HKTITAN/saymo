@@ -93,10 +93,10 @@ export function MotionDoodle({ className }: { className?: string }) {
       </defs>
       <rect x={92} y={26} width={136} height={77} rx={8} fill="#2e2e2e" />
       <g clipPath={`url(#${id}-line)`}>
-        <text x={171} y={69} fontSize={16} fontWeight={650} letterSpacing={-0.3} fill={INK} textAnchor="end" className={word} style={{ ...TYPE, animationDelay: "0.3s" }}>
+        <text x={171} y={70.3} fontSize={16} fontWeight={650} letterSpacing={-0.3} fill={INK} textAnchor="end" className={word} style={{ ...TYPE, animationDelay: "0.3s" }}>
           Launch
         </text>
-        <text x={176} y={69} fontSize={16} fontWeight={650} letterSpacing={-0.3} fill={INK} className={word} style={{ ...TYPE, animationDelay: "0.42s" }}>
+        <text x={176} y={70.3} fontSize={16} fontWeight={650} letterSpacing={-0.3} fill={INK} className={word} style={{ ...TYPE, animationDelay: "0.42s" }}>
           day
         </text>
       </g>

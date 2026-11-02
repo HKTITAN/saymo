@@ -56,6 +56,7 @@ export function Panel({
   actions,
   children,
   bodyClassName,
+  pillMark,
 }: {
   title: string;
   folded: boolean;
@@ -67,6 +68,7 @@ export function Panel({
   actions?: ReactNode;
   children: ReactNode;
   bodyClassName?: string;
+  pillMark?: ReactNode; // shown in the folded pill instead of its dot
 }) {
   if (folded) {
     return (
@@ -83,7 +85,7 @@ export function Panel({
         aria-label={`Open ${title.toLowerCase()}`}
         tabIndex={hidden ? -1 : undefined}
       >
-        <span className="size-1.5 rounded-full bg-white/40" aria-hidden="true" />
+        {pillMark ?? <span className="size-1.5 rounded-full bg-white/40" aria-hidden="true" />}
         {title}
       </button>
     );

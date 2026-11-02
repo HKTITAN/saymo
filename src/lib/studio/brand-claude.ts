@@ -4,7 +4,7 @@ import path from "node:path";
 import { attachmentNote } from "./attachments";
 import type { BrandKit } from "./brand";
 import { checkKit, kitDir, readBrand, restoreBrand, snapshotBrand, withBrand, writeBrand } from "./brands";
-import { CLAUDE_BIN, childEnv, explain, killGroup, MODEL, StreamReader } from "./claude";
+import { CLAUDE_BIN, childEnv, EFFORT, explain, killGroup, MODEL, StreamReader } from "./claude";
 import type { Attachment, ChatEvent, ChatMessage, Film } from "./contract";
 import { figmaReady, pullFigma } from "./figma";
 import { ROOT } from "./films";
@@ -247,7 +247,7 @@ function brandArgs(id: string, session: string | undefined, sites: string[]) {
     "--verbose",
     "--include-partial-messages",
     "--model", MODEL,
-    "--effort", "high",
+    "--effort", EFFORT,
     "--permission-mode", "dontAsk",
     "--setting-sources", "project,local",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
