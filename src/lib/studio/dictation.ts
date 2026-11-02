@@ -33,11 +33,16 @@ import { hasDevanagari, toRoman } from "./roman";
 //   1.1 GB download, large-v3, which measured better on Hindi and on mixed
 //   Hindi and English, at about 2.5 times the time (4.6 s for 30 s of
 //   speech on an M5, against 1.8 s).
-//   Both with beam search (5), whisper's temperature fallback, the Silero
-//   voice detector (cuts silence, so silence doesn't come back as "Thank
-//   you."), a hint of the studio's own words, and the end of the previous
-//   piece as context. Detect finds the language first, then writes the
-//   piece the way that language needs.
+//   Both with beam search (5), whisper's temperature fallback, timestamps
+//   (without them whisper can stop after the first sentence), and the
+//   Silero voice detector (cuts silence, so silence doesn't come back as
+//   "Thank you.").
+// - English and Hindi in one recording: Detect and Hinglish find the
+//   language of every stretch of speech first (whisper's small base model,
+//   about 40 ms a stretch), then write each part in its own language.
+//   Whisper set to one language drops or translates the other. Every other
+//   path is checked afterwards for speech no line covers, which is then
+//   written down on its own (writeDown).
 // - Hindi: whisper writes Devanagari; for Roman letters roman.ts spells it
 //   out. On Fast, the optional Hinglish model (Oriserve's
 //   Whisper-Hindi2Hinglish-Apex, a fine-tune of large-v3-turbo, Apache 2.0)
@@ -59,6 +64,16 @@ const VAD = {
   url: "https://huggingface.co/ggml-org/whisper-vad/resolve/main/ggml-silero-v5.1.2.bin",
   sha256: "29940d98d42b91fbd05ce489f3ecf7c72f0a42f027e4875919a28fb4c04ea2cf",
 };
+// whisper's base model (60 MB), only to tell which language each stretch of
+// speech is in: it told English from Hindi in 19 of 19 test stretches, 1 to
+// 3 seconds long, in about 40 ms each. Fetched without asking, like the
+// voice detector.
+const LANGUAGE_ID = {
+  file: path.join(MODELS, "ggml-base-q5_1.bin"),
+  url: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin",
+  sha256: "422f1ae452ade6f30a004d7e5c6a43195e4433bc370bf23fac9cc591f01a8898",
+};
+
 // The optional models, downloaded only when asked for in the mic's menu.
 const EXTRA: Record<ExtraModel, { file: string; url: string; sha256: string; bytes: number; name: string }> = {
   // large-v3, quantised to 5 bits by whisper.cpp (near the full model's
@@ -83,10 +98,12 @@ const EXTRA: Record<ExtraModel, { file: string; url: string; sha256: string; byt
 const HINGLISH = EXTRA.hinglish;
 const BEST = EXTRA.best;
 
-// Words whisper wouldn't know, as a sentence in the way they're said. The
-// hint also sets the style: a line of Hinglish keeps English words in
-// English letters (measured: 10% word errors on Hinglish against 43% with
-// an English hint, and no change on English).
+// For Hindi, a line in the style wanted, which also spells the studio's
+// names: a line of Hinglish keeps English words in English letters
+// (measured: 10% word errors on Hinglish against 38% without it). English
+// gets the names right from FIXES below.
+// For English, only where every stretch was checked to be English: with
+// Hindi in the same audio, it made whisper translate or skip the Hindi.
 const HINT_EN = "Notes for an Aerchain film about SpendOS, Aiera and procurement.";
 const HINT_MIXED = "Aerchain का logo थोड़ा बड़ा करो, और SpendOS का title fade in करो।";
 const HINT_HINDI = "इस फ़िल्म में Aerchain का शीर्षक धीरे धीरे बड़ा करो।";
@@ -96,7 +113,7 @@ const HINT_ROMAN = "Aerchain ka logo thoda bada karo, aur SpendOS ka title fade 
 const FIXES: [RegExp, string][] = [
   [/\b(?:air ?chain|aer ?chain|air ?cane|aer ?cane|air ?kane|air can|aircain|aercain|aerkane|ercane|ercain|airchane|aircaine)\b/gi, "Aerchain"],
   [/(?:एयरचेन|एरचेन|एरकेन|एयरकेन)/g, "Aerchain"],
-  [/\bspend ?o\.?s\.?(?=\W|$)/gi, "SpendOS"],
+  [/\bspend ?o\.? ?s(?=\W|$)/gi, "SpendOS"],
   [/(?:स्पेंड ?ओएस|स्पेंडओएस)/g, "SpendOS"],
 ];
 
@@ -175,7 +192,9 @@ export function startSetup() {
       const said = err.trim().split("\n").at(-1) ?? "";
       return done(said.startsWith("! ") ? said.slice(2) : "Setting up listening failed. Try again in a moment.");
     }
-    void Promise.all([ownLibraries("whisper-server"), ownLibraries("whisper-cli"), voiceDetector()]).finally(() => done(null));
+    void Promise.all([ownLibraries("whisper-server"), ownLibraries("whisper-cli"), ownLibraries("whisper-vad-speech-segments"), fetchSmall(VAD), fetchSmall(LANGUAGE_ID)]).finally(() =>
+      done(null),
+    );
   });
 }
 
@@ -231,19 +250,28 @@ async function download(url: string, to: string, sha256: string, onBytes?: (byte
   }
 }
 
-// The voice detector is under 1 MB, so it's fetched without asking. Without
-// it, listening still works; silence is just more likely to come back as
-// stray words.
-let gettingVad: Promise<void> | null = null;
-function voiceDetector() {
-  if (existsSync(VAD.file)) return Promise.resolve();
-  gettingVad ??= download(VAD.url, VAD.file, VAD.sha256)
-    .catch((error) => console.error("[studio dictation] voice detector download failed", error))
-    .finally(() => {
-      gettingVad = null;
-    });
-  return gettingVad;
+// The voice detector (under 1 MB) and the language checker (60 MB) are
+// fetched without asking. Without them listening still works: silence is
+// more likely to come back as stray words, and a switch of language
+// mid-recording is caught by the slower checks in writeDown.
+const getting = new Map<string, Promise<void>>();
+function fetchSmall(m: { file: string; url: string; sha256: string }) {
+  if (existsSync(m.file)) return Promise.resolve();
+  let job = getting.get(m.file);
+  if (!job) {
+    job = download(m.url, m.file, m.sha256)
+      .catch((error) => console.error(`[studio dictation] ${path.basename(m.file)} download failed`, error))
+      .finally(() => getting.delete(m.file));
+    getting.set(m.file, job);
+  }
+  return job;
 }
+// The voice detector is waited for; the language checker comes in the
+// background, so a slow connection never holds up writing something down.
+const voiceDetector = () => {
+  void fetchSmall(LANGUAGE_ID);
+  return fetchSmall(VAD);
+};
 
 // An optional model, only when asked for in the mic's menu.
 export function startExtra(which: ExtraModel) {
@@ -408,20 +436,35 @@ const romanModel = (ask: Ask) => ask.script === "roman" && ask.language !== "en"
 
 // Which model, language and hint a piece is written down with.
 //  English   English.
-//  Detect    the language is found first (writeDown); English pieces are
-//            then written as English, Hindi ones as Hinglish.
+//  Detect    the language of each stretch is found first (writeDown);
+//            English parts are written as English, Hindi ones as Hinglish.
 //  Hindi     Hindi, with English words written as they sound.
-//  Hinglish  like Detect, but leaning to Hindi: a piece is written as
-//            English only when whisper is sure it's English.
+//  Hinglish  the same as Detect, leaning to Hindi where the language
+//            checker isn't available: a part is written as English only
+//            when whisper is sure it's English.
 // The Hinglish model (romanModel) finds the language itself.
-function plan(ask: Ask, language: DictationLanguage = ask.language): Plan {
+// `checked`: the language checker found this audio all in one language.
+function plan(ask: Ask, language: DictationLanguage = ask.language, checked = false): Plan {
   const roman = romanModel(ask);
   const model = roman ? HINGLISH.file : best(ask) ? BEST.file : STANDARD;
   const code = language === "en" ? "en" : language === "auto" || (roman && language === "hinglish") ? "auto" : "hi";
-  const hint = language === "en" ? HINT_EN : roman ? HINT_ROMAN : language === "hi" ? HINT_HINDI : HINT_MIXED;
-  // The end of the piece before, so a sentence cut in two reads on.
-  const context = ask.context.trim().slice(-200);
-  return { model, language: code, prompt: context ? `${hint} ${context}` : hint };
+  // A hint for Hindi, where it keeps English words in English letters, and
+  // for English only once checked (HINT_EN). Not the words said before
+  // either, which pulled the next piece into their language the same way.
+  // The Hinglish model always gets its own line: without it, it dropped the
+  // first word of a recording ("Cut the..." came back as "The...").
+  const hint = roman
+    ? HINT_ROMAN
+    : language === "en"
+      ? checked
+        ? HINT_EN
+        : ""
+      : language === "auto"
+        ? ""
+        : language === "hi"
+          ? HINT_HINDI
+          : HINT_MIXED;
+  return { model, language: code, prompt: process.env.STUDIO_DICTATION_HINTS === "off" ? "" : hint };
 }
 
 // Whisper forced into the wrong language can get stuck saying the same
@@ -441,7 +484,11 @@ function stuck(text: string) {
 
 const DECODE = { beam_size: "5", best_of: "5", temperature: "0.0", temperature_inc: "0.2", no_speech_thold: "0.6", suppress_nst: "true" };
 
-async function viaServer(wav: string, p: Plan, detect = false) {
+// A stretch of what was said, in seconds of the piece.
+type Segment = { start: number; end: number; text: string };
+type Heard = { text: string; language: string | null; sure: number | null; segments: Segment[] | null };
+
+async function viaServer(wav: string, p: Plan, detect = false): Promise<Heard> {
   const s = await server(p.model);
   keepAwhile(s);
   const form = new FormData();
@@ -453,23 +500,49 @@ async function viaServer(wav: string, p: Plan, detect = false) {
     response_format: "verbose_json",
     // Only the language check needs how sure whisper is.
     no_language_probabilities: detect ? "false" : "true",
-    no_timestamps: "true",
+    // With timestamps whisper keeps going to the end of the piece; without,
+    // it can stop after the first sentence and drop the rest (measured: the
+    // Hindi half of an English-then-Hindi recording vanished).
+    no_timestamps: "false",
+    // whisper-server otherwise wraps lines at 60 letters, mid-word.
+    max_len: "100000",
+    split_on_word: "true",
     vad: existsSync(VAD.file) ? "true" : "false",
     detect_language: detect ? "true" : "false",
   };
   for (const [k, v] of Object.entries(fields)) form.set(k, v);
   const res = await fetch(`http://127.0.0.1:${s.port}/${s.secret}/inference`, { method: "POST", body: form, signal: AbortSignal.timeout(600_000) });
   if (!res.ok) throw new Error(`whisper-server ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const body = (await res.json()) as { text?: string; language?: string; detected_language_probability?: number; error?: string };
+  const body = (await res.json()) as {
+    text?: string;
+    language?: string;
+    detected_language_probability?: number;
+    segments?: { start?: number; end?: number; text?: string }[];
+    error?: string;
+  };
   if (body.error) throw new Error(`whisper-server: ${body.error}`);
-  return { text: detect ? "" : (body.text ?? ""), language: codeOf(body.language), sure: body.detected_language_probability ?? null };
+  const segments = (body.segments ?? [])
+    .filter((x) => typeof x.start === "number" && typeof x.end === "number")
+    .map((x) => ({ start: x.start as number, end: x.end as number, text: x.text ?? "" }));
+  return {
+    text: detect ? "" : (body.text ?? ""),
+    language: codeOf(body.language),
+    sure: body.detected_language_probability ?? null,
+    segments: detect ? [] : body.segments ? segments : null,
+  };
 }
 
 // The same, one program run per piece: slower (the model loads each time)
 // but independent of the server.
+const stamp = (t: string) => {
+  const [h, m, sec] = t.split(":").map(Number);
+  return h * 3600 + m * 60 + sec;
+};
+
 function viaCli(wav: string, p: Plan, detect = false) {
-  return new Promise<{ text: string; language: string | null; sure: number | null }>((resolve, reject) => {
-    const args = ["-m", p.model, "-l", p.language, "-t", String(threads()), "-nt", "-bs", DECODE.beam_size, "-bo", DECODE.best_of, "-sns", "--prompt", p.prompt];
+  return new Promise<Heard>((resolve, reject) => {
+    const args = ["-m", p.model, "-l", p.language, "-t", String(threads()), "-bs", DECODE.beam_size, "-bo", DECODE.best_of, "-sns"];
+    if (p.prompt) args.push("--prompt", p.prompt);
     if (detect) args.push("-dl");
     if (existsSync(VAD.file)) args.push("--vad", "-vm", VAD.file);
     args.push("-f", wav);
@@ -487,7 +560,18 @@ function viaCli(wav: string, p: Plan, detect = false) {
       clearTimeout(timer);
       if (code !== 0) return reject(new Error(`whisper-cli ${code}: ${err.slice(-600)}`));
       const found = /auto-detected language: (\w+) \(p = ([\d.]+)\)/.exec(err);
-      resolve({ text: detect ? "" : out, language: found?.[1] ?? (p.language === "auto" ? null : p.language), sure: found ? Number(found[2]) : null });
+      // Lines read "[00:00:01.200 --> 00:00:03.400]  words".
+      const segments: Segment[] = [];
+      for (const line of out.split("\n")) {
+        const m = /^\[(\d+:\d+:[\d.]+) --> (\d+:\d+:[\d.]+)\]\s*(.*)$/.exec(line.trim());
+        if (m) segments.push({ start: stamp(m[1]), end: stamp(m[2]), text: m[3] });
+      }
+      resolve({
+        text: detect ? "" : segments.map((x) => x.text).join(" ") || out,
+        language: found?.[1] ?? (p.language === "auto" ? null : p.language),
+        sure: found ? Number(found[2]) : null,
+        segments: detect ? [] : segments,
+      });
     });
   });
 }
@@ -498,6 +582,9 @@ function tidy(text: string, script: HindiScript, language: DictationLanguage) {
   // The Hinglish model sometimes runs sentences together: "flips.The".
   t = t.replace(/([a-z][.!?])(?=[A-Z][a-z])/g, "$1 ");
   if (script === "roman" && language !== "en" && hasDevanagari(t)) t = toRoman(t);
+  // A piece starts as a sentence does (the page lowercases it again when it
+  // carries on a sentence already in the box).
+  t = t.replace(/^[a-z]/, (c) => c.toUpperCase());
   // A recording that is only punctuation said nothing.
   return /[\p{L}\p{N}]/u.test(t) ? t : "";
 }
@@ -525,47 +612,215 @@ function oneAtATime<T>(job: () => Promise<T>): Promise<T> {
   return run;
 }
 
+// Where the voice detector hears speech, in seconds of the piece, with
+// pauses under 0.3 s joined. Null if it can't tell.
+async function speechIn(wav: string): Promise<{ start: number; end: number }[] | null> {
+  if (!existsSync(VAD.file)) return null;
+  await ownLibraries("whisper-vad-speech-segments");
+  const out = await quiet(path.join(BIN, "whisper-vad-speech-segments"), ["-vm", VAD.file, "-f", wav, "-t", "4", "-np"]).catch(() => null);
+  if (out === null) return null;
+  const regions: { start: number; end: number }[] = [];
+  // "Speech segment 0: start = 243.00, end = 493.00" (hundredths of a second)
+  for (const m of out.matchAll(/start = ([\d.]+), end = ([\d.]+)/g)) {
+    const start = Number(m[1]) / 100;
+    const end = Number(m[2]) / 100;
+    const last = regions.at(-1);
+    if (last && start - last.end < 0.3) last.end = end;
+    else regions.push({ start, end });
+  }
+  return regions;
+}
+
+// Cuts start to end out of a 16 kHz WAV, with a little air either side.
+function cut(wav: string, start: number, end: number, to: string) {
+  const from = Math.max(0, start - 0.15);
+  return quiet("ffmpeg", ["-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-ss", from.toFixed(3), "-t", (end + 0.15 - from).toFixed(3), "-i", wav, "-c:a", "pcm_s16le", "-f", "wav", to]);
+}
+
+// The language of each stretch, with the base model: one run for them all,
+// so the model loads once. Null if it can't tell.
+async function languagesOf(wav: string, stretches: { start: number; end: number }[], parts: string[]) {
+  if (!existsSync(LANGUAGE_ID.file) || !stretches.length) return null;
+  try {
+    const files = stretches.map(() => path.join(TMP, `dictation-${randomBytes(6).toString("hex")}.wav`));
+    parts.push(...files);
+    await Promise.all(stretches.map((r, i) => cut(wav, r.start, r.end, files[i])));
+    const out = await new Promise<string>((resolve, reject) => {
+      const child = spawn(path.join(BIN, "whisper-cli"), ["-m", LANGUAGE_ID.file, "-l", "auto", "-dl", "-t", "4", ...files.flatMap((f) => ["-f", f])], {
+        cwd: HOME,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      let text = "";
+      child.stdout.on("data", (c) => (text += c));
+      child.stderr.on("data", (c) => (text += c));
+      const timer = setTimeout(() => child.kill(), 60_000);
+      child.on("error", reject);
+      child.on("close", (code) => {
+        clearTimeout(timer);
+        if (code === 0) resolve(text);
+        else reject(new Error(`language check ${code}`));
+      });
+    });
+    const found = [...out.matchAll(/auto-detected language: (\w+) \(p = ([\d.]+)\)/g)].map((m) => ({ language: m[1], sure: Number(m[2]) }));
+    return found.length === stretches.length ? found : null;
+  } catch (error) {
+    console.error("[studio dictation] language check failed", error);
+    return null;
+  }
+}
+
+const covered = (r: { start: number; end: number }, segments: Segment[]) => {
+  let sum = 0;
+  for (const x of segments) sum += Math.max(0, Math.min(r.end, x.end) - Math.max(r.start, x.start));
+  return sum / Math.max(0.01, r.end - r.start);
+};
+// Words in a line, counting a Devanagari or Roman word alike.
+const wordCount = (t: string) => t.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+const MIN_WORDS_PER_SECOND = 1.9;
+// A line said twice over (whisper in the wrong language repeats itself) is
+// kept once.
+function dedupe(segments: Segment[]) {
+  const seen = new Set<string>();
+  return segments.filter((x) => {
+    const k = key(x.text);
+    if (!k || (k.length > 8 && seen.has(k))) return false;
+    seen.add(k);
+    return true;
+  });
+}
+const key = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
 async function writeDown(file: string, ask: Ask): Promise<PieceResult> {
   if (!installed()) throw new DictationError("Listening isn't set up on this Mac yet.", "setup");
   await mkdir(TMP, { recursive: true });
   const wav = path.join(TMP, `dictation-${randomBytes(6).toString("hex")}.wav`);
+  const parts: string[] = [];
   try {
     await toWav(file, wav);
-    const listen = (q: Plan, detect = false) =>
+    const listen = (audio: string, q: Plan, detect = false) =>
       oneAtATime(async () => {
         try {
-          return await viaServer(wav, q, detect);
+          return await viaServer(audio, q, detect);
         } catch (error) {
           console.error("[studio dictation] server failed, using whisper-cli", error);
           stopServer();
           await ownLibraries("whisper-cli");
           try {
-            return await viaCli(wav, q, detect);
+            return await viaCli(audio, q, detect);
           } catch (again) {
             console.error("[studio dictation] whisper-cli failed", again);
             throw new DictationError("Writing this down failed. Your recording is kept, so you can try again.", "failed");
           }
         }
       });
-    let language = ask.language;
-    // Detect and Hinglish: which language, first (about half a second), so
-    // English pieces are written as English (whisper forced into Hindi on
-    // English speech writes Hindi gibberish) and Hindi ones keep English
-    // words in English letters.
-    if ((language === "auto" || language === "hinglish") && !romanModel(ask)) {
-      const found = await listen(plan(ask, "auto"), true);
-      const english = found.language === "en" && (language === "auto" || (found.sure ?? 1) >= 0.85);
-      if (english) language = "en";
-      else if (language === "hinglish" || (found.language && HINDI_LIKE.has(found.language))) language = "hinglish";
+    // Which language, and so how to write it down (plan()).
+    const choose = async (audio: string, asked: DictationLanguage): Promise<DictationLanguage> => {
+      if ((asked !== "auto" && asked !== "hinglish") || romanModel(ask)) return asked;
+      const found = await listen(audio, plan(ask, "auto"), true);
+      if (found.language === "en" && (asked === "auto" || (found.sure ?? 1) >= 0.85)) return "en";
+      if (asked === "hinglish" || (found.language && HINDI_LIKE.has(found.language))) return "hinglish";
+      return "auto";
+    };
+    // `known`: the language was already found, so no second check.
+    const hear = async (audio: string, asked: DictationLanguage, known = false) => {
+      const p = plan(ask, known ? asked : await choose(audio, asked), known);
+      let said = await listen(audio, p);
+      // Stuck in a loop: the language was probably wrong, so let whisper
+      // choose.
+      if (stuck(said.text) && p.language !== "auto") said = await listen(audio, { ...p, language: "auto" });
+      return { said, p };
+    };
+
+    const speech = await speechIn(wav);
+    // The voice detector heard no speech at all: nothing to write.
+    if (speech && !speech.length) return { text: "", language: null };
+    const alone = async (r: { start: number; end: number }, asked: DictationLanguage, known = false) => {
+      const part = path.join(TMP, `dictation-${randomBytes(6).toString("hex")}.wav`);
+      parts.push(part);
+      await cut(wav, r.start, r.end, part);
+      const once = (await hear(part, asked, known)).said.text.trim();
+      if (once && !stuck(once)) return once;
+      // Nothing back from real speech: once more, whisper choosing the
+      // language, so a part is never lost quietly.
+      if (r.end - r.start < 0.6 || asked === "auto") return "";
+      const twice = (await hear(part, "auto", true)).said.text.trim();
+      return twice && !stuck(twice) ? twice : "";
+    };
+    const done = (segments: Segment[], language: string | null) => {
+      segments.sort((a, b) => a.start - b.start);
+      return { text: tidy(segments.map((x) => x.text.trim()).join(" "), ask.script, ask.language), language };
+    };
+
+    // Detect and Hinglish, with the standard or most accurate model: the
+    // language of every stretch of speech first, so a recording that
+    // switches between English and Hindi has each part written in its own
+    // language. (Set to one language, whisper drops or translates the
+    // other: an English start lost the Hindi after it.)
+    if (speech && (ask.language === "auto" || ask.language === "hinglish") && !romanModel(ask)) {
+      const stretches = speech.slice(0, 32);
+      const found = await oneAtATime(() => languagesOf(wav, stretches, parts));
+      if (found) {
+        const lang = found.map((f): DictationLanguage => (f.language === "en" ? "en" : HINDI_LIKE.has(f.language) ? "hinglish" : "auto"));
+        // A stretch in neither (a cough, a name) goes with the one before.
+        for (let i = 0; i < lang.length; i++) if (lang[i] === "auto") lang[i] = lang[i - 1] ?? lang.find((l) => l !== "auto") ?? "auto";
+        const runs: { language: DictationLanguage; start: number; end: number }[] = [];
+        stretches.forEach((r, i) => {
+          const last = runs.at(-1);
+          if (last && last.language === lang[i]) last.end = r.end;
+          else runs.push({ language: lang[i], start: r.start, end: r.end });
+        });
+        // Anything past the 32nd stretch joins the last run.
+        if (speech.length > stretches.length) runs[runs.length - 1].end = speech[speech.length - 1].end;
+        if (runs.length === 1) {
+          const p = plan(ask, runs[0].language, true);
+          let said = await listen(wav, p);
+          if (stuck(said.text) && p.language !== "auto") said = await listen(wav, { ...p, language: "auto" });
+          const segments = said.segments ?? [{ start: 0, end: 0, text: said.text }];
+          return done(dedupe(segments), said.language ?? p.language);
+        }
+        const segments: Segment[] = [];
+        for (const run of runs) {
+          const text = await alone(run, run.language, true);
+          if (text) segments.push({ start: run.start, end: run.end, text });
+        }
+        return done(segments, runs.some((r) => r.language === "hinglish") ? "hi" : "en");
+      }
     }
-    const p = plan(ask, language);
-    let said = await listen(p);
-    // Stuck in a loop: the language was probably wrong, so let whisper
-    // choose.
-    if (stuck(said.text) && p.language !== "auto") said = await listen({ ...p, language: "auto" });
-    return { text: tidy(said.text, ask.script, ask.language), language: said.language ?? (p.language === "auto" ? null : p.language) };
+
+    // Otherwise (English or Hindi chosen, the Hinglish model, or the
+    // language check unavailable): one pass, then make sure nothing was
+    // dropped.
+    const { said, p } = await hear(wav, ask.language);
+    if (!said.segments) return { text: tidy(said.text, ask.script, ask.language), language: said.language ?? (p.language === "auto" ? null : p.language) };
+    let segments = dedupe(said.segments);
+    const seen = new Set(segments.map((x) => key(x.text)));
+    const other: DictationLanguage = ask.language === "en" || ask.language === "hi" ? "auto" : ask.language;
+    if (speech) {
+      // Too few words for the speech heard (people say 2 to 3 a second; a
+      // dropped half leaves about 1.5): a language was skipped inside a
+      // line. Then every stretch is written down on its own.
+      const heard = speech.reduce((sum, r) => sum + r.end - r.start, 0);
+      const words = segments.reduce((sum, x) => sum + wordCount(x.text), 0);
+      if (speech.length > 1 && heard >= 2 && words / heard < MIN_WORDS_PER_SECOND) {
+        const each: Segment[] = [];
+        for (const r of speech.slice(0, 16)) {
+          const text = r.end - r.start >= 0.3 ? await alone(r, other) : "";
+          if (text) each.push({ start: r.start, end: r.end, text });
+        }
+        // Kept only if it found more.
+        if (each.reduce((sum, x) => sum + wordCount(x.text), 0) > words) segments = each;
+      } else {
+        // A stretch no line covers is written down on its own and put back
+        // in its place.
+        for (const r of speech.filter((x) => x.end - x.start >= 0.6 && covered(x, segments) < 0.4).slice(0, 12)) {
+          const text = await alone(r, other);
+          if (text && !seen.has(key(text))) segments.push({ start: r.start, end: r.end, text });
+        }
+      }
+    }
+    return done(segments, said.language ?? (p.language === "auto" ? null : p.language));
   } finally {
-    await rm(wav, { force: true });
+    await Promise.all([wav, ...parts].map((f) => rm(f, { force: true })));
   }
 }
 
