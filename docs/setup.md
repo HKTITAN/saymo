@@ -18,7 +18,22 @@ npm run setup -- --with-rust   # also the Rust engine (needs Rust from rustup.rs
 npm run dev                    # then open http://localhost:3200/studio
 ```
 
-Setup installs ffmpeg and cmake, the app's packages and each engine's packages. Run it again any time; it skips what's already there.
+Setup installs ffmpeg and cmake, the app's packages and each engine's packages. Run it again any time; it skips what's already there. It also checks that ffmpeg can use your Mac's hardware video encoder; if it says it can't, run `brew reinstall ffmpeg`.
+
+## Renders on your Mac
+
+Each render looks at the Mac it runs on and sets itself up for it. You don't need to change anything.
+
+- **Drawing frames:** Chrome draws several frames at once, as many as your Mac's cores and memory allow. An 8 GB Mac draws a 4K film with 2 at a time, so it doesn't run out of memory; a 16 GB Mac with 10 cores uses 8.
+- **Encoding:** a final's 4K file uses Apple's hardware encoder on Apple silicon Macs, which is about 2.5 times as fast as the software encoder and just as sharp. Intel Macs use the software encoder (x264). The 1080p file always uses x264.
+- **No repeat work:** if nothing in the film has changed since its last render of the same kind, the studio hands back that render at once. If only the sound changed, it puts the new sound on the existing video.
+
+The first line of `films/<id>/out/render-log.txt` says what a render chose. To override it on one Mac, add to `.env.local`:
+
+| Setting | Does |
+| --- | --- |
+| `STUDIO_WORKERS=4` | Draws 4 frames at once. Lower it if your Mac slows down during renders. |
+| `STUDIO_ENCODER=x264` | Never uses the hardware encoder. |
 
 Some things happen the first time you use them:
 
@@ -49,4 +64,5 @@ Restart `npm run dev` after changing `.env.local`.
 - **"Operation not permitted" in the terminal:** macOS has blocked access to the Desktop. In System Settings, open Privacy & Security, then Full Disk Access. Turn your terminal app off and on again, then quit and reopen it.
 - **The studio says it can't reach Claude:** run `claude` once in a terminal and sign in.
 - **A render fails:** check that Google Chrome is installed, then run `npm run setup` again.
+- **Your Mac slows down a lot while rendering:** add `STUDIO_WORKERS=2` to `.env.local` and restart `npm run dev`.
 - **Port 3200 is busy:** another copy of the studio is running. Close it, or stop it with `lsof -ti tcp:3200 | xargs kill`.

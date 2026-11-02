@@ -29,6 +29,21 @@ step "2. Video and audio tools"
 for tool in ffmpeg cmake; do
   if command -v "$tool" >/dev/null; then ok "$tool already installed"; else brew install "$tool"; fi
 done
+# Renders need x264 (every final) and use Apple's hardware encoder,
+# VideoToolbox, where the Mac has it (faster finals and drafts). Homebrew's
+# ffmpeg has both; an ffmpeg from elsewhere may not.
+ENCODERS=$(ffmpeg -hide_banner -encoders 2>/dev/null || true)
+if ! grep -q libx264 <<<"$ENCODERS"; then
+  stop "Your ffmpeg can't make H.264 videos (no libx264). Run: brew install ffmpeg, make sure $(brew --prefix)/bin comes first in your PATH, then run this again."
+fi
+if grep -q h264_videotoolbox <<<"$ENCODERS" &&
+  ffmpeg -hide_banner -loglevel error -f lavfi -i testsrc2=s=256x144:r=30 -frames:v 4 -vf format=yuv420p \
+    -c:v h264_videotoolbox -b:v 8M -f null - >/dev/null 2>&1; then
+  ok "ffmpeg can use this Mac's hardware video encoder (faster renders)"
+else
+  printf '  note: ffmpeg is not using the hardware video encoder, so renders will be slower.\n'
+  printf '        To fix it: brew reinstall ffmpeg\n'
+fi
 
 step "3. The app's packages"
 npm ci --no-audit --no-fund

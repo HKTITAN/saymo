@@ -87,21 +87,70 @@ How the studio uses them:
   studio queues them, one at a time, in `src/lib/studio/render.ts`). A
   draft writes `films/<id>/out/draft.mp4` at the film's own size; a final
   writes `4k.mp4` (twice its size) and `1080p.mp4` (its own size). Both make
-  `poster.png` at the film's "Cover" mark. Each engine hands over lossless
-  frames and one ffmpeg encodes them exactly as `npm run export` does
-  (H.264, tagged BT.709, the small copy being the big frames at half size).
-  HTML films use HyperFrames' renderer, or a Chrome capture at twice the
-  size for shapes it has no 4K preset for (4:5); React films use Remotion's
-  renderer; Rust films build into one shared folder,
-  `node_modules/.cache/studio-cargo`, so only the first build is slow.
+  `poster.png` at the film's "Cover" mark. For a final, each engine hands
+  over lossless frames at twice the film's size and one ffmpeg makes both
+  files from them (H.264, BT.709, limited range, 4:2:0; the 1080p file is
+  the same frames at half size). HTML films use HyperFrames' renderer, or
+  our own Chrome capture at twice the size for shapes it has no 4K preset
+  for (4:5); React films use Remotion's renderer; Rust films build into
+  one shared folder, `node_modules/.cache/studio-cargo`, so only the first
+  build is slow.
 
-Typical times on this Mac for a 5 second 1920x1080 film:
+### How renders stay crisp
 
-| | HTML | React | Rust |
-| --- | --- | --- | --- |
-| Stage ready | under 1 s | under 1 s | 10 to 20 s (its draft) |
-| Draft | 8 s | 19 to 22 s | 10 s |
-| Final (4K + 1080p) | 15 s | 56 s | 22 s |
+- A final is drawn once, at twice the film's size. The 4K file is those
+  frames as they are; the 1080p file is the same frames shrunk to half
+  with the lanczos filter, which keeps small type and hairlines sharper
+  than averaging. Nothing is drawn twice or scaled twice, so the two files
+  always match.
+- Colour is tagged BT.709, limited range, 4:2:0, so the orange plays back
+  the same in QuickTime, browsers and social apps.
+- The 4K file is encoded at quality 90 on Apple's hardware encoder (Apple
+  silicon) or x264 slow at CRF 14 (Intel Macs). The 1080p file is x264
+  slow at CRF 14, tuned for flat colour and sharp edges. All of these
+  measure as visually lossless: on the launch film, 100% crops of small
+  type and hairlines sit within 1 dB of the 4:2:0 ceiling.
+- Sound is AAC at 320 kb/s, 48 kHz. Files start playing before they have
+  fully downloaded (faststart).
+- The poster is cut from a lossless frame, not from the video.
+
+### How renders are made fast
+
+`scripts/studio/machine.mjs` looks at each Mac when a render starts: its
+cores, its memory, and whether ffmpeg can use Apple's hardware encoder
+(VideoToolbox). From that it picks:
+
+- **How many frames Chrome draws at once:** the cores minus two, at most
+  8, and only as many as fit in memory after keeping about 6.5 GB for
+  macOS, the studio, your browser and Claude (about 0.6 GB a page at 4K,
+  0.35 GB at 1080p). So an 8 GB Mac draws a 4K film 2 frames at a time and
+  a 16 GB Mac with 10 cores 8 at a time. HyperFrames, Remotion and our own
+  4:5 capture all take this number.
+- **The encoder:** see above for finals. A draft uses the hardware encoder
+  wherever it works; an HTML draft is drawn and encoded in one pass by
+  HyperFrames.
+- **No repeat work:** each render saves a fingerprint of the film's files,
+  settings, footage and sound in `out/render-key.json`. The next render of
+  the same kind with the same fingerprint returns at once. If only the
+  sound (or its volume) changed, the new sound goes onto the existing
+  video in a second or two. A changed sound is rendered while the frames
+  are drawn, not after.
+
+`STUDIO_WORKERS` and `STUDIO_ENCODER=x264` override the choice on one Mac
+(docs/setup.md). The first line of `out/render-log.txt` says what was
+picked.
+
+Measured on an M5 with 16 GB, with other apps running, for the 29 second
+1920x1080 60 fps launch film (HTML):
+
+| | Before | Now |
+| --- | --- | --- |
+| Draft | 48 s | 18 s |
+| Final (4K + 1080p) | 150 s | 75 s |
+| Either again, nothing changed | the full time | under 1 s |
+
+A 5 second 4:5 HTML film's final went from 23 s to 14 s (its capture now
+draws several frames at once).
 
 Set up once per engine (each keeps its own packages; the root is untouched):
 
