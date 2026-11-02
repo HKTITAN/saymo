@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { bridgeScript, STAGE_STYLE } from "./bridge";
+import { IS_PRODUCT } from "./edition";
 import type { Film } from "./contract";
 import { FILMS_DIR, filmDir, outDir, ROOT } from "./films";
 import { fontFaces, kitForFilm, stageFileUrl, tokensOf } from "./brand-tokens";
@@ -36,7 +37,7 @@ export async function stagePage(film: Film): Promise<string> {
     const html = await readFile(path.join(filmDir(film.id), "index.html"), "utf8").catch(() => null);
     if (html === null) return errorPage(film, "This film has no index.html. Ask Claude to fix it.");
     // The globals go first, then the brand and the bridge, then the film's own head.
-    return prepareHtml(html, film, paramValues(film), `<base href="${stageBase(film.id)}">${STAGE_STYLE}${brand}${bridgeScript({ id: film.id, engine: "html" })}`);
+    return prepareHtml(html, film, paramValues(film), `<base href="${stageBase(film.id)}">${STAGE_STYLE}${brand}${bridgeScript({ id: film.id, engine: "html", gsap: !IS_PRODUCT })}`);
   }
   if (film.engine === "react") {
     const key = await sourceKey(film.id);

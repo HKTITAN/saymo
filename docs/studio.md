@@ -63,7 +63,7 @@ from), and the studio drives and renders it:
 
 | A film written as | Engine | Good for | Licence |
 | --- | --- | --- | --- |
-| `html`: `index.html`, a paused GSAP timeline at `window.__timelines.main` | [HyperFrames](https://hyperframes.heygen.com) 0.8.227 (`studio/hyperframes`) | Most films: instant to preview, any web type, CSS and SVG, and the one Claude writes best. The default | Apache 2.0, free |
+| `html`: `index.html`, moved by a Motion sequence wrapped by `filmTimeline()` at `window.__timelines.main` (GSAP in films made before Motion, in-house only) | [HyperFrames](https://hyperframes.heygen.com) 0.8.227 (`studio/hyperframes`) | Most films: instant to preview, any web type, CSS and SVG, and the one Claude writes best. The default | Apache 2.0, free |
 | `react`: `src/Film.jsx`, a component drawn from `useCurrentFrame()` | [Remotion](https://www.remotion.dev) 4.0.539 (`studio/remotion`) | Films driven by data, captions, audio and video clips | Free for individuals, companies of up to 3 people, and evaluation. **Aerchain needs a company licence before using it for real work** (remotion.pro) |
 | `rust`: a Cargo crate drawing SVG per frame | [fframes](https://fframes.studio) 1.3.0 (`studio/fframes`) | Heavy generative scenes; renders 4K in seconds on the GPU | MIT, free |
 
@@ -202,5 +202,8 @@ same 4 second "Aerchain bands" film made in each engine, rendered with
 
 The studio's chat gets the engines' own skills, installed in `.claude/skills`:
 Remotion's (`remotion-dev/skills`), HyperFrames' (`heygen-com/hyperframes`),
-fframes' (`fframes.studio`), GSAP's (`greensock/gsap-skills`) and
-LottieFiles' motion design principles (`lottiefiles/motion-design-skill`).
+fframes' (`fframes.studio`), GSAP's (`greensock/gsap-skills`, for films made
+before Motion) and LottieFiles' motion design principles
+(`lottiefiles/motion-design-skill`). Each skill that used to point at GSAP
+starts with an "In Motion Studio" note saying to write Motion instead; a
+skills update overwrites those notes, so put them back after one.

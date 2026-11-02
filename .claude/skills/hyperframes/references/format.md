@@ -2,6 +2,8 @@
 
 The detail behind the contract in `SKILL.md`. Full references: `npx hyperframes docs compositions`, `docs data-attributes`, `docs troubleshooting`.
 
+In Motion Studio, the examples' `gsap.timeline({ paused: true })` and tweens are written as a Motion sequence wrapped by `filmTimeline()` instead (`runtimes.md`, "Motion"); the attributes, scenes and lint rules are the same. The `gsap_*` lint rules apply to films made before Motion.
+
 ## Shape of a project
 
 ```html

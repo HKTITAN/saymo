@@ -8,18 +8,20 @@
 //   window.__studioStage.loading()    a draft is being made (rust)
 //
 // HTML films need no adapter of their own: this script finds their
-// timeline. Pointing (a click that picks, not plays) is done here for every
-// engine, from the `pick` selector: the deepest element it matches under the
-// pointer. The stage's own outline is drawn in a layer the film never sees
-// in a render.
+// timeline (a Motion sequence wrapped by the film's filmTimeline(), or a
+// GSAP timeline in films made before Motion). Pointing (a click that picks,
+// not plays) is done here for every engine, from the `pick` selector: the
+// deepest element it matches under the pointer. The stage's own outline is
+// drawn in a layer the film never sees in a render.
 
 export type BridgeOptions = {
   id: string; // film id, for remembering the playhead and live values across reloads
   engine: "html" | "react" | "rust";
+  gsap?: boolean; // false in the product edition: a film moved by GSAP doesn't play
 };
 
-export function bridgeScript({ id, engine }: BridgeOptions) {
-  return `<script>(${bridge.toString()})(${JSON.stringify({ id, engine })});</script>`;
+export function bridgeScript({ id, engine, gsap = true }: BridgeOptions) {
+  return `<script>(${bridge.toString()})(${JSON.stringify({ id, engine, gsap })});</script>`;
 }
 
 // Runs in the stage page, not here: plain browser JavaScript.
@@ -30,7 +32,10 @@ function bridge(options: BridgeOptions) {
   const w = window as unknown as {
     __film: { width: number; height: number; fps: number; duration: number };
     __params: Values;
-    __timelines?: Record<string, { pause(): void; seek(t: number, suppress?: boolean): void }>;
+    // A timeline seeks; a bare Motion animation has a `time` to set instead.
+    __timelines?: Record<string, { pause?(): void; seek?(t: number, suppress?: boolean): void; time?: unknown }>;
+    filmTimeline?: { flush?(): void };
+    gsap?: unknown;
     __studioStage: unknown;
   };
   const FILM = w.__film;
@@ -590,7 +595,10 @@ function bridge(options: BridgeOptions) {
 
   // HTML films: the timeline at window.__timelines.main, once the page and
   // its fonts are in. New values rebuild the film, so the page reloads
-  // (calmly: at most a few times a second while a slider moves).
+  // (calmly: at most a few times a second while a slider moves). A seek
+  // draws its frame at once: filmTimeline's seek() does (Motion), as does
+  // a GSAP timeline's; a bare Motion animation gets its time set and then
+  // Motion's frame run.
   if (options.engine === "html") {
     let timer = 0;
     const stage = w.__studioStage as { keepParams(v: Values): void; register(a: Adapter): void; ready(): void };
@@ -600,10 +608,18 @@ function bridge(options: BridgeOptions) {
         let tries = 0;
         const wait = () => {
           const tl = w.__timelines?.main;
-          if (tl) {
-            tl.pause();
+          if (tl && options.gsap === false && w.gsap) {
+            fail("This film moves with GSAP, which this edition of the studio doesn't include. Ask Claude to move it to Motion.");
+          } else if (tl) {
+            tl.pause?.();
             stage.register({
-              seek: (s) => tl.seek(s, false),
+              seek: (s) => {
+                if (typeof tl.seek === "function") tl.seek(s, false);
+                else {
+                  tl.time = s;
+                  w.filmTimeline?.flush?.();
+                }
+              },
               params(values) {
                 // The studio sends its values on every "ready"; if the page
                 // already runs with them, reloading would only send it round

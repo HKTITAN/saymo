@@ -309,10 +309,17 @@ async function captureHtml(job, frames, onProgress) {
       // these pages, so the wait used to time out.
       await page.waitForFunction(() => !!window.__timelines?.main, null, { polling: 100 });
       for (let f = from; f < to; f++) {
+        // filmTimeline's seek() (Motion) and a GSAP timeline's both draw the
+        // frame at once; a bare Motion animation gets its time set, then
+        // Motion's frame run.
         await page.evaluate((t) => {
           const tl = window.__timelines.main;
-          tl.pause();
-          tl.seek(t, false);
+          tl.pause?.();
+          if (typeof tl.seek === "function") tl.seek(t, false);
+          else {
+            tl.time = t;
+            window.filmTimeline?.flush?.();
+          }
         }, f / job.fps);
         const file = path.join(frames, `frame_${String(f).padStart(5, "0")}.png`);
         await page.screenshot({ path: file, animations: "disabled", caret: "hide" });
@@ -455,6 +462,10 @@ async function lock(file) {
 }
 
 const ENGINE_OF = { html: "hyperframes", react: "remotion", rust: "fframes" };
+// The edition (src/lib/studio/edition.ts): the studio hands its environment
+// to this script, so STUDIO_EDITION is the same here.
+const PRODUCT = process.env.STUDIO_EDITION === "product";
+const GSAP_SCRIPT = /<script[^>]+src=["'][^"']*gsap[^"']*["']/i;
 // What a render copies: the film's own files, not its renders or history.
 const SKIP = new Set(["out", ".history", "node_modules", "target", ".hyperframes", "renders", "media", "sound"]);
 
@@ -492,6 +503,11 @@ async function renderFilm(id) {
   const brand = kit ? await tokensForRender(ROOT, kit, film.engine === "react" ? path.join(src, "public") : src) : null;
   if (film.engine === "html") {
     const index = path.join(src, "index.html");
+    // The product edition doesn't include GSAP (docs/launch/gsap-to-motion.md):
+    // only films moved by Motion render there.
+    if (PRODUCT && GSAP_SCRIPT.test(await readFile(index, "utf8"))) {
+      throw new Error("This film moves with GSAP, which this edition of the studio doesn't include. Ask Claude to move it to Motion.");
+    }
     await writeFile(index, prepareHtml(await readFile(index, "utf8"), film, params, brand ? brandScript(brand, fontFaces(brand)) : ""));
   }
   if (brand && film.engine === "rust") await writeFile(path.join(src, "brand.json"), `${JSON.stringify(brand, null, 2)}\n`);

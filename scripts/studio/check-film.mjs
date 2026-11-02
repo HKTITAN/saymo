@@ -77,6 +77,13 @@ if (film.kind === "video") {
 }
 
 if (film.engine === "html") {
+  // Films move with Motion, wrapped by filmTimeline() so the studio can seek
+  // them (assets/timeline.js). GSAP is only for films made before Motion, and
+  // only in the in-house edition (docs/launch/gsap-to-motion.md).
+  const html = readFileSync(path.join(dir, "index.html"), "utf8");
+  if (process.env.STUDIO_EDITION === "product" && /<script[^>]+src=["'][^"']*gsap[^"']*["']/i.test(html)) {
+    fail("index.html loads GSAP, which this edition of the studio doesn't include. Move the film to Motion (assets/vendor/motion.js with assets/timeline.js).");
+  }
   const bin = path.join(ROOT, "studio/hyperframes/node_modules/.bin/hyperframes");
   if (!existsSync(bin)) fail("The film checker isn't installed: run `npm ci` in studio/hyperframes.");
   process.exit(

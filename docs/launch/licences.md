@@ -24,6 +24,8 @@ GSAP is free, commercially too, but its licence (https://gsap.com/community/stan
 
 Ways out: Webflow's written consent, or move films off GSAP. See [gsap-to-motion.md](gsap-to-motion.md).
 
+Done on 2026-11-03: the starter and new films use Motion; the starter no longer contains `gsap.min.js`, and the product edition won't play, render or check a film that loads GSAP. Films made before then still carry their own copy, for in-house use. Left: the sample composition `studio/hyperframes/aerchain-bands` still loads GSAP from a CDN, and several borrowed skills still show GSAP code (each starts with a note to write Motion).
+
 ### 3. Remotion
 
 Every `remotion` and `@remotion/*` package is under the Remotion License (`studio/remotion/node_modules/remotion/LICENSE.md`), source-available rather than open source. From https://www.remotion.dev/docs/license/faq:
@@ -47,6 +49,7 @@ The brand kit (`studio/brands/aerchain`: logos, guideline, rules), the `aerchain
 | What | Licence | What it needs |
 | --- | --- | --- |
 | HyperFrames 0.8.227 | Apache-2.0 | Keep its licence and NOTICE; say what was changed |
+| Motion 14.3.1 (`motion`, vendored as `assets/vendor/motion.min.js` in the HTML starter and so in every new film) | MIT | Keep `motion.LICENSE.md` beside it |
 | fframes, Tone.js, skullet, Next, React and about 700 more | MIT, ISC, BSD | Keep each licence and copyright line |
 | whisper.cpp, the Whisper models, Silero VAD | MIT | The same |
 | Hinglish model (`Oriserve/Whisper-Hindi2Hinglish-Apex`, GGML by `Marquestra`) | Apache-2.0 | Keep its notice |
