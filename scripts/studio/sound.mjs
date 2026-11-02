@@ -169,11 +169,49 @@ function servePage(script) {
   );
 }
 
+// ─── A motion film's voiceover ──────────────────────────────────────────────
+//
+// A motion film made from slides can have a voiceover: sound/voice.json
+// places clips of speech (sound/voice/<name>.wav) on the film's timeline,
+// { "clips": [{ "file": "voice/slide-01.wav", "start": 0.5 }, …] }. They're
+// added to the mix as a third stem at their own level, and the music dips
+// under them as it does under speech in a video film.
+
+const voiceFile = path.join(soundDir, "voice.json");
+
+async function voiceClips(film) {
+  if (film.kind === "video") return [];
+  const raw = JSON.parse(await readFile(voiceFile, "utf8").catch(() => "null"));
+  if (!Array.isArray(raw?.clips)) return [];
+  return raw.clips
+    .slice(0, 400)
+    .filter((c) => typeof c?.file === "string" && /^voice\/[A-Za-z0-9._-]{1,80}\.wav$/.test(c.file) && Number.isFinite(Number(c.start)))
+    .map((c) => ({ file: path.join(soundDir, c.file), start: Math.max(0, Number(c.start)), name: c.file }))
+    .filter((c) => existsSync(c.file));
+}
+
+// The voice stem: every clip at its start, the film's length, stereo float.
+async function voiceStem(film, clips) {
+  const frames = Math.round(film.duration * RATE);
+  const out = new Float32Array(frames * 2);
+  const spans = [];
+  for (const c of clips) {
+    const { stdout } = await run("ffmpeg", ["-hide_banner", "-loglevel", "error", "-i", c.file, "-f", "f32le", "-ac", "2", "-ar", String(RATE), "-"]);
+    const pcm = new Float32Array(stdout.buffer, stdout.byteOffset, stdout.byteLength / 4);
+    const at = Math.round(c.start * RATE) * 2;
+    const n = Math.min(pcm.length, out.length - at);
+    for (let i = 0; i < n; i++) out[at + i] += pcm[i];
+    if (n > 0) spans.push({ start: c.start, end: c.start + n / 2 / RATE });
+  }
+  return { pcm: out, spans };
+}
+
 // A video film's timeline, as the score sees it: its graphics, and where in
 // film time someone speaks (from the captions if made, else the clips'
-// transcripts placed on the timeline).
-async function videoContext(film) {
-  if (film.kind !== "video") return { graphics: [], speech: [] };
+// transcripts placed on the timeline). A motion film's speech is its
+// voiceover.
+async function videoContext(film, voice = null) {
+  if (film.kind !== "video") return { graphics: [], speech: voice?.spans ?? [] };
   const edit = JSON.parse(await readFile(path.join(dir, "edit.json"), "utf8").catch(() => "null"));
   if (!edit?.tracks) return { graphics: [], speech: [] };
   const graphics = [];
@@ -204,9 +242,9 @@ async function videoContext(film) {
 }
 
 // Renders the score in the page; returns interleaved float32 stereo.
-async function renderInChrome(source, film) {
+async function renderInChrome(source, film, voice = null) {
   const script = await engineBundle();
-  const context = await videoContext(film);
+  const context = await videoContext(film, voice);
   const server = await servePage(script);
   const { chromium } = await import(path.join(ROOT, "node_modules/playwright/index.mjs"));
   const browser = await chromium.launch({ channel: "chrome", args: ["--autoplay-policy=no-user-gesture-required"] });
@@ -491,10 +529,11 @@ async function chooseMaster(raw, targetLufs) {
 
 // Adds the stems (with the person's edits), sets the loudness the score
 // was given, and writes sound.wav, the outlines and the status.
-async function finish({ film, music, effects, master, spans, work, stems }) {
+async function finish({ film, music, effects, voice = null, master, spans, work, stems }) {
   const total = Math.round(film.duration * RATE);
   const raw = path.join(work, "mix.f32");
-  const mixed = spans.length ? sumOf(withSpans(music, spans, "music"), withSpans(effects, spans, "effects")) : sumOf(music, effects);
+  const score = spans.length ? sumOf(withSpans(music, spans, "music"), withSpans(effects, spans, "effects")) : sumOf(music, effects);
+  const mixed = voice ? sumOf(score, voice.pcm) : score;
   await writeFile(raw, Buffer.from(mixed.buffer));
   const filters = [...master.filters];
   // A span made louder could push past the peak limit; catch it.
@@ -533,7 +572,9 @@ async function finish({ film, music, effects, master, spans, work, stems }) {
 async function main() {
   const film = JSON.parse(await readFile(path.join(dir, "film.json"), "utf8"));
   const scoreFile = path.join(soundDir, "score.js");
-  if (!existsSync(scoreFile)) {
+  const clips = checking ? [] : await voiceClips(film);
+  const voice = clips.length ? await voiceStem(film, clips) : null;
+  if (!existsSync(scoreFile) && !voice) {
     await mkdir(soundDir, { recursive: true });
     await status({ state: "none" });
     say("This film has no sound/score.js yet, so there is nothing to render.");
@@ -556,7 +597,7 @@ async function main() {
     await mkdir(work, { recursive: true });
     try {
       const spans = await readSpans(film.duration);
-      const { length } = await finish({ film, music, effects, master, spans, work, stems: master.stems ?? STEMS });
+      const { length } = await finish({ film, music, effects, voice, master, spans, work, stems: master.stems ?? STEMS });
       say(`Mixed sound/sound.wav again from its stems with ${spans.length} edit${spans.length === 1 ? "" : "s"}: ${fmt(length)}, in ${((Date.now() - started) / 1000).toFixed(1)} s.`);
     } finally {
       await rm(work, { recursive: true, force: true });
@@ -564,8 +605,9 @@ async function main() {
     return;
   }
 
-  const source = await readFile(scoreFile, "utf8");
-  const targetLufs = loudnessOf(source);
+  // A voiceover with no score yet: only the voice.
+  const source = existsSync(scoreFile) ? await readFile(scoreFile, "utf8") : null;
+  const targetLufs = source ? loudnessOf(source) : TARGET_LUFS;
   await mkdir(soundDir, { recursive: true });
   const started = Date.now();
   await status({ state: "rendering", step: "Playing the score" });
@@ -591,16 +633,19 @@ async function main() {
     return;
   }
 
-  const { results, context } = await renderInChrome(source, film);
+  const silence = () => new Float32Array(Math.round(film.duration * RATE) * 2);
+  const { results, context } = source
+    ? await renderInChrome(source, film, voice)
+    : { results: [{ music: silence(), effects: silence(), report: { music: null, effects: null } }], context: { graphics: [], speech: voice?.spans ?? [] } };
   const { music, effects, report } = results[0];
   const stems = STEMS.filter((s) => (s === "music" ? report.music : report.effects));
   const work = path.join(soundDir, ".work");
   await mkdir(work, { recursive: true });
 
   await status({ state: "rendering", step: "Setting the loudness" });
-  // The loudness is chosen from the score alone, before any edits.
+  // The loudness is chosen from the score (and voiceover) alone, before any edits.
   const raw = path.join(work, "score.f32");
-  await writeFile(raw, Buffer.from(sumOf(music, effects).buffer));
+  await writeFile(raw, Buffer.from((voice ? sumOf(sumOf(music, effects), voice.pcm) : sumOf(music, effects)).buffer));
   const master = { ...(await chooseMaster(raw, targetLufs)), stems };
   for (const [stem, pcm] of [["music", music], ["effects", effects]]) {
     await writeFile(path.join(work, `${stem}.wav`), floatWav(pcm));
@@ -610,7 +655,7 @@ async function main() {
 
   await status({ state: "rendering", step: "Listening back" });
   const spans = await readSpans(film.duration);
-  const { final, after, length } = await finish({ film, music, effects, master, spans, work, stems });
+  const { final, after, length } = await finish({ film, music, effects, voice, master, spans, work, stems });
   const onsets = onsetsOf(final);
   await rm(work, { recursive: true, force: true });
 
@@ -619,7 +664,7 @@ async function main() {
     `Rendered sound/sound.wav: ${fmt(length)}, 48 kHz stereo, in ${((Date.now() - started) / 1000).toFixed(1)} s.`,
     master.silent
       ? "It is silent."
-      : `Loudness ${after.lufs?.toFixed(1)} LUFS (the score alone was ${master.before?.toFixed(1)}), true peak ${after.truePeak?.toFixed(1)} dBTP.`,
+      : `Loudness ${after.lufs?.toFixed(1)} LUFS (the ${voice ? "score and voiceover were" : "score alone was"} ${master.before?.toFixed(1)}), true peak ${after.truePeak?.toFixed(1)} dBTP.`,
     report.music
       ? `Music: ${report.music.notes} notes at ${report.music.cps} cycles a second (${(report.music.cps * 60).toFixed(0)} cycles a minute), from ${fmt(report.music.start)}.`
       : "Music: none.",
@@ -634,7 +679,11 @@ async function main() {
     `Onsets (${onsets.length}), with the film mark each lands on:`,
     ...describeOnsets(onsets, [...(film.marks ?? []), ...context.graphics.map((g) => ({ t: g.start, label: `${g.graphic} appears`, after: Math.min(0.8, g.duration) }))]),
     ...(context.graphics.length ? [`Graphics: ${context.graphics.map((g) => `${g.graphic} ${g.start.toFixed(2)} to ${(g.start + g.duration).toFixed(2)} s`).join(", ")}.`] : []),
-    ...(context.speech.length ? [`Speech: ${context.speech.length} words; the music dips under them.`] : []),
+    ...(voice
+      ? [`Voiceover: ${clips.length} clip${clips.length === 1 ? "" : "s"} from sound/voice.json, ${voice.spans.map((v) => `${v.start.toFixed(2)} to ${v.end.toFixed(2)} s`).join(", ")}; the music dips under them.`]
+      : context.speech.length
+        ? [`Speech: ${context.speech.length} words; the music dips under them.`]
+        : []),
   ];
   say(lines.join("\n"));
 }

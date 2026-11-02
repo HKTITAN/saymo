@@ -404,6 +404,10 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Edit(/${dir}/sound/*-peaks.json)`,
     `Edit(/${dir}/sound/master.json)`,
     `Edit(/${dir}/sound/mix.json)`,
+    // A slide film's voiceover clips are the studio's; Claude may move them
+    // in sound/voice.json, not change or open the recordings.
+    `Edit(/${dir}/sound/voice/*.wav)`,
+    `Read(/${dir}/sound/voice/*.wav)`,
     ...FOOTAGE_FILES.map((f) => `Read(/${dir}/media/**/${f})`),
   ];
   const args = [

@@ -26,16 +26,25 @@ const KINDS: Record<string, AttachmentKind> = {
   json: "text",
   docx: "doc",
 };
-// A film's prompts also take sounds, as references Claude listens to.
+// A film's prompts also take sounds, as references Claude listens to, and
+// slide decks, which become slides Claude can build from.
 const AUDIO_EXTS = ["mp3", "wav", "m4a", "aif", "aiff", "aac", "ogg", "flac"];
+const DECK_EXTS = ["pptx", "ppt", "key", "odp"];
 export const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
+const MAX_DECK_BYTES = 200 * 1024 * 1024;
 const kindsFor = (audio: boolean): Record<string, AttachmentKind> =>
-  audio ? { ...KINDS, ...Object.fromEntries(AUDIO_EXTS.map((e) => [e, "audio" as const])) } : KINDS;
+  audio
+    ? {
+        ...KINDS,
+        ...Object.fromEntries(AUDIO_EXTS.map((e) => [e, "audio" as const])),
+        ...Object.fromEntries(DECK_EXTS.map((e) => [e, "slides" as const])),
+      }
+    : KINDS;
 export const acceptFor = (audio: boolean) =>
   Object.keys(kindsFor(audio))
     .map((e) => `.${e}`)
     .join(",");
-export const KIND_LABEL: Record<AttachmentKind, string> = { image: "Image", pdf: "PDF", text: "Text", doc: "Doc", audio: "Sound" };
+export const KIND_LABEL: Record<AttachmentKind, string> = { image: "Image", pdf: "PDF", text: "Text", doc: "Doc", audio: "Sound", slides: "Slides" };
 
 const extOf = (name: string) => name.split(".").pop()?.toLowerCase() ?? "";
 export const isAudioFile = (file: File) => AUDIO_EXTS.includes(extOf(file.name)) || (file.type.startsWith("audio/") && extOf(file.name) !== "");
@@ -154,11 +163,11 @@ export function useAttachments(url: string | null, { audio = false }: { audio?: 
         const kind = kinds[extOf(file.name)] ?? (file.type.startsWith("image/") ? "image" : null);
         if (!kind) {
           setNotice(
-            `Claude can't open ${file.name}. Attach ${audio ? "a sound, an image, a PDF, a Word file or plain text" : "an image, a PDF, a Word file or plain text"}.`,
+            `Claude can't open ${file.name}. Attach ${audio ? "a sound, slides, an image, a PDF, a Word file or plain text" : "an image, a PDF, a Word file or plain text"}.`,
           );
           continue;
         }
-        const limit = kind === "audio" ? MAX_AUDIO_BYTES : MAX_BYTES;
+        const limit = kind === "audio" ? MAX_AUDIO_BYTES : kind === "slides" ? MAX_DECK_BYTES : MAX_BYTES;
         if (file.size > limit) {
           setNotice(`${file.name} is over ${limit / 1024 / 1024} MB. Attach a smaller file${kind === "audio" ? " or a shorter clip" : ""}.`);
           continue;

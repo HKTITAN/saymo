@@ -201,8 +201,10 @@ export type ChatContext = {
 // /api/studio/films/<id>/attachments or /api/studio/brands/<id>/attachments
 // (body = the file, `x-file-name`), then send what comes back with the prompt.
 // Films also take sound files ("audio"), as references Claude listens to
-// with scripts/studio/listen.mjs; brand kits don't.
-export type AttachmentKind = "image" | "pdf" | "text" | "doc" | "audio";
+// with scripts/studio/listen.mjs, and slide decks ("slides": PowerPoint,
+// Keynote, OpenDocument), turned into slides beside them as a PDF is too;
+// brand kits take neither.
+export type AttachmentKind = "image" | "pdf" | "text" | "doc" | "audio" | "slides";
 export type Attachment = {
   path: string; // relative to the film or kit folder: "refs/brief-1a2b3c.pdf"
   name: string; // the file's own name, for the chip

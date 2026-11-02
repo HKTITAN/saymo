@@ -679,7 +679,8 @@ async function saveKey(file, quality, value) {
 async function soundFor(id, film, duration) {
   if (!film.sound?.on) return null;
   const dir = path.join(ROOT, "films", id, "sound");
-  if (!existsSync(path.join(dir, "score.js"))) return null;
+  // A score, or a voiceover (a film made from slides).
+  if (!existsSync(path.join(dir, "score.js")) && !existsSync(path.join(dir, "voice.json"))) return null;
   const wav = path.join(dir, "sound.wav");
   if (!(await soundIsCurrent(id, film, duration))) {
     await run(process.execPath, [path.join(ROOT, "scripts/studio/sound.mjs"), id, "--quiet"]);
@@ -717,7 +718,8 @@ async function soundIsCurrent(id, film, duration) {
   const time = async (p) => (await stat(p).catch(() => null))?.mtimeMs ?? null;
   const wav = await time(path.join(dir, "sound/sound.wav"));
   const score = await time(path.join(dir, "sound/score.js"));
-  if (wav === null || score === null || wav < score) return false;
+  const voice = await time(path.join(dir, "sound/voice.json"));
+  if (wav === null || (score === null && voice === null) || wav < (score ?? 0) || wav < (voice ?? 0)) return false;
   // Volume edits saved but not mixed in yet.
   const mix = await time(path.join(dir, "sound/mix.json"));
   if (mix !== null && wav < mix) return false;

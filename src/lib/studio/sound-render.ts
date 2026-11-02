@@ -34,11 +34,14 @@ async function record(id: string, status: SoundStatus) {
 // Is sound.wav made from the score as it is now, at the film's length?
 export async function soundIsCurrent(id: string) {
   const dir = soundDir(id);
-  const [score, wav] = await Promise.all([
+  const [score, wav, voice] = await Promise.all([
     stat(path.join(dir, "score.js")).catch(() => null),
     stat(path.join(dir, "sound.wav")).catch(() => null),
+    stat(path.join(dir, "voice.json")).catch(() => null),
   ]);
-  if (!score || !wav || wav.mtimeMs < score.mtimeMs) return false;
+  if ((!score && !voice) || !wav || wav.mtimeMs < (score?.mtimeMs ?? 0)) return false;
+  // A slide film's voiceover moved or changed.
+  if (voice && wav.mtimeMs < voice.mtimeMs) return false;
   // Volume edits saved but not mixed in yet.
   const mix = await stat(path.join(dir, "mix.json")).catch(() => null);
   if (mix && wav.mtimeMs < mix.mtimeMs) return false;
@@ -55,7 +58,8 @@ export async function soundIsCurrent(id: string) {
 // Asks for the film's sound. Unless `force`, a sound that is already
 // current is left as it is.
 export async function startSound(id: string, force = false) {
-  if (!existsSync(path.join(soundDir(id), "score.js"))) return;
+  // A score, or a voiceover (a film made from slides) with or without one.
+  if (!existsSync(path.join(soundDir(id), "score.js")) && !existsSync(path.join(soundDir(id), "voice.json"))) return;
   if (jobs.running === id || jobs.queue.includes(id)) return;
   if (!force && (await soundIsCurrent(id))) return;
   jobs.queue.push(id);

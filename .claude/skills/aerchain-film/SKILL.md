@@ -101,6 +101,25 @@ When a film has music, cut it to the music, using the **stopmotion-video** skill
 - **The end holds** about two seconds on the beat with the music under it.
 - The stop-motion *look* (one held pose per eighth note, a low frame rate) is a style: use it only when asked. The timing rules apply to every film with music.
 
+## Slides to video
+
+A film made with "Turn slides into a video" (or a deck attached to a prompt) has its slides in the film's `refs/`: `refs/slides/` for a new film, `refs/<file name>-slides/` for an attached deck. `slides.json` there lists the slides in order. Each has `image` (a PNG of the whole slide, at least 1920 px wide, by its path in the film), `title`, `text` (every word on the slide, in reading order), `notes` (speaker notes), `pictures` (images cut from the deck, each with its `box` on the slide as fractions: x, y, w, h), `charts` (type, title, box, categories and series values), and, in a new film, `start` and `duration` (its time in the film) and `voice` (its voiceover clip). Read slides.json, then look at every slide's PNG with Read before you build.
+
+The files in `refs/` belong to the person: use them from the film by their relative path (`<img src="refs/slides/slide-03-picture-1.png">`, `background-image: url(refs/slides/slide-03.png)`), never edit them. They're shown in the studio and go into renders.
+
+**"Animate my slides": rebuild each slide faithfully, as layers.**
+- One scene per slide, in order, at the times slides.json gives. Each slide keeps its own look: its layout, background, colours, type sizes and weights, and where things sit. Measure positions from the PNG (it's the slide at full size, so its pixels map straight onto the film after scaling to fit). Use the brand kit only where the slide gives no look of its own.
+- Keep the slide's words exactly: same wording, spelling, capitals, numbers and order. Never rewrite, shorten or "improve" them. Put them on screen as real text (live HTML), split into their real parts: title, each bullet, each label.
+- Charts are real, animated charts. Draw them from `charts` data (or read the values off the slide when there's no data): bars grow from zero to their values, lines draw along, pie slices sweep, and the axis labels and numbers match the slide. Never show a picture of a chart.
+- Pictures: use `pictures` (the deck's own images) at their boxes. When a picture isn't there (a PDF or a picture of a slide), crop it from the slide's PNG: a box the size of the picture showing the PNG at the slide's scale with `background-position` (or `object-position` plus `overflow: hidden`), so only that picture shows.
+- Logos, icons and drawn shapes: rebuild simple shapes in HTML/SVG; crop anything complex from the PNG as above.
+- Bring the parts in one by one in reading order: title, then each point, then the chart or picture; hold the finished slide at least a second before the move to the next. Between slides, carry a shared element across (a colour band, the title's position, a shape) so the deck plays as one film.
+- Never just pan or zoom over a screenshot of a slide. A whole-slide PNG on screen is only for a slide that is itself one photo, and then it gets a slow camera move.
+
+**"Make it a motion film": retell the story.** Read every slide and its notes, find the story (the problem, the turn, the proof, the ask) and design a motion film in the brand kit, following every studio rule. Use the deck's own words and numbers for anything on screen (shorter where a line is long), turn numbers into animated charts and steps into a moving diagram. No slide layouts and no screenshots of slides.
+
+**Voiceover.** When slides.json has a voiceover, `sound/voice.json` places each slide's clip on the timeline (`{ "clips": [{ "slide": 3, "file": "voice/slide-03.wav", "start": 9.4, "seconds": 5.1, "text": "…" }] }`) and the clips are mixed into the film's sound, with the music dipping under them. Keep each slide on screen while its voice plays, and bring each part in as the voice reaches it (the `text` says what's said; a voice says about 2.5 words a second). If you change a slide's timing, move its clip's `start` to match and render the sound again. Never edit or open the clips themselves. With music, the score plays under the voice; without music, keep the score to a few soft effects or none.
+
 ## Before you finish
 
 1. Run the check, exactly as given in your instructions (`node …/scripts/studio/check-film.mjs`), and fix every error. Fix warnings that affect what's on screen; one about an empty first frame matters, since the first frame is the thumbnail.
