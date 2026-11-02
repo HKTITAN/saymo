@@ -63,6 +63,9 @@ Your films, posts and brand kits stay on your Mac (`films/`, `posts/`, `brands/`
 - [Setup](docs/setup.md): requirements, keys and fixes for common problems
 - [How the studio works](docs/studio.md): engines, video editing, sound, brand kits, renders
 - [Saving to Google Drive and GitHub](docs/connections.md)
+- [Use the studio from other apps](docs/mcp.md): Claude Desktop, Claude Code, Cursor (MCP) and the command line
+- [Shortcuts and Raycast](docs/shortcuts.md): start a film from a link
+- [Security](docs/security.md): who the studio answers, and the local API token
 - [The post tool](docs/post-tool.md)
 - [The speaker post](docs/speaker-post.md): the original post and its export
 

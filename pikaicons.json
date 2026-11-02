@@ -56,6 +56,10 @@
       "name": "cloud-default",
       "variant": "stroke"
     },
+    "code": {
+      "name": "code",
+      "variant": "stroke"
+    },
     "copy-default": {
       "name": "copy-default",
       "variant": "stroke"

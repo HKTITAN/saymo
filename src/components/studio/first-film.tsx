@@ -15,6 +15,27 @@ import { ACCEPTS, isMediaFile } from "./video-api";
 
 type Kind = "video" | "motion";
 
+// A link from another app (Raycast, Shortcuts), such as
+// /studio?new=<prompt>&format=9:16, opens this card with the prompt filled
+// in. Nothing starts until it's sent, so a link alone never makes a film.
+export type NewFilmLink = { prompt: string; size: (typeof SIZES)[number] };
+
+export function readNewFilmLink(): NewFilmLink | null {
+  const params = new URLSearchParams(window.location.search);
+  const prompt = params.get("new")?.trim().slice(0, 8000);
+  if (!prompt) return null;
+  const format = params.get("format")?.trim();
+  return { prompt, size: SIZES.find((s) => format && s.label.endsWith(` ${format}`)) ?? SIZES[0] };
+}
+
+// Takes the link off the address, so a reload doesn't open the card again.
+export function clearNewFilmLink() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("new");
+  url.searchParams.delete("format");
+  window.history.replaceState(window.history.state, "", url.toString());
+}
+
 export function FirstFilm({
   busy,
   error,
@@ -22,6 +43,7 @@ export function FirstFilm({
   onStartVideo,
   initialKind = "video",
   title = "Make your first film",
+  link = null,
 }: {
   initialKind?: Kind;
   title?: string;
@@ -29,12 +51,13 @@ export function FirstFilm({
   error: string | null;
   onStart: (prompt: string | null, width: number, height: number, files?: File[]) => void;
   onStartVideo: (files: File[], width: number, height: number) => void;
+  link?: NewFilmLink | null;
 }) {
-  const [kind, setKind] = useState<Kind>(initialKind);
-  const [draft, setDraft] = useState("");
+  const [kind, setKind] = useState<Kind>(link ? "motion" : initialKind);
+  const [draft, setDraft] = useState(link?.prompt ?? "");
   // Files picked before the film exists; they go in once it does.
   const attached = useAttachments(null);
-  const [size, setSize] = useState<(typeof SIZES)[number]>(SIZES[0]);
+  const [size, setSize] = useState<(typeof SIZES)[number]>(link?.size ?? SIZES[0]);
   const [over, setOver] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
 
@@ -155,6 +178,11 @@ export function FirstFilm({
           </>
         ) : (
           <>
+            {link ? (
+              <p className="rounded-[10px] bg-white/[0.06] px-3 py-2 text-[11.5px] text-white/75 leading-relaxed">
+                This prompt came from a link. Check it, then send it to make the film.
+              </p>
+            ) : null}
             <PromptBox
               value={draft}
               onChange={setDraft}

@@ -8,6 +8,7 @@ import type { ConnectionsStatus, FilmConnections, SaveState } from "@/lib/studio
 import { cn } from "@/lib/utils";
 import { StudioError } from "./api";
 import { connectApi } from "./connect-api";
+import { OutsideAppsSection } from "./outside-apps";
 import { Hint, ICON_BUTTON } from "./panel";
 
 // Where finished films go: the videos to Google Drive, the source to a
@@ -90,6 +91,7 @@ export function ConnectionsButton() {
                 <span className="studio-shimmer">Checking the connections</span>
               </p>
             )}
+            <OutsideAppsSection />
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>

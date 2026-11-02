@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { api } from "./api";
 import { Swatches } from "./brand-row";
 import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, StudioMark, TinyFolder, VideoDoodle } from "./doodles";
-import { FirstFilm } from "./first-film";
+import { clearNewFilmLink, FirstFilm, readNewFilmLink } from "./first-film";
 import { undoKey, useHistory } from "./history";
 import { KitMaker } from "./kit-maker";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
@@ -151,7 +151,14 @@ export function Dashboard({
   onKitMade: (kitId: string, reply: string) => void;
   onKitHidden: (kitId: string | null) => void;
 }) {
-  const [overlay, setOverlay] = useState<Overlay>(null);
+  // A ?new=<prompt> link opens the new film card with it filled in (first-film.tsx).
+  const [link, setLink] = useState(readNewFilmLink);
+  const [overlay, setOverlay] = useState<Overlay>(link ? "motion" : null);
+  useEffect(() => {
+    if (link) clearNewFilmLink();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the link fills the card once, not every time it opens
+    if (link && overlay !== "motion") setLink(null);
+  }, [link, overlay]);
   const [folders, setFolders] = useState<Folder[] | null>(null);
   const [folderId, setFolderId] = useState<string | null>(readFolder);
   const [query, setQuery] = useState("");
@@ -687,6 +694,7 @@ export function Dashboard({
               <FirstFilm
                 key={overlay}
                 initialKind={overlay}
+                link={overlay === "motion" ? link : null}
                 title={folder ? `New film in ${folder.name}` : films?.length ? "New film" : "Make your first film"}
                 busy={busy}
                 error={error}
