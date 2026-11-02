@@ -4,7 +4,7 @@ import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowLeftIcon,
-  ChevronLeftIcon,
+  ChevronRightIcon,
   CopyIcon,
   DeleteDustbin01Icon,
   FolderIcon,
@@ -793,8 +793,8 @@ function FolderCard({
 // back with a small tab low on its right, the cover swung open on the left,
 // and the films inside standing in it like pages held in the spine.
 //
-// Three states, one motion: at rest the folder is shut, the cover flat over
-// the back with the pages just peeking out of the top; on hover the cover
+// Three states, one motion: at rest the folder is a little open, the cover
+// ajar and the pages just starting to fan; on hover the cover
 // swings open and the pages fan out one after another; with a film dragged
 // over it, it opens wide to take it.
 type FolderState = "rest" | "hover" | "over";
@@ -802,8 +802,8 @@ const PAGE = { w: 58, h: 80 };
 const PAGES: Record<FolderState, { skew: number; scale: number; y: number }[]> = {
   rest: [
     { skew: 0, scale: 1, y: 0 },
-    { skew: 0, scale: 1, y: 1.5 },
-    { skew: 0, scale: 1, y: 3 },
+    { skew: 4, scale: 0.94, y: 1.5 },
+    { skew: 8, scale: 0.88, y: 3 },
   ],
   hover: [
     { skew: 0, scale: 1, y: -2 },
@@ -819,7 +819,7 @@ const PAGES: Record<FolderState, { skew: number; scale: number; y: number }[]> =
 // The cover hinges on the spine: shut it lies flat over the back; open, it
 // leans toward you, foreshortened.
 const COVER: Record<FolderState, { skew: number; scale: number }> = {
-  rest: { skew: 0, scale: 1 },
+  rest: { skew: 15, scale: 0.78 },
   hover: { skew: 36, scale: 0.4 },
   over: { skew: 40, scale: 0.3 },
 };
@@ -1148,7 +1148,8 @@ function FilmCard({
   onMoveNew: (name: string) => Promise<void>;
 }) {
   const [menu, setMenu] = useState(false);
-  const [view, setView] = useState<"list" | "move" | "delete">("list");
+  const [view, setView] = useState<"list" | "delete">("list");
+  const [moveOpen, setMoveOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [making, setMaking] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -1218,6 +1219,7 @@ function FilmCard({
         open={menu}
         onOpenChange={(open) => {
           setMenu(open);
+          if (!open) setMoveOpen(false);
           if (open) {
             setView("list");
             setMaking(false);
@@ -1252,68 +1254,70 @@ function FilmCard({
                     <CopyIcon aria-hidden="true" />
                     Duplicate
                   </button>
-                  <button type="button" className={ITEM} onClick={() => setView("move")}>
-                    <FolderIcon aria-hidden="true" />
-                    Move to folder
-                  </button>
+                  {/* Opens beside the menu, with the folders listed. */}
+                  <Popover.Root open={moveOpen} onOpenChange={setMoveOpen}>
+                    <Popover.Trigger openOnHover delay={80} className={cn(ITEM, "data-popup-open:bg-white/[0.07] data-popup-open:text-white")}>
+                      <FolderIcon aria-hidden="true" />
+                      <span className="flex-1 text-left">Move to folder</span>
+                      <ChevronRightIcon aria-hidden="true" className="ms-3 !size-3.5 text-white/40" />
+                    </Popover.Trigger>
+                    <Popover.Portal>
+                      <Popover.Positioner side="right" align="start" sideOffset={10} alignOffset={-6} collisionPadding={12} className="z-50">
+                        <Popover.Popup className={cn(SURFACE, MENU_POPUP, "w-max min-w-[168px] max-w-[260px]")}>
+                          {here ? (
+                            <button
+                              type="button"
+                              className={ITEM}
+                              onClick={() => {
+                                setMenu(false);
+                                onMove(null);
+                              }}
+                            >
+                              <GridDashboard02Icon aria-hidden="true" />
+                              <span className="truncate">Take out of {here.name}</span>
+                            </button>
+                          ) : null}
+                          {folders.map((x) => (
+                            <button
+                              key={x.id}
+                              type="button"
+                              className={ITEM}
+                              disabled={x.id === f.folder}
+                              onClick={() => {
+                                setMenu(false);
+                                onMove(x.id);
+                              }}
+                            >
+                              <FolderIcon aria-hidden="true" />
+                              <span className="min-w-0 flex-1 truncate">{x.name}</span>
+                              {x.id === f.folder ? <span className="shrink-0 text-[11.5px] text-white/40">In it now</span> : null}
+                            </button>
+                          ))}
+                          {making ? (
+                            <RenameField
+                              value=""
+                              placeholder="Launch films"
+                              className="m-1 h-8 min-w-[180px] text-[12.5px]"
+                              onDone={(name) => {
+                                setMaking(false);
+                                if (name) void run(() => onMoveNew(name));
+                              }}
+                            />
+                          ) : (
+                            <button type="button" className={ITEM} onClick={() => setMaking(true)}>
+                              <PlusIcon aria-hidden="true" />
+                              New folder
+                            </button>
+                          )}
+                        </Popover.Popup>
+                      </Popover.Positioner>
+                    </Popover.Portal>
+                  </Popover.Root>
                   <div className="mx-2 my-1 h-px bg-white/[0.07]" />
                   <button type="button" className={cn(ITEM, DANGER_ITEM)} onClick={() => setView("delete")}>
                     <DeleteDustbin01Icon aria-hidden="true" />
                     Delete
                   </button>
-                </>
-              ) : view === "move" ? (
-                <>
-                  <button type="button" className={cn(ITEM, "text-white/50")} onClick={() => setView("list")}>
-                    <ChevronLeftIcon aria-hidden="true" />
-                    Move to folder
-                  </button>
-                  <div className="mx-2 my-1 h-px bg-white/[0.07]" />
-                  {here ? (
-                    <button
-                      type="button"
-                      className={ITEM}
-                      onClick={() => {
-                        setMenu(false);
-                        onMove(null);
-                      }}
-                    >
-                      <GridDashboard02Icon aria-hidden="true" />
-                      <span className="truncate">Take out of {here.name}</span>
-                    </button>
-                  ) : null}
-                  {folders.map((x) => (
-                    <button
-                      key={x.id}
-                      type="button"
-                      className={ITEM}
-                      disabled={x.id === f.folder}
-                      onClick={() => {
-                        setMenu(false);
-                        onMove(x.id);
-                      }}
-                    >
-                      <FolderIcon aria-hidden="true" />
-                      <span className="min-w-0 flex-1 truncate">{x.name}</span>
-                      {x.id === f.folder ? <span className="shrink-0 text-[11.5px] text-white/40">In it now</span> : null}
-                    </button>
-                  ))}
-                  {making ? (
-                    <RenameField
-                      value=""
-                      placeholder="Launch films"
-                      className="m-1 h-8 min-w-[180px] text-[12.5px]"
-                      onDone={(name) => {
-                        setMaking(false);
-                        if (name) void run(() => onMoveNew(name));
-                      }}
-                    />
-                  ) : (
-                    <button type="button" className={ITEM} onClick={() => setMaking(true)}>
-                      <PlusIcon aria-hidden="true" />
-                      New folder
-                    </button>
-                  )}
                 </>
               ) : (
                 <Confirm
