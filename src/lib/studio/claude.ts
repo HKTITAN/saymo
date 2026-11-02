@@ -3,10 +3,11 @@ import { existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { CLAUDE_BIN, codexBin, EFFORT, killGroup, MODEL } from "./ai-env";
-import { DEFAULT_PROVIDER, familyOf, type ProviderId } from "./ai-types";
+import { DEFAULT_PROVIDER, familyOf, isProviderId, type ProviderId } from "./ai-types";
+import { IS_PRODUCT } from "./edition";
 import { runCodex, readThread, writeThread } from "./codex";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./contract";
-import { claudeEnvFor, readApiKey } from "./providers";
+import { claudeEnvFor, keyProblem } from "./providers";
 import { attachmentNote } from "./attachments";
 import { listenCommand, referenceSoundNote, refAudioDenies } from "./listen";
 import { atPlayhead } from "./captions";
@@ -28,7 +29,8 @@ import {
 import { startSound } from "./sound-render";
 
 // The studio's chat: each prompt is one Claude Code turn, run headless on
-// the owner's own Claude login (no API key), in the film's folder. The
+// the owner's own Claude login (no API key; the product edition runs on an
+// API key only, see providers.ts), in the film's folder. The
 // session id is kept in film.json, so each film has one continuing
 // conversation with Claude.
 //
@@ -137,7 +139,10 @@ export function stopTurn(id: string) {
 
 // Runs one turn and calls `emit` with each ChatEvent. Resolves when the
 // turn is over, whatever happened.
-export async function runTurn(id: string, request: ChatRequest, emit: (event: ChatEvent) => void) {
+export async function runTurn(id: string, asked: ChatRequest, emit: (event: ChatEvent) => void) {
+  // Only an AI this build offers runs: a pick another edition saved (a plan
+  // to carry on, say) falls back to the default.
+  const request = { ...asked, provider: isProviderId(asked.provider) ? asked.provider : DEFAULT_PROVIDER };
   const who = whoFor(request.provider);
   if (running.has(id)) {
     emit({ kind: "error", message: `${whoFor(running.get(id)?.provider)} is still working on this film. Wait for it, or stop it first.` });
@@ -191,8 +196,9 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   const family = familyOf(provider);
   const who = whoFor(provider);
   // Said before anything is snapshotted, so a missing key costs no version.
-  if (provider === "api-key" && !(await readApiKey())) {
-    emit({ kind: "error", message: "No API key is saved. Add one under Connections, then AI, or switch this prompt to Claude." });
+  const noKey = await keyProblem(provider);
+  if (noKey) {
+    emit({ kind: "error", message: noKey });
     return;
   }
   if (provider === "codex" && !codexBin()) {
@@ -827,6 +833,12 @@ function kitStepFor(name: string, file: string | null, dir: string): string | nu
 
 // Plain-English versions of the ways a turn can fail.
 export function explain(raw: string) {
+  // The product edition only ever runs on an API key.
+  if (IS_PRODUCT) return explainKey(raw);
+  return explainPlan(raw);
+}
+
+function explainPlan(raw: string) {
   const text = raw.toLowerCase();
   if (/not logged in|please run \/login|invalid api key|authentication|oauth/.test(text)) {
     return "Claude isn't signed in on this Mac. Open Terminal, run `claude`, then type /login.";
@@ -849,6 +861,10 @@ function explainKey(raw: string) {
   if (/invalid (x-)?api.?key|authentication|401|not logged in|permission/.test(text)) {
     return "The API key didn't work. Check it in the Claude Console, then paste it again under Connections, then AI.";
   }
-  if (/credit balance|billing|402/.test(text)) return "The API key's account is out of credit. Add credit in the Claude Console, or switch this prompt to Claude.";
-  return explain(raw);
+  if (/credit balance|billing|402/.test(text)) {
+    return IS_PRODUCT
+      ? "The API key's account is out of credit. Add credit in the Claude Console, then try again."
+      : "The API key's account is out of credit. Add credit in the Claude Console, or switch this prompt to Claude.";
+  }
+  return explainPlan(raw);
 }

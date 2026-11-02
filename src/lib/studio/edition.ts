@@ -3,6 +3,7 @@
 // motion still play and render. "product" is the build that could be sold
 // (see docs/launch): AI by API key only, no AGPL Strudel, no GSAP, a
 // Licences screen. Set STUDIO_EDITION=product in .env.local to try it.
+// next.config.ts passes it to the page too, so both sides agree.
 export type Edition = "in-house" | "product";
 
 export const EDITION: Edition = process.env.STUDIO_EDITION === "product" ? "product" : "in-house";

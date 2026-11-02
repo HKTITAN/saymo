@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { DEFAULT_PROVIDER, isProviderId } from "@/lib/studio/ai-types";
+import { IS_PRODUCT } from "@/lib/studio/edition";
 import { isRunning, readChat, runAutoTurn, runTurn, stopTurn } from "@/lib/studio/claude";
 import { readCarryOn, restoreCarryOns } from "@/lib/studio/carry-on";
 import type { ChatContext, ChatEvent, ChatRequest } from "@/lib/studio/contract";
@@ -40,9 +41,11 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/film
   if (!prompt.trim() && attachments.length) prompt = "Have a look at what I attached.";
   if (!prompt.trim()) return Response.json({ error: "Type what you'd like changed." }, { status: 400 });
   const turnContext = { ...context(body?.context), ...(attachments.length ? { attachments } : {}) };
-  // Which AI runs it: one of the studio's own, or Claude when not given.
+  // Which AI runs it: one this edition offers, or the default when not
+  // given. The product edition offers the API key only.
   if (body?.provider !== undefined && !isProviderId(body.provider)) {
-    return Response.json({ error: "Pick Claude, Codex or the API key to send this to." }, { status: 400 });
+    const words = IS_PRODUCT ? "This studio sends prompts to Claude with your API key only." : "Pick Claude, Codex or the API key to send this to.";
+    return Response.json({ error: words }, { status: 400 });
   }
   const provider = body?.provider ?? DEFAULT_PROVIDER;
   if (isRunning(id)) {

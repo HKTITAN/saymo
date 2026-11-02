@@ -1,19 +1,32 @@
+import { IS_PRODUCT } from "./edition";
+
 // Which AI makes a film's changes, shared by the server and the page. No
 // key, token or account detail is ever part of these: the page only learns
 // whether each one is ready, its plan's name and how to set it up.
 //
-//  - claude: Claude Code on the owner's own Claude plan (the default, and
-//    the studio's house model: Opus 5.5 at high effort).
+//  - claude: Claude Code on the owner's own Claude plan (the in-house
+//    default, and the studio's house model: Opus 5.5 at high effort).
 //  - codex: OpenAI's Codex CLI on a ChatGPT plan.
 //  - api-key: Claude Code paid by an Anthropic API key pasted into the
 //    studio, for teammates without a Claude plan.
+//
+// The product edition (edition.ts) offers the API key only: Anthropic
+// doesn't allow a product to run on a person's Claude plan, and Codex on a
+// ChatGPT plan isn't checked (docs/launch/ai-providers.md). Later options,
+// such as Claude through Bedrock or Vertex, or other models, join
+// PROVIDER_IDS and the product's list here.
 
 export const PROVIDER_IDS = ["claude", "codex", "api-key"] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
-export const DEFAULT_PROVIDER: ProviderId = "claude";
 
+// The AIs this build offers, in the order the picker lists them.
+export const OFFERED_PROVIDERS: readonly ProviderId[] = IS_PRODUCT ? ["api-key"] : PROVIDER_IDS;
+export const DEFAULT_PROVIDER: ProviderId = IS_PRODUCT ? "api-key" : "claude";
+
+// True only for an AI this build offers, so a pick saved by another build
+// (or sent by hand) falls back to the default or is refused.
 export const isProviderId = (value: unknown): value is ProviderId =>
-  typeof value === "string" && (PROVIDER_IDS as readonly string[]).includes(value);
+  typeof value === "string" && (OFFERED_PROVIDERS as readonly string[]).includes(value);
 
 // Claude Code and the API key share one conversation per film; Codex keeps
 // its own.

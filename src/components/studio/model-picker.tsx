@@ -4,14 +4,15 @@ import { Popover } from "@base-ui/react/popover";
 import { useEffect, useState } from "react";
 import { ChevronDownIcon } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
-import { type AiStatus, DEFAULT_PROVIDER, PROVIDER_IDS, PROVIDERS, type ProviderId } from "@/lib/studio/ai-types";
+import { type AiStatus, DEFAULT_PROVIDER, OFFERED_PROVIDERS, PROVIDERS, type ProviderId } from "@/lib/studio/ai-types";
 import { cn } from "@/lib/utils";
 import { aiApi } from "./ai-api";
 import { stateWords } from "./ai-connections";
 import { Hint, PILL_BUTTON } from "./panel";
 
 // The small "Claude ⌄" in a prompt box: which AI this prompt goes to.
-// Claude is the default; the last pick is kept per film (use-chat.ts).
+// Claude is the default; the last pick is kept per film (use-chat.ts). It
+// lists only the AIs this edition offers: the API key alone in the product.
 // Esc or a click outside closes it.
 
 const POPUP =
@@ -48,7 +49,7 @@ export function ModelPicker({ provider, onChange }: { provider: ProviderId; onCh
         <Popover.Positioner side="top" align="start" sideOffset={8} collisionPadding={12} className="z-50">
           <Popover.Popup className={cn(SURFACE, POPUP, "flex w-[300px] flex-col gap-0.5 p-1")}>
             <div role="radiogroup" aria-label="AI for this prompt" className="flex flex-col gap-0.5">
-              {PROVIDER_IDS.map((id) => {
+              {OFFERED_PROVIDERS.map((id) => {
                 const s = status?.providers.find((p) => p.id === id);
                 const chosen = id === provider;
                 return (
@@ -68,7 +69,7 @@ export function ModelPicker({ provider, onChange }: { provider: ProviderId; onCh
                   >
                     <span className="flex w-full items-center gap-2">
                       <span className={cn("text-[12.5px]", chosen ? "text-white" : "text-white/80")}>{PROVIDERS[id].name}</span>
-                      {id === DEFAULT_PROVIDER ? <span className="text-[11px] text-white/35">Default</span> : null}
+                      {id === DEFAULT_PROVIDER && OFFERED_PROVIDERS.length > 1 ?<span className="text-[11px] text-white/35">Default</span> : null}
                       <span
                         className={cn(
                           "ms-auto shrink-0 text-[11px]",

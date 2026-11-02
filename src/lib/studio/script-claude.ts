@@ -2,14 +2,15 @@ import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { CLAUDE_BIN, childEnv, EFFORT, explain, killGroup, MODEL } from "./claude";
+import { CLAUDE_BIN, EFFORT, explain, killGroup, MODEL } from "./claude";
+import { claudeEnvFor, keyProblem } from "./providers";
 import { type Beat, cleanScript, type ScriptEvent, type ScriptRequest, tidy } from "./script";
 
 // Writes a script and its storyboard in one quick Claude call: no tools,
 // no project, no conversation kept, and the answer comes back as JSON in
 // the shape of `Script` (the CLI's structured output). It runs on the
 // owner's own Claude login, like the studio's chat (claude.ts), with the
-// same model and effort.
+// same model and effort; in the product edition, on the API key.
 //
 // While it writes, the beats are read out of the half-written JSON and
 // sent on, so the storyboard fills in as Claude goes.
@@ -73,7 +74,12 @@ export async function writeScript(request: ScriptRequest, emit: (event: ScriptEv
     "--system-prompt", SYSTEM,
     "--json-schema", JSON.stringify(SCHEMA),
   ];
-  const proc = spawn(CLAUDE_BIN, args, { cwd, env: childEnv(), stdio: ["pipe", "pipe", "pipe"], detached: true });
+  const noKey = await keyProblem();
+  if (noKey) {
+    emit({ kind: "error", message: noKey });
+    return;
+  }
+  const proc = spawn(CLAUDE_BIN, args, { cwd, env: await claudeEnvFor(), stdio: ["pipe", "pipe", "pipe"], detached: true });
   const stop = () => proc.pid && killGroup(proc.pid);
   signal.addEventListener("abort", stop, { once: true });
   const limit = setTimeout(stop, LIMIT_MS);

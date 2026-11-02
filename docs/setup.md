@@ -25,6 +25,10 @@ Claude on your Claude plan is the default and needs nothing more. Two other AIs 
 
 Then pick the AI in any prompt box with the small picker next to Point. More in [connections.md](connections.md).
 
+### The product edition
+
+With `STUDIO_EDITION=product` in `.env.local` (see [launch/README.md](launch/README.md)), Claude with an API key is the only AI: there's no Claude plan or Codex option anywhere. Every Claude request (a film's chat, the kit maker, the script writer) uses the saved key, and Claude Code runs with a settings folder of the studio's own (`.studio/claude`), so a Claude sign-in on the Mac is never used. Until a key is saved, each of them says where to paste one. To keep the key in a file of your own instead, set `STUDIO_ANTHROPIC_KEY_FILE` to that file's path (the key alone, or JSON with a `key`).
+
 ## Install
 
 ```bash
@@ -34,6 +38,15 @@ npm run dev                    # then open http://localhost:3200/studio
 ```
 
 Setup installs ffmpeg and cmake, the app's packages and each engine's packages. Run it again any time; it skips what's already there. It also checks that ffmpeg can use your Mac's hardware video encoder; if it says it can't, run `brew reinstall ffmpeg`.
+
+### Licences
+
+```bash
+npm run licences                           # for the edition you run
+STUDIO_EDITION=product npm run licences    # what the product ships
+```
+
+Run it after adding or updating packages. It lists everything the studio uses that someone else made (the app's and engines' packages, the Rust crates, the speech models, the font, the icons and the borrowed skills) and writes `THIRD-PARTY-NOTICES.md` and `public/licences.json`, which the product edition shows under About and licences on the home page. The product's list leaves out what it doesn't ship (the Strudel music engine and GSAP). Never edit either file by hand.
 
 ## Renders on your Mac
 

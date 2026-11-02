@@ -59,7 +59,7 @@ The brand kit (`studio/brands/aerchain`: logos, guideline, rules), the `aerchain
 
 ## Running the check again
 
-From the repo root. It lists every package whose licence isn't plainly permissive:
+`npm run licences` writes the full list, with each licence text, to `THIRD-PARTY-NOTICES.md` and `public/licences.json` (see [setup.md](../setup.md)). For a quick look at just the packages whose licence isn't plainly permissive, run this from the repo root:
 
 ```bash
 node --input-type=module -e '

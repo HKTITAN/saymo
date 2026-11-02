@@ -4,7 +4,8 @@ import path from "node:path";
 import { attachmentNote } from "./attachments";
 import type { BrandKit } from "./brand";
 import { checkKit, kitDir, readBrand, restoreBrand, snapshotBrand, withBrand, writeBrand } from "./brands";
-import { CLAUDE_BIN, childEnv, EFFORT, explain, killGroup, MODEL, StreamReader } from "./claude";
+import { CLAUDE_BIN, EFFORT, explain, killGroup, MODEL, StreamReader } from "./claude";
+import { claudeEnvFor, keyProblem } from "./providers";
 import type { Attachment, ChatEvent, ChatMessage, Film } from "./contract";
 import { figmaReady, pullFigma } from "./figma";
 import { ROOT } from "./films";
@@ -98,6 +99,12 @@ async function brandTurn(
     emit({ kind: "error", message: "That kit no longer exists." });
     return;
   }
+  // Said before anything is snapshotted (the product edition needs a key).
+  const noKey = await keyProblem();
+  if (noKey) {
+    emit({ kind: "error", message: noKey });
+    return;
+  }
   const n = await withBrand(id, () => snapshotBrand(id));
   emit({ kind: "start", turn: n });
   const typed = links.filter((l) => !prompt.includes(l.url)).map((l) => l.url);
@@ -132,7 +139,7 @@ async function brandTurn(
 
   const session = (await readFile(sessionFile(id), "utf8").catch(() => "")).trim() || undefined;
   const args = brandArgs(id, session, sites);
-  const proc = spawn(CLAUDE_BIN, args, { cwd: dir, env: childEnv(), stdio: ["pipe", "pipe", "pipe"], detached: true });
+  const proc = spawn(CLAUDE_BIN, args, { cwd: dir, env: await claudeEnvFor(), stdio: ["pipe", "pipe", "pipe"], detached: true });
   turn.pid = proc.pid ?? null;
   if (turn.stopped && proc.pid) killGroup(proc.pid);
   proc.stdin.end(

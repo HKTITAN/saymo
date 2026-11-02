@@ -1,6 +1,9 @@
+import { chmod, mkdir, readFile } from "node:fs/promises";
+import path from "node:path";
 import { CLAUDE_BIN, childEnv, codexBin, EFFORT, MODEL, runQuick } from "./ai-env";
 import { type AiStatus, DEFAULT_PROVIDER, type ProviderId, type ProviderStatus } from "./ai-types";
-import { ConnectError, readSecret, removeSecret, writeSecret } from "./connect-store";
+import { ConnectError, readSecret, removeSecret, STUDIO_DIR, writeSecret } from "./connect-store";
+import { IS_PRODUCT } from "./edition";
 
 // The AIs a film's turn can run on, and whether each is ready on this Mac.
 // After Pond's provider subscriptions (github.com/raphaelsalaja/pond, MIT):
@@ -11,18 +14,49 @@ import { ConnectError, readSecret, removeSecret, writeSecret } from "./connect-s
 // anthropic.json (mode 600), given only to that provider's Claude Code as
 // ANTHROPIC_API_KEY, and never sent back to the page beyond its last 4
 // characters.
+//
+// The product edition (edition.ts) runs Claude Code on that key only: no
+// Claude plan, no Codex. Its Claude Code also keeps its settings in a
+// folder of the studio's own, so a Claude sign-in on the Mac is never seen,
+// let alone used. STUDIO_ANTHROPIC_KEY_FILE, if set, names a file the key
+// is read from instead (the key alone, or JSON with a "key"); the studio
+// then can't save or remove it.
 
 export const CODEX_MODEL = process.env.STUDIO_CODEX_MODEL ?? null;
 
 const KEY_FILE = "anthropic";
 type SavedKey = { key: string; savedAt: string };
 
+const KEY_OVERRIDE = process.env.STUDIO_ANTHROPIC_KEY_FILE || null;
+
 export async function readApiKey(): Promise<string | null> {
+  if (KEY_OVERRIDE) {
+    const text = (await readFile(KEY_OVERRIDE, "utf8").catch(() => "")).trim();
+    let key = text;
+    try {
+      key = String((JSON.parse(text) as Partial<SavedKey>)?.key ?? "");
+    } catch {}
+    return key || null;
+  }
   const saved = await readSecret<SavedKey>(KEY_FILE);
   return typeof saved?.key === "string" && saved.key ? saved.key : null;
 }
 
+const OVERRIDDEN = "The key comes from the file named in STUDIO_ANTHROPIC_KEY_FILE. Change that file, or remove the setting to paste a key here.";
+
+// Said by every Claude action in the product edition when no key is saved.
+export const NO_KEY =
+  "Claude needs an Anthropic API key. Open a film, then Connections (the link button in the top right), and paste your key under AI.";
+
+// Why a Claude run can't start for want of a key, or null when it can.
+export async function keyProblem(provider: ProviderId = DEFAULT_PROVIDER): Promise<string | null> {
+  if (!IS_PRODUCT && provider !== "api-key") return null;
+  if (await readApiKey()) return null;
+  return IS_PRODUCT ? NO_KEY : "No API key is saved. Add one under Connections, then AI, or switch this prompt to Claude.";
+}
+
 export async function saveApiKey(raw: unknown) {
+  if (KEY_OVERRIDE) throw new ConnectError(OVERRIDDEN);
   const key = typeof raw === "string" ? raw.trim() : "";
   if (!/^sk-ant-[A-Za-z0-9_-]{20,300}$/.test(key)) {
     throw new ConnectError("That doesn't look like an Anthropic API key. Keys start with sk-ant- and come from console.anthropic.com.");
@@ -32,18 +66,29 @@ export async function saveApiKey(raw: unknown) {
 }
 
 export async function removeApiKey() {
+  if (KEY_OVERRIDE) throw new ConnectError(OVERRIDDEN);
   await removeSecret(KEY_FILE);
   cached = null;
 }
 
-// The environment for one provider's Claude Code turn. The plan path gets
-// no key at all; the API-key path gets only the studio's own.
-export async function claudeEnvFor(provider: ProviderId): Promise<NodeJS.ProcessEnv> {
+// Claude Code's own settings folder in the product edition, apart from the
+// one a person's Claude sign-in lives in.
+const PRODUCT_CLAUDE_HOME = path.join(STUDIO_DIR, "claude");
+
+// The environment for one provider's Claude Code run (a film's turn, the
+// kit maker, the script writer). In-house, the plan path gets no key at
+// all and the API-key path gets only the studio's own. In the product
+// every run is the API-key path, whatever was asked for. childEnv() has
+// already removed every other sign-in or billing route.
+export async function claudeEnvFor(provider: ProviderId = DEFAULT_PROVIDER): Promise<NodeJS.ProcessEnv> {
   const env = childEnv();
-  if (provider !== "api-key") return env;
+  if (!IS_PRODUCT && provider !== "api-key") return env;
   const key = await readApiKey();
-  if (!key) throw new ConnectError("No API key is saved. Add one under Connections, then AI.");
-  return { ...env, ANTHROPIC_API_KEY: key };
+  if (!key) throw new ConnectError((await keyProblem(provider)) ?? NO_KEY);
+  if (!IS_PRODUCT) return { ...env, ANTHROPIC_API_KEY: key };
+  await mkdir(PRODUCT_CLAUDE_HOME, { recursive: true, mode: 0o700 });
+  await chmod(PRODUCT_CLAUDE_HOME, 0o700).catch(() => {});
+  return { ...env, ANTHROPIC_API_KEY: key, CLAUDE_CONFIG_DIR: PRODUCT_CLAUDE_HOME };
 }
 
 // ─── Status ──────────────────────────────────────────────────────────────────
@@ -143,7 +188,10 @@ async function apiKeyStatus(claudeInstalled: boolean): Promise<ProviderStatus> {
   const base = { id: "api-key" as const, plan: null, model: `${modelWords()}, billed to the key` };
   const make = { text: "Make a key in the Claude Console (console.anthropic.com, API keys), then paste it here." };
   if (!claudeInstalled) {
-    return { ...base, state: "not-installed", detail: "This uses Claude Code too, and it isn't installed on this Mac.", setup: [INSTALL_CLAUDE, make] };
+    const detail = IS_PRODUCT
+      ? "The studio runs Claude Code with your key, and Claude Code isn't installed on this Mac."
+      : "This uses Claude Code too, and it isn't installed on this Mac.";
+    return { ...base, state: "not-installed", detail, setup: [INSTALL_CLAUDE, make] };
   }
   if (!key) return { ...base, state: "no-key", detail: null, setup: [make] };
   return { ...base, state: "ready", detail: null, setup: [make], keyEnding: key.slice(-4) };
@@ -153,6 +201,14 @@ let cached: { at: number; status: AiStatus } | null = null;
 
 export async function aiStatus(fresh = false): Promise<AiStatus> {
   if (!fresh && cached && Date.now() - cached.at < 20_000) return cached.status;
+  if (IS_PRODUCT) {
+    // The key only: Claude Code's version says it's installed, without
+    // asking it about any sign-in.
+    const installed = !(await runQuick(CLAUDE_BIN, ["--version"], childEnv())).missing;
+    const status: AiStatus = { default: DEFAULT_PROVIDER, providers: [await apiKeyStatus(installed)] };
+    cached = { at: Date.now(), status };
+    return status;
+  }
   const [claude, codex] = await Promise.all([claudeStatus(), codexStatus()]);
   const status: AiStatus = {
     default: DEFAULT_PROVIDER,

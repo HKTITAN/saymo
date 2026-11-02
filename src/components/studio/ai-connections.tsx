@@ -4,6 +4,7 @@ import { type ReactNode, useCallback, useEffect, useId, useState } from "react";
 import { BotIcon, ChevronDownIcon, CopyIcon, KeyLeftIcon } from "@/components/icons";
 import { DialButton, DialNote, LABEL, ROW } from "@/components/tool/dial";
 import { type AiStatus, PROVIDERS, type ProviderState, type ProviderStatus } from "@/lib/studio/ai-types";
+import { IS_PRODUCT } from "@/lib/studio/edition";
 import { cn } from "@/lib/utils";
 import { aiApi } from "./ai-api";
 import { StudioError } from "./api";
@@ -11,7 +12,8 @@ import { StudioError } from "./api";
 // The AI part of the Connections pop-up: which AIs can make a film's
 // changes on this Mac, whether each is ready, and how to set it up. Claude
 // on the owner's plan is the default; Codex runs on a ChatGPT plan; the API
-// key is for teammates without a plan. Nothing secret ever reaches here:
+// key is for teammates without a plan. The product edition shows the API
+// key alone (the server sends only that one). Nothing secret ever reaches here:
 // the saved key shows as its last 4 characters at most.
 
 export const STATE_WORDS: Record<ProviderState, string> = {
@@ -55,11 +57,15 @@ export function AiSection() {
         <BotIcon aria-hidden="true" />
         AI
       </h3>
-      <DialNote>Which AI makes your changes. Pick one in each prompt box; Claude is the default.</DialNote>
+      <DialNote>
+        {IS_PRODUCT
+          ? "Claude makes your changes, paid for by your own Anthropic API key."
+          : "Which AI makes your changes. Pick one in each prompt box; Claude is the default."}
+      </DialNote>
       {error ? <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
       {status ? (
         status.providers.map((p) => (
-          <Provider key={p.id} status={p} isDefault={p.id === status.default} onStatus={setStatus} onError={setError} />
+          <Provider key={p.id} status={p} isDefault={status.providers.length > 1 && p.id === status.default} onStatus={setStatus} onError={setError} />
         ))
       ) : !error ? (
         <p className="px-1 pb-1 text-[11.5px]">
@@ -208,7 +214,9 @@ function ApiKey({
         {asking ? (
           <div className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] p-2">
             <p className="px-1 text-[11.5px] text-white/65 leading-relaxed">
-              The studio forgets the key. Prompts sent to the API key stop working until you add one again.
+              {IS_PRODUCT
+                ? "The studio forgets the key. Claude stops working here until you add one again."
+                : "The studio forgets the key. Prompts sent to the API key stop working until you add one again."}
             </p>
             <div className="flex gap-1.5">
               <DialButton onClick={() => setAsking(false)}>Cancel</DialButton>
@@ -261,7 +269,9 @@ function ApiKey({
       <DialButton type="submit" loading={busy} disabled={!key.trim()} className="bg-white text-[#141414] hover:bg-white/90">
         Save key
       </DialButton>
-      <DialNote>Kept on this Mac only, and used only for prompts sent to the API key.</DialNote>
+      <DialNote>
+        {IS_PRODUCT ? "Kept on this Mac only, and used only when the studio asks Claude." : "Kept on this Mac only, and used only for prompts sent to the API key."}
+      </DialNote>
     </form>
   );
 }
