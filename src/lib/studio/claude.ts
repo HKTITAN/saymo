@@ -15,6 +15,7 @@ import type { Clip, Edit, Graphic } from "./edit";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "./brand-tokens";
 import { filmDir, pruneVersions, readFilm, recordVersion, ROOT, snapshotFilm, wentBackTo, withFilm, writeFilm } from "./films";
 import { readRules, rulesNote } from "./rules";
+import { asksForThree } from "./takes-shared";
 import {
   CARRY_ON_PROMPT,
   type CarryOn,
@@ -108,6 +109,17 @@ export async function noteWentBack(id: string, about: string) {
   await writeFile(wentBackFlag(id), about);
   await rm(undoneFlag(id), { force: true });
   await addChat(id, { role: "you", text: wentBackTo(about), at: new Date().toISOString() });
+}
+
+// Picking one of three versions (takes.ts) tells the next turn the files
+// changed outside its session, and says so in the chat.
+export async function notePicked(id: string, prompt: string, n: number, reply: string) {
+  await mkdir(historyDir(id), { recursive: true });
+  await writeFile(wentBackFlag(id), `picked:${prompt}`);
+  await rm(undoneFlag(id), { force: true });
+  const at = new Date().toISOString();
+  await addChat(id, { role: "you", text: asksForThree(prompt) ? prompt : `Make 3 versions: ${prompt}`, at });
+  await addChat(id, { role: "claude", text: `You picked version ${n} of 3.${reply ? `\n\n${reply}` : ""}`, at, steps: [] });
 }
 
 const dropSnapshot = (id: string, n: number) =>
@@ -666,7 +678,11 @@ function userMessage(
   }
   if (context.sound) lines.push(soundSpanNote(context.sound));
   if (undone) lines.push("<note>They undid your previous change: the files are back to how they were before it.</note>");
-  if (wentBack) {
+  if (wentBack?.startsWith("picked:")) {
+    lines.push(
+      `<note>They asked for three versions of "${wentBack.slice(7)}", each made in its own copy of the film, and picked one: the files are now that version, which this conversation hasn't seen. Read the files again before changing them.</note>`,
+    );
+  } else if (wentBack) {
     lines.push(
       `<note>They went back to an earlier version of the film, ${wentBack}: the files are back to how they were then, so changes you made since are gone. Read the files again before changing them.</note>`,
     );

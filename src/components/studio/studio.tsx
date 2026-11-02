@@ -38,6 +38,7 @@ import { useChat } from "./use-chat";
 import { useEdit } from "./use-edit";
 import { useSound } from "./use-sound";
 import { useSoundEdit } from "./use-sound-edit";
+import { TakesView, useTakes } from "./takes";
 import { isMediaFile } from "./video-api";
 import { type Pinned, type SoundPin, soundChipLabel, tryAnotherPrompt } from "./words";
 
@@ -454,6 +455,15 @@ function FilmView({
   });
 
   const history = useHistory({ undoClaude: chat.undo, claudeBusy: () => chat.turn.running });
+
+  // Three versions of one prompt at once, only when asked ("Try 3", or a
+  // prompt asking for three). Picking one makes the film that version.
+  const takes = useTakes(id, (picked) => {
+    adopt(picked);
+    reloadStage();
+    void chat.reloadHistory();
+    void onRefresh();
+  });
 
   // The film's sound design: played here in step with the clock.
   const sound = useSound({ id, film, clock, bridge, claudeRunning: chat.turn.running });
@@ -1182,6 +1192,21 @@ function FilmView({
         onMessage={onStage}
       />
 
+      {/* Three versions side by side, over the film, while there are some. */}
+      {takes.takes ? <TakesView state={takes} film={film} box={insets} /> : null}
+      {!takes.takes && takes.error ? (
+        <div
+          role="alert"
+          className={cn(CARD, "pointer-events-auto absolute z-30 flex max-w-[420px] -translate-x-1/2 items-center gap-2 py-2 ps-3 pe-1.5")}
+          style={{ left: fit.x + fit.width / 2, top: insets.top }}
+        >
+          <p className="text-[12px] text-[#ff9592]">{takes.error}</p>
+          <button type="button" className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/65 hover:bg-white/[0.08]")} onClick={takes.clearError}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
       {/* Over the film: what's going on with it. */}
       <div className="pointer-events-none absolute inset-0">
         {pointing ? (
@@ -1294,6 +1319,7 @@ function FilmView({
           sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength, isVideo) } : null}
           soundLength={soundLength}
           video={isVideo}
+          onTakes={isVideo ? undefined : (prompt, context) => void takes.start(prompt, context, chat.provider)}
           time={time}
           clock={clock}
           onClearPick={() => {

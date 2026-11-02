@@ -5,7 +5,8 @@ import { type Clock, formatTime, useClock } from "./clock";
 import { MultipleCrossCancelIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import type { ChatMessage } from "@/lib/studio/contract";
+import type { ChatContext, ChatMessage } from "@/lib/studio/contract";
+import { asksForThree } from "@/lib/studio/takes-shared";
 import { cn } from "@/lib/utils";
 import { Hint, PILL_BUTTON, Panel } from "./panel";
 import { ModelPicker } from "./model-picker";
@@ -35,6 +36,7 @@ export function ChatPanel({
   sound,
   soundLength,
   video = false,
+  onTakes,
   time,
   clock,
   onClearPick,
@@ -52,6 +54,7 @@ export function ChatPanel({
   sound?: { pin: SoundPin; label: string } | null; // part of the sound, picked on the timeline
   soundLength?: number; // how long the sound is, so a whole lane reads "whole film"
   video?: boolean; // a video film: Claude's music reads "Score"
+  onTakes?: (prompt: string, context: ChatContext) => void; // three versions of this prompt at once
   time: () => number;
   clock: Clock;
   onClearPick: () => void;
@@ -135,12 +138,21 @@ export function ChatPanel({
 
   const files = useAttachments(`/api/studio/films/${filmId}/attachments`, { audio: true });
 
+  // "Try 3": the next prompt makes three versions at once, to pick from.
+  // Also when a prompt asks for three versions itself.
+  const [three, setThree] = useState(false);
   const send = async () => {
     const attached = await files.flush();
     const words = draft.trim() || (attached.length ? "Have a look at what I attached." : "");
     if (!words) return;
     setDraft("");
     files.clear();
+    if (onTakes && !turn.running && (three || asksForThree(words))) {
+      setThree(false);
+      onTakes(words, { t: pinned?.t ?? time(), pick: null, ...(attached.length ? { attachments: attached } : {}) });
+      onClearPick();
+      return;
+    }
     void chat.send(words, {
       t: pinned?.t ?? time(),
       pick: pinned?.pick ?? null,
@@ -171,6 +183,26 @@ export function ChatPanel({
       bodyClassName="flex flex-col"
       actions={
         <>
+          {onTakes ? (
+            <Hint label="Make 3 versions of your next prompt, then pick one">
+              <button
+                type="button"
+                aria-pressed={three}
+                onClick={() => {
+                  setThree((on) => !on);
+                  inputRef.current?.focus();
+                }}
+                disabled={turn.running}
+                className={cn(
+                  PILL_BUTTON,
+                  "h-7 px-2.5",
+                  three ? "bg-white/[0.14] text-white hover:bg-white/[0.18]" : "text-white/60 hover:bg-white/[0.08] hover:text-white",
+                )}
+              >
+                Try 3
+              </button>
+            </Hint>
+          ) : null}
           {messages.length > 0 ? (
             <VersionsButton
               filmId={filmId}
@@ -253,7 +285,7 @@ export function ChatPanel({
           onStop={chat.stop}
           running={turn.running}
           queueing
-          placeholder="Make the title come in from the left"
+          placeholder={three ? "Describe it, and Claude makes 3 versions" : "Make the title come in from the left"}
           chip={sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
           onClearChip={onClearPick}
           meta={<PlayheadChip clock={clock} />}

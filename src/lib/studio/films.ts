@@ -56,7 +56,8 @@ export async function listFilms(): Promise<FilmSummary[]> {
   const ids = (await readdir(FILMS_DIR).catch(() => [])).filter(isId);
   // A film still being made briefly holds its starter's film.json, with no
   // id yet; it shows up once it's ready.
-  const films = (await Promise.all(ids.map(readFilm))).filter((f): f is Film => typeof f?.id === "string");
+  // Versions Claude is trying (takes.ts) belong to their film, not the list.
+  const films = (await Promise.all(ids.map(readFilm))).filter((f): f is Film => typeof f?.id === "string" && !f.take);
   const summaries = await Promise.all(
     films.map(async (f) => ({
       id: f.id,

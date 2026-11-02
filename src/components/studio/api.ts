@@ -1,5 +1,8 @@
 import type { Rule } from "@/lib/studio/rules";
+import type { ProviderId } from "@/lib/studio/ai-types";
+import type { Takes } from "@/lib/studio/takes-shared";
 import {
+  type ChatContext,
   type ChatEvent,
   type ChatMessage,
   type ChatRequest,
@@ -89,6 +92,12 @@ export const api = {
   render: (id: string, quality: RenderQuality) =>
     call<RenderStatus>(`${film(id)}/render`, send("POST", { quality })),
   renderStatus: (id: string) => call<RenderStatus>(`${film(id)}/render`),
+  // Three versions of one prompt at once (takes.ts), and keeping one.
+  takes: async (id: string) => (await call<{ takes: Takes | null }>(`${film(id)}/takes`)).takes,
+  startTakes: async (id: string, body: { prompt: string; context: ChatContext; provider: ProviderId }) =>
+    (await call<{ takes: Takes }>(`${film(id)}/takes`, send("POST", body))).takes,
+  pickTake: async (id: string, take: string) => (await call<{ film: Film }>(`${film(id)}/takes/pick`, send("POST", { take }))).film,
+  discardTakes: (id: string) => call<void>(`${film(id)}/takes`, { method: "DELETE" }),
   // Folders on the front page. A film is moved with edit(id, { folder }).
   folders: () => call<Folder[]>("/api/studio/folders"),
   newFolder: (name: string) => call<Folder>("/api/studio/folders", send("POST", { name })),

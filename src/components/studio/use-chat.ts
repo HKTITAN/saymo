@@ -281,8 +281,16 @@ export function useChat(
     [id],
   );
 
+  // The chat as the server has it now (after picking one of three
+  // versions, say).
+  const reloadHistory = useCallback(async () => {
+    const saved = await api.history(id).catch(() => null);
+    if (saved) setMessages(saved.messages);
+  }, [id]);
+
   return {
     messages,
+    reloadHistory,
     turn,
     send,
     stop,

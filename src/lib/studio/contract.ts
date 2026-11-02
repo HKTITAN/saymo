@@ -61,6 +61,7 @@ export type Film = {
   sound?: { on: boolean; volume: number }; // sound design (sound.ts); missing = none yet
   brand?: string; // brand kit id (brand.ts); missing = "aerchain"
   folder?: string; // the folder (project) it's filed in; missing = none
+  take?: { of: string; n: number }; // one of three versions Claude is trying for film `of` (takes.ts); hidden from the list
 };
 
 // A folder on the studio's home page, for grouping films by project.
