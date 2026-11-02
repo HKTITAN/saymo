@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { constants } from "node:fs";
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { tokenMatches } from "./api-token";
 import type { Engine, Film, FilmEdit, FilmSummary, Folder, Version } from "./contract";
 
 // Copies are APFS clones where the disk allows: instant, and no extra space
@@ -408,11 +409,15 @@ export async function restoreVersion(id: string, n: number, t: number): Promise<
 //    same-origin, with the `x-studio: 1` header. A web page elsewhere can't
 //    add that header without the server's permission, which it never gives.
 // (x-forwarded-for is no help: Next passes on whatever the caller sends.)
+// Apps outside the browser (the MCP server, the command line, Raycast) send
+// the local API token instead: see fromApp below and docs/security.md.
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 export function allowed(request: Request) {
   const host = (request.headers.get("host") ?? "").replace(/:\d+$/, "");
   if (!LOCAL_HOSTS.has(host)) return false;
+  const auth = request.headers.get("authorization");
+  if (auth !== null) return fromApp(request, auth);
   if (request.method === "GET" || request.method === "HEAD") return true;
   // The page's own origin: this Mac by any of its names, on the same port
   // (Next reports its own address as localhost even when the page was
@@ -431,6 +436,27 @@ export function allowed(request: Request) {
   const site = request.headers.get("sec-fetch-site");
   if (site !== null && site !== "same-origin") return false;
   return request.headers.get("x-studio") === "1";
+}
+
+// An app on this Mac with the token. Never a web page: a browser only sends
+// an Authorization header to another site after asking the server first
+// (CORS), which the studio never allows, and anything a browser marks as
+// coming from a page is refused here too.
+function fromApp(request: Request, auth: string) {
+  if (request.headers.get("origin") !== null) return false;
+  const site = request.headers.get("sec-fetch-site");
+  if (site !== null && site !== "none") return false;
+  return tokenMatches(auth);
+}
+
+// Only the studio page itself, for what only the page may do (showing and
+// replacing the token): same-origin as the browser reports it, with the
+// studio's header, and no token.
+export function fromPage(request: Request) {
+  if (request.headers.get("authorization") !== null) return false;
+  if (request.headers.get("sec-fetch-site") !== "same-origin") return false;
+  if (request.headers.get("x-studio") !== "1") return false;
+  return allowed(request);
 }
 
 export const refused = () => new Response("The studio only answers its own page on this computer.", { status: 403 });
