@@ -256,6 +256,8 @@ export function Multitrack({
     if (e.button !== 0) return;
     e.stopPropagation();
     if (!edit) return;
+    // One thing picked at a time: a clip lets go of a stretch of sound.
+    sound?.editor?.setPick(null);
     let ids = new Set(selected);
     if (e.shiftKey) {
       if (ids.has(item.id)) ids.delete(item.id);
@@ -395,6 +397,7 @@ export function Multitrack({
   const laneDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) return;
     setSelected(new Set());
+    sound?.editor?.setPick(null);
     scrubDown(e);
   };
 
@@ -712,10 +715,12 @@ export function Multitrack({
           ) : null}
         </div>
 
-        {/* The lanes, scrolling sideways. */}
+        {/* The lanes, scrolling sideways. As tall as their tracks, so when
+            the timeline is short they scroll up with the track names
+            instead of being cut off at the bottom. */}
         <div
           ref={scroller}
-          className="relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="relative h-max min-h-full min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           onPointerMove={move}
           onPointerUp={up}
           onPointerCancel={up}
@@ -816,7 +821,13 @@ export function Multitrack({
                 isn't cut or moved here. */}
             {showStems(sound) ? (
               (["music", "effects"] as const).map((stem) => (
-                <div key={stem} className="border-white/[0.05] border-t">
+                <div
+                  key={stem}
+                  className="border-white/[0.05] border-t"
+                  // Picking sound lets go of any clips, so Delete or S can't
+                  // change the cut while the sound panel is open.
+                  onPointerDownCapture={(e) => e.button === 0 && setSelected(new Set())}
+                >
                   <StemLane
                     stem={stem}
                     peaks={sound.stems[stem]}
