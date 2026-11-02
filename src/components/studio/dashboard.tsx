@@ -26,18 +26,20 @@ import type { FilmSummary, Folder } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { api } from "./api";
 import { Swatches } from "./brand-row";
-import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, StudioMark, TinyFolder, VideoDoodle } from "./doodles";
+import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, StudioMark, TinyFolder, VideoDoodle } from "./doodles";
 import { FirstFilm } from "./first-film";
 import { undoKey, useHistory } from "./history";
 import { KitMaker } from "./kit-maker";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
+import { ReelFlow } from "./reel-flow";
 
-// The studio's home page, at /studio. At the top, the two ways to start a
-// film. Below, every film, filed in folders: the row of folders filters the
+// The studio's home page, at /studio. At the top, the ways to start a film
+// (edit a video, make motion graphics, write a script, record a reel).
+// Below, every film, filed in folders: the row of folders filters the
 // grid, and a film moves to a folder by dragging it onto one or from its •••
 // menu. ⌘Z undoes moves and renames. Last, the brand kits.
 
-type Overlay = null | "video" | "motion" | "kit";
+type Overlay = null | "video" | "motion" | "kit" | "script" | "reel";
 type Sort = "edited" | "name";
 
 // What a dragged film carries, so only films can be dropped on folders.
@@ -120,6 +122,7 @@ export function Dashboard({
   onRefresh,
   onStartFilm,
   onStartVideo,
+  onOpenNewFilm,
   onOpenKit,
   onNewKit,
   onImportKit,
@@ -138,6 +141,8 @@ export function Dashboard({
   onRefresh: () => Promise<void>;
   onStartFilm: (prompt: string | null, width: number, height: number, folder: string | null) => void;
   onStartVideo: (files: File[], width: number, height: number, folder: string | null) => void;
+  // A film made here (a reel), opened with its first prompt and files to attach.
+  onOpenNewFilm: (id: string, prompt: string, attach: File[]) => void;
   onOpenKit: (id: string) => void;
   onNewKit: () => void;
   onImportKit: (file: File) => void;
@@ -257,7 +262,7 @@ export function Dashboard({
   // ─── Keys: ⌘Z undoes, / finds a film, Esc closes the new-film card ──────
 
   useEffect(() => {
-    if (overlay === "kit") return; // the kit card handles its own keys
+    if (overlay === "kit" || overlay === "script" || overlay === "reel") return; // these cards handle their own keys
     const onKey = (e: KeyboardEvent) => {
       if (overlay) {
         if (e.key !== "Escape" || e.defaultPrevented) return;
@@ -374,7 +379,7 @@ export function Dashboard({
         </header>
 
         <div className="mx-auto flex max-w-[1240px] flex-col gap-10 px-6 pt-3 pb-20">
-          {/* The two ways to start. */}
+          {/* The ways to start. */}
           <section aria-label="Start a film" className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
             <StartCard
               doodle={<VideoDoodle className="absolute inset-0 h-full w-full" />}
@@ -387,6 +392,18 @@ export function Dashboard({
               title="Make motion graphics"
               note="Describe a film in a sentence and Claude makes it."
               onClick={() => setOverlay("motion")}
+            />
+            <StartCard
+              doodle={<ScriptDoodle className="absolute inset-0 h-full w-full" />}
+              title="Write a script"
+              note="Claude writes it as a storyboard, beat by beat."
+              onClick={() => setOverlay("script")}
+            />
+            <StartCard
+              doodle={<ReelDoodle className="absolute inset-0 h-full w-full" />}
+              title="Record a reel"
+              note="Read your script to camera; the prompter follows your voice."
+              onClick={() => setOverlay("reel")}
             />
           </section>
 
@@ -639,6 +656,14 @@ export function Dashboard({
                 setOverlay(null);
                 onNewKit();
               }}
+            />
+          ) : overlay === "script" || overlay === "reel" ? (
+            <ReelFlow
+              start={overlay}
+              folder={folder?.id ?? null}
+              onClose={() => setOverlay(null)}
+              onStartMotion={(prompt, w, h) => onStartFilm(prompt, w, h, folder?.id ?? null)}
+              onOpenFilm={onOpenNewFilm}
             />
           ) : (
             <>

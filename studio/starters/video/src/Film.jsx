@@ -85,17 +85,27 @@ function ClipBody({ clip, file, muted, soundOnly, length }) {
     return <Audio src={file.src} {...trim} playbackRate={speed} volume={volume} />;
   }
   const opacity = fade(frame / fps);
-  if (file.kind === "image") {
-    return <Img src={file.src} style={{ ...framing(file, clip, W, H), objectFit: "cover", opacity }} />;
-  }
+  // A clip with a box fills that part of the frame only (a split screen,
+  // the top half of a half-and-half reel); it's framed inside the box as
+  // it would be inside the whole frame.
+  const box = clip.box;
+  const bw = box ? box.w * W : W;
+  const bh = box ? box.h * H : H;
+  const picture =
+    file.kind === "image" ? (
+      <Img src={file.src} style={{ ...framing(file, clip, bw, bh), objectFit: "cover", opacity }} />
+    ) : (
+      <OffthreadVideo
+        src={file.src}
+        {...trim}
+        playbackRate={speed}
+        volume={volume}
+        style={{ ...framing(file, clip, bw, bh), objectFit: "cover", opacity }}
+      />
+    );
+  if (!box) return picture;
   return (
-    <OffthreadVideo
-      src={file.src}
-      {...trim}
-      playbackRate={speed}
-      volume={volume}
-      style={{ ...framing(file, clip, W, H), objectFit: "cover", opacity }}
-    />
+    <div style={{ position: "absolute", left: box.x * W, top: box.y * H, width: bw, height: bh, overflow: "hidden" }}>{picture}</div>
   );
 }
 

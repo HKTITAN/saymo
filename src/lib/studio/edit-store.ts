@@ -1,7 +1,7 @@
 import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Param } from "./contract";
-import { type Clip, type Edit, editEnd, type Graphic, type Track, type Word } from "./edit";
+import { type Clip, cleanBox, type Edit, editEnd, type Graphic, type Track, type Word } from "./edit";
 import { filmDir, readFilm, withFilm, writeFilm } from "./films";
 import { graphicNames } from "./graphics";
 import { listMedia } from "./media";
@@ -78,6 +78,11 @@ export async function checkEdit(id: string, body: unknown): Promise<Edit | strin
         const clip: Clip = { id: it.id, type: "clip", media: m.id, start: it.start as number, from: it.from as number, to: it.to as number };
         for (const k of ["speed", "volume", "fadeIn", "fadeOut", "zoom", "x", "y"] as const) {
           if (it[k] !== undefined) clip[k] = it[k] as number;
+        }
+        if (it.box !== undefined) {
+          const box = cleanBox(it.box);
+          if (!box) return "A clip's box must sit inside the frame (x, y, w and h from 0 to 1).";
+          clip.box = box;
         }
         items.push(clip);
       } else if (it.type === "graphic") {

@@ -42,7 +42,7 @@ function Face({ x, y, s = 1 }: { x: number; y: number; s?: number }) {
   );
 }
 
-// The two start tiles: one plain object each, the studio's screen at its
+// The start tiles: one plain object each, the studio's screen at its
 // simplest. At rest each shows its result; on hover, the one thing that
 // makes it happens again.
 
@@ -107,6 +107,65 @@ export function MotionDoodle({ className }: { className?: string }) {
       <g className="[transform-box:fill-box] origin-center motion-safe:group-hover/doodle:animate-[studio-press_0.4s_ease-out_both]">
         <circle cx={236} cy={134} r={8} fill={INK} />
         <path d="M236 137.6 V130.6 M232.9 133.5 L236 130.4 L239.1 133.5" stroke="#141414" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </g>
+    </svg>
+  );
+}
+
+// Write a script: a page of three beats, each a storyboard frame beside
+// its line and its visual idea. On hover the lines are written in again,
+// one beat after another.
+export function ScriptDoodle({ className }: { className?: string }) {
+  const write = "origin-left [transform-box:fill-box] motion-safe:group-hover/doodle:animate-[studio-write_0.5s_cubic-bezier(0.23,1,0.32,1)_both]";
+  return (
+    <svg viewBox="0 0 320 180" aria-hidden="true" className={className}>
+      <rect x={96} y={20} width={128} height={140} rx={8} fill="#2e2e2e" />
+      {[0, 1, 2].map((i) => {
+        const y = 33 + i * 42;
+        const delay = { animationDelay: `${0.1 + i * 0.28}s` };
+        return (
+          <g key={i}>
+            <rect x={107} y={y} width={30} height={28} rx={4} fill="#4a4a4a" />
+            <rect x={145} y={y + 6} width={i === 1 ? 54 : 66} height={6} rx={3} fill={INK} className={write} style={delay} />
+            <rect x={145} y={y + 17} width={i === 2 ? 34 : 44} height={5} rx={2.5} fill="rgb(255 255 255 / 0.28)" className={write} style={{ animationDelay: `${0.22 + i * 0.28}s` }} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Record a reel: a story-shaped screen split in two, the speaker on top and
+// a graphic below, with the script over the speaker. On hover the script
+// moves up a line, as the prompter does when you read.
+export function ReelDoodle({ className }: { className?: string }) {
+  const id = useId();
+  const scroll = "[transform-box:fill-box] motion-safe:group-hover/doodle:animate-[studio-word-in_0.9s_cubic-bezier(0.23,1,0.32,1)_both]";
+  return (
+    <svg viewBox="0 0 320 180" aria-hidden="true" className={className}>
+      <defs>
+        <clipPath id={`${id}-screen`}>
+          <rect x={118} y={14} width={84} height={150} rx={9} />
+        </clipPath>
+        <clipPath id={`${id}-prompter`}>
+          <rect x={118} y={22} width={84} height={22} />
+        </clipPath>
+      </defs>
+      <g clipPath={`url(#${id}-screen)`}>
+        <rect x={118} y={14} width={84} height={75} fill="#2e2e2e" />
+        <circle cx={160} cy={62} r={11} fill="#4a4a4a" />
+        <path d="M136 89 q0 -15 24 -15 q24 0 24 15 Z" fill="#4a4a4a" />
+        <rect x={118} y={89} width={84} height={75} fill="#232323" />
+        <rect x={132} y={110} width={10} height={36} rx={3} fill="#4a4a4a" />
+        <rect x={147} y={122} width={10} height={24} rx={3} fill="#4a4a4a" />
+        <rect x={162} y={102} width={10} height={44} rx={3} fill={INK} />
+        <rect x={177} y={116} width={10} height={30} rx={3} fill="#4a4a4a" />
+        <g clipPath={`url(#${id}-prompter)`}>
+          <g className={scroll}>
+            <rect x={128} y={25} width={64} height={5} rx={2.5} fill={INK} />
+            <rect x={128} y={35} width={46} height={5} rx={2.5} fill="rgb(255 255 255 / 0.3)" />
+          </g>
+        </g>
       </g>
     </svg>
   );

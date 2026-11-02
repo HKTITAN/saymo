@@ -274,6 +274,15 @@ export function Studio() {
             onRefresh={refresh}
             onStartFilm={(prompt, w, h, folder, attach?: File[]) => start(() => create(w, h, { prompt, folder, attach }))}
             onStartVideo={(files, w, h, folder) => start(() => create(w, h, { kind: "video", files, folder }))}
+            onOpenNewFilm={(fid, prompt, attach) =>
+              start(async () => {
+                // A reel: its footage is already in; Claude starts on it as it opens.
+                opening.current = prompt;
+                openingAttach.current = attach.length ? attach : null;
+                await refresh();
+                openFilm(fid);
+              })
+            }
             onOpenKit={(next) => openKit(next)}
             onNewKit={newKit}
             onImportKit={importKit}

@@ -206,7 +206,7 @@ function ClipPanel({
             id={id}
             clip={clip}
             media={media}
-            filmAspect={filmWidth / filmHeight}
+            filmAspect={(filmWidth * (clip.box?.w ?? 1)) / (filmHeight * (clip.box?.h ?? 1))}
             onMove={(x, y) => set({ x, y }, "Moved the framing", "frame")}
           />
           <DialNote>Drag the box to choose what the frame shows, such as the speaker when a wide shot becomes a story.</DialNote>
