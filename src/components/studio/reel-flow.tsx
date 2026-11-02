@@ -140,7 +140,7 @@ export function ReelFlow({
   }
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-6">
+    <div data-backdrop="" className="absolute inset-0 flex items-center justify-center p-6">
       {close}
       {step === "making" ? (
         <Making

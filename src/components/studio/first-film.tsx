@@ -44,7 +44,7 @@ export function FirstFilm({
   };
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center p-6">
+    <div data-backdrop="" className="absolute inset-0 flex items-center justify-center p-6">
       <section aria-labelledby="first-film" className={cn(CARD, "flex w-full max-w-[540px] flex-col gap-4 p-5")}>
         <div className="flex flex-col gap-1.5">
           <h1 id="first-film" className="font-medium text-[15px] text-white/95">

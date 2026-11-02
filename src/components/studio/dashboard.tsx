@@ -646,7 +646,16 @@ export function Dashboard({
       ) : null}
 
       {overlay ? (
-        <div className="absolute inset-0 z-40 bg-black/55 backdrop-blur-[2px]">
+        <div
+          data-backdrop=""
+          className="absolute inset-0 z-40 bg-black/55 backdrop-blur-[2px]"
+          // A press on the dimmed space around a card closes it, the same as
+          // Esc (cards with typed or dropped things ask first).
+          onPointerDown={(e) => {
+            if (!(e.target instanceof HTMLElement) || !e.target.hasAttribute("data-backdrop")) return;
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+          }}
+        >
           {overlay === "rules" ? (
             <RulesPanel onClose={() => setOverlay(null)} />
           ) : overlay === "kit" ? (

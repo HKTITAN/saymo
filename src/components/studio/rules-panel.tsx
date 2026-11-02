@@ -78,7 +78,7 @@ export function RulesPanel({ onClose }: { onClose: () => void }) {
   return (
     // The card fits the window: its title and "Add a rule" stay put, and
     // only the rules scroll between them.
-    <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-8">
+    <div data-backdrop="" className="absolute inset-0 flex items-center justify-center p-4 sm:p-8">
       <section aria-labelledby="rules-title" className={cn(CARD, "flex max-h-full w-full max-w-[600px] flex-col overflow-hidden")}>
         <header className="flex shrink-0 items-start gap-3 px-5 pt-5 pb-3">
           <div className="flex min-w-0 flex-1 flex-col gap-1">

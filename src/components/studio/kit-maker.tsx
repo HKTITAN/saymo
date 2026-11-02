@@ -143,7 +143,7 @@ export function KitMaker({
   }, [build, confirm, dirty, onClose, onHide]);
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-y-auto p-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div data-backdrop="" className="absolute inset-0 flex items-center justify-center overflow-y-auto p-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <section aria-labelledby="make-kit" className={cn(CARD, "relative my-auto flex w-full max-w-[640px] flex-col gap-4 p-5")}>
         {build ? (
           <Building build={build} buildingRef={buildingRef} onDone={onDone} onBack={() => setBuild(null)} />
