@@ -248,7 +248,7 @@ function GoogleSection({ status, onChange, onNote }: SectionProps) {
           <DialToggle
             label="Save drafts too"
             checked={google.autoDrafts}
-            onChange={(on) => void act(() => connectApi.setGoogle({ autoDrafts: on }), "Unable to change that. Try again.")}
+            onChange={(on) => void act(() => connectApi.setGoogle({ autoDrafts: on }), "Unable to change the drafts setting. Try again.")}
           />
           <DialButton onClick={() => window.location.assign(connectApi.googleStartUrl())}>Add another Drive</DialButton>
           <Disconnect

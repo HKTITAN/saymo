@@ -44,7 +44,7 @@ export const ghAvailable = async () => (await ghToken()) !== null;
 // The token to use now, from wherever this connection gets it.
 export async function githubToken(): Promise<{ token: string; saved: Saved }> {
   const saved = await load();
-  if (!saved) throw new ConnectError("GitHub isn't connected.");
+  if (!saved) throw new ConnectError("GitHub isn't connected. Connect it under Where films are saved.");
   const token = saved.via === "gh" ? await ghToken() : saved.token;
   if (!token) {
     throw new ConnectError(
@@ -205,7 +205,7 @@ export async function chooseRepo(owner: string, name: string): Promise<GithubRep
   let repo: GithubRepo;
   if (found.status === 200 && found.body.full_name) {
     if (!found.body.private) throw new ConnectError(`${found.body.full_name} is public. Pick a private repository, or a new name.`);
-    if (found.body.permissions && !found.body.permissions.push) throw new ConnectError(`You can't push to ${found.body.full_name}.`);
+    if (found.body.permissions && !found.body.permissions.push) throw new ConnectError(`You can't save to ${found.body.full_name}. Pick another repository, or a new name.`);
     repo = { fullName: found.body.full_name, url: found.body.html_url ?? `https://github.com/${found.body.full_name}`, private: true };
   } else if (found.status === 404) {
     const made = await gh<{ full_name?: string; html_url?: string; message?: string }>(
@@ -239,7 +239,7 @@ export async function chooseRepo(owner: string, name: string): Promise<GithubRep
 
 export async function githubIdentity() {
   const saved = await load();
-  if (!saved) throw new ConnectError("GitHub isn't connected.");
+  if (!saved) throw new ConnectError("GitHub isn't connected. Connect it under Where films are saved.");
   return { name: saved.login, email: `${saved.userId}+${saved.login}@users.noreply.github.com` };
 }
 

@@ -90,7 +90,7 @@ export function MediaBin({
         }}
       />
 
-      <div className="mx-3 mb-2 flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="tablist" aria-label="Show">
+      <div className="mx-3 mb-2 flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="tablist" aria-label="Footage or graphics">
         {(["footage", "graphics"] as const).map((k) => (
           <button
             key={k}

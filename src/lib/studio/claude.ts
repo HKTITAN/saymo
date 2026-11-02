@@ -138,7 +138,7 @@ export async function runTurn(id: string, request: ChatRequest, emit: (event: Ch
   try {
     await turnFor(id, request, turn, emit);
   } catch (error) {
-    emit({ kind: "error", message: `Something went wrong: ${String((error as Error)?.message ?? error)}` });
+    emit({ kind: "error", message: `Claude stopped with an error. Try again. Details: ${String((error as Error)?.message ?? error)}` });
   } finally {
     running.delete(id);
   }

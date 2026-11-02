@@ -7,7 +7,7 @@ export const originOf = (request: Request) => `http://${request.headers.get("hos
 
 export function failed(error: unknown) {
   if (error instanceof ConnectError) return Response.json({ error: error.message }, { status: 400 });
-  return Response.json({ error: "Something went wrong with the connection. Try again." }, { status: 500 });
+  return Response.json({ error: "Unable to finish that. Try again, and if it keeps failing, restart the studio." }, { status: 500 });
 }
 
 // Only pages of the studio itself, never another site.

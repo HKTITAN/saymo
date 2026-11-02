@@ -43,7 +43,7 @@ const linkNote = (link: SharedLink, figmaReady: boolean): string | null => {
     return "Claude can't open Figma links yet. Export the frames as PDF or PNG and drop them in, or add a Figma token.";
   }
   if (link.kind === "drive") return "Google Drive links can't be opened from here. Download the file and drop it in.";
-  if (link.kind === "video") return "Videos can't be watched from here. A note on what's in it helps.";
+  if (link.kind === "video") return "Claude can't watch videos from here. Add a note on what's in it.";
   return null;
 };
 
@@ -484,7 +484,9 @@ function Building({
       ? "Almost there"
       : left < 60
         ? "Less than a minute left"
-        : `About ${Math.round(left / 60)} minute${Math.round(left / 60) === 1 ? "" : "s"} left`;
+        : Math.round(left / 60) === 1
+          ? "About a minute left"
+          : `About ${Math.round(left / 60)} minutes left`;
 
   return (
     <div className="flex flex-col gap-5" aria-live="polite">

@@ -28,9 +28,9 @@ export function figmaKey(url: string): string | null {
 
 async function figma<T>(route: string): Promise<T> {
   const res = await fetch(`${API}${route}`, { headers: { "X-Figma-Token": process.env.FIGMA_TOKEN?.trim() ?? "" } });
-  if (res.status === 403 || res.status === 401) throw new Error("Figma said no: the token can't open this file.");
-  if (res.status === 404) throw new Error("Figma couldn't find that file.");
-  if (!res.ok) throw new Error(`Figma answered ${res.status}.`);
+  if (res.status === 403 || res.status === 401) throw new Error("Figma refused: the token can't open this file. Use a token from an account that can open it.");
+  if (res.status === 404) throw new Error("Figma couldn't find that file. Check the link.");
+  if (!res.ok) throw new Error(`Figma answered with error ${res.status}. Try again in a moment.`);
   return (await res.json()) as T;
 }
 

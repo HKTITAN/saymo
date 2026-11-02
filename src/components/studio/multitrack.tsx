@@ -481,7 +481,7 @@ export function Multitrack({
             made = r.made;
             return r.edit;
           },
-          { label: items.length > 1 ? `Duplicated ${items.length} items` : "Duplicated" },
+          { label: items.length > 1 ? `Duplicated ${items.length} items` : "Duplicated an item" },
         );
         setSelected(new Set(made));
         return;
@@ -495,7 +495,7 @@ export function Multitrack({
         e.preventDefault();
         const ripple = e.shiftKey;
         change((cur) => remove(cur, new Set(items), ripple), {
-          label: ripple ? "Deleted and closed the gap" : items.length > 1 ? `Deleted ${items.length} items` : "Deleted",
+          label: ripple ? "Deleted and closed the gap" : items.length > 1 ? `Deleted ${items.length} items` : "Deleted an item",
         });
         setSelected(new Set());
       }

@@ -433,7 +433,7 @@ function Arrival({ text, onDismiss, onCopy }: { text: string; onDismiss: () => v
           <p className="text-[14px] text-white/60 leading-relaxed"><Inline text={guessed} onCopy={onCopy} /></p>
         </div>
       ) : null}
-      <button type="button" onClick={onDismiss} aria-label="Dismiss" className="absolute top-3 right-3 inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-white/45 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5">
+      <button type="button" onClick={onDismiss} aria-label="Dismiss what Claude did" className="absolute top-3 right-3 inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-white/45 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5">
         <MultipleCrossCancelIcon aria-hidden="true" />
       </button>
     </aside>
@@ -491,7 +491,7 @@ function RuleGroup({
               />
               <button
                 type="button"
-                onClick={() => onChange(rules.filter((_, j) => j !== i), `Remove a ${label.toLowerCase()} rule`)}
+                onClick={() => onChange(rules.filter((_, j) => j !== i), `Removed a ${label.toLowerCase()} rule`)}
                 aria-label={`Remove rule ${i + 1}`}
                 className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-white/45 outline-none hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5"
               >
@@ -501,7 +501,7 @@ function RuleGroup({
           ))}
           <button
             type="button"
-            onClick={() => onChange([...rules, ""], `Add a ${label.toLowerCase()} rule`)}
+            onClick={() => onChange([...rules, ""], `Added a ${label.toLowerCase()} rule`)}
             className="flex h-9 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-white/[0.05] text-[12px] text-white/75 outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5"
           >
             <PlusIcon aria-hidden="true" />
@@ -528,7 +528,7 @@ function RuleGroup({
           <RuleList tone="dont" rules={donts} onCopy={onCopy} />
         </>
       ) : (
-        <Empty>None yet.</Empty>
+        <Empty>No rules yet. Choose Edit to add one.</Empty>
       )}
     </div>
   );

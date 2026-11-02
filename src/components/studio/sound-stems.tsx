@@ -244,7 +244,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
       <>
       <header className="flex h-7 items-center gap-1 ps-1.5">
         <h2 className="me-auto truncate font-medium text-[12px] text-white/85">{editor.label}</h2>
-        <button type="button" className={cn(ICON_BUTTON, "size-6 [&_svg]:size-3.5")} onClick={() => editor.setPick(null)} aria-label="Close">
+        <button type="button" className={cn(ICON_BUTTON, "size-6 [&_svg]:size-3.5")} onClick={() => editor.setPick(null)} aria-label="Close this part of the sound">
           <MultipleCrossCancelIcon aria-hidden="true" />
         </button>
       </header>
@@ -275,7 +275,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
         }}
       >
         <RefreshIcon aria-hidden="true" />
-        Try another
+        Try another take
       </DialButton>
       {editor.error ? (
         <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed" aria-live="polite">

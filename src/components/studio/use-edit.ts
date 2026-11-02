@@ -162,7 +162,7 @@ export function useEdit(
       show(next);
       setSelected((s) => new Set([...s].filter((i) => next.tracks.some((t) => t.items.some((x) => x.id === i)))));
     } catch (e) {
-      setLoadError(e instanceof StudioError ? e.message : "Unable to load the edit.");
+      setLoadError(e instanceof StudioError ? e.message : "Unable to load the edit. Reload the page to try again.");
     }
   }, [id, flush, show]);
 
@@ -172,7 +172,7 @@ export function useEdit(
     videoApi
       .edit(id)
       .then((e) => live && show(e))
-      .catch((e) => live && setLoadError(e instanceof StudioError ? e.message : "Unable to load the edit."));
+      .catch((e) => live && setLoadError(e instanceof StudioError ? e.message : "Unable to load the edit. Reload the page to try again."));
     videoApi
       .graphics()
       .then((g) => live && setGraphics(g))

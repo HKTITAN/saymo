@@ -29,13 +29,13 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/bran
   const attachments = await checkAttachments(kitDir(id), "guide", body?.attachments);
   let prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 20_000) : "";
   if (!prompt.trim() && attachments.length) prompt = "Have a look at what I attached.";
-  if (!prompt.trim()) return Response.json({ error: "Say what the kit should have." }, { status: 400 });
+  if (!prompt.trim()) return Response.json({ error: "Type what you'd like changed in the kit." }, { status: 400 });
   const extra = [
     ...(typeof body?.url === "string" ? [body.url] : []),
     ...(Array.isArray(body?.links) ? body.links.filter((l): l is string => typeof l === "string").slice(0, 12) : []),
   ];
   const links = linksFor(prompt, extra);
-  if (isBrandRunning(id)) return Response.json({ error: "Claude is still working on this kit." }, { status: 409 });
+  if (isBrandRunning(id)) return Response.json({ error: "Claude is still working on this kit. Wait for it, or stop it first." }, { status: 409 });
 
   const encoder = new TextEncoder();
   let open = true;
