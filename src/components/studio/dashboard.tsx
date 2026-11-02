@@ -394,7 +394,7 @@ export function Dashboard({
 
         <div className="mx-auto flex max-w-[1240px] flex-col gap-10 px-6 pt-3 pb-20">
           {/* The ways to start. */}
-          <section aria-label="Start a film" className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
+          <section aria-label="Start a film" className="grid gap-x-3 gap-y-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
             <StartCard
               doodle={<VideoDoodle className="absolute inset-0 h-full w-full" />}
               title="Edit a video"
