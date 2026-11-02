@@ -1249,6 +1249,7 @@ function FilmView({
             pinned={pinned}
             time={time}
             chat={chatView}
+            pointing={pointing}
             onClose={() => setBubble(false)}
             onSent={() => {
               setBubble(false);

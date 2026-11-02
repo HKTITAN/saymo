@@ -1,17 +1,19 @@
 "use client";
 
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import type React from "react";
 import { cn } from "@/lib/utils";
 
 // Confirmations in the DialKit language: a small dark panel over a dimmed
 // page, a plain title and line of detail, and row buttons at the foot.
+// Like every pop-up in the app, a press outside it closes it (as Cancel
+// does), so the root is a Dialog's; the popup still says it's an alert.
 
 export const AlertDialogCreateHandle: typeof AlertDialogPrimitive.createHandle =
   AlertDialogPrimitive.createHandle;
 
-export const AlertDialog: typeof AlertDialogPrimitive.Root =
-  AlertDialogPrimitive.Root;
+export const AlertDialog: typeof DialogPrimitive.Root = DialogPrimitive.Root;
 
 export const AlertDialogPortal: typeof AlertDialogPrimitive.Portal =
   AlertDialogPrimitive.Portal;
@@ -82,6 +84,7 @@ export function AlertDialogPopup({
             className,
           )}
           data-slot="alert-dialog-popup"
+          role="alertdialog"
           {...props}
         />
       </AlertDialogViewport>

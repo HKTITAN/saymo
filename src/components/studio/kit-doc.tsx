@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { brandFile } from "./brand-api";
 import { ColorRow } from "./color-row";
 import { CARD } from "./panel";
+import { useOutsideClose } from "./use-outside";
 
 // A brand kit set as a brand book: a light page in a comfortable reading
 // column, numbered sections with a contents bar that follows along,
@@ -379,6 +380,7 @@ function DocSection({
             type="button"
             onClick={onEdit}
             aria-expanded={editing}
+            data-edit-toggle=""
             className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5"
           >
             <PencilEditIcon aria-hidden="true" />
@@ -391,10 +393,29 @@ function DocSection({
   );
 }
 
-// An edit tray inside the page: dark DialKit rows, like the panels.
+// An edit tray inside the page: dark DialKit rows, like the panels. Changes
+// save as they're made, so a press outside it or Esc simply closes it (the
+// Edit buttons open and close trays themselves). Esc hands the focus back to
+// the Edit button that opened it.
 function EditTray({ children, note, onDone }: { children: ReactNode; note?: string; onDone: () => void }) {
+  const tray = useRef<HTMLDivElement>(null);
+  const outside = useOutsideClose(tray, onDone, { ignore: (target) => Boolean(target.closest("[data-edit-toggle]")) });
+  const done = useRef(onDone);
+  useEffect(() => {
+    done.current = onDone;
+  });
+  useEffect(() => {
+    const keys = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented || e.isComposing) return;
+      e.preventDefault();
+      document.querySelector<HTMLElement>('[data-edit-toggle][aria-expanded="true"]')?.focus();
+      done.current();
+    };
+    window.addEventListener("keydown", keys);
+    return () => window.removeEventListener("keydown", keys);
+  }, []);
   return (
-    <div className="flex flex-col gap-1.5 rounded-[14px] bg-[#161616] p-2.5 text-white animate-in fade-in slide-in-from-top-1 duration-200">
+    <div ref={tray} {...outside} className="flex flex-col gap-1.5 rounded-[14px] bg-[#161616] p-2.5 text-white animate-in fade-in slide-in-from-top-1 duration-200">
       {children}
       <div className="flex items-center gap-2 px-1 pt-1">
         {note ? <p className="me-auto text-[11.5px] text-white/45">{note}</p> : <span className="me-auto" />}
@@ -470,6 +491,7 @@ function RuleGroup({
           type="button"
           onClick={onEdit}
           aria-expanded={editing}
+          data-edit-toggle=""
           className="flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-[12px] text-white/60 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3"
         >
           <PencilEditIcon aria-hidden="true" />

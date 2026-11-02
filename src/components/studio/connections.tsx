@@ -26,6 +26,9 @@ export function ConnectionsButton() {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<ConnectionsStatus | null>(null);
   const [note, setNote] = useState<{ text: string; bad: boolean } | null>(null);
+  // Kept here, so a repository name being typed survives the panel closing
+  // on a press outside it.
+  const [repo, setRepo] = useState(DEFAULT_REPO);
 
   const refresh = useCallback(async () => {
     try {
@@ -80,7 +83,7 @@ export function ConnectionsButton() {
             {status ? (
               <>
                 <GoogleSection status={status} onChange={refresh} onNote={setNote} />
-                <GithubSection status={status} onChange={refresh} onNote={setNote} />
+                <GithubSection status={status} onChange={refresh} onNote={setNote} name={repo} setName={setRepo} />
               </>
             ) : (
               <p className="px-1 pb-1 text-[11.5px]">
@@ -271,11 +274,16 @@ function GoogleSection({ status, onChange, onNote }: SectionProps) {
 
 // ─── GitHub ───────────────────────────────────────────────────────────────
 
-function GithubSection({ status, onChange, onNote }: SectionProps) {
+function GithubSection({
+  status,
+  onChange,
+  onNote,
+  name,
+  setName,
+}: SectionProps & { name: string; setName: (name: string) => void }) {
   const { github } = status;
   const [busy, setBusy] = useState(false);
   const [owner, setOwner] = useState<string | null>(null);
-  const [name, setName] = useState(DEFAULT_REPO);
   const [changing, setChanging] = useState(false);
   const [copied, setCopied] = useState(false);
   const pending = github.pending;

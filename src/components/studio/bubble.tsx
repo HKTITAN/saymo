@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
-import { CARD } from "./panel";
+import { CARD, DiscardAsk } from "./panel";
 import { PromptBox } from "./prompt-box";
 import type { Fit } from "./stage";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
+import { useOutsideClose } from "./use-outside";
 import { chipLabel, type Pinned } from "./words";
 
 // The inline prompt: a small bubble right where you pointed on the film,
 // so "make this bigger" means exactly this. ⌘K opens it in the middle of
-// the film without a pick.
+// the film without a pick. A press outside it or Esc closes it, asking
+// first when there's an unsent prompt or file.
 
 const W = 320;
 
@@ -27,6 +29,7 @@ export function Bubble({
   pinned,
   time,
   chat,
+  pointing,
   onClose,
   onSent,
 }: {
@@ -35,6 +38,7 @@ export function Bubble({
   pinned: Pinned | null;
   time: () => number;
   chat: ChatState;
+  pointing: boolean; // Point is picking on the film, so presses there aren't "outside"
   onClose: () => void;
   onSent: () => void;
 }) {
@@ -62,6 +66,43 @@ export function Bubble({
 
   const files = useAttachments(`/api/studio/films/${filmId}/attachments`);
 
+  // Closing would lose an unsent prompt or file, so it asks once first.
+  const [asking, setAsking] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const dirty = Boolean(draft.trim()) || files.items.length > 0;
+  const keep = () => {
+    setAsking(false);
+    input.current?.focus();
+  };
+
+  // A press outside closes it, or asks; a second one while asking discards.
+  const outside = useOutsideClose(box, () => (dirty && !asking ? setAsking(true) : onClose()), {
+    ignore: (target) => pointing && Boolean(target.closest("[data-film-stage]")),
+  });
+
+  // Esc closes it, or asks; Esc while asking goes back to the prompt. Heard
+  // before the studio's own Esc, which would close it without asking.
+  const latest = useRef({ asking, dirty, onClose });
+  useEffect(() => {
+    latest.current = { asking, dirty, onClose };
+  });
+  useEffect(() => {
+    const keys = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.isComposing) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const now = latest.current;
+      if (now.asking) {
+        setAsking(false);
+        input.current?.focus();
+      } else if (now.dirty) setAsking(true);
+      else now.onClose();
+    };
+    window.addEventListener("keydown", keys, true);
+    return () => window.removeEventListener("keydown", keys, true);
+  }, []);
+
   const send = async () => {
     const attached = await files.flush();
     const words = draft.trim() || (attached.length ? "Have a look at what I attached." : "");
@@ -78,12 +119,15 @@ export function Bubble({
 
   return (
     <div
+      ref={box}
       role="dialog"
       aria-label="Ask Claude about this"
-      className={cn(CARD, "pointer-events-auto absolute z-30 p-1.5 motion-safe:animate-[bubble-in_180ms_cubic-bezier(0.23,1,0.32,1)]")}
+      {...outside}
+      className={cn(CARD, "pointer-events-auto absolute z-30 flex flex-col gap-1.5 p-1.5 motion-safe:animate-[bubble-in_180ms_cubic-bezier(0.23,1,0.32,1)]")}
       style={{ left, top, width: W, transformOrigin: "top center" }}
     >
       <PromptBox
+        inputRef={input}
         value={draft}
         onChange={setDraft}
         onSend={() => void send()}
@@ -91,12 +135,12 @@ export function Bubble({
         running={chat.turn.running}
         queueing
         autoFocus
-        onEscape={onClose}
         maxRows={4}
         placeholder={pinned ? "Make this bigger and bring it in later" : "Describe a change to the film"}
         chip={chipLabel(pinned?.pick ?? null, pinned?.t ?? time())}
         className="bg-transparent has-[:focus-visible]:bg-transparent has-[:focus-visible]:ring-0"
       />
+      {asking ? <DiscardAsk what="this prompt" onKeep={keep} onDiscard={onClose} /> : null}
       <style>{`@keyframes bubble-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }`}</style>
     </div>
   );
