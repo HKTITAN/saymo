@@ -731,6 +731,10 @@ async function main() {
     const sounding = classes.filter((c) => c.v >= 0.05).map((c) => c.n);
     if (sounding.length < 3) out.push(`Key: can't tell, only ${sounding.join(" and ")} sound. Tonal ${tonalPct}% of the time.`);
     else if (k1.r < 0.5) out.push(`Key: no clear key (closest ${k1.name}, fit ${k1.r.toFixed(2)}). Tonal ${tonalPct}% of the time.`);
+    // Key profiles often put the right key second (checked against rekordbox's
+    // own analysis of its demo tracks): when the top two are close, say both
+    // and never call it clear.
+    else if (k1.r - k2.r <= 0.15) out.push(`Key: ${k1.name} or ${k2.name} (too close to call, fits ${k1.r.toFixed(2)} and ${k2.r.toFixed(2)}). Treat both as possible. Tonal ${tonalPct}% of the time.`);
     else out.push(`Key: ${k1.name} (${sure}, fit ${k1.r.toFixed(2)}; next ${k2.name} ${k2.r.toFixed(2)}). Tonal ${tonalPct}% of the time.`);
     out.push(`Pitch classes by weight: ${classes.slice(0, 7).map((c) => `${c.n} ${Math.round(c.v * 100)}%`).join(", ")}.`);
     // The main note over time: smoothed, runs under 100 ms dropped.
