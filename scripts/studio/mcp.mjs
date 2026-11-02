@@ -11,6 +11,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import {
+  attachFromLibrary,
   changeFilm,
   createFilm,
   FORMATS,
@@ -18,6 +19,7 @@ import {
   getFilm,
   goBack,
   listFilms,
+  listLibrary,
   listVersions,
   renderFilm,
   StudioError,
@@ -29,7 +31,8 @@ const server = new McpServer(
     instructions:
       "Makes and changes Aerchain films in the Motion Studio running on this Mac. Each film has an 8-character id; list_films finds them. " +
       "change_film and create_film with a prompt run one Claude turn in the studio, which can take a few minutes. " +
-      "render_film makes the video files. open_in_studio gives the link to watch a film in the studio.",
+      "render_film makes the video files. open_in_studio gives the link to watch a film in the studio. " +
+      "list_library lists saved references (pictures, clips, sounds, PDFs, notes, links); pass their ids to change_film as library to send them with the prompt.",
   },
 );
 
@@ -119,10 +122,42 @@ server.registerTool(
       id: ID,
       prompt: z.string().min(1).max(8000).describe("The change, in plain words"),
       at: z.number().min(0).optional().describe("Seconds into the film the change is about, like the studio's playhead"),
+      library: z.array(z.string().regex(/^[a-z0-9]{8}$/)).max(10).optional().describe("Ids of library items (from list_library) to attach to the prompt as references"),
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   },
-  tool(async ({ id, prompt, at }, extra) => json(await changeFilm(id, prompt, { at, onEvent: turnProgress(extra), signal: extra.signal }))),
+  tool(async ({ id, prompt, at, library }, extra) => {
+    const attachments = library?.length ? await attachFromLibrary(id, library) : undefined;
+    return json(await changeFilm(id, prompt, { at, attachments, onEvent: turnProgress(extra), signal: extra.signal }));
+  }),
+);
+
+server.registerTool(
+  "list_library",
+  {
+    title: "List the reference library",
+    description:
+      "The studio's saved references, newest first: pictures, clips, GIFs, sounds, PDFs, notes and links, each with its id, kind, name, tags, note, folder and where its file is on this Mac.",
+    inputSchema: {
+      query: z.string().max(200).optional().describe("Words to find in names, tags and notes"),
+      tag: z.string().max(40).optional().describe("Only items with this tag"),
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  tool(async ({ query, tag }) => json(await listLibrary({ query, tag }))),
+);
+
+server.registerTool(
+  "attach_from_library",
+  {
+    title: "Attach from the library",
+    description:
+      "Copies library items into a film's references, as picking them in the studio does (a clip comes in as four stills, a note or link as text). " +
+      "Returns the attachments. To have Claude use them in a change, pass the same ids to change_film as library instead.",
+    inputSchema: { id: ID, items: z.array(z.string().regex(/^[a-z0-9]{8}$/)).min(1).max(10).describe("Library item ids from list_library") },
+    annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+  },
+  tool(async ({ id, items }) => json(await attachFromLibrary(id, items))),
 );
 
 server.registerTool(

@@ -10,6 +10,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import {
+  attachFromLibrary,
   changeFilm,
   createFilm,
   FORMATS,
@@ -17,6 +18,7 @@ import {
   getFilm,
   goBack,
   listFilms,
+  listLibrary,
   listVersions,
   PAGE_URL,
   ping,
@@ -39,11 +41,15 @@ Commands
       --brand <name or id>        A brand kit (default Aerchain)
   change <id> "<prompt>"        Ask the film's Claude for a change
       --at <seconds>              The moment in the film it's about
+      --library <ids>             Library items to send with it, comma-separated
   render <id>                   Make the final videos (4K and the film's own size)
       --draft                     A quick draft instead
   versions <id>                 The film after each prompt, newest first
   back <id> <version>           Go back to an earlier version
   open <id>                     Open the film in the studio
+  library ["<words>"]           List the reference library, newest first
+      --tag <tag>                 Only items with this tag
+  attach <id> <item…>           Copy library items into a film's references
   doctor                        Check the studio, its token, ffmpeg and Claude
 
 Options
@@ -56,7 +62,7 @@ another one, e.g. http://127.0.0.1:3333.`;
 // ─── Arguments ──────────────────────────────────────────────────────────────
 
 const FLAGS = new Set(["json", "help", "draft", "video"]);
-const VALUES = new Set(["format", "brand", "at"]);
+const VALUES = new Set(["format", "brand", "at", "library", "tag"]);
 
 function parse(argv) {
   const words = [];
@@ -132,7 +138,9 @@ async function change(words, opts) {
   const prompt = need(words.slice(1).join(" ").trim(), "what to change");
   const at = opts.at === undefined ? undefined : Number(opts.at);
   if (at !== undefined && !(Number.isFinite(at) && at >= 0)) throw new StudioError("--at is a number of seconds, like 2.5.", "usage");
-  printTurn(await changeFilm(id, prompt, { at, onEvent: narrate }));
+  const items = opts.library ? String(opts.library).split(",").map((s) => s.trim()).filter(Boolean) : [];
+  const attachments = items.length ? await attachFromLibrary(id, items) : undefined;
+  printTurn(await changeFilm(id, prompt, { at, attachments, onEvent: narrate }));
 }
 
 async function render(words, opts) {
@@ -172,6 +180,20 @@ async function open(words) {
   if (asJson) out(JSON.stringify({ link }, null, 2));
   else out(link);
   if (process.platform === "darwin") spawn("open", [link], { stdio: "ignore", detached: true }).unref();
+}
+
+async function library(words, opts) {
+  const list = await listLibrary({ query: words.join(" "), tag: opts.tag });
+  if (asJson) return out(JSON.stringify(list, null, 2));
+  if (!list.length) return out("Nothing in the library matches. Add references on the studio's home page, under Library.");
+  out(table([["ID", "KIND", "NAME", "TAGS", "SAVED"], ...list.map((i) => [i.id, i.kind, i.name, i.tags.join(", "), when(i.updatedAt)])]));
+}
+
+async function attach(words) {
+  const id = need(words[0], "the film's id");
+  const done = await attachFromLibrary(id, need(words.slice(1).length ? words.slice(1) : null, "the library item ids (see: library)"));
+  if (asJson) return out(JSON.stringify(done, null, 2));
+  out(done.map((a) => `${a.path}  (${a.name})`).join("\n"));
 }
 
 // ─── Doctor ─────────────────────────────────────────────────────────────────
@@ -236,7 +258,7 @@ async function doctor() {
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 
-const COMMANDS = { films, new: create, change, render, versions, back, open, doctor };
+const COMMANDS = { films, new: create, change, render, versions, back, open, library, attach, doctor };
 
 try {
   const { words, opts } = parse(process.argv.slice(2));

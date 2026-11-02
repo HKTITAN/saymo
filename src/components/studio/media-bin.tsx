@@ -7,14 +7,17 @@ import type { GraphicInfo, Media } from "@/lib/studio/edit";
 import { cn } from "@/lib/utils";
 import { StudioError } from "./api";
 import { formatTime } from "./clock";
+import { libraryApi } from "./library-api";
 import { Hint, ICON_BUTTON, PILL_BUTTON, Panel } from "./panel";
+import { SaveToLibrary } from "./save-to-library";
 import type { EditState } from "./use-edit";
 import { ACCEPTS, mediaUrl, videoApi } from "./video-api";
 import { VoiceoverButton } from "./voiceover";
 
 // The bin: the footage, photos and sound brought into this film, and the
 // studio's graphics. Drag one onto the timeline, or double-click to put it
-// at the playhead. Files dropped anywhere on the studio land here.
+// at the playhead. Files dropped anywhere on the studio land here. On hover,
+// a bookmark saves a piece of footage to the reference library.
 
 export function MediaBin({
   id,
@@ -285,20 +288,22 @@ function MediaRow({
           )}
         </span>
       </button>
-      {!used && media.status !== "importing" ? (
-        <Hint label={`Remove ${media.name}`}>
-          <button
-            type="button"
-            onClick={onRemove}
-            aria-label={`Remove ${media.name}`}
-            className={cn(
-              ICON_BUTTON,
-              "absolute end-1.5 top-1/2 -translate-y-1/2 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
-            )}
-          >
-            <DeleteDustbin01Icon aria-hidden="true" />
-          </button>
-        </Hint>
+      {media.status !== "importing" ? (
+        <span className="absolute end-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-[8px] bg-[#1c1c1c]/90 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+          {ready ? (
+            <SaveToLibrary
+              className="size-7 rounded-[8px] [&_svg]:size-4"
+              save={() => libraryApi.fromFilm({ film: id, media: media.id })}
+            />
+          ) : null}
+          {!used ? (
+            <Hint label={`Remove ${media.name}`}>
+              <button type="button" onClick={onRemove} aria-label={`Remove ${media.name}`} className={ICON_BUTTON}>
+                <DeleteDustbin01Icon aria-hidden="true" />
+              </button>
+            </Hint>
+          ) : null}
+        </span>
       ) : null}
     </div>
   );

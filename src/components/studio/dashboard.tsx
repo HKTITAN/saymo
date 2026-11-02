@@ -1,7 +1,7 @@
 "use client";
 
 import { Popover } from "@base-ui/react/popover";
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
@@ -22,28 +22,37 @@ import { SURFACE } from "@/components/tool/dial";
 import { RulesPanel } from "./rules-panel";
 import { RenameField } from "@/components/tool/rename";
 import { Kbd } from "@/components/ui/kbd";
-import { Spinner } from "@/components/ui/spinner";
 import type { BrandSummary } from "@/lib/studio/brand";
 import type { FilmSummary, Folder } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { api } from "./api";
 import { Swatches } from "./brand-row";
-import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, TinyFolder, VideoDoodle } from "./doodles";
+import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, VideoDoodle } from "./doodles";
 import { clearNewFilmLink, FirstFilm, readNewFilmLink } from "./first-film";
 import { undoKey, useHistory } from "./history";
 import { KitMaker } from "./kit-maker";
+import { LibraryView } from "./library";
+import { cachedLibrary, filesFor } from "./library-api";
+import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, FolderChip, FolderMenu, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { ReelFlow } from "./reel-flow";
 import { SlidesFlow } from "./slides-flow";
+import { handOff } from "./use-attachments";
+import { LIBRARY_DRAG } from "@/lib/studio/references-shared";
 
 // The studio's home page, at /studio. At the top, the ways to start a film
 // (edit a video, make motion graphics, write a script, record a reel).
 // Below, every film, filed in folders: the row of folders filters the
 // grid, and a film moves to a folder by dragging it onto one or from its •••
-// menu. ⌘Z undoes moves and renames. Last, the brand kits.
+// menu. ⌘Z undoes moves and renames. Beside Films, the Library (library.tsx,
+// also at /studio?library): references saved for any film. A library item
+// dragged onto a film card waits in that film's chat; dragged onto "Make
+// motion graphics", in the new film's prompt. Last, the brand kits.
 
 type Overlay = null | "video" | "motion" | "kit" | "script" | "reel" | "slides" | "rules";
 type Sort = "edited" | "name";
+type Tab = "films" | "library";
+const tabFromUrl = (): Tab => (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("library") ? "library" : "films");
 
 // What a dragged film carries, so only films can be dropped on folders.
 const FILM_DRAG = "application/x-studio-film";
@@ -66,28 +75,11 @@ const keepFolder = (id: string | null) => {
 
 const plural = new Intl.PluralRules("en");
 const filmCount = (n: number) => `${n} ${plural.select(n) === "one" ? "film" : "films"}`;
+const folderDetail = (films: FilmSummary[], now: number) =>
+  films.length ? `${filmCount(films.length)}${films[0] && now ? ` · ${ago(films[0].updatedAt, now)}` : ""}` : "Empty";
+const folderDeleteBody = (count: number) =>
+  count > 0 ? `Only the folder goes. Its ${filmCount(count)} move back to Films.` : "It’s empty, so only the folder goes.";
 
-// "3 hours ago", "yesterday": when a film was last changed. The clock moves
-// on once a minute.
-const relative = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-  ["year", 31536000],
-  ["month", 2592000],
-  ["week", 604800],
-  ["day", 86400],
-  ["hour", 3600],
-  ["minute", 60],
-];
-const ago = (iso: string, now: number) => {
-  const seconds = (new Date(iso).getTime() - now) / 1000;
-  for (const [unit, size] of UNITS) if (Math.abs(seconds) >= size) return relative.format(Math.round(seconds / size), unit);
-  return "just now";
-};
-const everyMinute = (cb: () => void) => {
-  const t = setInterval(cb, 30_000);
-  return () => clearInterval(t);
-};
-const thisMinute = () => Math.floor(Date.now() / 60_000) * 60_000;
 
 const typing = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT");
@@ -142,7 +134,7 @@ export function Dashboard({
   onDeleteFilm: (id: string) => Promise<void>;
   onMoveFilm: (id: string, folder: string | null) => Promise<void>;
   onRefresh: () => Promise<void>;
-  onStartFilm: (prompt: string | null, width: number, height: number, folder: string | null) => void;
+  onStartFilm: (prompt: string | null, width: number, height: number, folder: string | null, attach?: File[]) => void;
   onStartVideo: (files: File[], width: number, height: number, folder: string | null) => void;
   // A film made here (a reel), opened with its first prompt and files to attach.
   onOpenNewFilm: (id: string, prompt: string, attach: File[]) => void;
@@ -163,6 +155,10 @@ export function Dashboard({
   const [folders, setFolders] = useState<Folder[] | null>(null);
   const [folderId, setFolderId] = useState<string | null>(readFolder);
   const [query, setQuery] = useState("");
+  const [tab, setTabState] = useState<Tab>(tabFromUrl);
+  const [libCount, setLibCount] = useState<number | null>(null);
+  // A library item being dragged, so film cards and "Make motion graphics" take it.
+  const [libDrag, setLibDrag] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("edited");
   const [dragging, setDragging] = useState<string | null>(null);
   const [naming, setNaming] = useState(false);
@@ -193,9 +189,47 @@ export function Dashboard({
     keepFolder(id);
   };
   const folder = (folderId && folders?.find((f) => f.id === folderId)) || null;
+  // A film started from here is filed in the open folder, while Films shows.
+  const startIn = tab === "films" ? folder : null;
   const folderName = (id: string | null) => (id ? (folders?.find((f) => f.id === id)?.name ?? "a folder") : "Films");
 
-  const say = (text: string) => setFlash({ text, key: Date.now() });
+  const say = useCallback((text: string) => setFlash({ text, key: Date.now() }), []);
+
+  // Films or Library, kept in the address (/studio?library) so a reload or
+  // a link lands on the same one.
+  const setTab = useCallback((next: Tab) => {
+    setTabState(next);
+    const url = next === "library" ? "/studio?library" : "/studio";
+    if (window.location.pathname + window.location.search !== url) window.history.replaceState(null, "", url);
+  }, []);
+  useEffect(() => {
+    const sync = () => setTabState(tabFromUrl());
+    window.addEventListener("studio:navigate", sync);
+    window.addEventListener("popstate", sync);
+    return () => {
+      window.removeEventListener("studio:navigate", sync);
+      window.removeEventListener("popstate", sync);
+    };
+  }, []);
+
+  // A library item dropped on a film: it waits in that film's chat as an
+  // attachment. Dropped on "Make motion graphics": in the new film's prompt.
+  const takeFromLibrary = async (itemId: string, to: { film: string } | "new") => {
+    const entry = [...(cachedLibrary()?.items ?? []), ...(cachedLibrary()?.brands ?? [])].find((e) => e.id === itemId);
+    if (!entry) return;
+    try {
+      const files = await filesFor(entry);
+      if (to === "new") {
+        handOff(null, files);
+        setOverlay("motion");
+      } else {
+        handOff(`/api/studio/films/${to.film}/attachments`, files);
+        onOpenFilm(to.film);
+      }
+    } catch {
+      say(`Unable to fetch “${entry.name}” from the library. Try again.`);
+    }
+  };
   useEffect(() => {
     if (!flash) return;
     const t = setTimeout(() => setFlash(null), 2600);
@@ -342,8 +376,8 @@ export function Dashboard({
                   setQuery("");
                   e.currentTarget.blur();
                 }}
-                placeholder="Search films"
-                aria-label="Search films"
+                placeholder={tab === "library" ? "Search the library" : "Search films"}
+                aria-label={tab === "library" ? "Search the library" : "Search films"}
                 className="min-w-0 flex-1 bg-transparent text-[12px] text-white/90 outline-none placeholder:text-white/35"
               />
               {query ? (
@@ -404,8 +438,10 @@ export function Dashboard({
             <StartCard
               doodle={<MotionDoodle className="absolute inset-0 h-full w-full" />}
               title="Make motion graphics"
-              note="Describe a film in a sentence and Claude makes it."
+              note={libDrag ? "Drop it here to start a film with it." : "Describe a film in a sentence and Claude makes it."}
               onClick={() => setOverlay("motion")}
+              onLibraryDrop={(id) => void takeFromLibrary(id, "new")}
+              waiting={libDrag !== null}
             />
             <StartCard
               doodle={<ScriptDoodle className="absolute inset-0 h-full w-full" />}
@@ -427,7 +463,21 @@ export function Dashboard({
             />
           </section>
 
-          <section aria-label={folder ? folder.name : "Films"} className="flex flex-col gap-3">
+          <LibraryView
+            active={tab === "library"}
+            tabs={<Tabs tab={tab} films={films?.length ?? null} library={libCount} onTab={setTab} />}
+            query={query}
+            sort={sort}
+            now={now}
+            history={history}
+            say={say}
+            onClearQuery={() => setQuery("")}
+            onDragItem={setLibDrag}
+            onOpenKit={onOpenKit}
+            onCount={setLibCount}
+          />
+
+          <section aria-label={folder ? folder.name : "Films"} className="flex flex-col gap-3" hidden={tab !== "films"}>
             {/* Stays in reach while you scroll, so films can be dragged onto a folder from anywhere. */}
             <div className="sticky top-16 z-10 -mx-3 flex flex-col gap-2.5 bg-[#0b0b0b]/85 px-3 pt-1 pb-2.5 backdrop-blur-xl">
               <header className="flex h-8 items-center gap-1.5 px-1">
@@ -453,19 +503,17 @@ export function Dashboard({
                     <span className="ms-1 font-mono text-[11.5px] text-white/35 tabular-nums">{inView}</span>
                     <FolderMenu
                       folder={folder}
-                      count={inView}
+                      deleteBody={folderDeleteBody(inView)}
                       onRename={() => setRenamingFolder(true)}
                       onDelete={() => deleteFolder(folder)}
                     />
                   </>
                 ) : (
-                  <>
-                    <h2 className="font-medium text-[13px] text-white/90">Films</h2>
-                    <span className="ms-1 font-mono text-[11.5px] text-white/35 tabular-nums">{films?.length ?? ""}</span>
-                  </>
+                  <Tabs tab={tab} films={films?.length ?? null} library={libCount} onTab={setTab} />
                 )}
                 <span className="ms-auto flex items-center gap-2">
                   {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder</span> : null}
+                  {libDrag ? <span className="text-[11.5px] text-white/45">Drop it on a film to use it in that film’s chat</span> : null}
                   {naming ? (
                     <RenameField
                       value=""
@@ -491,6 +539,8 @@ export function Dashboard({
                     label="Films"
                     count={films ? films.length : null}
                     current={!folder}
+                    dragType={FILM_DRAG}
+                    springType={LIBRARY_DRAG}
                     onOpen={() => goFolder(null)}
                     onDrop={(id) => moveById(id, null)}
                   />
@@ -502,6 +552,8 @@ export function Dashboard({
                       count={films ? (counts.get(f.id) ?? 0) : null}
                       current={folder?.id === f.id}
                       folder
+                      dragType={FILM_DRAG}
+                      springType={LIBRARY_DRAG}
                       onOpen={() => goFolder(f.id)}
                       onDrop={(id) => moveById(id, f.id)}
                     />
@@ -521,8 +573,11 @@ export function Dashboard({
                       <FolderCard
                         key={x.id}
                         folder={x}
-                        films={inFolder(x.id)}
-                        now={now}
+                        pages={inFolder(x.id)}
+                        detail={folderDetail(inFolder(x.id), now)}
+                        deleteBody={folderDeleteBody(inFolder(x.id).length)}
+                        dragType={FILM_DRAG}
+                        springType={LIBRARY_DRAG}
                         dragging={dragging !== null}
                         onOpen={() => goFolder(x.id)}
                         onDrop={(id) => moveById(id, x.id)}
@@ -543,6 +598,8 @@ export function Dashboard({
                         folderLabel={!folder && f.folder ? folderName(f.folder) : null /* only while searching */}
                         dragged={dragging === f.id}
                         onDrag={(on) => setDragging(on ? f.id : null)}
+                        takes={libDrag !== null}
+                        onLibraryDrop={(id) => void takeFromLibrary(id, { film: f.id })}
                         onOpen={() => onOpenFilm(f.id)}
                         onRename={(title) => renameFilm(f, title)}
                         onDuplicate={() => onDuplicateFilm(f.id)}
@@ -689,13 +746,13 @@ export function Dashboard({
               }}
             />
           ) : overlay === "slides" ? (
-            <SlidesFlow folder={folder?.id ?? null} onClose={() => setOverlay(null)} onOpenFilm={onOpenNewFilm} />
+            <SlidesFlow folder={startIn?.id ?? null} onClose={() => setOverlay(null)} onOpenFilm={onOpenNewFilm} />
           ) : overlay === "script" || overlay === "reel" ? (
             <ReelFlow
               start={overlay}
-              folder={folder?.id ?? null}
+              folder={startIn?.id ?? null}
               onClose={() => setOverlay(null)}
-              onStartMotion={(prompt, w, h) => onStartFilm(prompt, w, h, folder?.id ?? null)}
+              onStartMotion={(prompt, w, h) => onStartFilm(prompt, w, h, startIn?.id ?? null)}
               onOpenFilm={onOpenNewFilm}
             />
           ) : (
@@ -704,11 +761,11 @@ export function Dashboard({
                 key={overlay}
                 initialKind={overlay}
                 link={overlay === "motion" ? link : null}
-                title={folder ? `New film in ${folder.name}` : films?.length ? "New film" : "Make your first film"}
+                title={startIn ? `New film in ${startIn.name}` : films?.length ? "New film" : "Make your first film"}
                 busy={busy}
                 error={error}
-                onStart={(prompt, w, h) => onStartFilm(prompt, w, h, folder?.id ?? null)}
-                onStartVideo={(files, w, h) => onStartVideo(files, w, h, folder?.id ?? null)}
+                onStart={(prompt, w, h, files) => onStartFilm(prompt, w, h, startIn?.id ?? null, files)}
+                onStartVideo={(files, w, h) => onStartVideo(files, w, h, startIn?.id ?? null)}
               />
               <Hint label="Close" keys={["Esc"]}>
                 <button type="button" onClick={() => setOverlay(null)} className={cn(CARD, ICON_BUTTON, "absolute top-4 right-4 size-11 rounded-[14px]")} aria-label="Close">
@@ -725,12 +782,52 @@ export function Dashboard({
 
 // One way to start a film: a tile the size of a film, its drawing on top
 // and what it is below.
-function StartCard({ doodle, title, note, onClick }: { doodle: ReactNode; title: string; note: string; onClick: () => void }) {
+function StartCard({
+  doodle,
+  title,
+  note,
+  onClick,
+  onLibraryDrop,
+  waiting = false,
+}: {
+  doodle: ReactNode;
+  title: string;
+  note: string;
+  onClick: () => void;
+  onLibraryDrop?: (itemId: string) => void; // takes a library item dragged onto it
+  waiting?: boolean; // one is being dragged
+}) {
+  const [over, setOver] = useState(false);
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group/doodle flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color,scale] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
+      onDragOver={
+        onLibraryDrop
+          ? (e) => {
+              if (!e.dataTransfer.types.includes(LIBRARY_DRAG)) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "copy";
+              setOver(true);
+            }
+          : undefined
+      }
+      onDragLeave={onLibraryDrop ? (e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOver(false) : undefined}
+      onDrop={
+        onLibraryDrop
+          ? (e) => {
+              const id = e.dataTransfer.getData(LIBRARY_DRAG);
+              setOver(false);
+              if (!id) return;
+              e.preventDefault();
+              onLibraryDrop(id);
+            }
+          : undefined
+      }
+      className={cn(
+        "group/doodle flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color,scale] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]",
+        over ? "bg-white/[0.07] ring-1 ring-white/40" : waiting && onLibraryDrop && "bg-white/[0.03] outline-1 outline-dashed outline-white/20",
+      )}
     >
       <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">{doodle}</span>
       <span className="flex flex-col gap-0.5 px-1 pb-0.5">
@@ -741,397 +838,10 @@ function StartCard({ doodle, title, note, onClick }: { doodle: ReactNode; title:
   );
 }
 
-// An empty place, said plainly, with a drawing and the way forward.
-function Empty({ doodle, title, note, children }: { doodle: ReactNode; title: string; note: string; children?: ReactNode }) {
-  return (
-    <div className="group/doodle flex flex-col items-center gap-1.5 rounded-[16px] px-6 py-12 text-center ring-1 ring-white/[0.05]">
-      {doodle}
-      <p className="mt-3 font-medium text-[13px] text-white/90">{title}</p>
-      <p className="max-w-[360px] text-[12px] text-white/45 leading-relaxed">{note}</p>
-      {children}
-    </div>
-  );
-}
 
-// A folder in the grid, the size of a film: the films inside peek out as a
-// small fanned stack. Drop a film on it to file it; the stack spreads to
-// make room while one is dragged over. The ••• menu renames or deletes it.
-function FolderCard({
-  folder,
-  films,
-  now,
-  dragging,
-  onOpen,
-  onDrop,
-  onRename,
-  onDelete,
-}: {
-  folder: Folder;
-  films: FilmSummary[];
-  now: number;
-  dragging: boolean;
-  onOpen: () => void;
-  onDrop: (filmId: string) => void;
-  onRename: (name: string) => void;
-  onDelete: () => Promise<void>;
-}) {
-  const [over, setOver] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  const [renaming, setRenaming] = useState(false);
-  const [landed, setLanded] = useState(0); // bumps when a film lands, for a small nod
-  const latest = films[0]?.updatedAt;
-  return (
-    <li
-      className="group/card group/doodle relative"
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
-      onDragOver={(e) => {
-        if (!e.dataTransfer.types.includes(FILM_DRAG)) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        setOver(true);
-      }}
-      onDragLeave={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
-      }}
-      onDrop={(e) => {
-        const id = e.dataTransfer.getData(FILM_DRAG);
-        setOver(false);
-        if (!id) return;
-        e.preventDefault();
-        setLanded((n) => n + 1);
-        onDrop(id);
-      }}
-    >
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={`Open the folder ${folder.name}`}
-        className={cn(
-          "flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color,box-shadow] duration-150 focus-visible:ring-2 focus-visible:ring-ring [&_*]:pointer-events-none",
-          over ? "bg-white/[0.07] ring-1 ring-white/40" : dragging ? "bg-white/[0.03] outline-1 outline-dashed outline-white/20" : "hover:bg-white/[0.04]",
-        )}
-      >
-        <span
-          key={landed}
-          className={cn(
-            "relative flex aspect-[4/5] w-full",
-            landed > 0 && "motion-safe:animate-[studio-folder-nod_420ms_cubic-bezier(0.23,1,0.32,1)]",
-          )}
-          skullet-block=""
-        >
-          <FolderArt films={films} state={over ? "over" : hovered ? "hover" : "rest"} />
-        </span>
-        <span className="flex flex-col gap-0.5 px-1 pb-0.5">
-          <span className={cn("truncate pe-8 text-[12.5px] text-white/90", renaming && "invisible")}>{folder.name}</span>
-          <span className="truncate text-[11.5px] text-white/40" suppressHydrationWarning>
-            {over ? "Drop to add it here" : films.length ? `${filmCount(films.length)}${latest && now ? ` · ${ago(latest, now)}` : ""}` : "Empty"}
-          </span>
-        </span>
-      </button>
 
-      {renaming ? (
-        <RenameField
-          value={folder.name}
-          className="absolute right-2 bottom-[28px] left-2 h-6 text-[12.5px]"
-          onDone={(name) => {
-            setRenaming(false);
-            if (name) onRename(name);
-          }}
-        />
-      ) : null}
 
-      <div className="absolute right-1.5 bottom-[18px] opacity-0 transition-opacity focus-within:opacity-100 group-hover/card:opacity-100 has-[[data-popup-open]]:opacity-100">
-        <FolderMenu folder={folder} count={films.length} onRename={() => setRenaming(true)} onDelete={onDelete} />
-      </div>
-    </li>
-  );
-}
 
-// A folder drawn the Windows way, standing up and seen from the side: the
-// back with a small tab low on its right, the cover swung open on the left,
-// and the films inside standing in it like pages held in the spine.
-//
-// Three states, one motion: at rest the folder is a little open, the cover
-// ajar and the pages just starting to fan; on hover the cover
-// swings open and the pages fan out one after another; with a film dragged
-// over it, it opens wide to take it.
-type FolderState = "rest" | "hover" | "over";
-const PAGE = { w: 58, h: 80 };
-const PAGES: Record<FolderState, { skew: number; scale: number; y: number }[]> = {
-  rest: [
-    { skew: 0, scale: 1, y: 0 },
-    { skew: 4, scale: 0.94, y: 1.5 },
-    { skew: 8, scale: 0.88, y: 3 },
-  ],
-  hover: [
-    { skew: 0, scale: 1, y: -2 },
-    { skew: 13, scale: 0.8, y: 0 },
-    { skew: 25, scale: 0.6, y: 2 },
-  ],
-  over: [
-    { skew: 0, scale: 1, y: -4 },
-    { skew: 17, scale: 0.74, y: -2 },
-    { skew: 31, scale: 0.52, y: 0 },
-  ],
-};
-// The cover hinges on the spine: shut it lies flat over the back; open, it
-// leans toward you, foreshortened.
-const COVER: Record<FolderState, { skew: number; scale: number }> = {
-  rest: { skew: 15, scale: 0.78 },
-  hover: { skew: 36, scale: 0.4 },
-  over: { skew: 40, scale: 0.3 },
-};
-const PAGE_FILL = ["#3a3a3a", "#454545", "#505050"];
-const SPRING = "cubic-bezier(0.23, 1, 0.32, 1)";
-function FolderArt({ films, state }: { films: FilmSummary[]; state: FolderState }) {
-  const id = useId();
-  // Newest film in front; an empty folder holds one blank page.
-  const inside: (FilmSummary | null)[] = films.length ? films.slice(0, 3).reverse() : [null];
-  const slots = PAGES[state].slice(3 - inside.length);
-  const opening = state !== "rest";
-  const move = (delay: number) => ({
-    transition: `transform ${opening ? 260 : 200}ms ${SPRING} ${opening ? delay : 0}ms`,
-  });
-  return (
-    <svg viewBox="0 0 100 125" aria-hidden="true" className="absolute inset-0 h-full w-full overflow-visible">
-      <defs>
-        <clipPath id={`${id}-page`}>
-          <rect width={PAGE.w} height={PAGE.h} rx={3.5} />
-        </clipPath>
-        <linearGradient id={`${id}-cover`} x1="0" y1="0" x2="0.3" y2="1">
-          <stop offset="0" stopColor="#3d3d3d" />
-          <stop offset="1" stopColor="#303030" />
-        </linearGradient>
-        <filter id={`${id}-soft`} x="-30%" y="-200%" width="160%" height="500%">
-          <feGaussianBlur stdDeviation={2.6} />
-        </filter>
-      </defs>
-      <g transform="translate(1 9)">
-        {/* One soft shadow on the ground. */}
-        <ellipse cx={50} cy={104} rx={38} ry={3.2} fill="rgb(0 0 0 / 0.55)" filter={`url(#${id}-soft)`} />
-        {/* The back and its tab. */}
-        <path
-          d="M19 6.6 H73.7 Q78.7 6.6 78.7 11.6 V59.5 Q78.7 62.5 81 64 L82 64.7 Q84.3 66.2 84.3 69 V90.6 Q84.3 95.6 79.3 95.6 H19 Q14 95.6 14 90.6 V11.6 Q14 6.6 19 6.6 Z"
-          fill="#262626"
-        />
-        {/* The pages, fanned from the spine. */}
-        {inside.map((f, i) => {
-          const at = slots[i];
-          return (
-            <g
-              key={f?.id ?? "blank"}
-              style={{
-                transformBox: "view-box",
-                transformOrigin: "0 0",
-                transform: `translate(16.5px, ${at.y}px) skewY(${at.skew}deg) scaleX(${at.scale})`,
-                ...move(i * 22),
-              }}
-            >
-              <rect width={PAGE.w} height={PAGE.h} rx={3.5} fill={PAGE_FILL[PAGE_FILL.length - inside.length + i]} />
-              {f?.poster ? (
-                <image href={f.poster} width={PAGE.w} height={PAGE.h} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-page)`} opacity={0.9} />
-              ) : (
-                <>
-                  <rect x={7} y={8} width={20} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.18)" />
-                  <rect x={7} y={14} width={30} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.08)" />
-                </>
-              )}
-              <rect x={0.3} y={0.3} width={PAGE.w - 0.6} height={PAGE.h - 0.6} rx={3.3} fill="none" stroke="rgb(255 255 255 / 0.06)" strokeWidth={0.6} />
-            </g>
-          );
-        })}
-        {/* The cover, swung open toward you. */}
-        <g
-          style={{
-            transformBox: "view-box",
-            transformOrigin: "0 0",
-            transform: `translate(14px, 6.6px) skewY(${COVER[state].skew}deg) scaleX(${COVER[state].scale})`,
-            ...move(0),
-          }}
-        >
-          <rect width={64.7} height={89} rx={5} fill={`url(#${id}-cover)`} stroke="rgb(255 255 255 / 0.07)" strokeWidth={0.6} />
-        </g>
-      </g>
-    </svg>
-  );
-}
-
-// A folder in the row: opens it, and takes films dropped on it.
-function FolderChip({
-  label,
-  count,
-  current,
-  folder = false,
-  onOpen,
-  onDrop,
-}: {
-  label: string;
-  count: number | null; // null while the films load
-  current: boolean;
-  folder?: boolean;
-  onOpen: () => void;
-  onDrop: (filmId: string) => void;
-}) {
-  const [over, setOver] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      aria-current={current ? "true" : undefined}
-      onDragOver={(e) => {
-        if (!e.dataTransfer.types.includes(FILM_DRAG)) return;
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        setOver(true);
-      }}
-      onDragLeave={(e) => {
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
-      }}
-      onDrop={(e) => {
-        const id = e.dataTransfer.getData(FILM_DRAG);
-        setOver(false);
-        if (!id) return;
-        e.preventDefault();
-        onDrop(id);
-      }}
-      className={cn(
-        // Its insides never take the pointer, so a drag over them stays a drag over the folder.
-        "group/doodle inline-flex h-8 cursor-pointer items-center gap-2 rounded-[10px] px-2.5 text-[12px] outline-none transition-[background-color,color,box-shadow,scale] duration-150 focus-visible:ring-2 focus-visible:ring-ring [&_*]:pointer-events-none",
-        over
-          ? "scale-[1.04] bg-[#F55A00]/12 text-white ring-1 ring-[#F55A00]/70"
-          : current
-            ? "bg-white/[0.12] text-white"
-            : "bg-white/[0.04] text-white/60 hover:bg-white/[0.07] hover:text-white/85",
-      )}
-    >
-      {folder ? (
-        <TinyFolder open={over} current={current} />
-      ) : (
-        <GridDashboard02Icon className="size-3.5 opacity-70" aria-hidden="true" />
-      )}
-      <span className="max-w-[180px] truncate">{label}</span>
-      {count === null ? null : <span className="font-mono text-[11px] text-white/35 tabular-nums">{count}</span>}
-    </button>
-  );
-}
-
-const MENU_POPUP =
-  "flex origin-(--transform-origin) flex-col p-1 outline-none transition-[scale,opacity] duration-150 ease-out data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-starting-style:scale-[0.97] data-starting-style:opacity-0";
-
-const ITEM =
-  "flex min-h-9 w-full cursor-pointer items-center gap-2.5 rounded-[9px] px-2 pe-3 text-left text-[12.5px] text-white/80 outline-none transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:bg-white/[0.07] disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-white/50";
-const DANGER_ITEM = "text-[#ff9592] hover:bg-[#e5484d]/12 hover:text-[#ffaaa8] [&>svg]:text-[#ff9592]";
-
-// Asks before something can't be undone: what goes, what stays, two answers.
-function Confirm({
-  title,
-  body,
-  action,
-  busy,
-  onYes,
-  onNo,
-}: {
-  title: string;
-  body: string;
-  action: string;
-  busy: boolean;
-  onYes: () => void;
-  onNo: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2 p-2">
-      <p className="font-medium text-[13px] text-white/90">{title}</p>
-      <p className="text-[12px] text-white/50 leading-relaxed">{body}</p>
-      <div className="mt-1 flex gap-1.5">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onYes}
-          className="inline-flex h-8 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-[9px] bg-[#e5484d] font-medium text-[12px] text-white outline-none transition-colors hover:bg-[#ec5d5e] focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-        >
-          {busy ? <Spinner className="size-3" /> : null}
-          {action}
-        </button>
-        <button
-          type="button"
-          onClick={onNo}
-          className="inline-flex h-8 flex-1 cursor-pointer items-center justify-center rounded-[9px] bg-white/[0.08] font-medium text-[12px] text-white/80 outline-none transition-colors hover:bg-white/[0.12] focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          Keep it
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// The open folder's ••• menu: rename it, or delete it (its films stay).
-function FolderMenu({ folder, count, onRename, onDelete }: { folder: Folder; count: number; onRename: () => void; onDelete: () => Promise<void> }) {
-  const [open, setOpen] = useState(false);
-  const [asking, setAsking] = useState(false);
-  const [busy, setBusy] = useState(false);
-  return (
-    <Popover.Root
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        if (next) setAsking(false);
-      }}
-    >
-      <Hint label="Folder options">
-        <Popover.Trigger aria-label={`Options for ${folder.name}`} className={cn(ICON_BUTTON, "data-popup-open:bg-white/[0.08]")}>
-          <ThreeDotsMenuHorizontalIcon aria-hidden="true" />
-        </Popover.Trigger>
-      </Hint>
-      <Popover.Portal>
-        <Popover.Positioner side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50">
-          <Popover.Popup className={cn(SURFACE, MENU_POPUP, asking ? "w-[256px]" : "w-max min-w-[148px]")}>
-            {asking ? (
-              <Confirm
-                title={`Delete the folder “${folder.name}”?`}
-                body={
-                  count > 0
-                    ? `Only the folder goes. Its ${filmCount(count)} move back to Films.`
-                    : "It’s empty, so only the folder goes."
-                }
-                action="Delete folder"
-                busy={busy}
-                onNo={() => setAsking(false)}
-                onYes={async () => {
-                  setBusy(true);
-                  try {
-                    await onDelete();
-                    setOpen(false);
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              />
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className={ITEM}
-                  onClick={() => {
-                    setOpen(false);
-                    onRename();
-                  }}
-                >
-                  <PencilEditIcon aria-hidden="true" />
-                  Rename
-                </button>
-                <button type="button" className={cn(ITEM, DANGER_ITEM)} onClick={() => setAsking(true)}>
-                  <DeleteDustbin01Icon aria-hidden="true" />
-                  Delete folder
-                </button>
-              </>
-            )}
-          </Popover.Popup>
-        </Popover.Positioner>
-      </Popover.Portal>
-    </Popover.Root>
-  );
-}
 
 // A kit as a card: its logo on its own surface, its colours as lines.
 function KitCard({ kit, onOpen }: { kit: BrandSummary; onOpen: () => void }) {
@@ -1186,6 +896,8 @@ function FilmCard({
   folderLabel,
   dragged,
   onDrag,
+  takes,
+  onLibraryDrop,
   onOpen,
   onRename,
   onDuplicate,
@@ -1199,6 +911,8 @@ function FilmCard({
   folderLabel: string | null; // the folder it's in, shown in search results
   dragged: boolean;
   onDrag: (on: boolean) => void;
+  takes: boolean; // a library item is being dragged
+  onLibraryDrop: (itemId: string) => void;
   onOpen: () => void;
   onRename: (title: string) => void;
   onDuplicate: () => Promise<void>;
@@ -1212,6 +926,7 @@ function FilmCard({
   const [renaming, setRenaming] = useState(false);
   const [making, setMaking] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [over, setOver] = useState(false);
   const run = async (job: () => Promise<void>) => {
     setBusy(true);
     try {
@@ -1233,12 +948,31 @@ function FilmCard({
         onDrag(true);
       }}
       onDragEnd={() => onDrag(false)}
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes(LIBRARY_DRAG)) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
+      }}
+      onDrop={(e) => {
+        const id = e.dataTransfer.getData(LIBRARY_DRAG);
+        setOver(false);
+        if (!id) return;
+        e.preventDefault();
+        onLibraryDrop(id);
+      }}
     >
       <button
         type="button"
         onClick={onOpen}
         aria-label={`Open ${f.title}`}
-        className="flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          "flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring",
+          over ? "bg-white/[0.07] ring-1 ring-white/40" : takes && "bg-white/[0.03] outline-1 outline-dashed outline-white/20",
+        )}
       >
         <span className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" skullet-block="">
           {f.poster ? (
@@ -1393,5 +1127,74 @@ function FilmCard({
         </Popover.Portal>
       </Popover.Root>
     </li>
+  );
+}
+
+// Films | Library: the two lists on the home page, with a highlight that
+// slides to the open one. Hold a library item over Films to switch to it
+// and drop the item on a film; drop files on Library to add them.
+function Tabs({ tab, films, library, onTab }: { tab: Tab; films: number | null; library: number | null; onTab: (tab: Tab) => void }) {
+  const refs = useRef<Record<Tab, HTMLButtonElement | null>>({ films: null, library: null });
+  const [mark, setMark] = useState<{ x: number; w: number } | null>(null);
+  const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useLayoutEffect(() => {
+    const el = refs.current[tab];
+    if (el) setMark({ x: el.offsetLeft, w: el.offsetWidth });
+  }, [tab, films, library]);
+  const springTo = (next: Tab) => {
+    if (tab === next || hold.current) return;
+    hold.current = setTimeout(() => {
+      hold.current = null;
+      onTab(next);
+    }, 450);
+  };
+  const cancel = () => {
+    if (hold.current) clearTimeout(hold.current);
+    hold.current = null;
+  };
+  return (
+    <div role="tablist" aria-label="Films or library" className="relative -ms-1 flex h-8 items-center gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5">
+      {mark ? (
+        <span
+          aria-hidden="true"
+          className="absolute top-0.5 bottom-0.5 rounded-[8px] bg-white/[0.12] transition-[left,width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+          style={{ left: mark.x, width: mark.w }}
+        />
+      ) : null}
+      {(
+        [
+          ["films", "Films", films],
+          ["library", "Library", library],
+        ] as const
+      ).map(([k, label, count]) => (
+        <button
+          key={k}
+          ref={(el) => {
+            refs.current[k] = el;
+          }}
+          type="button"
+          role="tab"
+          aria-selected={tab === k}
+          onClick={() => onTab(k)}
+          onDragOver={(e) => {
+            const wants = k === "films" ? e.dataTransfer.types.includes(LIBRARY_DRAG) : e.dataTransfer.types.includes("Files");
+            if (!wants) return;
+            e.preventDefault();
+            springTo(k);
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) cancel();
+          }}
+          onDrop={cancel}
+          className={cn(
+            "relative z-[1] flex h-7 cursor-pointer items-center gap-1.5 rounded-[8px] px-2.5 font-medium text-[12.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+            tab === k ? "text-white" : "text-white/50 hover:text-white/80",
+          )}
+        >
+          {label}
+          {count === null ? null : <span className="font-mono font-normal text-[11px] text-white/35 tabular-nums">{count}</span>}
+        </button>
+      ))}
+    </div>
   );
 }

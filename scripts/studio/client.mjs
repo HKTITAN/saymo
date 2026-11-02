@@ -211,12 +211,13 @@ export async function createFilm({ prompt = "", format = "16:9", kind = "motion"
 // Sends one prompt to the film's Claude and waits for the turn to end.
 // onEvent gets each ChatEvent as it comes (start, text, step, changed).
 // If the caller stops waiting, the turn carries on in the studio.
-export async function changeFilm(id, prompt, { at, onEvent, signal } = {}) {
+export async function changeFilm(id, prompt, { at, onEvent, signal, attachments } = {}) {
   checkId(id);
   const text = String(prompt ?? "").trim();
   if (!text) throw new StudioError("Say what you'd like changed.", "invalid");
   const t = Number.isFinite(at) && at >= 0 ? at : 0;
-  const res = await call("POST", `/films/${id}/chat`, { body: { prompt: text, context: { t, pick: null } }, signal, stream: true });
+  const context = { t, pick: null, ...(attachments?.length ? { attachments } : {}) };
+  const res = await call("POST", `/films/${id}/chat`, { body: { prompt: text, context }, signal, stream: true });
   let reply = "";
   const steps = [];
   let film = null;
@@ -315,4 +316,49 @@ export async function goBack(id, version) {
   if (!Number.isInteger(n) || n < 1) throw new StudioError("The version is a whole number from the film's list of versions.", "invalid");
   const film = await call("POST", `/films/${id}/versions/${n}/restore`, { body: { t: 0 } });
   return summary(film);
+}
+
+// ─── The reference library ──────────────────────────────────────────────────
+
+const LIBRARY = path.join(ROOT, "library");
+
+// Everything saved in the library (not the brand kits' own files, which
+// films use through their kit), newest first. `query` matches names, tags
+// and notes; `tag` keeps one tag.
+export async function listLibrary({ query, tag } = {}) {
+  const { items, folders } = await call("GET", "/library");
+  const folderName = new Map(folders.map((f) => [f.id, f.name]));
+  const q = String(query ?? "").trim().toLowerCase();
+  const t = String(tag ?? "").trim().toLowerCase();
+  return items
+    .filter((i) => !q || [i.name, i.note, i.site ?? "", ...i.tags].some((s) => s.toLowerCase().includes(q)))
+    .filter((i) => !t || i.tags.some((x) => x.toLowerCase() === t))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .map((i) => ({
+      id: i.id,
+      kind: i.kind,
+      name: i.name,
+      tags: i.tags,
+      ...(i.note ? { note: i.note } : {}),
+      folder: i.folder ? (folderName.get(i.folder) ?? null) : null,
+      ...(i.duration ? { seconds: i.duration } : {}),
+      ...(i.url ? { url: i.url } : {}),
+      ...(i.file ? { path: path.join(LIBRARY, i.id, i.file) } : {}),
+      updatedAt: i.updatedAt,
+    }));
+}
+
+// Copies library items into a film's refs/, as the studio does when one is
+// picked in a prompt box (a clip comes in as four stills, a note or link as
+// text). Returns the attachments, to send with change_film.
+export async function attachFromLibrary(id, items) {
+  checkId(id);
+  const list = (Array.isArray(items) ? items : [items]).map(String);
+  if (!list.length) throw new StudioError("Name at least one library item.", "invalid");
+  const out = [];
+  for (const item of list) {
+    if (!isId(item)) throw new StudioError(`"${item}" isn't a library item id. List the library to find one.`, "invalid");
+    out.push(...(await call("POST", `/library/${item}/attach`, { body: { film: id } })));
+  }
+  return out;
 }

@@ -120,6 +120,18 @@ export async function attachFiles(url: string, files: File[]): Promise<Attachmen
   return out;
 }
 
+// Files handed to a prompt box that isn't on screen yet: a library item
+// dropped on a film card waits here for that film's chat, and one dropped
+// on "Make motion graphics" for the new film card. Taken by the first box
+// with that address to appear.
+const waiting = new Map<string, File[]>();
+const NEW = "new";
+export function handOff(url: string | null, files: File[]) {
+  if (!files.length) return;
+  const key = url ?? NEW;
+  waiting.set(key, [...(waiting.get(key) ?? []), ...files]);
+}
+
 // `audio`: sounds can come along too (a film's prompts, not a kit's).
 export function useAttachments(url: string | null, { audio = false }: { audio?: boolean } = {}) {
   const [items, setItems] = useState<PendingFile[]>([]);
@@ -237,6 +249,16 @@ export function useAttachments(url: string | null, { audio = false }: { audio?: 
     },
     [],
   );
+
+  // Anything handed to this box before it appeared.
+  useEffect(() => {
+    const key = url ?? NEW;
+    const files = waiting.get(key);
+    if (!files) return;
+    waiting.delete(key);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- takes files handed over from outside React, once
+    add(files);
+  }, [url, add]);
 
   const uploading = items.some((i) => i.sending);
   const ready = items.map((i) => i.done).filter((d): d is Attachment => d !== null);

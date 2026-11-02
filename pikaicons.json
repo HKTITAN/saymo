@@ -24,6 +24,10 @@
       "name": "arrow-up",
       "variant": "stroke"
     },
+    "bookmark-default": {
+      "name": "bookmark-default",
+      "variant": "stroke"
+    },
     "bot": {
       "name": "bot",
       "variant": "stroke"
@@ -182,6 +186,10 @@
     },
     "speaker-on": {
       "name": "speaker-on",
+      "variant": "stroke"
+    },
+    "tag": {
+      "name": "tag",
       "variant": "stroke"
     },
     "three-dots-menu-horizontal": {

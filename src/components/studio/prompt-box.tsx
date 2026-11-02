@@ -1,18 +1,22 @@
 "use client";
 
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUpIcon, MultipleCrossCancelIcon, MusicBeamNoteIcon, PaperclipVerticalIcon } from "@/components/icons";
+import { ArrowUpIcon, MultipleCrossCancelIcon, MusicBeamNoteIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { libraryApi } from "./library-api";
+import { AttachMenu } from "./library-picker";
 import { DictationNotice, MicButton, RecordingBar } from "./mic-button";
 import { Hint } from "./panel";
+import { SaveToLibrary } from "./save-to-library";
 import { acceptFor, type Attachments, clockText, KIND_LABEL } from "./use-attachments";
 import { useDictation } from "./use-dictation";
 
 // Where a prompt is typed: in the chat panel and in the bubble on the film.
 // Enter sends, Shift+Enter starts a new line. Grows with its words. While
 // Claude works, Enter adds the prompt to the queue (where the box allows it).
-// With `attachments`, files can come along too: the paperclip, a drop onto
-// the box, or a pasted screenshot. The mic writes down what you say
+// With `attachments`, files can come along too: the paperclip (files from
+// this Mac, or from the reference library), a drop onto the box, or a
+// pasted screenshot. The mic writes down what you say
 // (use-dictation.ts): ⌘ ⇧ D or hold ⌥ Space; while it listens, Enter
 // stops and Esc discards it, and nothing is sent.
 
@@ -150,7 +154,7 @@ export function PromptBox({
             <li
               key={a.key}
               className={cn(
-                "flex h-7 max-w-full items-center gap-1.5 rounded-[8px] bg-white/[0.07] ps-1 pe-0.5 text-[11.5px] text-white/80",
+                "group/chip flex h-7 max-w-full items-center gap-1.5 rounded-[8px] bg-white/[0.07] ps-1 pe-0.5 text-[11.5px] text-white/80",
                 a.error && "bg-[#ff9592]/10 text-[#ff9592]",
               )}
               title={a.error ?? a.name}
@@ -172,6 +176,10 @@ export function PromptBox({
               {a.kind === "audio" && (a.seconds ?? a.done?.seconds) ? (
                 <span className="shrink-0 font-mono text-[10.5px] text-white/45 tabular-nums">{clockText(a.seconds ?? a.done?.seconds ?? 0)}</span>
               ) : null}
+              {/* Keep it for later: saved to the reference library. */}
+              <span className="hidden group-hover/chip:flex group-focus-within/chip:flex">
+                <SaveToLibrary save={() => libraryApi.upload(a.file, null)} />
+              </span>
               <button
                 type="button"
                 onClick={() => attachments.remove(a.key)}
@@ -251,16 +259,8 @@ export function PromptBox({
       <div className="flex min-w-0 items-center gap-0.5 [&>*]:shrink-0">
         {attachments ? (
           <>
-            <Hint label={attachments.audio ? "Attach sounds, images, PDFs or documents" : "Attach images, PDFs or documents"}>
-              <button
-                type="button"
-                onClick={() => picker.current?.click()}
-                aria-label="Attach files"
-                className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-white/55 outline-none transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4"
-              >
-                <PaperclipVerticalIcon aria-hidden="true" />
-              </button>
-            </Hint>
+            {/* Upload files, or pick from the library (library-picker.tsx). */}
+            <AttachMenu attachments={attachments} onUpload={() => picker.current?.click()} />
             <input
               ref={picker}
               type="file"

@@ -57,12 +57,14 @@ In a JSON config, add `"env": { "MOTION_STUDIO_URL": "http://127.0.0.1:3333" }` 
 | --- | --- |
 | `list_films` | Every film, most recently edited first: id, title, kind, format, length, brand and its studio link. |
 | `create_film` | Makes a film. `prompt` (what it should be), `format` (`16:9`, `1:1`, `4:5` or `9:16`), `kind` (`motion` or `video`), `brand` (a kit's name or id; Aerchain if left out). With a prompt, Claude makes the first version and its reply comes back when it's done. |
-| `change_film` | Asks the film's Claude for a change, like the studio's chat. `id`, `prompt`, and `at` (seconds into the film, like the playhead). Returns Claude's reply when the change is done. |
+| `change_film` | Asks the film's Claude for a change, like the studio's chat. `id`, `prompt`, `at` (seconds into the film, like the playhead) and `library` (ids of library items to attach). Returns Claude's reply when the change is done. |
 | `render_film` | Makes the videos. `quality` is `draft` (quick, the film's own size) or `final` (4K and the film's own size). Returns the files' paths on this Mac when done. |
 | `get_film` | One film: title, format, length, brand, its settings and its latest render. |
 | `list_versions` | The film after each prompt, newest first. The first is the film as it is now. |
 | `go_back` | Puts the film back to a `version` from `list_versions`. The film as it is now is kept as a version first, so nothing is lost. |
 | `open_in_studio` | The link that opens the film in the studio: `http://localhost:3200/studio?film=<id>`. |
+| `list_library` | The reference library, newest first: id, kind, name, tags, note, folder and where the file is. `query` and `tag` narrow it. |
+| `attach_from_library` | Copies library items into a film's references (`id`, `items`), as picking them in a prompt does. A clip comes in as four stills. |
 
 A Claude turn or a final render can take a few minutes. The tools send progress as they go (Claude's steps, the render's percentage), which also keeps apps from giving up early. If an app stops waiting anyway, the change or render carries on in the studio; check on it with `get_film` or in the studio.
 
@@ -80,6 +82,8 @@ npm run studio -- render abcd1234 --draft
 npm run studio -- versions abcd1234
 npm run studio -- back abcd1234 3
 npm run studio -- open abcd1234
+npm run studio -- library "moodboard" --tag warm
+npm run studio -- change abcd1234 "Use these colours" --library efgh5678
 npm run studio -- doctor
 ```
 

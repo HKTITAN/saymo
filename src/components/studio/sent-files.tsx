@@ -2,17 +2,19 @@
 
 import type { Attachment } from "@/lib/studio/contract";
 import { MusicBeamNoteIcon } from "@/components/icons";
+import { SaveToLibrary, saveAttachment } from "./save-to-library";
 import { clockText, KIND_LABEL } from "./use-attachments";
 
 // The files a sent message carried, under it in the chat: a small picture
 // for images, a note and its length for sounds, the kind and name for the
-// rest. Each opens in a new tab.
+// rest. Each opens in a new tab; on hover, a bookmark saves it to the
+// reference library.
 export function SentFiles({ files, urlOf }: { files: Attachment[]; urlOf: (path: string) => string }) {
   if (!files.length) return null;
   return (
     <ul className="flex max-w-full flex-wrap justify-end gap-1">
       {files.map((f) => (
-        <li key={f.path}>
+        <li key={f.path} className="group/sent relative">
           <a
             href={urlOf(f.path)}
             target="_blank"
@@ -36,6 +38,11 @@ export function SentFiles({ files, urlOf }: { files: Attachment[]; urlOf: (path:
             <span className="truncate">{f.name}</span>
             {f.kind === "audio" && f.seconds ? <span className="shrink-0 font-mono text-[10.5px] text-white/40 tabular-nums">{clockText(f.seconds)}</span> : null}
           </a>
+          {f.kind !== "slides" ? (
+            <span className="absolute end-1 top-1/2 flex -translate-y-1/2 rounded-[6px] bg-[#262626] opacity-0 transition-opacity focus-within:opacity-100 group-hover/sent:opacity-100">
+              <SaveToLibrary save={() => saveAttachment(urlOf(f.path), f.name, f.path)} />
+            </span>
+          ) : null}
         </li>
       ))}
     </ul>
