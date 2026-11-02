@@ -7,6 +7,14 @@
 //     (twice the film's size) and 1080p.mp4 (its own size); draft:
 //     out/draft.mp4 at its own size, quickly. Both also write out/poster.png.
 //
+//   node scripts/studio/render.mjs --film <id> --sizes
+//     The same film in every size the studio offers (16:9, 1:1, 4:5, 9:16),
+//     each drawn at that size from the same files, so a film laid out from
+//     its width and height re-flows rather than being cropped. Writes
+//     out/wide-16x9.mp4, square-1x1, portrait-4x5 and story-9x16 (each with
+//     a still beside it), at the film's own pixel density. film.json is
+//     left as it is. Motion films only (HTML and React).
+//
 //   node scripts/studio/render.mjs <id> [--draft]
 //     A sample from studio/compositions.json into studio/out/.
 //
@@ -68,6 +76,15 @@ const args = process.argv.slice(2);
 const draft = args.includes("--draft");
 const filmAt = args.indexOf("--film");
 const filmId = filmAt >= 0 ? args[filmAt + 1] : null;
+const everySize = args.includes("--sizes");
+
+// The sizes "Every size" renders, as named in the studio (contract.ts SIZES).
+const EVERY_SIZE = [
+  { name: "wide-16x9", width: 1920, height: 1080 },
+  { name: "square-1x1", width: 1080, height: 1080 },
+  { name: "portrait-4x5", width: 1080, height: 1350 },
+  { name: "story-9x16", width: 1080, height: 1920 },
+];
 
 // ─── Progress ───────────────────────────────────────────────────────────────
 //
@@ -77,8 +94,11 @@ const filmId = filmAt >= 0 ? args[filmAt + 1] : null;
 // step's own 0..1 onto its part of the bar.
 
 let shown = -1;
+// Several renders in one run (every size) share the bar: each gets its band.
+let band = [0, 1];
 const progress = (fraction) => {
-  const percent = Math.max(0, Math.min(100, Math.floor(fraction * 100)));
+  const whole = band[0] + (band[1] - band[0]) * Math.max(0, Math.min(1, fraction));
+  const percent = Math.max(0, Math.min(100, Math.floor(whole * 100)));
   if (percent > shown) console.log(`progress ${(shown = percent)}`);
 };
 const step = (from, to) => (fraction) => progress(from + (to - from) * Math.max(0, Math.min(1, fraction)));
@@ -469,14 +489,19 @@ const GSAP_SCRIPT = /<script[^>]+src=["'][^"']*gsap[^"']*["']/i;
 // What a render copies: the film's own files, not its renders or history.
 const SKIP = new Set(["out", ".history", "node_modules", "target", ".hyperframes", "renders", "media", "sound"]);
 
-async function renderFilm(id) {
+// `size` (one of EVERY_SIZE) draws the film at that size instead of its own.
+async function renderFilm(id, size = null) {
   if (!/^[a-z0-9]{8}$/.test(id)) throw new Error(`No film called ${id}`);
   const dir = path.join(ROOT, "films", id);
-  const film = JSON.parse(await readFile(path.join(dir, "film.json"), "utf8"));
+  const own = JSON.parse(await readFile(path.join(dir, "film.json"), "utf8"));
+  if (size && (own.kind === "video" || own.engine === "rust")) {
+    throw new Error("Every size works for motion films. A video edit or a Rust film is resized by asking Claude.");
+  }
+  const film = size ? { ...own, width: size.width, height: size.height } : own;
   const out = path.join(dir, "out");
   // Beside the films, not inside this one: a folder can't be copied into
   // itself. The studio's list skips names that aren't film ids.
-  const quality = draft ? "draft" : "final";
+  const quality = size ? size.name : draft ? "draft" : "final";
   const work = path.join(ROOT, "films", ".work", id, quality);
   // The studio's queue and the chat can both ask for a draft of the same
   // film; the second waits for the first rather than sharing its folder.
@@ -520,7 +545,7 @@ async function renderFilm(id) {
     duration: film.duration,
     // A React film reads its brand from its props (studio-kit's useBrand()).
     params: film.engine === "react" && brand ? { ...params, brand } : params,
-    scale: draft ? 1 : 2,
+    scale: draft || size ? 1 : 2,
   };
   let media = null;
   let edit = null;
@@ -545,7 +570,9 @@ async function renderFilm(id) {
   job.workers = workersFor(m, job.scale);
   console.error(describe(m, job.workers));
 
-  const files = draft
+  const files = size
+    ? [{ path: path.join(out, `${size.name}.mp4`), big: false }]
+    : draft
     ? [{ path: path.join(out, "draft.mp4"), big: true }]
     : job.scale === 2
       ? [
@@ -553,7 +580,7 @@ async function renderFilm(id) {
           { path: path.join(out, "1080p.mp4"), big: false },
         ]
       : [{ path: path.join(out, "1080p.mp4"), big: false }];
-  const poster = path.join(out, "poster.png");
+  const poster = path.join(out, size ? `${size.name}.png` : "poster.png");
   // The poster: the film at its "Cover" mark (or halfway; a third in for a
   // video film, past any title card).
   const cover = (film.marks ?? []).find((mk) => /cover/i.test(mk.label))?.t ?? job.duration / (film.kind === "video" ? 3 : 2);
@@ -615,7 +642,7 @@ async function renderFilm(id) {
   }
 
   // A final at the film's own size replaces any earlier twice-size file.
-  if (!draft && job.scale === 1) await rm(path.join(out, "4k.mp4"), { force: true });
+  if (!draft && !size && job.scale === 1) await rm(path.join(out, "4k.mp4"), { force: true });
   if (source.encoded) await finishEncoded(source.encoded, job, files, m, step(share.drawn, share.encoded));
   else await encode(source, job, files, m, step(share.drawn, share.encoded));
   const wav = await sound;
@@ -893,5 +920,10 @@ async function renderSample(id) {
   for (const f of files) console.log(`wrote ${path.relative(ROOT, f.path)}`);
 }
 
-if (filmId) await renderFilm(filmId);
+if (filmId && everySize) {
+  for (const [i, size] of EVERY_SIZE.entries()) {
+    band = [i / EVERY_SIZE.length, (i + 1) / EVERY_SIZE.length];
+    await renderFilm(filmId, size);
+  }
+} else if (filmId) await renderFilm(filmId);
 else await renderSample(args.find((a) => !a.startsWith("--")));

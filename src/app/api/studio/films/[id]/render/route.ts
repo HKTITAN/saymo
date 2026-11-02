@@ -17,15 +17,15 @@ export async function GET(request: Request, ctx: RouteContext<"/api/studio/films
   return Response.json(await renderStatus(id));
 }
 
-// Starts a render: "draft" (quick, the film's own size) or "final" (4K and
-// the film's own size). One render runs at a time; others wait in line.
+// Starts a render: "draft" (quick, the film's own size), "final" (4K and
+// the film's own size) or "sizes" (every size, each laid out for its frame). One render runs at a time; others wait in line.
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/films/[id]/render">) {
   if (!allowed(request)) return refused();
   const { id } = await ctx.params;
   if (!(await readFilm(id))) return missing();
   const body = (await request.json().catch(() => null)) as { quality?: unknown } | null;
-  const quality = body?.quality === "draft" ? "draft" : body?.quality === "final" ? "final" : null;
-  if (!quality) return Response.json({ error: 'Ask for a "draft" or a "final" render.' }, { status: 400 });
+  const quality = body?.quality === "draft" || body?.quality === "final" || body?.quality === "sizes" ? body.quality : null;
+  if (!quality) return Response.json({ error: 'Ask for a "draft", "final" or "sizes" render.' }, { status: 400 });
   startRender(id, quality);
   return Response.json(await renderStatus(id), { status: 202 });
 }

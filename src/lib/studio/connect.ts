@@ -1,6 +1,6 @@
 import { ConnectError } from "./connect-store";
 import type { ConnectionsStatus, FilmConnections } from "./connect-types";
-import type { RenderStatus } from "./contract";
+import type { RenderQuality, RenderStatus } from "./contract";
 import { filmDriveState, saveToDrive } from "./drive-sync";
 import { readFilm } from "./films";
 import { cancelGithubSignIn, deviceFlowAvailable, ghAvailable, githubPending, githubState } from "./github";
@@ -14,10 +14,11 @@ import { outDir } from "./films";
 // asked) the videos go to the active Google Drive and the film's source to
 // the GitHub library, both in the background, one at a time.
 
-export async function afterRender(id: string, quality: "draft" | "final", files: string[]) {
+export async function afterRender(id: string, quality: RenderQuality, files: string[]) {
   const film = await readFilm(id);
   if (!film) return;
-  if ((quality === "final" || (await autoSaveDrafts())) && (await driveConnected())) saveToDrive(id, files);
+  // Every size counts as finished work, as a final does.
+  if ((quality !== "draft" || (await autoSaveDrafts())) && (await driveConnected())) saveToDrive(id, files);
   if (quality === "final") {
     const gh = await githubState().catch(() => null);
     if (gh?.connected && gh.repo) saveToGithub(id, renderMessage(film, quality, files));

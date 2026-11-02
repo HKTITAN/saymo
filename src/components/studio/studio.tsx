@@ -1286,7 +1286,7 @@ function FilmView({
             await onGone();
           }}
         />
-        <RenderControl id={id} hidden={hidden} onHide={() => setHidden(() => true)} />
+        <RenderControl id={id} hidden={hidden} onHide={() => setHidden(() => true)} sizes={!isVideo && film?.engine !== "rust"} />
         <ChatPanel
           filmId={id}
           chat={chatView}

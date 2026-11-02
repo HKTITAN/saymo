@@ -8,6 +8,7 @@ import {
   type FilmEdit,
   type FilmSummary,
   type Folder,
+  type RenderQuality,
   type RenderStatus,
   STUDIO_HEADERS,
   type Version,
@@ -85,7 +86,7 @@ export const api = {
   // The film after each prompt, newest first, and going back to one.
   versions: async (id: string) => (await call<{ versions: Version[] }>(`${film(id)}/versions`)).versions,
   restore: (id: string, n: number, t: number) => call<Film>(`${film(id)}/versions/${n}/restore`, send("POST", { t })),
-  render: (id: string, quality: "draft" | "final") =>
+  render: (id: string, quality: RenderQuality) =>
     call<RenderStatus>(`${film(id)}/render`, send("POST", { quality })),
   renderStatus: (id: string) => call<RenderStatus>(`${film(id)}/render`),
   // Folders on the front page. A film is moved with edit(id, { folder }).

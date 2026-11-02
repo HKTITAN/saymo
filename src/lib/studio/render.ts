@@ -2,18 +2,18 @@ import { spawn } from "node:child_process";
 import { mkdirSync, openSync } from "node:fs";
 import { readFile, rename, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { RenderStatus } from "./contract";
+import type { RenderQuality, RenderStatus } from "./contract";
 import { outDir, ROOT } from "./films";
 import { claim, release } from "./heavy";
 import { draftIsCurrent, newestChange } from "./stage";
 
-// Renders films with `scripts/studio/render.mjs --film <id> [--draft]`, one
+// Renders films with `scripts/studio/render.mjs --film <id> [--draft | --sizes]`, one
 // at a time across the whole studio: every engine drives Chrome or the GPU
 // flat out, and two renders at once only slow both. Films asked for
 // meanwhile wait in line. Each film's latest status is kept in
 // out/render.json, so it survives a restart of the server.
 
-type Quality = "draft" | "final";
+type Quality = RenderQuality;
 type Job = { id: string; quality: Quality };
 
 const g = globalThis as {
@@ -55,7 +55,7 @@ function next() {
       "scripts/studio/render.mjs",
       "--film",
       job.id,
-      ...(job.quality === "draft" ? ["--draft"] : []),
+      ...(job.quality === "draft" ? ["--draft"] : job.quality === "sizes" ? ["--sizes"] : []),
     ],
     { cwd: ROOT, stdio: ["ignore", "pipe", log] },
   );

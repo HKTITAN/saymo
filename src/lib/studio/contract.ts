@@ -167,7 +167,7 @@ export type StageOutbound =
 // POST   /api/studio/films/<id>/versions/<n>/restore  {t?: number}
 //        → Film (snapshot n, after keeping the film as it was as a new version)
 //
-// POST   /api/studio/films/<id>/render  {quality: "draft" | "final"}
+// POST   /api/studio/films/<id>/render  {quality: "draft" | "final" | "sizes"}
 //        → RenderStatus (starts it; one render at a time across the studio)
 // GET    /api/studio/films/<id>/render         → RenderStatus
 // GET    /api/studio/films/<id>/out/<file>     → the file (mp4/png), download
@@ -252,9 +252,13 @@ export type Version = {
   current?: true;
 };
 
+// "sizes": the film in every size (16:9, 1:1, 4:5, 9:16), each laid out
+// for its own frame, beside its own size's render.
+export type RenderQuality = "draft" | "final" | "sizes";
+
 export type RenderStatus =
   | { state: "idle" }
   | { state: "queued" }
-  | { state: "running"; quality: "draft" | "final"; progress: number } // 0..1
-  | { state: "done"; quality: "draft" | "final"; files: string[]; at: string }
+  | { state: "running"; quality: RenderQuality; progress: number } // 0..1
+  | { state: "done"; quality: RenderQuality; files: string[]; at: string }
   | { state: "failed"; message: string; at: string };

@@ -4,7 +4,7 @@ import { Popover } from "@base-ui/react/popover";
 import { useEffect, useState } from "react";
 import { DownloadDownIcon, EyeOffIcon, VideoCallIcon } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
-import type { RenderStatus } from "@/lib/studio/contract";
+import type { RenderQuality, RenderStatus } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { api, outUrl, StudioError } from "./api";
 import { ConnectionsButton, SavedTo } from "./connections";
@@ -24,6 +24,14 @@ const FILES: Record<string, string> = {
   "1080p.mp4": "1080p video",
   "draft.mp4": "Draft video",
   "poster.png": "Still",
+  "wide-16x9.mp4": "Wide 16:9",
+  "square-1x1.mp4": "Square 1:1",
+  "portrait-4x5.mp4": "Portrait 4:5",
+  "story-9x16.mp4": "Story 9:16",
+  "wide-16x9.png": "Wide 16:9 still",
+  "square-1x1.png": "Square 1:1 still",
+  "portrait-4x5.png": "Portrait 4:5 still",
+  "story-9x16.png": "Story 9:16 still",
 };
 const fileLabel = (name: string) => FILES[name] ?? name;
 
@@ -31,10 +39,12 @@ export function RenderControl({
   id,
   hidden,
   onHide,
+  sizes = true,
 }: {
   id: string | null;
   hidden: boolean;
   onHide: () => void;
+  sizes?: boolean; // offers "Every size" (motion films; not a video edit or a Rust film)
 }) {
   const [status, setStatus] = useState<RenderStatus>({ state: "idle" });
   const [open, setOpen] = useState(false);
@@ -60,7 +70,7 @@ export function RenderControl({
     };
   }, [id, follow]);
 
-  const start = async (quality: "draft" | "final") => {
+  const start = async (quality: RenderQuality) => {
     if (!id) return;
     setError(null);
     setOpen(false);
@@ -161,6 +171,12 @@ export function RenderControl({
                 <span className="text-[12.5px] text-white/90">4K video</span>
                 <span className="text-[11.5px] text-white/45">The finished film in 4K and 1080p, with a still</span>
               </button>
+              {sizes ? (
+                <button type="button" className={OPTION} onClick={() => start("sizes")}>
+                  <span className="text-[12.5px] text-white/90">Every size</span>
+                  <span className="text-[11.5px] text-white/45">Wide, square, portrait and story, each laid out for its frame</span>
+                </button>
+              ) : null}
               {id ? <SavedTo id={id} renderedAt={status.state === "done" ? status.at : null} /> : null}
               {error || status.state === "failed" ? (
                 <p className="px-2.5 pt-1 pb-1.5 text-[11.5px] text-[#ff9592] leading-relaxed">
