@@ -88,7 +88,7 @@ export function Inspector({
         {editLength !== undefined ? (
           <DialNote>
             The film runs as long as its timeline,{" "}
-            <span className="font-mono tabular-nums">{editLength.toFixed(1)} s</span>. Changing the size keeps each
+            <span className="font-mono tabular-nums">{editLength.toFixed(1)}</span>{"\u2009"}s. Changing the size keeps each
             clip framed where you put it.
           </DialNote>
         ) : (

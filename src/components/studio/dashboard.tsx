@@ -793,16 +793,17 @@ function FolderCard({
 // back with a small tab low on its right, the cover swung open on the left,
 // and the films inside standing in it like pages held in the spine.
 //
-// Three states, one motion: at rest the cover is ajar and the pages barely
-// fan; on hover the cover swings open and the pages fan out one after
-// another; with a film dragged over it, it opens wide to take it.
+// Three states, one motion: at rest the folder is shut, the cover flat over
+// the back with the pages just peeking out of the top; on hover the cover
+// swings open and the pages fan out one after another; with a film dragged
+// over it, it opens wide to take it.
 type FolderState = "rest" | "hover" | "over";
 const PAGE = { w: 58, h: 80 };
 const PAGES: Record<FolderState, { skew: number; scale: number; y: number }[]> = {
   rest: [
     { skew: 0, scale: 1, y: 0 },
-    { skew: 4, scale: 0.93, y: 1.5 },
-    { skew: 8, scale: 0.86, y: 3 },
+    { skew: 0, scale: 1, y: 1.5 },
+    { skew: 0, scale: 1, y: 3 },
   ],
   hover: [
     { skew: 0, scale: 1, y: -2 },
@@ -815,7 +816,13 @@ const PAGES: Record<FolderState, { skew: number; scale: number; y: number }[]> =
     { skew: 31, scale: 0.52, y: 0 },
   ],
 };
-const COVER: Record<FolderState, number> = { rest: 0.86, hover: 1.18, over: 1.42 };
+// The cover hinges on the spine: shut it lies flat over the back; open, it
+// leans toward you, foreshortened.
+const COVER: Record<FolderState, { skew: number; scale: number }> = {
+  rest: { skew: 0, scale: 1 },
+  hover: { skew: 36, scale: 0.4 },
+  over: { skew: 40, scale: 0.3 },
+};
 const PAGE_FILL = ["#3a3a3a", "#454545", "#505050"];
 const SPRING = "cubic-bezier(0.23, 1, 0.32, 1)";
 function FolderArt({ films, state }: { films: FilmSummary[]; state: FolderState }) {
@@ -879,17 +886,12 @@ function FolderArt({ films, state }: { films: FilmSummary[]; state: FolderState 
         <g
           style={{
             transformBox: "view-box",
-            transformOrigin: "14px 60px",
-            transform: `scaleX(${COVER[state]})`,
+            transformOrigin: "0 0",
+            transform: `translate(14px, 6.6px) skewY(${COVER[state].skew}deg) scaleX(${COVER[state].scale})`,
             ...move(0),
           }}
         >
-          <path
-            d="M14 10 Q14 5.5 17.6 8.2 L35 21.6 Q37.8 23.8 37.8 27.3 V107.6 Q37.8 113.4 33.6 110.4 L17.4 98.6 Q14 96.2 14 92 Z"
-            fill={`url(#${id}-cover)`}
-            stroke="rgb(255 255 255 / 0.07)"
-            strokeWidth={0.6}
-          />
+          <rect width={64.7} height={89} rx={5} fill={`url(#${id}-cover)`} stroke="rgb(255 255 255 / 0.07)" strokeWidth={0.6} />
         </g>
       </g>
     </svg>
@@ -1194,7 +1196,7 @@ function FilmCard({
             </span>
           </span>
           <span className="truncate text-[11.5px] text-white/40">
-            {f.kind === "video" ? "Video edit" : "Motion graphics"} · <span className="font-mono tabular-nums">{f.duration.toFixed(1)} s</span>
+            {f.kind === "video" ? "Video edit" : "Motion graphics"} · <span className="font-mono tabular-nums">{f.duration.toFixed(1)}</span>{"\u2009"}s
             {folderLabel ? ` · ${folderLabel}` : null}
           </span>
         </span>

@@ -56,6 +56,20 @@ export function DialGroup({
 }
 
 // A number: drag anywhere along the row, or use the arrow keys.
+// A number in the monospaced face with its unit (s, %, ×) in the normal
+// face just after it: a space in a monospaced font is a full letter wide,
+// which leaves the unit floating away from its number.
+export function Reading({ text }: { text: string }) {
+  const m = /^(-?[\d.,:]+)\s*(\S.*)?$/.exec(text);
+  if (!m) return <>{text}</>;
+  return (
+    <>
+      {m[1]}
+      {m[2] ? <span className="ms-[0.18em] font-sans">{m[2]}</span> : null}
+    </>
+  );
+}
+
 export function DialSlider({
   label,
   value,
@@ -107,7 +121,9 @@ export function DialSlider({
           </SliderPrimitive.Track>
         </div>
         <span className={cn(LABEL, "pointer-events-none relative ps-3")}>{label}</span>
-        <span className={cn(VALUE, "pointer-events-none relative ms-auto pe-3")}>{format(value)}</span>
+        <span className={cn(VALUE, "pointer-events-none relative ms-auto pe-3")}>
+          <Reading text={format(value)} />
+        </span>
       </SliderPrimitive.Control>
     </SliderPrimitive.Root>
   );

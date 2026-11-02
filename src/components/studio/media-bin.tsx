@@ -197,7 +197,7 @@ export function MediaBin({
                   <LayerThreeIcon aria-hidden="true" className="size-3.5" />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-white/85">{g.label}</span>
-                <span className="font-mono text-[11px] text-white/40 tabular-nums">{g.duration.toFixed(1)} s</span>
+                <span className="text-[11px] text-white/40"><span className="font-mono tabular-nums">{g.duration.toFixed(1)}</span>{"\u2009"}s</span>
               </button>
             ))}
             {!ed.graphics.length ? (
