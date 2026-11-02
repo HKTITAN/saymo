@@ -791,12 +791,13 @@ function FolderCard({
 // left. The newest films inside peek out of the top as stills. Hovering (or
 // a film dragged over it) swings the cover wider and lifts them.
 const EASE = "duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
-// The films inside stand up like pages: taller than wide, like the folder.
-const SHEET = { w: 27, h: 38 };
+// The films inside stand up like pages held in the spine: the back one flat
+// against the back, each one in front leaning further toward the open cover.
+const SHEET = { w: 62, h: 84 };
 const SHEETS = [
-  { x: 38, y: -1, rotate: -6 },
-  { x: 48, y: -3, rotate: 6 },
-  { x: 43, y: 1, rotate: -1 },
+  { x: 15, y: 0, skew: 0, scale: 1 },
+  { x: 15, y: 2, skew: 13, scale: 0.78 },
+  { x: 15, y: 4, skew: 25, scale: 0.56 },
 ];
 function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
   const id = useId();
@@ -823,15 +824,15 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
               key={f.id}
               className={cn("transition-transform", EASE, open ? "-translate-y-[7px]" : "group-hover/card:-translate-y-[3px]")}
             >
-              <g transform={`translate(${at.x} ${at.y}) rotate(${at.rotate} ${SHEET.w / 2} ${SHEET.h / 2})`}>
+              <g transform={`translate(${at.x} ${at.y}) skewY(${at.skew}) scale(${at.scale} 1)`}>
                 <rect width={SHEET.w} height={SHEET.h} rx={3} fill="#3f3f3f" />
                 {f.poster ? (
                   <image href={f.poster} width={SHEET.w} height={SHEET.h} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-sheet)`} />
                 ) : (
                   <>
-                    <rect x={5} y={7} width={11} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.16)" />
-                    <rect x={5} y={12} width={17} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.09)" />
-                    <rect x={5} y={17} width={14} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.09)" />
+                    <rect x={30} y={9} width={18} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.16)" />
+                    <rect x={30} y={15} width={24} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.09)" />
+                    <rect x={30} y={21} width={20} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.09)" />
                   </>
                 )}
                 <rect width={SHEET.w} height={SHEET.h} rx={3} fill="none" stroke="rgb(0 0 0 / 0.35)" strokeWidth={0.6} />
