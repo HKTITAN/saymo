@@ -97,7 +97,7 @@ if (spec.video) {
     pixelFormat: "yuv420p",
     colorSpace: "bt709",
     audioCodec: "aac",
-    audioBitrate: "256k",
+    audioBitrate: "320k",
     enforceAudioTrack: true,
     scale,
     concurrency,
