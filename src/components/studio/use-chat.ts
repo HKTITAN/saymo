@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DEFAULT_PROVIDER, type ProviderId } from "@/lib/studio/ai-types";
 import type { ChatContext, ChatMessage, Film } from "@/lib/studio/contract";
+import { loadPick, savePick } from "./ai-api";
 import { api, chat, StudioError } from "./api";
 
 // One film's conversation with Claude, shared by the chat panel and the
@@ -26,7 +28,7 @@ export type Turn = {
 
 const IDLE: Turn = { running: false, text: "", steps: [], error: null, resumed: false };
 
-export type Queued = { key: string; prompt: string; context: ChatContext };
+export type Queued = { key: string; prompt: string; context: ChatContext; provider?: ProviderId };
 
 const queueKey = (id: string) => `studio:queue:${id}`;
 const loadQueue = (id: string): Queued[] => {
@@ -54,11 +56,21 @@ export function useChat(
   const [restoring, setRestoring] = useState(false);
   const [queue, setQueue] = useState<Queued[]>([]);
   const [paused, setPaused] = useState(false);
+  // Which AI the next prompt goes to: the last one picked for this film.
+  const [provider, setProviderState] = useState<ProviderId>(DEFAULT_PROVIDER);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read once per film from this browser
     setQueue(loadQueue(id));
     setPaused(false);
+    setProviderState(loadPick(id));
   }, [id]);
+  const setProvider = useCallback(
+    (next: ProviderId) => {
+      setProviderState(next);
+      savePick(id, next);
+    },
+    [id],
+  );
   useEffect(() => {
     saveQueue(id, queue);
   }, [id, queue]);
@@ -103,12 +115,12 @@ export function useChat(
   }, [id]);
 
   const run = useCallback(
-    async (prompt: string, context: ChatContext) => {
+    async (prompt: string, context: ChatContext, provider: ProviderId = DEFAULT_PROVIDER) => {
       const words = prompt.trim();
       if (!words || abort.current) return;
       const controller = new AbortController();
       abort.current = controller;
-      setMessages((m) => [...m, { role: "you", text: words, at: new Date().toISOString(), context }]);
+      setMessages((m) => [...m, { role: "you", text: words, at: new Date().toISOString(), context, provider }]);
       setTurn({ ...IDLE, running: true });
       let text = "";
       let steps: string[] = [];
@@ -116,7 +128,7 @@ export function useChat(
       try {
         await chat(
           id,
-          { prompt: words, context },
+          { prompt: words, context, provider },
           (event) => {
             switch (event.kind) {
               case "text":
@@ -172,20 +184,21 @@ export function useChat(
       const words = prompt.trim();
       if (!words) return;
       if (abort.current || busy || queue.length) {
-        setQueue((q) => [...q, { key: `${Date.now().toString(36)}-${q.length}`, prompt: words, context }]);
+        setQueue((q) => [...q, { key: `${Date.now().toString(36)}-${q.length}`, prompt: words, context, provider }]);
         return;
       }
-      await run(words, context);
+      await run(words, context, provider);
     },
-    [busy, queue.length, run],
+    [busy, queue.length, run, provider],
   );
 
-  // When a turn ends, the next queued prompt starts on its own.
+  // When a turn ends, the next queued prompt starts on its own, on the AI
+  // it was sent to.
   useEffect(() => {
     if (busy || paused || abort.current || !queue.length) return;
     const [next, ...rest] = queue;
     setQueue(rest);
-    void run(next.prompt, next.context);
+    void run(next.prompt, next.context, next.provider);
   }, [busy, paused, queue, run]);
 
   const removeQueued = useCallback((key: string) => setQueue((q) => q.filter((x) => x.key !== key)), []);
@@ -239,7 +252,7 @@ export function useChat(
     [id],
   );
 
-  return { messages, turn, send, stop, undo, restore, undoing, restoring, loaded, queue, paused, removeQueued, clearQueue, resume };
+  return { messages, turn, send, stop, undo, restore, undoing, restoring, loaded, queue, paused, removeQueued, clearQueue, resume, provider, setProvider };
 }
 
 export type ChatState = ReturnType<typeof useChat>;

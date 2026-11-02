@@ -6,6 +6,7 @@ import { CloudIcon, CopyIcon, ExternalLinkSquareIcon, GithubIcon, LinkChainHoriz
 import { DialButton, DialNote, DialText, DialToggle, LABEL, ROW, SURFACE } from "@/components/tool/dial";
 import type { ConnectionsStatus, FilmConnections, SaveState } from "@/lib/studio/connect-types";
 import { cn } from "@/lib/utils";
+import { AiSection } from "./ai-connections";
 import { StudioError } from "./api";
 import { connectApi } from "./connect-api";
 import { Hint, ICON_BUTTON } from "./panel";
@@ -81,6 +82,7 @@ export function ConnectionsButton() {
               <>
                 <GoogleSection status={status} onChange={refresh} onNote={setNote} />
                 <GithubSection status={status} onChange={refresh} onNote={setNote} />
+                <AiSection />
               </>
             ) : (
               <p className="px-1 pb-1 text-[11.5px]">

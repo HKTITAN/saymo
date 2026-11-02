@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 import { CARD } from "./panel";
+import { ModelPicker } from "./model-picker";
 import { PromptBox } from "./prompt-box";
 import type { Fit } from "./stage";
 import { useAttachments } from "./use-attachments";
@@ -96,6 +97,7 @@ export function Bubble({
         placeholder={pinned ? "Make this bigger and bring it in later" : "Describe a change to the film"}
         chip={chipLabel(pinned?.pick ?? null, pinned?.t ?? time())}
         className="bg-transparent has-[:focus-visible]:bg-transparent has-[:focus-visible]:ring-0"
+        tools={<ModelPicker provider={chat.provider} onChange={chat.setProvider} />}
       />
       <style>{`@keyframes bubble-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }`}</style>
     </div>

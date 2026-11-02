@@ -1,9 +1,12 @@
 import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import path from "node:path";
+import { CLAUDE_BIN, codexBin, EFFORT, killGroup, MODEL } from "./ai-env";
+import { DEFAULT_PROVIDER, familyOf, type ProviderId } from "./ai-types";
+import { runCodex, readThread, writeThread } from "./codex";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./contract";
+import { claudeEnvFor, readApiKey } from "./providers";
 import { attachmentNote } from "./attachments";
 import { listenCommand, referenceSoundNote, refAudioDenies } from "./listen";
 import { atPlayhead } from "./captions";
@@ -30,6 +33,12 @@ import { startSound } from "./sound-render";
 //  - look at footage only through that tool: the original video and sound
 //    files can't be read or changed.
 // Only project settings load (not the owner's own plugins and hooks).
+//
+// A prompt can also run on another AI (ai-types.ts): Claude Code paid by an
+// API key (the same command and session, with only that key in its
+// environment), or OpenAI's Codex CLI on a ChatGPT plan (codex.ts, with its
+// own sandbox rules and its own conversation per film). Snapshots, versions
+// and undo work the same whichever one ran.
 
 const ENGINE_WORDS: Record<Film["engine"], string> = {
   html: "html (HyperFrames: index.html with a paused GSAP timeline)",
@@ -38,16 +47,10 @@ const ENGINE_WORDS: Record<Film["engine"], string> = {
 };
 
 const TURN_LIMIT_MS = 15 * 60 * 1000;
-// Everyone's studio uses the same Claude by default: Opus 5.5 at high effort,
-// named exactly so an older alias can't pick an older model on someone's Mac.
-// STUDIO_MODEL and STUDIO_EFFORT in .env.local change it for one machine.
-export const MODEL = process.env.STUDIO_MODEL ?? "claude-opus-5-5";
-export const EFFORT = process.env.STUDIO_EFFORT ?? "high";
-
-export const CLAUDE_BIN = (() => {
-  const own = path.join(homedir(), ".local/bin/claude");
-  return process.env.STUDIO_CLAUDE_BIN ?? (existsSync(own) ? own : "claude");
-})();
+// The model, the programs and the clean environment live in ai-env.ts
+// (shared with the providers and Codex); the kit maker and the script writer
+// still import them from here.
+export { CLAUDE_BIN, childEnv, EFFORT, killGroup, MODEL } from "./ai-env";
 
 // ─── Files ───────────────────────────────────────────────────────────────────
 
@@ -101,7 +104,7 @@ const dropSnapshot = (id: string, n: number) =>
 
 // ─── Running turns ───────────────────────────────────────────────────────────
 
-type Running = { proc: ChildProcess | null; stopped: boolean; timedOut: boolean };
+type Running = { proc: ChildProcess | null; stopped: boolean; timedOut: boolean; provider?: ProviderId };
 const g = globalThis as { __studioTurns?: Map<string, Running> };
 const running = (g.__studioTurns ??= new Map());
 
@@ -117,34 +120,36 @@ export function stopTurn(id: string) {
   return true;
 }
 
-export function killGroup(pid: number) {
-  try {
-    process.kill(-pid, "SIGTERM");
-  } catch {}
-  setTimeout(() => {
-    try {
-      process.kill(-pid, "SIGKILL");
-    } catch {}
-  }, 3000).unref();
-}
 
 // Runs one turn and calls `emit` with each ChatEvent. Resolves when the
 // turn is over, whatever happened.
 export async function runTurn(id: string, request: ChatRequest, emit: (event: ChatEvent) => void) {
+  const who = whoFor(request.provider);
   if (running.has(id)) {
-    emit({ kind: "error", message: "Claude is still working on this film. Wait for it, or stop it first." });
+    emit({ kind: "error", message: `${whoFor(running.get(id)?.provider)} is still working on this film. Wait for it, or stop it first.` });
     return;
   }
-  const turn: Running = { proc: null, stopped: false, timedOut: false };
+  const turn: Running = { proc: null, stopped: false, timedOut: false, provider: request.provider ?? DEFAULT_PROVIDER };
   running.set(id, turn);
   try {
     await turnFor(id, request, turn, emit);
   } catch (error) {
-    emit({ kind: "error", message: `Claude stopped with an error. Try again. Details: ${String((error as Error)?.message ?? error)}` });
+    emit({ kind: "error", message: `${who} stopped with an error. Try again. Details: ${String((error as Error)?.message ?? error)}` });
   } finally {
     running.delete(id);
   }
 }
+
+const whoFor = (provider: ProviderId | undefined) => (provider === "codex" ? "Codex" : "Claude");
+
+// What one AI's run left behind, whichever AI it was.
+type Outcome = {
+  code: number | null;
+  reply: string;
+  steps: string[];
+  changedAny: boolean;
+  problem: string | null;
+};
 
 async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (event: ChatEvent) => void) {
   const film = await readFilm(id);
@@ -157,6 +162,18 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
     emit({ kind: "error", message: "Type what you'd like changed." });
     return;
   }
+  const provider = request.provider ?? DEFAULT_PROVIDER;
+  const family = familyOf(provider);
+  const who = whoFor(provider);
+  // Said before anything is snapshotted, so a missing key costs no version.
+  if (provider === "api-key" && !(await readApiKey())) {
+    emit({ kind: "error", message: "No API key is saved. Add one under Connections, then AI, or switch this prompt to Claude." });
+    return;
+  }
+  if (provider === "codex" && !codexBin()) {
+    emit({ kind: "error", message: "Codex isn't installed on this Mac. Open Connections, then AI, for the set-up steps, or switch this prompt to Claude." });
+    return;
+  }
 
   // The film as it is now, for undo and the version history.
   const n = await withFilm(id, async () => {
@@ -165,37 +182,113 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
     return taken;
   });
   emit({ kind: "start", turn: n });
-  await addChat(id, { role: "you", text: prompt, at: new Date().toISOString(), context: request.context });
+  const earlier = await readChat(id);
+  await addChat(id, { role: "you", text: prompt, at: new Date().toISOString(), context: request.context, provider });
 
   const undone = existsSync(undoneFlag(id));
   await rm(undoneFlag(id), { force: true });
   const wentBack = await readFile(wentBackFlag(id), "utf8").catch(() => null);
   await rm(wentBackFlag(id), { force: true });
 
-  const dir = filmDir(id);
   await rm(logFile(id), { force: true });
+  const log = (line: string) => void appendFile(logFile(id), `${line}\n`).catch(() => {});
+  const edit = film.kind === "video" ? await editSummary(id, request.context.t) : null;
+  const rules = rulesNote(await readRules(), film.kind);
+  const thread = family === "codex" ? await readThread(id) : undefined;
+  const session = family === "codex" ? thread : film.session;
+  const recap = recapFor(earlier, family, Boolean(session));
+  const message = userMessage(film, prompt, request.context, undone, wentBack, edit, rules, recap);
+
+  const limit = setTimeout(() => {
+    turn.stopped = true;
+    turn.timedOut = true;
+    if (turn.proc?.pid) killGroup(turn.proc.pid);
+  }, TURN_LIMIT_MS);
+
+  let outcome: Outcome;
+  let after: Film;
+  if (family === "codex") {
+    const ran = await runCodex({
+      id,
+      message: forCodex(message),
+      instructions: codexInstructions(id, film.kind),
+      thread,
+      turn,
+      emit,
+      log,
+      stepFor: (kind, detail) => codexStep(kind, detail, filmDir(id)),
+    });
+    clearTimeout(limit);
+    await writeThread(id, ran.thread);
+    after = await touchFilm(id, film, film.session);
+    outcome = ran;
+  } else {
+    const ran = await runClaude(id, film, provider, message, turn, emit, log);
+    clearTimeout(limit);
+    // Keep the conversation going next time, whatever happened; if the old
+    // conversation couldn't be found, the next turn starts a new one.
+    after = await touchFilm(id, film, ran.session);
+    outcome = ran;
+  }
+
+  // A turn that changed nothing needn't be a step for undo.
+  if (!outcome.changedAny) await dropSnapshot(id, n);
+  // A new score, length or cut means new sound, unless the AI already
+  // rendered it while listening to its work.
+  else void startSound(id);
+
+  const { problem } = outcome;
+  const text = outcome.reply.trim();
+  await addChat(id, {
+    role: "claude",
+    text: turn.stopped ? (text ? `${text}\n\n(Stopped.)` : "Stopped.") : text || problem || "Done.",
+    at: new Date().toISOString(),
+    steps: outcome.steps,
+    provider,
+  });
+  if (turn.timedOut) emit({ kind: "error", message: `${who} took longer than 15 minutes, so the studio stopped it. What it changed is kept; Undo puts it back.` });
+  else if (turn.stopped) emit({ kind: "error", message: `Stopped. Anything ${who} had already changed is kept; Undo puts it back.` });
+  else if (problem) emit({ kind: "error", message: problem });
+  emit({ kind: "done", film: after });
+}
+
+// film.json after a turn: its Claude session and when it last changed.
+const touchFilm = (id: string, film: Film, session: string | undefined) =>
+  withFilm(id, async () => {
+    const now = (await readFilm(id)) ?? film;
+    const next: Film = { ...now, session, updatedAt: new Date().toISOString() };
+    await writeFilm(next);
+    return next;
+  });
+
+// One Claude Code run, on the owner's plan or on the studio's API key.
+async function runClaude(
+  id: string,
+  film: Film,
+  provider: ProviderId,
+  message: string,
+  turn: Running,
+  emit: (event: ChatEvent) => void,
+  log: (line: string) => void,
+): Promise<Outcome & { session: string | undefined }> {
+  const dir = filmDir(id);
   const args = claudeArgs(id, film.session, film.kind, film.brand);
   const proc = spawn(CLAUDE_BIN, args, {
     cwd: dir,
-    env: childEnv(),
+    env: await claudeEnvFor(provider),
     stdio: ["pipe", "pipe", "pipe"],
     detached: true, // its own process group, so stopping ends everything
   });
   turn.proc = proc;
   if (turn.stopped && proc.pid) killGroup(proc.pid);
-  // The exact command goes first in the turn's log, for debugging.
-  await appendFile(logFile(id), `${JSON.stringify({ type: "studio_command", bin: CLAUDE_BIN, args })}\n`).catch(() => {});
-  const edit = film.kind === "video" ? await editSummary(id, request.context.t) : null;
-  const rules = rulesNote(await readRules(), film.kind);
-  proc.stdin.end(userMessage(film, prompt, request.context, undone, wentBack, edit, rules));
+  // The exact command goes first in the turn's log, for debugging (never
+  // the environment, which may hold the API key).
+  log(JSON.stringify({ type: "studio_command", provider, bin: CLAUDE_BIN, args }));
+  proc.stdin.on("error", () => {});
+  proc.stdin.end(message);
 
-  const limit = setTimeout(() => {
-    turn.stopped = true;
-    turn.timedOut = true;
-    if (proc.pid) killGroup(proc.pid);
-  }, TURN_LIMIT_MS);
-
-  const reader = new StreamReader(dir, emit);
+  const explainFor = provider === "api-key" ? explainKey : explain;
+  const reader = new StreamReader(dir, emit, explainFor);
   let stderr = "";
   proc.stderr.on("data", (d) => (stderr = (stderr + d).slice(-4000)));
   let buffer = "";
@@ -206,7 +299,7 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
       const line = buffer.slice(0, nl).trim();
       buffer = buffer.slice(nl + 1);
       if (!line) continue;
-      void appendFile(logFile(id), `${line}\n`).catch(() => {});
+      log(line);
       try {
         reader.handle(JSON.parse(line));
       } catch {}
@@ -220,41 +313,33 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
       resolve(-1);
     });
   });
-  clearTimeout(limit);
 
-  // Keep the conversation going next time, whatever happened; if the old
-  // conversation couldn't be found, the next turn starts a new one.
   const lost = code !== 0 && /no conversation found/i.test(stderr);
-  const session = lost ? undefined : (reader.session ?? film.session);
-  const after = await withFilm(id, async () => {
-    const now = (await readFilm(id)) ?? film;
-    const next: Film = { ...now, session, updatedAt: new Date().toISOString() };
-    await writeFilm(next);
-    return next;
-  });
-
-  // A turn that changed nothing needn't be a step for undo.
-  if (!reader.changedAny) await dropSnapshot(id, n);
-  // A new score, length or cut means new sound, unless Claude already
-  // rendered it while listening to its work.
-  else void startSound(id);
-
   const problem = turn.stopped
     ? null
     : lost
       ? "Claude couldn't pick up the earlier conversation about this film, so the next message starts a new one. Send it again."
-      : (reader.failure ?? (code !== 0 ? explain(stderr || reader.lastError || "") : null));
-  const text = reader.reply.trim();
-  await addChat(id, {
-    role: "claude",
-    text: turn.stopped ? (text ? `${text}\n\n(Stopped.)` : "Stopped.") : text || problem || "Done.",
-    at: new Date().toISOString(),
+      : (reader.failure ?? (code !== 0 ? explainFor(stderr || reader.lastError || "") : null));
+  return {
+    code,
+    session: lost ? undefined : (reader.session ?? film.session),
+    reply: reader.reply,
     steps: reader.steps,
-  });
-  if (turn.timedOut) emit({ kind: "error", message: "Claude took longer than 15 minutes, so the studio stopped it. What it changed is kept; Undo puts it back." });
-  else if (turn.stopped) emit({ kind: "error", message: "Stopped. Anything Claude had already changed is kept; Undo puts it back." });
-  else if (problem) emit({ kind: "error", message: problem });
-  emit({ kind: "done", film: after });
+    changedAny: reader.changedAny,
+    problem,
+  };
+}
+
+// When the film's last reply came from the other AI (or this AI has no
+// conversation about the film yet), a short recap of the chat so far, so a
+// switch mid-film doesn't start from nothing.
+function recapFor(chat: ChatMessage[], family: "claude" | "codex", hasSession: boolean) {
+  if (!chat.length) return null;
+  const lastReply = [...chat].reverse().find((m) => m.role === "claude");
+  const lastFamily = familyOf(lastReply?.provider ?? DEFAULT_PROVIDER);
+  if (lastFamily === family && hasSession) return null;
+  const lines = chat.slice(-6).map((m) => `${m.role === "you" ? "They" : "The assistant"}: ${m.text.replace(/\s+/g, " ").slice(0, 300)}`);
+  return `<earlier>Earlier in this film's chat${lastFamily !== family ? ", another assistant worked on the film" : ""}. Read the files again before changing them. The last messages:\n${lines.join("\n")}\n</earlier>`;
 }
 
 // ─── The command ─────────────────────────────────────────────────────────────
@@ -340,21 +425,6 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
   return args;
 }
 
-// A clean environment: the dev server's own variables (keys in .env.local,
-// the owner's Claude Code session settings) don't pass to the turn.
-export function childEnv(): NodeJS.ProcessEnv {
-  const keep = ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "TERM", "CARGO_HOME", "RUSTUP_HOME"];
-  const env = {} as NodeJS.ProcessEnv;
-  for (const key of keep) if (process.env[key]) env[key] = process.env[key] as string;
-  for (const [key, value] of Object.entries(process.env)) if (key.startsWith("LC_") && value) env[key] = value;
-  env.HYPERFRAMES_NO_TELEMETRY = "1";
-  // The same effort as the flag, so a person's own Claude settings don't lower it.
-  env.CLAUDE_CODE_EFFORT_LEVEL = EFFORT;
-  // Where the voiceover tool reaches the studio itself.
-  env.STUDIO_ORIGIN = `http://localhost:${process.env.PORT ?? "3200"}`;
-  return env;
-}
-
 // Recorded with the conversation on its first turn (Claude Code keeps the
 // system prompt fixed for a session), so it holds only what never changes
 // for this film; the rest goes with each message.
@@ -373,6 +443,32 @@ The film's sound design is sound/score.js (music in Strudel, effects in Tone.js,
 No other shell commands are available, and there is no web access.${video}
 
 How to reply: work silently (write no text while you work), then end with at most two short sentences, under 35 words in all, saying what changed on screen in visual words. Plain text only: no lists, no headings, no bold, no code, no file names. Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
+}
+
+// ─── The same job for Codex ──────────────────────────────────────────────────
+
+// Codex has no Skill tool: a skill is read as a file instead. Applied to the
+// instructions and to each message.
+const forCodex = (text: string) =>
+  text.replace(/\b[Ll]oad the ([a-z0-9-]+) skill/g, (_, name: string) => `Read ${path.join(ROOT, ".claude/skills", name, "SKILL.md")}`);
+
+function codexInstructions(id: string, kind: Film["kind"]) {
+  return forCodex(systemPrompt(id, kind)).replace(
+    "No other shell commands are available, and there is no web access.",
+    `Read files with plain commands (cat, sed, ls, rg) and change the film's files with apply_patch. Run no other programs than the ones above. The house rules are in ${path.join(ROOT, "CLAUDE.md")}. There is no web access, and the sandbox refuses writes outside the film's folder.`,
+  );
+}
+
+// A Codex step in the same plain words as a Claude one.
+function codexStep(kind: "command" | "edit", detail: string, dir: string): string | null {
+  if (kind === "edit") return stepFor("Edit", { file_path: detail || path.join(dir, "index.html") }, dir);
+  const said = stepFor("Bash", { command: detail }, dir);
+  if (said !== "Running a command") return said;
+  if (/\bapply_patch\b|>\s*\S|\btee\b|\bsed -i\b/.test(detail)) return "Editing the film";
+  if (detail.includes(`${path.sep}.claude${path.sep}skills${path.sep}`)) return "Looking up how to do it";
+  if (/\b(cat|sed|head|tail|nl|less|jq)\b/.test(detail)) return detail.includes(ROOT) && !detail.includes(dir) ? "Looking at the house style" : "Reading the film";
+  if (/\b(ls|rg|grep|find|fd|tree)\b/.test(detail)) return "Looking around";
+  return "Running a command";
 }
 
 // ─── Video films ─────────────────────────────────────────────────────────────
@@ -458,6 +554,7 @@ function userMessage(
   wentBack: string | null,
   edit: string | null,
   rules = "",
+  recap: string | null = null,
 ) {
   const lines = [
     `<film>engine ${ENGINE_WORDS[film.engine]}, ${film.width}x${film.height}, ${film.fps} fps, ${film.duration} s, title "${film.title}"</film>`,
@@ -497,6 +594,7 @@ function userMessage(
   if (attached) lines.push(attached);
   const heard = referenceSoundNote(film.id, film.kind, context.attachments ?? [], context.sound);
   if (heard) lines.push(heard);
+  if (recap) lines.push(recap);
   lines.push(`<request>\n${prompt}\n</request>`);
   // Repeated every turn, since a conversation keeps its first system prompt.
   lines.push("<reply>Work silently. Then answer in at most two short plain sentences (under 35 words), no lists or formatting. Ask one short question only if you truly can't guess.</reply>");
@@ -521,6 +619,7 @@ export class StreamReader {
   constructor(
     private dir: string,
     private emit: (event: ChatEvent) => void,
+    private explainer: (raw: string) => string = explain,
   ) {}
 
   handle(msg: Json) {
@@ -541,7 +640,7 @@ export class StreamReader {
     }
     if (msg.type === "result") {
       if (msg.session_id) this.session = msg.session_id;
-      if (msg.is_error) this.failure = explain(String(msg.result ?? msg.subtype ?? ""));
+      if (msg.is_error) this.failure = this.explainer(String(msg.result ?? msg.subtype ?? ""));
     }
   }
 
@@ -670,4 +769,15 @@ export function explain(raw: string) {
   if (/enoent|command not found|spawn/.test(text)) return "Claude Code isn't installed where the studio can find it.";
   const firstLine = raw.trim().split("\n").find(Boolean);
   return firstLine ? `Claude stopped with an error: ${firstLine.slice(0, 200)}` : "Claude stopped without saying why. Try again.";
+}
+
+// The same, when the turn ran on the studio's API key: the problem is the
+// key or its account, not a sign-in.
+function explainKey(raw: string) {
+  const text = raw.toLowerCase();
+  if (/invalid (x-)?api.?key|authentication|401|not logged in|permission/.test(text)) {
+    return "The API key didn't work. Check it in the Claude Console, then paste it again under Connections, then AI.";
+  }
+  if (/credit balance|billing|402/.test(text)) return "The API key's account is out of credit. Add credit in the Claude Console, or switch this prompt to Claude.";
+  return explain(raw);
 }
