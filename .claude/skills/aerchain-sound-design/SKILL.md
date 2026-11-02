@@ -1,6 +1,6 @@
 ---
 name: aerchain-sound-design
-description: Read before writing or changing a studio film's sound (films/<id>/sound/score.js). How the score works (Strudel music beds, Tone.js hits at exact film times), how to render it and "hear" the result, the Aerchain sonic language, syncing to the film's moments, ducking under speech in video films, loudness, and licences.
+description: Read before writing or changing a studio film's sound (films/<id>/sound/score.js). How the score works (Strudel music beds, Tone.js hits at exact film times), how to render it and "hear" the result, the Aerchain sonic language, syncing to the film's moments, ducking under speech in video films, loudness, following reference sounds the person attaches, and licences.
 ---
 
 # Sound design in the studio
@@ -82,6 +82,25 @@ The person sees the sound on the timeline as two lanes, **Music** (your Strudel 
 
 **Their own volume edits** live in `sound/mix.json`: spans of one stem made louder, quieter or muted, with 20 ms fades at the edges. The studio applies them on top of whatever you render (the stems are mixed again with them, then given the same loudness gain), and they stay when you change the score. Never edit `mix.json` (or the stems, `master.json` or the peaks files). The sound command's report lists them, so you know a quiet span may be their choice rather than the score.
 
+## Reference sounds
+
+The person can attach sound files to a prompt (often with a picked span): "make this feel like that". They're saved in the film's `refs/`, and the message carries a `<references>` note. You can't hear and can't Read audio, so listen with the listening tool (the note gives the exact command):
+
+```
+node <project>/scripts/studio/listen.mjs --film <id> refs/<file> [--from s --to s]
+node <project>/scripts/studio/listen.mjs --film <id> --stem music|effects|mix [--from s --to s]
+```
+
+It prints tempo (BPM, confidence) and beats, onsets, how hits attack and decay, the key and main notes over time, loudness (LUFS) and a loudness envelope, brightness (spectral centroid) over time, the low, mid and high balance, stereo width, and any words. The `--stem` form hears the film's own rendered sound in film seconds, so you can compare like with like.
+
+1. Listen to each reference. Pick out the two or three qualities that matter for the ask: often tempo or rhythm, the shape of the hits (sharp and short, or soft and ringing), brightness and register, how busy it is, how wide.
+2. Listen to the picked span of the film's stem with the same `--from` and `--to`, and note the gap.
+3. Change only the picked stem and span (as in "Changing one part"), towards those qualities, in the Aerchain language: a "huge trailer hit" reference becomes the cleanest version of that, not a boom.
+4. Render with the sound command, listen to the stem again, and check the numbers moved the right way (tempo, attack, centroid, balance).
+5. Start your reply by naming what you took from each reference in a few words: "From beat.mp3: its 92 BPM swing and soft, short kick."
+
+References are guidance only. Never copy, sample, load or play the reference audio in the film, never point the score or the edit at a file in `refs/`, and don't lift a melody note for note. Make an original sound that shares the qualities. If they want that exact recording in a video film, tell them to bring it in as media.
+
 ## The Aerchain sonic language
 
 Clean, minimal, digital, warm underneath. Like the lines: flat, precise, nothing decorative.
@@ -106,6 +125,7 @@ Clean, minimal, digital, warm underneath. Like the lines: flat, precise, nothing
 
 - **Strudel** (music) is **AGPL-3.0**. Fine for this in-house tool on Aerchain's Mac. Don't suggest offering the studio to people outside Aerchain as a hosted service; that would oblige publishing its source.
 - **Tone.js** (effects) is MIT. The rendered audio is ours to use anywhere.
+- **Reference sounds** the person attaches belong to someone else, often under copyright. They only guide the sound; nothing of theirs (audio, samples, a recognisable melody) goes into the film.
 
 ## Before you finish
 

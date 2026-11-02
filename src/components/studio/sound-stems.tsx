@@ -1,6 +1,6 @@
 "use client";
 
-import { type PointerEvent, type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type DragEvent, type PointerEvent, type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MultipleCrossCancelIcon, RefreshIcon } from "@/components/icons";
 import type { SoundStem } from "@/lib/studio/sound";
@@ -10,14 +10,16 @@ import { PromptBox } from "./prompt-box";
 import { cn } from "@/lib/utils";
 import { CARD, ICON_BUTTON } from "./panel";
 import { SoundWave } from "./sound-lane";
+import { isAudioFile, useAttachments } from "./use-attachments";
 import type { SoundEditor } from "./use-sound-edit";
 
 // The sound design as two lanes, Music and Effects, each its own stem's
 // waveform. Drag across a lane to pick a stretch of it (it snaps to the
 // playhead and the film's moments); click to pick the whole lane, or the
 // edit under the click. A small panel over the pick sets its volume or
-// mutes it, puts it back, or hands just that stretch to Claude. Escape
-// lets go.
+// mutes it, puts it back, or hands just that stretch to Claude, with sound
+// files attached as references ("make it feel like this"); dropping a
+// sound on the panel does that straight away. Escape lets go.
 
 export const STEM_LABEL: Record<SoundStem, string> = { music: "Music", effects: "Effects" };
 
@@ -162,6 +164,10 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
   // "Change with Claude" turns the panel into a prompt box, right here.
   const [asking, setAsking] = useState(false);
   const [words, setWords] = useState("");
+  // Reference sounds (or pictures, notes) for Claude, kept while the panel
+  // flips back and forth.
+  const files = useAttachments(`/api/studio/films/${editor.filmId}/attachments`, { audio: true });
+  const [over, setOver] = useState(false);
   const { pick } = editor;
   const width = asking ? ASK_W : W;
 
@@ -201,13 +207,52 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
 
   if (!box || typeof document === "undefined") return null;
   const gain = draft ?? editor.level.gain;
+  const hasSound = files.items.some((f) => f.kind === "audio" && !f.error);
+
+  const send = async () => {
+    const attached = await files.flush();
+    const fallback = attached.some((a) => a.kind === "audio")
+      ? "Make this part sound more like the sound I attached."
+      : attached.length
+        ? "Have a look at what I attached."
+        : "";
+    const text = words.trim() || fallback;
+    if (!text) return;
+    editor.send(text, attached);
+    files.clear();
+    setWords("");
+    setAsking(false);
+    editor.setPick(null);
+  };
+
+  // A sound dropped on the panel: ask Claude with it attached. (Over the
+  // prompt box, the box takes the drop itself.)
+  const hasFiles = (e: DragEvent<HTMLElement>) => e.dataTransfer.types.includes("Files");
+  const onDragOver = (e: DragEvent<HTMLElement>) => {
+    if (!hasFiles(e) || asking) return;
+    e.preventDefault();
+    setOver(true);
+  };
+  const onDrop = (e: DragEvent<HTMLElement>) => {
+    setOver(false);
+    if (!hasFiles(e) || e.defaultPrevented) return;
+    const dropped = [...e.dataTransfer.files];
+    if (!dropped.some(isAudioFile)) return; // not a sound: the studio handles it as before
+    e.preventDefault(); // claimed, so it isn't brought in as footage
+    files.add(dropped);
+    setAsking(true);
+  };
   return createPortal(
     <section
       aria-label={`Sound, ${editor.label}`}
       onPointerDown={(e) => e.stopPropagation()}
+      onDragOver={onDragOver}
+      onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOver(false)}
+      onDrop={onDrop}
       className={cn(
         CARD,
         "fixed z-50 flex animate-in flex-col gap-1.5 p-2 fade-in-0 zoom-in-95 duration-150 transition-[width,left] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+        over && "ring-1 ring-[#F55A00]",
       )}
       style={{ left: box.left, bottom: box.bottom, width }}
     >
@@ -222,20 +267,14 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
           <PromptBox
             value={words}
             onChange={setWords}
-            onSend={() => {
-              const text = words.trim();
-              if (!text) return;
-              editor.send(text);
-              setWords("");
-              setAsking(false);
-              editor.setPick(null);
-            }}
+            onSend={() => void send()}
+            attachments={files}
             running={editor.running}
             queueing
             autoFocus
             onEscape={() => setAsking(false)}
             maxRows={4}
-            placeholder="Make the hit softer and a little later"
+            placeholder={hasSound ? "What should it take from this sound?" : "Make the hit softer and a little later"}
             chip={editor.label}
             className="bg-white/[0.04]"
           />
@@ -243,7 +282,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
       ) : (
       <>
       <header className="flex h-7 items-center gap-1 ps-1.5">
-        <h2 className="me-auto truncate font-medium text-[12px] text-white/85">{editor.label}</h2>
+        <h2 className="me-auto truncate font-medium text-[12px] text-white/85">{over ? "Drop a sound for Claude to follow" : editor.label}</h2>
         <button type="button" className={cn(ICON_BUTTON, "size-6 [&_svg]:size-3.5")} onClick={() => editor.setPick(null)} aria-label="Close this part of the sound">
           <MultipleCrossCancelIcon aria-hidden="true" />
         </button>

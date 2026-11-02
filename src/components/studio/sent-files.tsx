@@ -1,10 +1,12 @@
 "use client";
 
 import type { Attachment } from "@/lib/studio/contract";
-import { KIND_LABEL } from "./use-attachments";
+import { MusicBeamNoteIcon } from "@/components/icons";
+import { clockText, KIND_LABEL } from "./use-attachments";
 
 // The files a sent message carried, under it in the chat: a small picture
-// for images, the kind and name for the rest. Each opens in a new tab.
+// for images, a note and its length for sounds, the kind and name for the
+// rest. Each opens in a new tab.
 export function SentFiles({ files, urlOf }: { files: Attachment[]; urlOf: (path: string) => string }) {
   if (!files.length) return null;
   return (
@@ -22,12 +24,17 @@ export function SentFiles({ files, urlOf }: { files: Attachment[]; urlOf: (path:
               // biome-ignore lint/performance/noImgElement: the film's own attached file
               // eslint-disable-next-line @next/next/no-img-element
               <img src={urlOf(f.path)} alt="" className="size-5 shrink-0 rounded-[4px] object-cover" />
+            ) : f.kind === "audio" ? (
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-[#F55A00]/15 text-[#ff9a5c] [&_svg]:size-3">
+                <MusicBeamNoteIcon aria-hidden="true" />
+              </span>
             ) : (
               <span className="flex h-5 shrink-0 items-center rounded-[4px] bg-white/[0.08] px-1 font-medium text-[10px] text-white/60 uppercase tracking-[0.04em]">
                 {KIND_LABEL[f.kind]}
               </span>
             )}
             <span className="truncate">{f.name}</span>
+            {f.kind === "audio" && f.seconds ? <span className="shrink-0 font-mono text-[10.5px] text-white/40 tabular-nums">{clockText(f.seconds)}</span> : null}
           </a>
         </li>
       ))}
