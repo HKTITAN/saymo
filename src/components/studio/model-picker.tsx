@@ -38,10 +38,17 @@ export function ModelPicker({ provider, onChange }: { provider: ProviderId; onCh
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Hint label="Choose the AI for this prompt">
         <Popover.Trigger
-          className={cn(PILL_BUTTON, "h-7 gap-1 px-2 text-white/60 hover:bg-white/[0.08] hover:text-white data-popup-open:bg-white/[0.08] data-popup-open:text-white [&_svg]:size-3")}
+          className={cn(PILL_BUTTON, "h-7 min-w-0 !shrink gap-1 px-1.5 text-white/60 hover:bg-white/[0.08] hover:text-white data-popup-open:bg-white/[0.08] data-popup-open:text-white [&_svg]:size-3 [&_svg]:shrink-0")}
           aria-label={`AI for this prompt: ${PROVIDERS[provider].name}`}
         >
-          {PROVIDERS[provider].short}
+          {/* "Opus 5.5 · High": when the row is tight, the effort shortens
+              first and the model's name stays whole. */}
+          <span className="flex min-w-0">
+            <span className="shrink-0">{PROVIDERS[provider].short.split(" · ")[0]}</span>
+            {PROVIDERS[provider].short.includes(" · ") ? (
+              <span className="min-w-0 truncate whitespace-pre">{` · ${PROVIDERS[provider].short.split(" · ").slice(1).join(" · ")}`}</span>
+            ) : null}
+          </span>
           <ChevronDownIcon aria-hidden="true" />
         </Popover.Trigger>
       </Hint>

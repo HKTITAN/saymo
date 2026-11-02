@@ -2,7 +2,6 @@
 
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUpIcon, MultipleCrossCancelIcon, MusicBeamNoteIcon, PaperclipVerticalIcon } from "@/components/icons";
-import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { DictationNotice, MicButton, RecordingBar } from "./mic-button";
 import { Hint } from "./panel";
@@ -247,7 +246,9 @@ export function PromptBox({
       {listening ? (
         <RecordingBar d={d} view={view} />
       ) : (
-      <div className="flex items-center gap-1">
+      // One row that always fits the box: the buttons keep their size and
+      // the AI picker's label shortens first.
+      <div className="flex min-w-0 items-center gap-0.5 [&>*]:shrink-0">
         {attachments ? (
           <>
             <Hint label={attachments.audio ? "Attach sounds, images, PDFs or documents" : "Attach images, PDFs or documents"}>
@@ -279,18 +280,22 @@ export function PromptBox({
         <span className="ms-auto" />
         <MicButton d={d} view={view} />
         {running && onStop ? (
+          // A square "stop" mark, as in every player: Claude's working line
+          // above already shows it's busy, so no spinner here.
           <Hint label="Stop Claude">
             <button
               type="button"
               onClick={onStop}
-              className="inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-[8px] bg-white/[0.1] px-2.5 font-medium text-[12px] text-white/85 outline-none transition-colors hover:bg-white/[0.15] focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Stop Claude"
+              className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[8px] bg-white/[0.1] text-white/85 outline-none transition-colors hover:bg-white/[0.16] focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Spinner className="size-3" />
-              Stop
+              <span aria-hidden="true" className="size-2.5 rounded-[2.5px] bg-current" />
             </button>
           </Hint>
         ) : null}
-        {!running || queueing ? (
+        {/* While Claude works, the arrow (which queues) shows once there's
+            something to queue; until then Stop has the room. */}
+        {!running || (queueing && (canSend || !onStop)) ? (
           <Hint label={running ? "Add to the queue" : "Send"} keys={["↵"]}>
             <button
               type="button"

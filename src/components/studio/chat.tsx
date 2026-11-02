@@ -266,7 +266,7 @@ export function ChatPanel({
                 aria-pressed={pointing}
                 className={cn(
                   PILL_BUTTON,
-                  "h-7 px-2.5",
+                  "h-7 px-1.5",
                   pointing ? "bg-[#F55A00] text-white hover:bg-[#ff6a14]" : "text-white/60 hover:bg-white/[0.08] hover:text-white",
                 )}
               >
