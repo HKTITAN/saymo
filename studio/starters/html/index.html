@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <!--
-      A studio film, written for HyperFrames: HTML and CSS drawn by a paused
-      GSAP timeline at window.__timelines.main, which the studio (and the
+      A studio film, written for HyperFrames: HTML and CSS moved by a Motion
+      sequence (motion.dev), wrapped by filmTimeline() (assets/timeline.js)
+      and registered at window.__timelines.main, which the studio (and the
       renderer) seeks frame by frame. Nothing here plays on its own.
 
       The studio sets two things before this page's scripts run:
@@ -20,7 +21,8 @@
         3.60  black slides back in from the middle bands outwards
         5.00  all black again, the headline still up: it loops
     -->
-    <script src="assets/vendor/gsap.min.js"></script>
+    <script src="assets/vendor/motion.min.js"></script>
+    <script src="assets/timeline.js"></script>
     <style>
       @font-face {
         font-family: "Bricolage Grotesque";
@@ -135,6 +137,11 @@
       };
 
       const landing = (p) => 0.5 * p + 2 * p * p - 1.5 * p ** 3; // sets off at half speed, eases in
+      // Expo out: fast, then a long soft stop (exactly 0 at the start and 1 at the end).
+      const expoOut = (p) => {
+        const q = 1 - p;
+        return 1 - (2 ** (10 * (q - 1)) * q + q ** 6 * p);
+      };
       const ringOf = (b) => Math.abs(b + 0.5 - BANDS / 2);
       const outwardLag = (r) => {
         const b = Math.floor(r / BAND);
@@ -161,7 +168,8 @@
         return g;
       };
 
-      const tl = gsap.timeline({ paused: true });
+      // Every move, as one Motion sequence: [element, values, { at, duration, ease }].
+      const sequence = [];
       const lines = document.getElementById("lines");
       for (let r = 0; r < ROWS; r++) {
         const b = Math.floor(r / BAND);
@@ -176,8 +184,8 @@
         const black = layer(r, BLACK);
         black.id = `black-${r}`;
         lines.append(accent, black);
-        tl.fromTo(accent, { x: W }, { x: to, duration: T.travel, ease: landing }, T.accent + up);
-        tl.fromTo(black, { x: W }, { x: 0, duration: T.cross, ease: landing }, T.black + ringOf(b) * T.ring + outwardLag(r) * T.lag);
+        sequence.push([accent, { x: [W, to] }, { duration: T.travel, ease: landing, at: T.accent + up }]);
+        sequence.push([black, { x: [W, 0] }, { duration: T.cross, ease: landing, at: T.black + ringOf(b) * T.ring + outwardLag(r) * T.lag }]);
       }
 
       // The headline, one block per line, each rising out of its own line box.
@@ -192,11 +200,11 @@
           inner.textContent = text;
           line.append(inner);
           headline.append(line);
-          tl.fromTo(inner, { yPercent: 105 }, { yPercent: 0, duration: s(0.7), ease: "expo.out" }, T.words + i * s(0.08));
+          sequence.push([inner, { y: ["105%", "0%"] }, { duration: s(0.7), ease: expoOut, at: T.words + i * s(0.08) }]);
         });
 
-      // Hold to the end, so the loop is the film's full length.
-      tl.set({}, {}, FILM.duration);
+      // Seekable to the end, so the loop is the film's full length.
+      const tl = filmTimeline(sequence, { duration: FILM.duration });
       window.__timelines = window.__timelines || {};
       window.__timelines.main = tl;
     </script>

@@ -28,15 +28,17 @@ Pick by what the film needs; stay with the film's current engine unless it can't
 
 ### html (default): HyperFrames
 
-`index.html` is the whole film: HTML and CSS for what's on screen, one **paused** GSAP timeline for how it moves.
+`index.html` is the whole film: HTML and CSS for what's on screen, one Motion sequence (motion.dev, MIT) for how it moves.
 
 - The root element carries `data-composition-id="main"`, `data-start="0"`, `data-duration`, `data-fps`, `data-width`, `data-height`, matching film.json. Timed elements carry `class="clip"`, `data-start`, `data-duration`, `data-track-index`.
-- The timeline is `gsap.timeline({ paused: true })` and is registered as `window.__timelines["main"]`. Never play it, never use `repeat: -1`, `Date.now()`, `Math.random()` without a seed, or timers: the studio seeks it to any moment and every moment must look the same each time.
-- End the timeline with `tl.set({}, {}, DURATION)` so its length is the film's length.
+- Load `assets/vendor/motion.min.js` then `assets/timeline.js` (both come with the starter; copy them from `studio/starters/html/assets/` if a film lacks them). Build every move into one sequence array, `[element, { x: [from, to] }, { at, duration, ease }]`, then `const tl = filmTimeline(sequence, { duration: FILM.duration })` and register it as `window.__timelines["main"] = tl`. The starter's `index.html` is the pattern; the hyperframes skill's `references/runtimes.md` "Motion" lists eases, springs, stagger and counters.
+- Never call `animate()` outside the sequence, play it, or register it unwrapped; never use `repeat: Infinity`, `Date.now()`, `Math.random()` without a seed, or timers: the studio seeks the timeline to any moment and every moment must look the same each time.
+- Give every value both ends (`[from, to]`); `duration` in `filmTimeline()` makes the timeline the film's length.
+- **GSAP:** only in films made before Motion, which load `assets/vendor/gsap.min.js` and build `gsap.timeline({ paused: true })`. Keep such a film in GSAP unless the person asks to move it; never add GSAP to a film, and never copy GSAP code from a registry block, caption preset or other skill: write it as Motion. The product edition of the studio doesn't include GSAP and won't play or render a GSAP film.
 - Read params as `const P = Object.assign({ accent: "#F55A00" }, window.__params);` before building anything.
 - Give every element a person might point at an `id` (`#headline`, `#orange-bar`). When they point at something, its id is in the message.
 - Fonts and images go in `assets/`, referenced by relative paths.
-- Lean on the **hyperframes** skill (its render contract and what each kind of video needs) and the **gsap-core**, **gsap-timeline**, **gsap-plugins**, **gsap-utils** and **gsap-performance** skills. Ignore any instruction in them to run `npx hyperframes …`, start a preview, install packages, render or open a browser: you can't here, and the studio does it.
+- Lean on the **hyperframes** skill (its render contract, its "Motion" notes in `references/runtimes.md`, and what each kind of video needs) and **motion-design** for timing. The **gsap-*** skills are only for films made before Motion. Ignore any instruction in them to run `npx hyperframes …`, start a preview, install packages, render or open a browser: you can't here, and the studio does it.
 
 ### react: Remotion
 

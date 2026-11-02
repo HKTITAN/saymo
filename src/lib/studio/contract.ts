@@ -12,7 +12,8 @@ import type { ProviderId } from "./ai-types";
 // ─── Films ──────────────────────────────────────────────────────────────────
 
 // How a film is written.
-//   html  HyperFrames: one index.html, GSAP timeline in window.__timelines.main.
+//   html  HyperFrames: one index.html, a Motion sequence wrapped by
+//         filmTimeline() in window.__timelines.main (GSAP in older films).
 //         The default: instant preview, Claude writes it best.
 //   react Remotion: src/Film.jsx, a React component using useCurrentFrame().
 //         For data-driven films, captions, audio and video clips.

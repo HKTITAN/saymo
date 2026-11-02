@@ -120,7 +120,7 @@ Read those reports: the gaps they list are the next round. Helpers stop at usage
 
 Borrowed from github.com/MengTo/Skills, agent-skills/web-design/html-demo (MIT, by Meng To; licence beside this file). The Vite preview plugin is left out on purpose (it can serve any local path). In the studio:
 
-- **Engine:** use its View(t) contract and timing for html (HyperFrames) films that show an app working, such as SpendOS walkthroughs: the film's GSAP timeline is the one clock, so every frame stays a pure function of time.
+- **Engine:** use its View(t) contract and timing for html (HyperFrames) films that show an app working, such as SpendOS walkthroughs: the film's timeline (its Motion sequence, wrapped by `filmTimeline()`) is the one clock, so every frame stays a pure function of time.
 - **The window:** copy `scripts/step-window.js` and `step-window.css` into the film's folder if a Mac-style window helps; restyle it with the film's brand tokens.
 - **Numbers to keep:** the pointer arrives 0.3 to 0.6 s before a click, presses 0.15 to 0.2 s and glides 0.5 to 0.9 s; results show a working state, then the reveal, then a settle; every label is copied from the real app.
 - **Scripts:** you can't run its shoot script in a turn; check frames with the studio's check command.

@@ -12,6 +12,8 @@ metadata:
   version: "1.0.0"
 ---
 
+> **In Motion Studio:** the principles here apply as they are; build them in Motion (motion.dev) as the `hyperframes` skill's `references/runtimes.md` "Motion" shows, not in GSAP. A spring there is `{ type: "spring", stiffness, damping }` or `{ type: "spring", visualDuration, bounce }`.
+
 # Motion Design Skill
 
 ## When to Apply

@@ -54,7 +54,7 @@ import { startSound } from "./sound-render";
 // and undo work the same whichever one ran.
 
 const ENGINE_WORDS: Record<Film["engine"], string> = {
-  html: "html (HyperFrames: index.html with a paused GSAP timeline)",
+  html: "html (HyperFrames: index.html moved by a Motion sequence wrapped by filmTimeline(); GSAP only in films made before Motion)",
   react: "react (Remotion: src/Film.jsx)",
   rust: "rust (fframes: a Cargo crate)",
 };

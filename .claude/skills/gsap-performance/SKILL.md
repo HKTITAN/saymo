@@ -4,6 +4,8 @@ description: Official GSAP skill for performance — prefer transforms, avoid la
 license: MIT
 ---
 
+> **In Motion Studio:** new films move with Motion (motion.dev), not GSAP: see the `hyperframes` skill's `references/runtimes.md`, "Motion". Use this skill only for a film made before Motion that already loads `assets/vendor/gsap.min.js`, and never add GSAP to a film. The product edition of the studio doesn't include GSAP at all.
+
 # GSAP Performance
 
 ## When to Use This Skill
