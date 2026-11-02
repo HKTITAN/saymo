@@ -168,9 +168,10 @@ Google Chrome.
 Every film can have a sound track, composed as code in
 `films/<id>/sound/score.js` (the contract is `src/lib/studio/sound.ts`):
 
-- **Music** in [Strudel](https://strudel.cc) (pattern-based live-coding
-  music; its synths only, nothing is downloaded) for beds, pulses and
-  rhythm.
+- **Music** as a music bed (`studio/sound/bed.js`, the studio's own code
+  played with Tone.js): named parts, each a loop of notes with a synth or
+  noise sound, an envelope, filters that can sweep slowly, a room and an
+  echo, for beds, pulses and rhythm. Nothing is downloaded.
 - **Effects** in [Tone.js](https://tonejs.github.io) at exact film times,
   for hits on the film's moments: air arriving from the right with a
   colour, a tick as a line lands, one bright note when orange lands.
@@ -191,10 +192,16 @@ edit change; it waits its turn with video renders (one heavy job at a time,
 its music dips under speech by itself. Starters come with a score; the
 **aerchain-sound-design** skill teaches Claude the Aerchain sonic language.
 
-Set up once: `npm ci --prefix studio/sound`. Licences: Strudel is
-**AGPL-3.0**, fine for this in-house tool; offering the studio to people
-outside Aerchain as a hosted service would oblige publishing its source.
-Tone.js is MIT. The rendered audio is ours to use anywhere.
+Set up once: `npm ci --prefix studio/sound`. Films scored before the music
+bed have [Strudel](https://strudel.cc) code as their music. In-house they
+still play, through `studio/sound/strudel` (`npm ci --prefix
+studio/sound/strudel`; setup does it unless given `--product`), and
+`node scripts/studio/convert-score.mjs <id>` turns one into a music bed,
+keeping the original as `sound/score.strudel.js` and printing how close the
+two sound. The product edition (`STUDIO_EDITION=product`) never installs or
+bundles Strudel. Licences: the bed and Tone.js are MIT or our own; Strudel
+is **AGPL-3.0**, which is why it stays in-house. The rendered audio is ours
+to use anywhere.
 
 The first experiments are still here: `studio/compositions.json` lists the
 same 4 second "Aerchain bands" film made in each engine, rendered with

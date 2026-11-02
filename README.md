@@ -78,5 +78,5 @@ The studio is for in-house use at Aerchain. It builds on:
 - Tone.js (MIT)
 - skullet (MIT)
 - Bricolage Grotesque (OFL)
-- Strudel (AGPL 3.0): fine in-house, but offering the studio to people outside Aerchain as a hosted service would mean publishing its source.
+- Strudel (AGPL 3.0), in-house only: it plays the music of films made before the studio's own music bed. The product edition leaves it out (see docs/launch).
 - Remotion: free for individuals, companies of up to 3 people and evaluation. Aerchain needs a company licence before using React films for real work.

@@ -1,0 +1,15 @@
+{
+  "name": "aerchain-studio-sound-strudel",
+  "private": true,
+  "type": "module",
+  "description": "In-house only: plays the music of films scored in Strudel, before the studio's own music bed. AGPL-3.0, so the product edition never installs or loads it.",
+  "license": "AGPL-3.0-or-later",
+  "dependencies": {
+    "@strudel/core": "1.2.6",
+    "@strudel/mini": "1.2.6",
+    "@strudel/tonal": "1.2.6",
+    "@strudel/transpiler": "1.2.6",
+    "@strudel/webaudio": "1.3.0",
+    "superdough": "1.3.0"
+  }
+}

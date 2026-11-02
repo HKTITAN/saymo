@@ -1,6 +1,6 @@
 ---
 name: aerchain-sound-design
-description: Read before writing or changing a studio film's sound (films/<id>/sound/score.js). How the score works (Strudel music beds, Tone.js hits at exact film times), how to render it and "hear" the result, the Aerchain sonic language, syncing to the film's moments, ducking under speech in video films, loudness, following reference sounds the person attaches, and licences.
+description: Read before writing or changing a studio film's sound (films/<id>/sound/score.js). How the score works (a music bed of looping parts, Tone.js hits at exact film times), how to render it and "hear" the result, the Aerchain sonic language, syncing to the film's moments, ducking under speech in video films, loudness, following reference sounds the person attaches, and licences.
 ---
 
 # Sound design in the studio
@@ -11,13 +11,25 @@ The contract is `src/lib/studio/sound.ts`. Read it once.
 
 ## The score
 
-`sound/score.js` is an ES module with one default export. It may not import anything: Strudel and Tone are provided.
+`sound/score.js` is an ES module with one default export. It may not import anything: Tone is provided.
 
 ```js
 export default {
-  // Music: Strudel code, as typed in the Strudel REPL.
-  music: `setcps(0.5)
-$: note("c1 ~ c1 ~").s("sine").decay(0.5).sustain(0).lpf(180)`,
+  // Music: a music bed, parts that loop at one tempo.
+  music: {
+    bpm: 120,
+    parts: {
+      pulse: { sound: "sine", notes: "c1 . c1 .", decay: 0.5, sustain: 0, lowpass: 180, gain: 0.9 },
+      pad: {
+        sound: "sawtooth",
+        notes: "c3+eb3+g3 | ab2+c3+eb3",
+        attack: 0.6, sustain: 0.8, release: 1.2,
+        lowpass: { from: 500, to: 1200, shape: "sine", bars: 8 },
+        gain: 0.06,
+        room: 0.4,
+      },
+    },
+  },
   musicGain: 0.5,      // 0..1, default 0.6
   musicStart: 0,       // film seconds, default 0
   musicFadeOut: 1,     // seconds at the end, default 1
@@ -35,22 +47,37 @@ $: note("c1 ~ c1 ~").s("sine").decay(0.5).sustain(0).lpf(180)`,
 - `at(seconds)` turns film time into audio time. Always schedule with it.
 - `marks` are film.json's moments; `params` are the film's current values (a `speed` param changes when things happen: divide times by it, as the starters do).
 - Video films also get `graphics` (each graphic on the timeline: `graphic`, `start`, `duration`) and `speech` (spans of film time where someone talks). Other films get empty lists.
-- **Deterministic only.** No `Math.random`, `Date.now`, `performance.now` or anything clock-timed in your own code: a score must sound identical every render. Strudel's `rand`, `perlin` and `irand` are seeded and fine. Tone's noise is seeded for you.
+- **Deterministic only.** No `Math.random`, `Date.now`, `performance.now` or anything clock-timed in your own code: a score must sound identical every render. The bed's noise and rooms are seeded, and so is Tone's noise.
 - `Tone.Reverb` builds its room asynchronously: make `effects` `async` and `await reverb.ready` before playing into it.
 
 ### When to use which
 
-| Strudel (`music`) | Tone.js (`effects`) |
+| The music bed (`music`) | Tone.js (`effects`) |
 | --- | --- |
-| Beds, pulses, rhythm, chords, anything that repeats in cycles | One-off hits that must land on an exact moment |
-| Tempo is `setcps(cycles per second)`; a cycle is a bar | Times are film seconds via `at()` |
+| Beds, pulses, rhythm, chords, anything that repeats in bars | One-off hits that must land on an exact moment |
+| Tempo is `bpm`; a bar is `beatsPerBar` beats (default 4) | Times are film seconds via `at()` |
 | Example: a sub pulse, a soft arpeggio, a pad | Example: a whoosh into a mark, a tick, one bright note |
 
-**Strudel without samples.** Nothing is downloaded, so sample banks (`s("bd sd")`, `bank(...)`) don't exist. Use the synths: `s("sine")`, `"triangle"`, `"square"`, `"sawtooth"`, `"supersaw"`, `"pulse"`, noise as `"white"`, `"pink"`, `"brown"`, and `"zzfx"`. Make drums from synths in Tone instead (`MembraneSynth` for a kick or tick, `NoiseSynth` through a filter for a hat, `MetalSynth` sparingly).
+### The music bed
 
-Mini-notation reminders: `"c1 ~ c1 ~"` four steps with rests; `"<a b>"` one per cycle in turn; `"a*2"` twice; `"[c3,e3,g3]"` a chord; `$:` lines play together. Shape with `.attack() .decay() .sustain() .release() .lpf() .hpf() .lpq() .gain() .room() .delay() .delaytime() .delayfeedback() .pan()`; move them over time with signals like `sine.range(300, 1100).slow(4)`.
+`music` is `{ bpm, beatsPerBar, parts }`. Each part is named for what it plays (`pulse`, `pad`, `arp`, `glints`) and loops on its own; the contract with every setting is `MusicBed` in `src/lib/studio/sound.ts`.
 
-**Sync the tempo to the film.** Pick `setcps` so a cycle lines up with the film's moments: if things happen every 1.2 s, `setcps(1/1.2)` (or half/double). Start music at a mark with `musicStart`.
+**Notes.** `notes` is one loop of the part: bars split by `|`, each bar into equal steps by spaces.
+
+- A step is a note (`c2`, `eb3`, `f#4`; middle C is `c4`), notes joined by `+` for a chord (`c3+eb3+g3`), `.` for a rest, `_` to hold the step before for one more step (also across a bar line), or `x` for a hit with no pitch (noise parts).
+- `"c1 . c1 ."` is four steps a bar with a note on 1 and 3. `"c2 | ab1"` is one note a bar, two bars, looping. `"c3+g3+eb4 | _"` is one chord held for two bars. A bar can have any number of steps: `". . g5 d6"` puts two quick notes at the end.
+
+**Sound.** `sound`: `sine`, `triangle`, `square`, `sawtooth`, or noise as `white`, `pink`, `brown`. No samples. Make drums in Tone instead (`MembraneSynth` for a kick or tick, `NoiseSynth` through a filter for a hat, `MetalSynth` sparingly).
+
+**Shape.** Each note has a linear envelope held for its length: `attack`, `decay`, `sustain` (a level, 0 to 1) and `release`, in seconds. A pluck is `decay: 0.12, sustain: 0`; a pad is `attack: 0.6, sustain: 0.8, release: 1.2`. Then `lowpass` and `highpass` (Hz) with `lowpassQ` and `highpassQ` (dB, default 1), `gain` (1 is one strong voice; bed parts usually sit between 0.02 and 0.5), `pan` (-1 left to 1 right), `room` and `roomSize` (how much goes into a room, and its length in seconds), and `delay`, `delayTime` (seconds) and `delayFeedback` for an echo.
+
+**Slow movement.** `lowpass`, `highpass`, `gain` and `pan` can be a slow wave instead of a number: `{ from: 300, to: 1100, shape: "sine", bars: 8 }`. Shapes are `sine` (starts in the middle, rising), `rise`, `fall`, `triangle` and `square`; `bars` is how long one sweep takes. It glides through every note; add `hold: true` to fix each note at the wave's value when it starts.
+
+**Sync the tempo to the film.** Pick `bpm` so a bar lines up with the film's moments: if things happen every 2 s, `bpm: 120` (4 beats a bar), or half or double. Start the music at a mark with `musicStart`; bar 1 starts there.
+
+**Music drawn with Tone.** For something the bed can't express, `music` can be an async function like `effects` (it gets the same kit, plus `start`, the music's start). Prefer the bed: it's easier to change one part of.
+
+**Older films.** In-house, films made before the bed may have Strudel code (a string) as their music. It still plays. Leave it alone unless the person asks to change the music; then change it in place, as little as possible. Never write new Strudel music: new music is always a bed. A developer can turn a film's Strudel music into a bed with `node scripts/studio/convert-score.mjs <film-id>` (it keeps the original as `score.strudel.js`); that's not something to do in a chat turn.
 
 ## Hear what you made
 
@@ -72,11 +99,11 @@ The studio normalises every sound to about **-16 LUFS** with peaks under **-1.5 
 
 ## Changing one part
 
-The person sees the sound on the timeline as two lanes, **Music** (your Strudel `music`) and **Effects** (your Tone.js `effects`), rendered as two stems (`sound/music.wav`, `sound/effects.wav`) that add up to `sound.wav`. They can pick a span of one lane and either change its volume themselves or ask you about just that bit. Then the message carries a `<sound>` note: the stem and the film times.
+The person sees the sound on the timeline as two lanes, **Music** (your music bed) and **Effects** (your Tone.js `effects`), rendered as two stems (`sound/music.wav`, `sound/effects.wav`) that add up to `sound.wav`. They can pick a span of one lane and either change its volume themselves or ask you about just that bit. Then the message carries a `<sound>` note: the stem and the film times.
 
 - Change only what plays on that stem between those times. Everything else must render byte-identical: the same notes, hits, times and gains outside the span, and nothing on the other stem moves. Read the score first and find exactly which notes or hits fall in the span.
 - Effects: retime, replace or reshape only the hits scheduled inside the span (a tail that rings past its end is fine).
-- Music: Strudel plays in cycles, so prefer a change that is gated to the span, for example a separate `$:` line or a `.mask()` / `.when()` that is only on between those times, and a matching gate that silences the old part there. Don't change `setcps`, `musicStart`, `musicGain` or the other lines: they move the whole bed.
+- Music: parts loop in bars, so gate the change to the span with `from` and `to` (film seconds): end the old part there (`to`), add the new part with `from` and `to` set to the span, and if the old part plays again after it, add a copy of it from the span's end. Notes are gated by when they start, and every part keeps counting bars from `musicStart`, so the rhythm doesn't shift. Don't change `bpm`, `musicStart`, `musicGain` or the other parts: they move the whole bed.
 - "Try another" means a fresh take on that span only: a different sound, rhythm or note in the same place, same overall level.
 - Render with the sound command as usual and check the onsets outside the span are unchanged.
 
@@ -119,12 +146,12 @@ Clean, minimal, digital, warm underneath. Like the lines: flat, precise, nothing
 - Music dips to `duck` (default 0.3, about -10 dB) while someone speaks, eased in and out. Use 0.2 for dense talk, 0.5 for sparse lines, 1 to switch it off.
 - Prefer no music under a talking head unless asked; a light hit on each graphic is enough (the starter does this).
 - Hits should not land on a word. Use `speech` to nudge a hit into the gap before or after.
-- Music-led edits (event recaps): pick `setcps` so cuts land on cycles; tell the person where the beats are so cuts can follow.
+- Music-led edits (event recaps): pick `bpm` so cuts land on bar lines; tell the person where the beats are so cuts can follow.
 
 ## Licences
 
-- **Strudel** (music) is **AGPL-3.0**. Fine for this in-house tool on Aerchain's Mac. Don't suggest offering the studio to people outside Aerchain as a hosted service; that would oblige publishing its source.
-- **Tone.js** (effects) is MIT. The rendered audio is ours to use anywhere.
+- **The music bed** is the studio's own code, played with **Tone.js** (MIT), as are the effects. The rendered audio is ours to use anywhere.
+- **Strudel**, which older in-house films' music is written in, is **AGPL-3.0**. It's only in the in-house edition; never add it to anything else, and don't suggest it for new music.
 - **Reference sounds** the person attaches belong to someone else, often under copyright. They only guide the sound; nothing of theirs (audio, samples, a recognisable melody) goes into the film.
 
 ## Before you finish

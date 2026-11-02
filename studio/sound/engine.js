@@ -1,11 +1,13 @@
 // The sound engine that runs inside headless Chrome (bundled by
-// scripts/studio/sound.mjs with esbuild into one script): it plays a film's
-// score into offline audio contexts, never to speakers, so a 20 second film
-// renders in a moment and the same score always gives the same sound.
+// scripts/studio/sound-engine.mjs with esbuild into one script): it plays a
+// film's score into offline audio contexts, never to speakers, so a 20
+// second film renders in a moment and the same score always gives the same
+// sound.
 //
-//   music    Strudel code (superdough synths, no samples: nothing is
-//            fetched), queried cycle by cycle and played into an
-//            OfflineAudioContext the length of the film.
+//   music    the studio's music bed (bed.js): an object of parts, played
+//            with Tone.js; or a function that draws music with Tone itself.
+//            In-house only, a string of Strudel code from before the bed,
+//            played by strudel/music.js when that's bundled in.
 //   effects  Tone.js, drawn inside Tone.Offline at exact film times.
 //
 // Each is brought to its gain (the music faded out at the end, and ducked
@@ -14,18 +16,12 @@
 // page, which also keeps the stems so the person's volume edits can be
 // mixed in again without playing the score.
 //
-// Strudel is AGPL-3.0 (in-house use only); Tone.js is MIT.
+// This file and bed.js use only Tone.js (MIT) and the browser. Strudel
+// (AGPL-3.0) is never imported here: the in-house build adds it through
+// inhouse.js, the product build leaves it out.
 
-import * as core from "@strudel/core";
-import * as mini from "@strudel/mini";
-import * as tonal from "@strudel/tonal";
-import { transpiler } from "@strudel/transpiler";
-import * as webaudio from "@strudel/webaudio";
 import * as Tone from "tone";
-
-const { evaluate, evalScope, Pattern, silence, stack } = core;
-const { superdough, setAudioContext, setSuperdoughAudioController, initAudio, registerSynthSounds, registerZZFXSounds, resetGlobalEffects } =
-  webaudio;
+import { playBed } from "./bed.js";
 
 // Every random number in the page comes from one seeded generator, reset at
 // the start of each render, so the noise in a whoosh is the same noise
@@ -60,93 +56,37 @@ async function settled() {
   }
 }
 
-let scoped = false;
-
-// What the Strudel REPL adds on top of the core: `$:` lines, setcps and
-// setcpm, all() and each(). Gathered here instead of played live.
-function strudelScope(state) {
-  Pattern.prototype.p = function (id) {
-    if (typeof id === "string" && (id.startsWith("_") || id.endsWith("_"))) return silence;
-    const key = typeof id === "string" && id.includes("$") ? `${id}${state.anonymous++}` : String(id);
-    state.patterns[key] = this;
-    return this;
-  };
-  Pattern.prototype.q = () => silence;
-  for (let i = 1; i < 10; ++i) {
-    Object.defineProperty(Pattern.prototype, `d${i}`, { get() { return this.p(i); }, configurable: true });
-    Object.defineProperty(Pattern.prototype, `p${i}`, { get() { return this.p(i); }, configurable: true });
+// Strudel music from before the bed (in-house builds only).
+async function renderStrudel(code, start, duration, sampleRate) {
+  const strudel = globalThis.__strudelMusic;
+  if (!strudel) {
+    throw new Error(
+      "This score's music is Strudel code, which this build of the studio doesn't play. Write the music as a music bed instead (the aerchain-sound-design skill shows how); in-house, node scripts/studio/convert-score.mjs <film-id> converts it.",
+    );
   }
-  const setcps = (v) => {
-    state.cps = Number(v);
-    return silence;
-  };
-  const setcpm = (v) => setcps(Number(v) / 60);
-  return evalScope({
-    setcps,
-    setCps: setcps,
-    setcpm,
-    setCpm: setcpm,
-    all: (f) => {
-      state.all.push(f);
-      return silence;
-    },
-    each: (f) => {
-      state.each = f;
-      return silence;
-    },
-    hush: () => silence,
-  });
+  const r = await strudel.render(code, start, duration, sampleRate, { settled });
+  return { ...r, engine: "strudel" };
 }
 
-async function strudelPattern(code) {
-  if (!scoped) {
-    await evalScope(core, mini, tonal, webaudio);
-    scoped = true;
-  }
-  const state = { patterns: {}, anonymous: 0, cps: 0.5, all: [], each: null };
-  await strudelScope(state);
-  let { pattern } = await evaluate(code, transpiler);
-  const keyed = Object.values(state.patterns);
-  if (keyed.length) pattern = stack(...(state.each ? keyed.map((x) => state.each(x)) : keyed));
-  for (const f of state.all) pattern = f(pattern);
-  if (!pattern || typeof pattern.queryArc !== "function") pattern = silence;
-  return { pattern, cps: state.cps > 0 && Number.isFinite(state.cps) ? state.cps : 0.5 };
-}
-
-// The music on its own, from `start` to the film's end.
-async function renderMusic(code, start, duration, sampleRate) {
-  const { pattern, cps } = await strudelPattern(code);
-  const length = Math.max(1, Math.round(duration * sampleRate));
-  const ctx = new OfflineAudioContext(2, length, sampleRate);
-  setAudioContext(ctx);
-  setSuperdoughAudioController(null); // made afresh for this context
-  await initAudio({ maxPolyphony: 128, multiChannelOrbits: false });
-  registerSynthSounds();
-  registerZZFXSounds();
-  const span = Math.max(0, duration - start);
-  // Ascending onsets, as Strudel's own renderer does (cut groups depend on it).
-  const haps = pattern
-    .queryArc(0, span * cps, { _cps: cps })
-    .filter((h) => h.hasOnset())
-    .sort((a, b) => a.whole.begin.valueOf() - b.whole.begin.valueOf());
-  let played = 0;
-  for (const hap of haps) {
-    const t = start + hap.whole.begin.valueOf() / cps;
-    if (t >= duration) continue;
-    hap.ensureObjectValue();
-    try {
-      await superdough(hap.value, t, hap.duration / cps, cps, t);
-      played++;
-    } catch (err) {
-      console.warn("[sound] a note could not be played:", err?.message ?? err);
-    }
-  }
-  await settled();
-  const buffer = await ctx.startRendering();
-  setAudioContext(null);
-  setSuperdoughAudioController(null);
-  resetGlobalEffects();
-  return { buffer, cps, notes: played };
+// The music bed (an object of parts), or music drawn with Tone by the
+// score's own function, from `start` to the film's end.
+async function renderToneMusic(music, start, duration, sampleRate, kitBase) {
+  let report = null;
+  const buffer = await Tone.Offline(
+    async (context) => {
+      const at = (s) => Math.max(0, Number(s) || 0);
+      if (typeof music === "function") {
+        await music({ ...kitBase, Tone, context, at, start });
+        report = { notes: null };
+      } else {
+        report = playBed(Tone, music, { start, duration, at });
+      }
+    },
+    duration,
+    2,
+    sampleRate,
+  );
+  return { buffer: buffer.get(), ...report, engine: typeof music === "function" ? "tone" : "bed" };
 }
 
 // The effects on their own, drawn with Tone at exact film times.
@@ -212,8 +152,10 @@ function mergeSpans(spans, gap = 0.6) {
 const clamp = (v, lo, hi, d) => (typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
 
 // The page's one entry: render a score module (its source text) for a film.
+// `musicOnly` (for comparing two versions of the music) plays the music at
+// full level with no fade and no effects.
 window.__sound = {
-  async render({ source, film, sampleRate = 48000 }) {
+  async render({ source, film, sampleRate = 48000, musicOnly = false }) {
     seed = 1;
     Math.random = random;
     const url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
@@ -236,14 +178,21 @@ window.__sound = {
     };
     const report = { music: null, effects: false };
     let music = null;
-    if (typeof score.music === "string" && score.music.trim()) {
+    const hasMusic =
+      (typeof score.music === "string" && score.music.trim()) ||
+      typeof score.music === "function" ||
+      (score.music && typeof score.music === "object");
+    if (hasMusic) {
       const start = clamp(score.musicStart, 0, duration, 0);
-      const r = await renderMusic(score.music, start, duration, sampleRate);
+      const r =
+        typeof score.music === "string"
+          ? await renderStrudel(score.music, start, duration, sampleRate)
+          : await renderToneMusic(score.music, start, duration, sampleRate, kitBase);
       music = r.buffer;
-      report.music = { cps: r.cps, notes: r.notes, start };
+      report.music = { engine: r.engine, cps: r.cps ?? null, bpm: r.bpm ?? null, notes: r.notes, start };
     }
     let effects = null;
-    if (typeof score.effects === "function") {
+    if (typeof score.effects === "function" && !musicOnly) {
       seed = 2; // effects have their own stream, so adding music never changes them
       effects = await renderEffects(score.effects, duration, sampleRate, kitBase);
       report.effects = true;
@@ -251,9 +200,9 @@ window.__sound = {
     const settings = {
       duration,
       sampleRate,
-      musicGain: clamp(score.musicGain, 0, 1, 0.6),
+      musicGain: musicOnly ? 1 : clamp(score.musicGain, 0, 1, 0.6),
       effectsGain: clamp(score.effectsGain, 0, 1, 0.8),
-      fadeOut: clamp(score.musicFadeOut, 0, duration, Math.min(1, duration)),
+      fadeOut: musicOnly ? 0 : clamp(score.musicFadeOut, 0, duration, Math.min(1, duration)),
       speech,
       duck: clamp(score.duck, 0, 1, 0.3),
     };

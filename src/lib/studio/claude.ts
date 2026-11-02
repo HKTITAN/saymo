@@ -505,7 +505,7 @@ To check your work, run exactly:
   node ${path.join(ROOT, "scripts/studio/check-film.mjs")}
 and fix what it reports. For a quick test video of a film that can't be checked any other way, run exactly:
   node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft
-The film's sound design is sound/score.js (music in Strudel, effects in Tone.js, as src/lib/studio/sound.ts describes). Load the aerchain-sound-design skill before writing or changing sound. To render the sound and hear what you made (loudness, and where each hit lands against the film's moments), run exactly:
+The film's sound design is sound/score.js (music as a music bed, effects in Tone.js, as src/lib/studio/sound.ts describes). Load the aerchain-sound-design skill before writing or changing sound. To render the sound and hear what you made (loudness, and where each hit lands against the film's moments), run exactly:
   ${soundCommand(id)}
 No other shell commands are available, and there is no web access.${video}
 
@@ -548,7 +548,7 @@ const soundCommand = (id: string) => `node ${path.join(ROOT, "scripts/studio/sou
 function soundSpanNote(s: NonNullable<ChatContext["sound"]>) {
   const what = s.stem === "both" ? "music and the effects" : s.stem;
   const span = `${s.from.toFixed(2)} s to ${s.to.toFixed(2)} s`;
-  return `<sound>They picked part of the sound design: the ${what} from ${span}. "This" or "this bit" means that. In sound/score.js, change only what plays on that ${s.stem === "both" ? "music and effects" : `stem (${s.stem === "music" ? "the Strudel music" : "the Tone.js effects"})`} from ${span}. Keep every other sound byte-identical in timing and level: the same notes, hits, times and gains outside that span${s.stem === "both" ? "" : `, and everything on the ${s.stem === "music" ? "effects" : "music"}`}. Load the aerchain-sound-design skill (its "Changing one part" section), then render the sound again with the sound command. Their own volume edits in sound/mix.json are applied on top of whatever you render; never edit mix.json.</sound>`;
+  return `<sound>They picked part of the sound design: the ${what} from ${span}. "This" or "this bit" means that. In sound/score.js, change only what plays on that ${s.stem === "both" ? "music and effects" : `stem (${s.stem === "music" ? "the music" : "the Tone.js effects"})`} from ${span}. Keep every other sound byte-identical in timing and level: the same notes, hits, times and gains outside that span${s.stem === "both" ? "" : `, and everything on the ${s.stem === "music" ? "effects" : "music"}`}. Load the aerchain-sound-design skill (its "Changing one part" section), then render the sound again with the sound command. Their own volume edits in sound/mix.json are applied on top of whatever you render; never edit mix.json.</sound>`;
 }
 
 const mediaTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/media-tool.mjs")} ${id}`;
