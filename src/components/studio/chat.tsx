@@ -161,7 +161,7 @@ export function ChatPanel({
         turn.running ? "h-[calc(100dvh-84px)]" : "h-auto max-h-[calc(100dvh-84px)]",
       )}
       pillClassName="top-[68px] left-4"
-      pillMark={turn.running ? <ClaudeAtWork /> : undefined}
+      pillMark={<ClaudeAtWork working={turn.running} />}
       style={style}
       bodyClassName="flex flex-col"
       actions={

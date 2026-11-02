@@ -383,14 +383,15 @@
   }
 }
 
-/* Claude's pixel mascot in the folded Claude pill while it works. */
+/* Claude's pixel mascot in the folded Claude pill (units are the mascot's
+   own SVG units). */
 @keyframes studio-clawd-bob {
   0%,
   100% {
     translate: 0 0;
   }
   50% {
-    translate: 0 -0.5px;
+    translate: 0 -4px;
   }
 }
 @keyframes studio-clawd-step {
@@ -399,17 +400,31 @@
     translate: 0 0;
   }
   50% {
-    translate: 0 -0.8px;
+    translate: 0 -6px;
   }
 }
-@keyframes studio-clawd-blink {
+@keyframes studio-clawd-arm {
   0%,
-  90%,
   100% {
-    scale: 1 1;
+    translate: 0 0;
   }
-  93% {
-    scale: 1 0.15;
+  50% {
+    translate: 0 6px;
+  }
+}
+@keyframes studio-clawd-look {
+  0%,
+  70%,
+  100% {
+    translate: 0 0;
+  }
+  74%,
+  80% {
+    translate: -4px 0;
+  }
+  84%,
+  90% {
+    translate: 4px 0;
   }
 }
 @keyframes studio-clawd-scrub {
@@ -417,6 +432,6 @@
     translate: 0 0;
   }
   to {
-    translate: 11.2px 0;
+    translate: 76px 0;
   }
 }
