@@ -7,7 +7,7 @@
 // usage:
 //   node scripts/studio/listen.mjs <file> [--from s] [--to s] [--words | --no-words]
 //   node scripts/studio/listen.mjs --film <id> refs/<file> [--from s] [--to s]
-//   node scripts/studio/listen.mjs --film <id> --stem music|effects|mix [--from s] [--to s]
+//   node scripts/studio/listen.mjs --film <id> --stem music|effects|voice|mix [--from s] [--to s]
 //
 // With --film, only that film's own files can be heard: a reference sound
 // attached to a prompt (in films/<id>/refs/) or the film's rendered sound
@@ -74,11 +74,11 @@ if (args.film !== null) {
   if (!existsSync(path.join(filmDir, "film.json"))) fail(`There's no film "${args.film}".`);
   if (args.stem !== null) {
     if (args.file) fail("Give a reference file or --stem, not both.");
-    const stems = { music: "music.wav", effects: "effects.wav", mix: "sound.wav" };
-    if (!stems[args.stem]) fail("--stem is music, effects or mix.");
+    const stems = { music: "music.wav", effects: "effects.wav", voice: "voice.wav", mix: "sound.wav" };
+    if (!stems[args.stem]) fail("--stem is music, effects, voice or mix.");
     source = path.join(filmDir, "sound", stems[args.stem]);
-    if (!existsSync(source)) fail(`This film has no rendered ${args.stem === "mix" ? "sound" : `${args.stem} stem`} yet. Render the sound first.`);
-    label = args.stem === "mix" ? "the film's sound (music and effects mixed)" : `the film's ${args.stem} stem`;
+    if (!existsSync(source)) fail(args.stem === "voice" ? "This film has no voiceover." : `This film has no rendered ${args.stem === "mix" ? "sound" : `${args.stem} stem`} yet. Render the sound first.`);
+    label = args.stem === "mix" ? "the film's sound (everything mixed)" : args.stem === "voice" ? "the film's voiceover" : `the film's ${args.stem} stem`;
   } else {
     if (!args.file) fail("Name a reference file (refs/<file>) or a --stem.");
     // Only files attached to this film, in its refs/ folder.

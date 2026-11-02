@@ -550,11 +550,19 @@ const FOOTAGE_FILES = ["original.*", "*.mp4", "*.mov", "*.m4v", "*.webm", "*.mkv
 
 const soundCommand = (id: string) => `node ${path.join(ROOT, "scripts/studio/sound.mjs")} ${id}`;
 
-// A part of the sound picked on the timeline's Music or Effects lane.
+// A part of the sound picked on the timeline's Music (Score, on a video
+// film), Effects or Voiceover lane.
 function soundSpanNote(s: NonNullable<ChatContext["sound"]>) {
+  if (s.stem === "voice") return voiceSpanNote(s);
   const what = s.stem === "both" ? "music and the effects" : s.stem;
   const span = `${s.from.toFixed(2)} s to ${s.to.toFixed(2)} s`;
   return `<sound>They picked part of the sound design: the ${what} from ${span}. "This" or "this bit" means that. In sound/score.js, change only what plays on that ${s.stem === "both" ? "music and effects" : `stem (${s.stem === "music" ? "the music" : "the Tone.js effects"})`} from ${span}. Keep every other sound byte-identical in timing and level: the same notes, hits, times and gains outside that span${s.stem === "both" ? "" : `, and everything on the ${s.stem === "music" ? "effects" : "music"}`}. Load the aerchain-sound-design skill (its "Changing one part" section), then render the sound again with the sound command. Their own volume edits in sound/mix.json are applied on top of whatever you render; never edit mix.json.</sound>`;
+}
+
+// A part of a slide film's voiceover.
+function voiceSpanNote(s: NonNullable<ChatContext["sound"]>) {
+  const span = `${s.from.toFixed(2)} s to ${s.to.toFixed(2)} s`;
+  return `<sound>They picked part of the voiceover: from ${span}. "This" or "this bit" means the voice there. The voiceover is clips of speech placed by sound/voice.json (each clip's "start", in film seconds); the clips themselves are the studio's recordings. To move a line, change its clip's "start" (and keep its slide on screen while it plays); to drop a line, take its clip out. You can't record new lines for a slide film from here, so if they want different words or a different voice, say so plainly and suggest they make the film from the slides again with the new speaker notes. Leave every other clip, and the music and effects, as they are. Then render the sound again with the sound command. Their own volume edits in sound/mix.json are applied on top; never edit mix.json.</sound>`;
 }
 
 const mediaTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/media-tool.mjs")} ${id}`;

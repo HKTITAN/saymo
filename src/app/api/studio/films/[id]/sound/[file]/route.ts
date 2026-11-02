@@ -3,7 +3,7 @@ import { allowed, readFilm, refused } from "@/lib/studio/films";
 import { serveFile } from "@/lib/studio/serve";
 import { soundDir } from "@/lib/studio/sound-render";
 
-const FILES = new Set(["sound.wav", "peaks.json", "music-peaks.json", "effects-peaks.json"]);
+const FILES = new Set(["sound.wav", "peaks.json", "music-peaks.json", "effects-peaks.json", "voice-peaks.json"]);
 
 // The film's rendered sound (with byte ranges, so it can be played and
 // seeked) and its loudness outlines for the timeline: the whole mix, and

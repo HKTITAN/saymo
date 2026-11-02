@@ -8,8 +8,9 @@ import type { SoundEditor } from "./use-sound-edit";
 // The sound design on a timeline: its waveform across the film, one
 // shimmering line while it's being made, or one plain line if it failed.
 // It's the score, not clips: it isn't cut or moved here, Claude writes it.
-// Once rendered as stems it shows as two lanes, Music and Effects, where
-// parts can be made louder, quieter or silent (sound-stems.tsx).
+// Once rendered as stems it shows as lanes, Music (Score on a video film)
+// and Effects, plus Voiceover on a film made from slides with a voice,
+// where parts can be made louder, quieter or silent (sound-stems.tsx).
 
 export type SoundLaneData = {
   status: SoundStatus;
@@ -20,7 +21,7 @@ export type SoundLaneData = {
   onRetry: () => void;
   // The music and the effects on their own (sound-stems.tsx), once the
   // sound has been rendered as stems, and editing parts of them by hand.
-  stems?: { music: number[] | null; effects: number[] | null } | null;
+  stems?: { music: number[] | null; effects: number[] | null; voice: number[] | null } | null;
   present?: SoundStem[]; // the stems the score has
   editor?: SoundEditor;
 };
@@ -29,9 +30,14 @@ export type SoundLaneData = {
 export const showLane = (d: SoundLaneData | undefined) =>
   Boolean(d && (d.status.state !== "none" || d.error));
 
-// Whether it shows as two lanes, Music and Effects.
+// Whether it shows as lanes, one per stem.
 export const showStems = (d: SoundLaneData | undefined): d is SoundLaneData & { stems: NonNullable<SoundLaneData["stems"]>; editor: SoundEditor } =>
   Boolean(d && d.status.state === "ready" && !d.error && d.stems && d.editor);
+
+// The lanes, top to bottom: Music and Effects always, Voiceover when the
+// film has one.
+export const stemLanes = (d: SoundLaneData | undefined): SoundStem[] =>
+  d?.present?.includes("voice") ? ["music", "effects", "voice"] : ["music", "effects"];
 
 const PER_SECOND = 100;
 

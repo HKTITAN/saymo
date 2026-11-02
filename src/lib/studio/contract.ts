@@ -194,7 +194,7 @@ export type ChatContext = {
   attachments?: Attachment[]; // files attached to this message
   // A part of the sound design picked on the timeline's lanes: change only
   // that stem between those film times.
-  sound?: { stem: "music" | "effects" | "both"; from: number; to: number };
+  sound?: { stem: "music" | "effects" | "voice" | "both"; from: number; to: number };
 };
 
 // A file attached to a prompt (a reference picture, a brief), saved beside

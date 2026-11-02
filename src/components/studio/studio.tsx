@@ -29,7 +29,7 @@ import { clipNumber, defaults, Multitrack } from "./multitrack";
 import { CARD, PILL_BUTTON } from "./panel";
 import { RenderControl } from "./render";
 import { SoundGroup } from "./sound-group";
-import { type SoundLaneData, showLane, showStems } from "./sound-lane";
+import { type SoundLaneData, showLane, showStems, stemLanes } from "./sound-lane";
 import { soundApi, soundOf } from "./sound-api";
 import { createBridge, type Insets, Stage, type StageStatus, useFit } from "./stage";
 import { Timeline } from "./timeline";
@@ -524,6 +524,7 @@ function FilmView({
     id,
     sound,
     duration: soundLength,
+    video: isVideo,
     record: history.record,
     onAsk: useCallback((pin: SoundPin) => {
       setPinned(null);
@@ -1129,9 +1130,9 @@ function FilmView({
     present: sound.status.state === "ready" ? sound.status.stems : undefined,
     editor: soundEdit,
   };
-  // The motion timeline grows by the sound lane once there is one (two,
-  // Music and Effects, once the sound has stems).
-  const bottom = isVideo ? tlH + 28 : showStems(soundLane) ? 150 : showLane(soundLane) ? 126 : 96;
+  // The motion timeline grows by the sound lane once there is one (Music and
+  // Effects once the sound has stems, and Voiceover when there's a voice).
+  const bottom = isVideo ? tlH + 28 : showStems(soundLane) ? 126 + 24 * (stemLanes(soundLane).length - 1) : showLane(soundLane) ? 126 : 96;
   const insets: Insets = hidden
     ? { top: 0, right: 0, bottom: 0, left: 0 }
     : {
@@ -1290,8 +1291,9 @@ function FilmView({
           filmId={id}
           chat={chatView}
           pinned={bubble ? null : pinned}
-          sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength) } : null}
+          sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength, isVideo) } : null}
           soundLength={soundLength}
+          video={isVideo}
           time={time}
           clock={clock}
           onClearPick={() => {

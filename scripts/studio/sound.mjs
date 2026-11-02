@@ -104,7 +104,11 @@ const run = (cmd, argv, { input } = {}) =>
 // places clips of speech (sound/voice/<name>.wav) on the film's timeline,
 // { "clips": [{ "file": "voice/slide-01.wav", "start": 0.5 }, …] }. They're
 // added to the mix as a third stem at their own level, and the music dips
-// under them as it does under speech in a video film.
+// under them as it does under speech in a video film. The voice stem is put
+// together again from the clips on every render and mix (it's quick), gets
+// the person's volume edits like the others (stem "voice" in mix.json), and
+// is kept as sound/voice.wav with its outline in voice-peaks.json, for the
+// timeline's Voiceover lane and the listening tool.
 
 const voiceFile = path.join(soundDir, "voice.json");
 
@@ -356,7 +360,7 @@ async function readSpans(duration) {
   const raw = JSON.parse(await readFile(mixFile, "utf8").catch(() => "null"));
   const spans = Array.isArray(raw?.spans) ? raw.spans : [];
   return spans
-    .filter((s) => s && STEMS.includes(s.stem) && Number.isFinite(s.from) && Number.isFinite(s.to))
+    .filter((s) => s && (STEMS.includes(s.stem) || s.stem === "voice") && Number.isFinite(s.from) && Number.isFinite(s.to))
     .map((s) => ({
       stem: s.stem,
       from: Math.max(0, Math.min(duration, s.from)),
@@ -459,7 +463,7 @@ async function finish({ film, music, effects, voice = null, master, spans, work,
   const total = Math.round(film.duration * RATE);
   const raw = path.join(work, "mix.f32");
   const score = spans.length ? sumOf(withSpans(music, spans, "music"), withSpans(effects, spans, "effects")) : sumOf(music, effects);
-  const mixed = voice ? sumOf(score, voice.pcm) : score;
+  const mixed = voice ? sumOf(score, withSpans(voice.pcm, spans, "voice")) : score;
   await writeFile(raw, Buffer.from(mixed.buffer));
   const filters = [...master.filters];
   // A span made louder could push past the peak limit; catch it.
@@ -488,8 +492,19 @@ async function finish({ film, music, effects, voice = null, master, spans, work,
   await writeJson(path.join(soundDir, "peaks.json"), peaksOf(final));
   await writeJson(path.join(soundDir, "music-peaks.json"), outline("music", music));
   await writeJson(path.join(soundDir, "effects-peaks.json"), outline("effects", effects));
+  // The voiceover, when there is one, as its own lane.
+  const listed = stems.filter((s) => s !== "voice");
+  if (voice) {
+    await writeFile(path.join(work, "voice.wav"), floatWav(voice.pcm));
+    await rename(path.join(work, "voice.wav"), path.join(soundDir, "voice.wav"));
+    await writeJson(path.join(soundDir, "voice-peaks.json"), outline("voice", voice.pcm));
+    listed.push("voice");
+  } else {
+    await rm(path.join(soundDir, "voice.wav"), { force: true });
+    await rm(path.join(soundDir, "voice-peaks.json"), { force: true });
+  }
   const length = final.length / 2 / RATE;
-  await status({ state: "ready", at: new Date().toISOString(), duration: Math.round(length * 1000) / 1000, loudness: after.lufs, stems });
+  await status({ state: "ready", at: new Date().toISOString(), duration: Math.round(length * 1000) / 1000, loudness: after.lufs, stems: listed });
   return { final, after, length };
 }
 

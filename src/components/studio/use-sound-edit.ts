@@ -9,8 +9,8 @@ import { soundApi } from "./sound-api";
 import type { SoundState } from "./use-sound";
 import { type SoundPin, soundChipLabel } from "./words";
 
-// Editing part of the sound by hand: a span picked on the timeline's Music
-// or Effects lane, made louder, quieter or silent. Each change is saved to
+// Editing part of the sound by hand: a span picked on one of the timeline's
+// sound lanes (Music or Score, Effects, Voiceover), made louder, quieter or silent. Each change is saved to
 // mix.json and the stems are mixed again on the server (about a second; the
 // score isn't played), then the new sound plays here. Each change is one
 // step for ⌘Z. The same span can go to Claude instead.
@@ -28,6 +28,7 @@ export function useSoundEdit({
   onTry,
   onSend,
   running = false,
+  video = false,
 }: {
   id: string;
   sound: SoundState;
@@ -37,6 +38,7 @@ export function useSoundEdit({
   onTry: (pin: SoundPin) => void; // asks Claude for another take straight away
   onSend?: (pin: SoundPin, words: string, attachments: Attachment[]) => void; // a prompt typed in the panel itself, with any reference files
   running?: boolean; // Claude is working (new prompts wait in the queue)
+  video?: boolean; // a video film's: the music lane is the "Score"
 }) {
   const [spans, setSpansState] = useState<SoundSpan[]>([]);
   const [pick, setPick] = useState<SoundPick | null>(null);
@@ -115,7 +117,7 @@ export function useSoundEdit({
     [record, save],
   );
 
-  const where = useCallback((p: SoundPick) => soundChipLabel(p, duration), [duration]);
+  const where = useCallback((p: SoundPick) => soundChipLabel(p, duration, video), [duration, video]);
 
   const setVolume = useCallback(
     (gain: number) => {

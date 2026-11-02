@@ -22,6 +22,7 @@
 //   music.wav      the music on its own, 32 bit float, before loudness (rendered)
 //   effects.wav    the effects on their own, likewise (rendered)
 //   music-peaks.json, effects-peaks.json   each stem's outline, as heard (rendered)
+//   voice.wav, voice-peaks.json   a slide film's voiceover as one stem, and its outline (rendered)
 //   master.json    the loudness gain chosen for the score (rendered)
 //   mix.json       SoundMix: the person's volume edits (the studio writes it;
 //                  Claude never does)
@@ -127,8 +128,9 @@ export type SoundStatus =
   | { state: "ready"; at: string; duration: number; loudness: number | null; stems?: SoundStem[] }
   | { state: "failed"; message: string; at: string };
 
-// The two stems the score renders to, which the timeline shows as lanes.
-export type SoundStem = "music" | "effects";
+// The stems the timeline shows as lanes: the two the score renders to, and
+// a slide film's voiceover (sound/voice.json) when it has one.
+export type SoundStem = "music" | "effects" | "voice";
 
 // A span of one stem made louder, quieter or silent by hand. The stems are
 // mixed again with these (20 ms fades at each edge) without playing the
@@ -151,7 +153,7 @@ export type SoundMix = { spans: SoundSpan[] };
 //                                                happens on its own after a Claude
 //                                                turn that changed sound/score.js)
 // GET  /api/studio/films/<id>/sound/<file>     → sound.wav (byte ranges), peaks.json,
-//                                                music-peaks.json, effects-peaks.json
+//                                                music-peaks.json, effects-peaks.json, voice-peaks.json
 // GET  /api/studio/films/<id>/sound/mix        → SoundMix
 // PUT  /api/studio/films/<id>/sound/mix        SoundMix → { mix, status }: saves the
 //                                                edits and mixes the stems again

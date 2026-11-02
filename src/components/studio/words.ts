@@ -53,16 +53,19 @@ const clockTime = (t: number) => {
 };
 
 // A part of the sound picked on the timeline: "Effects, 0:07.40 to 0:08.48".
+// On a video film, Claude's music is the "Score", so it isn't mixed up with
+// the person's own Music track.
 export type SoundPin = NonNullable<ChatContext["sound"]>;
-export const soundChipLabel = (s: SoundPin, duration?: number) => {
-  const stem = s.stem === "music" ? "Music" : s.stem === "effects" ? "Effects" : "Music and effects";
+export const soundChipLabel = (s: SoundPin, duration?: number, video = false) => {
+  const stem =
+    s.stem === "music" ? (video ? "Score" : "Music") : s.stem === "effects" ? "Effects" : s.stem === "voice" ? "Voiceover" : video ? "Score and effects" : "Music and effects";
   const whole = duration !== undefined && s.from <= 0.001 && s.to >= duration - 0.001;
   return whole ? `${stem}, whole film` : `${stem}, ${clockTime(s.from)} to ${clockTime(s.to)}`;
 };
 
 // What "Try another" on a part of the sound asks Claude.
 export const tryAnotherPrompt = (s: SoundPin, duration?: number) => {
-  const stem = s.stem === "both" ? "music and effects" : s.stem;
+  const stem = s.stem === "both" ? "music and effects" : s.stem === "voice" ? "voiceover" : s.stem;
   const whole = duration !== undefined && s.from <= 0.001 && s.to >= duration - 0.001;
   const where = whole ? `the ${stem}` : `the ${stem} from ${clockTime(s.from)} to ${clockTime(s.to)}`;
   return `Try a different take on ${where}. Keep the rest of the sound as it is.`;

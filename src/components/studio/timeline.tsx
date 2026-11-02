@@ -6,12 +6,13 @@ import type { Mark } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { type Clock, formatTime, useClock } from "./clock";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION } from "./panel";
-import { MotionSoundLane, type SoundLaneData, showLane, showStems } from "./sound-lane";
+import { MotionSoundLane, type SoundLaneData, showLane, showStems, stemLanes } from "./sound-lane";
 import { StemLane } from "./sound-stems";
 
 // The timeline along the bottom: play and pause, the film's named moments,
 // and a track to scrub, with the sound design's waveforms under it once the
-// film has one (Music and Effects, where parts can be picked and changed). Dragging pauses; Space plays; M mutes the sound here.
+// film has one (Music and Effects, and Voiceover on a film made from slides
+// with a voice, where parts can be picked and changed). Dragging pauses; Space plays; M mutes the sound here.
 
 export function Timeline({
   clock,
@@ -153,9 +154,9 @@ export function Timeline({
         />
       </div>
       {showStems(sound) ? (
-        // Music and Effects: drag across one to pick part of it.
+        // Music, Effects and any Voiceover: drag across one to pick part of it.
         <div className={cn("flex flex-col gap-1", (!sound.on || sound.muted) && "opacity-60")}>
-          {(["music", "effects"] as const).map((stem) => (
+          {stemLanes(sound).map((stem) => (
             <StemLane
               key={stem}
               stem={stem}

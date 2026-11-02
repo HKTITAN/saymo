@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Film } from "@/lib/studio/contract";
-import type { SoundStatus } from "@/lib/studio/sound";
+import type { SoundStatus, SoundStem } from "@/lib/studio/sound";
 import type { Clock } from "./clock";
 import { soundApi, soundOf, soundUrl } from "./sound-api";
 import type { Bridge } from "./stage";
@@ -99,10 +99,12 @@ export function useSound({
     };
   }, [id, version]);
 
-  // The music and the effects on their own, for the timeline's two lanes.
+  // The music and the effects on their own, for the timeline's lanes, and a
+  // slide film's voiceover when it has one.
   const stemList = status.state === "ready" ? status.stems : undefined;
   const hasStems = Boolean(stemList);
-  const [stems, setStems] = useState<{ music: number[] | null; effects: number[] | null } | null>(null);
+  const hasVoice = Boolean(stemList?.includes("voice"));
+  const [stems, setStems] = useState<{ music: number[] | null; effects: number[] | null; voice: number[] | null } | null>(null);
   useEffect(() => {
     if (!version || !hasStems) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- no stems rendered, so no lanes
@@ -110,18 +112,18 @@ export function useSound({
       return;
     }
     let live = true;
-    const one = (stem: "music" | "effects") =>
+    const one = (stem: SoundStem) =>
       soundApi.stemPeaks(id, stem, version).then(
         (p) => (Array.isArray(p) ? p : null),
         () => null,
       );
-    void Promise.all([one("music"), one("effects")]).then(([music, effects]) => {
-      if (live) setStems({ music, effects });
+    void Promise.all([one("music"), one("effects"), hasVoice ? one("voice") : null]).then(([music, effects, voice]) => {
+      if (live) setStems({ music, effects, voice });
     });
     return () => {
       live = false;
     };
-  }, [id, version, hasStems]);
+  }, [id, version, hasStems, hasVoice]);
 
   const render = useCallback(async () => {
     setError(null);

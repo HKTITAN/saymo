@@ -14,15 +14,18 @@ import { isAudioFile, useAttachments } from "./use-attachments";
 import type { SoundEditor } from "./use-sound-edit";
 import { useOutsideClose } from "./use-outside";
 
-// The sound design as two lanes, Music and Effects, each its own stem's
-// waveform. Drag across a lane to pick a stretch of it (it snaps to the
+// The sound design as lanes, Music and Effects (and Voiceover on a film
+// made from slides with a voice), each its own stem's waveform. On a video
+// film the Music lane is called Score, as the person's own Music track is
+// something else. Drag across a lane to pick a stretch of it (it snaps to the
 // playhead and the film's moments); click to pick the whole lane, or the
 // edit under the click. A small panel over the pick sets its volume or
 // mutes it, puts it back, or hands just that stretch to Claude, with sound
 // files attached as references ("make it feel like this"); dropping a
 // sound on the panel does that straight away. Escape lets go.
 
-export const STEM_LABEL: Record<SoundStem, string> = { music: "Music", effects: "Effects" };
+export const STEM_LABEL: Record<SoundStem, string> = { music: "Music", effects: "Effects", voice: "Voiceover" };
+export const stemLabel = (stem: SoundStem, video = false) => (video && stem === "music" ? "Score" : STEM_LABEL[stem]);
 
 const SNAP_PX = 6;
 const DRAG_PX = 3;
@@ -42,6 +45,7 @@ export function StemLane({
   snaps,
   playhead,
   above,
+  video = false,
   className,
 }: {
   stem: SoundStem;
@@ -56,6 +60,7 @@ export function StemLane({
   snaps: () => number[]; // film times a pick snaps to
   playhead?: number; // 0..1, drawn on the lane
   above?: "lane" | "card"; // the panel sits over the lane, or over the card it's in
+  video?: boolean; // a video film's: Music reads "Score"
   className?: string;
 }) {
   const lane = useRef<HTMLDivElement>(null);
@@ -104,7 +109,7 @@ export function StemLane({
       ref={lane}
       data-stem-lane=""
       role="group"
-      aria-label={empty ? `${STEM_LABEL[stem]}, none in this sound` : `${STEM_LABEL[stem]}. Drag to pick part of it`}
+      aria-label={empty ? `${stemLabel(stem, video)}, none in this sound` : `${stemLabel(stem, video)}. Drag to pick part of it`}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -137,7 +142,7 @@ export function StemLane({
         })}
       {label ? (
         <span className="pointer-events-none absolute top-1/2 left-1 -translate-y-1/2 rounded-[4px] bg-[#1b1b1b]/90 px-1 text-[10.5px] text-white/50 leading-[15px]">
-          {STEM_LABEL[stem]}
+          {stemLabel(stem, video)}
           {empty ? <span className="text-white/25">, none</span> : null}
         </span>
       ) : null}
@@ -195,8 +200,8 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
     };
   }, [anchor, card, pick?.from, pick?.to, pick?.stem, width]);
 
-  // A press outside lets go of the pick too, except on the Music and Effects
-  // lanes, which pick again. A typed prompt asks once before it's lost.
+  // A press outside lets go of the pick too, except on the sound lanes,
+  // which pick again. A typed prompt asks once before it's lost.
   const panel = useRef<HTMLElement>(null);
   const [discard, setDiscard] = useState(false);
   const typed = asking && (Boolean(words.trim()) || files.items.length > 0);
@@ -289,7 +294,13 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
             autoFocus
             onEscape={() => setAsking(false)}
             maxRows={4}
-            placeholder={hasSound ? "What should it take from this sound?" : "Make the hit softer and a little later"}
+            placeholder={
+              hasSound
+                ? "What should it take from this sound?"
+                : pick?.stem === "voice"
+                  ? "Start this line half a second later"
+                  : "Make the hit softer and a little later"
+            }
             chip={editor.label}
             className="bg-white/[0.04]"
           />
@@ -322,15 +333,19 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
       </DialButton>
       <div className="my-0.5 h-px bg-white/[0.06]" />
       <DialButton onClick={() => setAsking(true)}>Change with Claude</DialButton>
-      <DialButton
-        onClick={() => {
-          editor.tryAnother();
-          editor.setPick(null);
-        }}
-      >
-        <RefreshIcon aria-hidden="true" />
-        Try another take
-      </DialButton>
+      {/* A voiceover is recorded from the slides' notes, not written, so it
+          has no other takes. */}
+      {pick?.stem !== "voice" ? (
+        <DialButton
+          onClick={() => {
+            editor.tryAnother();
+            editor.setPick(null);
+          }}
+        >
+          <RefreshIcon aria-hidden="true" />
+          Try another take
+        </DialButton>
+      ) : null}
       {editor.error ? (
         <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed" aria-live="polite">
           {editor.error}

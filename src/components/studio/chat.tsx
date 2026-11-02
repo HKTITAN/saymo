@@ -34,6 +34,7 @@ export function ChatPanel({
   pinned,
   sound,
   soundLength,
+  video = false,
   time,
   clock,
   onClearPick,
@@ -50,6 +51,7 @@ export function ChatPanel({
   pinned: Pinned | null;
   sound?: { pin: SoundPin; label: string } | null; // part of the sound, picked on the timeline
   soundLength?: number; // how long the sound is, so a whole lane reads "whole film"
+  video?: boolean; // a video film: Claude's music reads "Score"
   time: () => number;
   clock: Clock;
   onClearPick: () => void;
@@ -225,7 +227,7 @@ export function ChatPanel({
           </div>
         ) : null}
         {messages.map((m, i) => (
-          <Message key={`${m.at}-${i}`} message={m} filmId={filmId} soundLength={soundLength} />
+          <Message key={`${m.at}-${i}`} message={m} filmId={filmId} soundLength={soundLength} video={video} />
         ))}
         {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
         {!turn.running && chat.carryOn ? <CarryOnNote carryOn={chat.carryOn} onCancel={() => void chat.cancelCarryOn()} /> : null}
@@ -303,7 +305,7 @@ function CarryOnNote({ carryOn, onCancel }: { carryOn: { reason: "time" | "limit
   );
 }
 
-function Message({ message, filmId, soundLength }: { message: ChatMessage; filmId: string; soundLength?: number }) {
+function Message({ message, filmId, soundLength, video }: { message: ChatMessage; filmId: string; soundLength?: number; video?: boolean }) {
   if (message.role === "you" && message.auto) {
     return <p className="text-center text-[11.5px] text-white/35">The studio carried on by itself</p>;
   }
@@ -312,7 +314,7 @@ function Message({ message, filmId, soundLength }: { message: ChatMessage; filmI
       <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">
         {message.context?.sound ? (
           <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
-            {soundChipLabel(message.context.sound, soundLength)}
+            {soundChipLabel(message.context.sound, soundLength, video)}
           </span>
         ) : message.context?.pick ? (
           <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">

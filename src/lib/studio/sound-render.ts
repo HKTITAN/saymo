@@ -165,7 +165,7 @@ export function cleanSpans(raw: unknown, duration: number): SoundSpan[] {
   if (!Array.isArray(raw)) return [];
   let out: SoundSpan[] = [];
   for (const s of raw.slice(0, 200) as Partial<SoundSpan>[]) {
-    if (!s || (s.stem !== "music" && s.stem !== "effects")) continue;
+    if (!s || (s.stem !== "music" && s.stem !== "effects" && s.stem !== "voice")) continue;
     const from = Math.max(0, Math.min(duration, Number(s.from)));
     const to = Math.max(0, Math.min(duration, Number(s.to)));
     if (!Number.isFinite(from) || !Number.isFinite(to) || to - from < 0.001) continue;

@@ -34,7 +34,7 @@ export function referenceSoundNote(id: string, kind: Film["kind"], all: Attachme
     const span = `--from ${sound.from.toFixed(2)} --to ${sound.to.toFixed(2)}`;
     lines.push(
       `Then hear what the film has there now: ${stems.map((s) => `${tool} --stem ${s} ${span}`).join(", and ")}.`,
-      `Use what you hear to guide only the ${sound.stem === "both" ? "music and effects" : sound.stem} from ${sound.from.toFixed(2)} s to ${sound.to.toFixed(2)} s, as the <sound> note says: everything else in the score stays identical, and never edit sound/mix.json.`,
+      `Use what you hear to guide only the ${sound.stem === "both" ? "music and effects" : sound.stem === "voice" ? "voiceover" : sound.stem} from ${sound.from.toFixed(2)} s to ${sound.to.toFixed(2)} s, as the <sound> note says: everything else in the score stays identical, and never edit sound/mix.json.`,
     );
   } else {
     lines.push(

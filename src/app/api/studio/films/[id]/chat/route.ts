@@ -103,7 +103,7 @@ function context(raw: unknown): ChatContext {
   const from = Number(s?.from);
   const to = Number(s?.to);
   const sound =
-    s && typeof s === "object" && ["music", "effects", "both"].includes(s.stem) && Number.isFinite(from) && Number.isFinite(to) && to > from
+    s && typeof s === "object" && ["music", "effects", "voice", "both"].includes(s.stem) && Number.isFinite(from) && Number.isFinite(to) && to > from
       ? { sound: { stem: s.stem, from: Math.max(0, from), to: Math.max(0, to) } }
       : {};
   const extra = { ...(selection.length ? { selection } : {}), ...sound };
