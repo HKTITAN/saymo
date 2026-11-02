@@ -58,7 +58,7 @@ export function FilmsMenu({
       className={cn(
         CARD,
         PANEL_MOTION,
-        "pointer-events-auto absolute top-4 left-4 flex h-11 max-w-[380px] items-center gap-0.5 rounded-[14px] ps-1.5 pe-1.5",
+        "pointer-events-auto absolute top-4 left-4 flex h-11 w-[300px] items-center gap-0.5 rounded-[14px] ps-1.5 pe-1.5",
         hidden && "pointer-events-none -translate-y-1 opacity-0",
       )}
     >
@@ -156,8 +156,7 @@ function Title({ title, onRename }: { title: string; onRename: (title: string) =
             requestAnimationFrame(() => (document.activeElement as HTMLElement | null)?.blur());
           }
         }}
-        size={Math.max(6, Math.min(32, text.length + 1))}
-        className="h-8 min-w-0 rounded-[8px] bg-transparent px-1.5 font-medium text-[13px] text-white/90 outline-none transition-colors hover:bg-white/[0.05] focus:bg-white/[0.07]"
+        className="h-8 min-w-0 flex-1 truncate rounded-[8px] bg-transparent px-1.5 font-medium text-[13px] text-white/90 outline-none transition-colors hover:bg-white/[0.05] focus:bg-white/[0.07]"
       />
     </Hint>
   );

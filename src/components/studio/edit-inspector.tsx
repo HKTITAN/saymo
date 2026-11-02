@@ -57,7 +57,7 @@ export function EditInspector({
       folded={folded}
       onFold={onFold}
       hidden={hidden}
-      className="top-[68px] right-4 w-[320px]"
+      className="top-[68px] right-4 w-[300px]"
       pillClassName="top-[68px] right-4"
       style={style}
       bodyClassName="flex flex-col gap-4 overflow-y-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

@@ -82,7 +82,7 @@ export function RenderControl({
       className={cn(
         CARD,
         PANEL_MOTION,
-        "pointer-events-auto absolute top-4 right-4 flex h-11 items-center gap-1 rounded-[14px] px-1.5",
+        "pointer-events-auto absolute top-4 right-4 flex h-11 w-[300px] items-center gap-1 rounded-[14px] px-1.5",
         hidden && "pointer-events-none -translate-y-1 opacity-0",
       )}
     >
@@ -92,6 +92,7 @@ export function RenderControl({
         </button>
       </Hint>
       <ConnectionsButton />
+      <span className="flex-1" aria-hidden="true" />
 
       {status.state === "done" && !working ? (
         <Popover.Root>

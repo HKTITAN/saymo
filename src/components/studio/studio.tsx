@@ -93,6 +93,9 @@ const titleFromFile = (name: string) => {
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : "Untitled video";
 };
 
+// A side column: 16 from the window edge, 300 wide, then 16 of air.
+const COLUMN = 16 + 300 + 16;
+
 export function Studio() {
   const id = useSyncExternalStore(subscribe, currentFilm, () => null);
   const kitId = useSyncExternalStore(subscribe, currentKit, () => null);
@@ -1084,16 +1087,17 @@ function FilmView({
     : {
         // Folded panels leave a pill under the top bar; keep the film below it.
         top: folded.chat || folded.inspector ? 116 : 72,
-        // Both side panels are 320 wide, 16 from the edge, with 16 of air.
-        right: inspectorOpen ? 352 : 24,
+        // Both side columns are 300 wide, 16 from the edge, with 16 of air.
+        right: inspectorOpen ? COLUMN : 24,
         bottom,
-        left: chatOpen || mediaOpen ? 352 : 24,
+        left: chatOpen || mediaOpen ? COLUMN : 24,
       };
   const fit = useFit(film?.width ?? 1920, film?.height ?? 1080, insets);
 
   // On a video film the left column holds the chat above the bin, both
   // ending above the timeline.
-  const column = winH - 68 - (tlH + 28);
+  // The side columns run to the bottom; the timeline sits between them.
+  const column = winH - 68 - 16;
   const binH = folded.chat ? column - 48 : Math.max(180, Math.round(column * 0.44));
   const chatMax = mediaOpen ? Math.max(160, column - binH - 10) : column;
 
@@ -1255,8 +1259,8 @@ function FilmView({
             folded={folded.media}
             onFold={(f) => setFolded((s) => ({ ...s, media: f }))}
             hidden={hidden}
-            className="bottom-[var(--above-timeline)] left-4 w-[320px]"
-            pillClassName="bottom-[var(--above-timeline)] left-4"
+            className="bottom-4 left-4 w-[300px]"
+            pillClassName="bottom-4 left-4"
             style={{ height: binH }}
           />
         ) : null}
@@ -1324,8 +1328,8 @@ function FilmView({
             hidden={hidden}
             sound={soundLane}
             onMute={sound.setMuted}
-            className="right-4 bottom-4 transition-[left,opacity,translate,scale,filter]"
-            style={{ left: chatOpen ? 352 : 16 }}
+            className="bottom-4 transition-[left,right,opacity,translate,scale,filter]"
+            style={{ left: chatOpen || mediaOpen ? COLUMN : 16, right: inspectorOpen ? COLUMN : 16 }}
           />
         )}
 

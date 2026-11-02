@@ -470,7 +470,7 @@ function TopBar({
       className={cn(
         CARD,
         PANEL_MOTION,
-        "pointer-events-auto absolute top-4 left-4 z-10 flex h-11 max-w-[420px] items-center gap-1 rounded-[14px] ps-1.5 pe-1.5",
+        "pointer-events-auto absolute top-4 left-4 z-10 flex h-11 w-[300px] items-center gap-1 rounded-[14px] ps-1.5 pe-1.5",
         hidden && "pointer-events-none -translate-y-1 opacity-0",
       )}
     >
@@ -1053,7 +1053,7 @@ function KitChat({
       folded={folded}
       onFold={onFold}
       hidden={hidden}
-      className="top-[68px] bottom-4 left-4 w-[320px]"
+      className="top-[68px] bottom-4 left-4 w-[300px]"
       pillClassName="top-[68px] left-4"
       bodyClassName="flex flex-col"
       actions={

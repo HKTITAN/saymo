@@ -14,14 +14,14 @@ export function Opening({ what }: { what: "film" | "kit" }) {
   const label = what === "film" ? "Opening the film" : "Opening the kit";
   return (
     <div className="pointer-events-none absolute inset-0" aria-busy="true">
-      <div className={cn(CARD, "absolute top-4 left-4 flex h-11 w-[200px] items-center gap-2 rounded-[14px] px-4")}>
+      <div className={cn(CARD, "absolute top-4 left-4 flex h-11 w-[300px] items-center gap-2 rounded-[14px] px-4")}>
         <Skeleton loading label={label}>
           <span className="text-[12.5px]">{what === "film" ? "Product launch teaser" : "Aerchain brand"}</span>
         </Skeleton>
       </div>
 
       {/* Claude, on the left. */}
-      <div className={cn(CARD, "absolute top-[68px] left-4 flex w-[320px] flex-col gap-3 p-4")}>
+      <div className={cn(CARD, "absolute top-[68px] left-4 flex w-[300px] flex-col gap-3 p-4")}>
         <Skeleton loading>
           <div className="flex flex-col gap-3">
             <p className="text-[12.5px]">Claude</p>
@@ -36,7 +36,7 @@ export function Opening({ what }: { what: "film" | "kit" }) {
       </div>
 
       {/* The settings, on the right. */}
-      <div className={cn(CARD, "absolute top-[68px] right-4 flex flex-col gap-2 p-3", "w-[320px]")}>
+      <div className={cn(CARD, "absolute top-[68px] right-4 flex flex-col gap-2 p-3", "w-[300px]")}>
         <Skeleton loading>
           <div className="flex flex-col gap-2">
             <p className="px-1 py-1 text-[12px]">{what === "film" ? "Film" : "Kit"}</p>
