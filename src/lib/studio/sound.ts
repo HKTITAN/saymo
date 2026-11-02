@@ -15,6 +15,12 @@
 //   sound.wav      48 kHz stereo, exactly film.duration long (rendered)
 //   peaks.json     number[] 0..1, 100 per second (rendered)
 //   status.json    SoundStatus
+//   music.wav      the music on its own, 32 bit float, before loudness (rendered)
+//   effects.wav    the effects on their own, likewise (rendered)
+//   music-peaks.json, effects-peaks.json   each stem's outline, as heard (rendered)
+//   master.json    the loudness gain chosen for the score (rendered)
+//   mix.json       SoundMix: the person's volume edits (the studio writes it;
+//                  Claude never does)
 
 // score.js is an ES module whose default export is a SoundScore. It runs in
 // the renderer's page with Strudel and Tone available; it must be
@@ -68,8 +74,27 @@ export type FilmSound = {
 export type SoundStatus =
   | { state: "none" } // no score yet
   | { state: "rendering"; step: string } // plain English, one line
-  | { state: "ready"; at: string; duration: number; loudness: number | null } // LUFS
+  // loudness in LUFS; stems: which stems have sound in them (missing on a
+  // sound rendered before stems existed)
+  | { state: "ready"; at: string; duration: number; loudness: number | null; stems?: SoundStem[] }
   | { state: "failed"; message: string; at: string };
+
+// The two stems the score renders to, which the timeline shows as lanes.
+export type SoundStem = "music" | "effects";
+
+// A span of one stem made louder, quieter or silent by hand. The stems are
+// mixed again with these (20 ms fades at each edge) without playing the
+// score, so it takes about a second; the loudness gain stays the score's,
+// so nothing outside the span changes. They stay when the score is
+// rendered again. Spans of one stem don't overlap.
+export type SoundSpan = {
+  stem: SoundStem;
+  from: number; // film seconds
+  to: number;
+  gain: number; // dB, -24 to +6
+  mute: boolean;
+};
+export type SoundMix = { spans: SoundSpan[] };
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 //
@@ -77,7 +102,11 @@ export type SoundStatus =
 // POST /api/studio/films/<id>/sound            → SoundStatus (renders score.js; also
 //                                                happens on its own after a Claude
 //                                                turn that changed sound/score.js)
-// GET  /api/studio/films/<id>/sound/<file>     → sound.wav (byte ranges), peaks.json
+// GET  /api/studio/films/<id>/sound/<file>     → sound.wav (byte ranges), peaks.json,
+//                                                music-peaks.json, effects-peaks.json
+// GET  /api/studio/films/<id>/sound/mix        → SoundMix
+// PUT  /api/studio/films/<id>/sound/mix        SoundMix → { mix, status }: saves the
+//                                                edits and mixes the stems again
 // PATCH /api/studio/films/<id>  {sound: FilmSound} sets on/volume
 //
 // The studio page plays sound.wav itself, kept in step with its own clock

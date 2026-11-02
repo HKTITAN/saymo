@@ -474,6 +474,9 @@ async function soundIsCurrent(id, film, duration) {
   const wav = await time(path.join(dir, "sound/sound.wav"));
   const score = await time(path.join(dir, "sound/score.js"));
   if (wav === null || score === null || wav < score) return false;
+  // Volume edits saved but not mixed in yet.
+  const mix = await time(path.join(dir, "sound/mix.json"));
+  if (mix !== null && wav < mix) return false;
   if (film.kind === "video") {
     const edit = await time(path.join(dir, "edit.json"));
     if (edit !== null && wav < edit) return false;

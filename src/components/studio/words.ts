@@ -1,4 +1,4 @@
-import type { Picked } from "@/lib/studio/contract";
+import type { ChatContext, Picked } from "@/lib/studio/contract";
 
 // What was pointed at, and when.
 export type Pinned = { pick: Picked; t: number };
@@ -50,6 +50,22 @@ const fromEdit = (pick: Picked) => pick.tag === "clip" || pick.tag === "graphic"
 const clockTime = (t: number) => {
   const m = Math.floor(t / 60);
   return `${m}:${(t - m * 60).toFixed(2).padStart(5, "0")}`;
+};
+
+// A part of the sound picked on the timeline: "Effects, 0:07.40 to 0:08.48".
+export type SoundPin = NonNullable<ChatContext["sound"]>;
+export const soundChipLabel = (s: SoundPin, duration?: number) => {
+  const stem = s.stem === "music" ? "Music" : s.stem === "effects" ? "Effects" : "Music and effects";
+  const whole = duration !== undefined && s.from <= 0.001 && s.to >= duration - 0.001;
+  return whole ? `${stem}, whole film` : `${stem}, ${clockTime(s.from)} to ${clockTime(s.to)}`;
+};
+
+// What "Try another" on a part of the sound asks Claude.
+export const tryAnotherPrompt = (s: SoundPin, duration?: number) => {
+  const stem = s.stem === "both" ? "music and effects" : s.stem;
+  const whole = duration !== undefined && s.from <= 0.001 && s.to >= duration - 0.001;
+  const where = whole ? `the ${stem}` : `the ${stem} from ${clockTime(s.from)} to ${clockTime(s.to)}`;
+  return `Try a different take on ${where}. Keep the rest of the sound as it is.`;
 };
 
 export const chipLabel = (pick: Picked | null, t: number) =>

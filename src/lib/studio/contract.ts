@@ -189,6 +189,9 @@ export type ChatContext = {
   pick: Picked | null; // what was pointed at, if anything
   selection?: string[]; // video films: ids of the timeline items selected (edit.ts Clip/Graphic ids)
   attachments?: Attachment[]; // files attached to this message
+  // A part of the sound design picked on the timeline's lanes: change only
+  // that stem between those film times.
+  sound?: { stem: "music" | "effects" | "both"; from: number; to: number };
 };
 
 // A file attached to a prompt (a reference picture, a brief), saved beside

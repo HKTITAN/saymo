@@ -16,6 +16,7 @@ import {
   LayerThreeIcon,
   MinusIcon,
   MusicBeamNoteIcon,
+  NotificationBellOnIcon,
   PauseCircleIcon,
   PlayCircleIcon,
   PlusIcon,
@@ -41,7 +42,8 @@ import {
   updateTrack,
 } from "./edit-ops";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON } from "./panel";
-import { type SoundLaneData, SoundLine, SoundWave, showLane } from "./sound-lane";
+import { type SoundLaneData, SoundLine, SoundWave, showLane, showStems } from "./sound-lane";
+import { STEM_LABEL, StemLane } from "./sound-stems";
 import type { EditState } from "./use-edit";
 import { mediaUrl } from "./video-api";
 
@@ -56,6 +58,7 @@ const HEADER_W = 152;
 const RULER_H = 22;
 const LANE_H: Record<Track["kind"] | "captions", number> = { video: 56, graphics: 32, audio: 40, captions: 26 };
 const SOUND_H = 32;
+const STEM_H = 28; // each of Music and Effects
 const SNAP_PX = 8;
 const EDGE_PX = 7;
 const MIN_PPS = 2;
@@ -682,7 +685,22 @@ export function Multitrack({
               </div>
             );
           })}
-          {showLane(sound) ? (
+          {showStems(sound) ? (
+            (["music", "effects"] as const).map((stem) => {
+              const Icon = stem === "music" ? MusicBeamNoteIcon : NotificationBellOnIcon;
+              return (
+                <div
+                  key={stem}
+                  className={cn("flex items-center gap-1.5 border-white/[0.05] border-t ps-3 pe-1", !sound.on && "opacity-50")}
+                  style={{ height: STEM_H }}
+                >
+                  <Icon aria-hidden="true" className="size-3.5 shrink-0 text-white/40" />
+                  <span className="me-auto truncate text-[11.5px] text-white/70">{STEM_LABEL[stem]}</span>
+                  {!sound.on ? <span className="pe-2 text-[11px] text-white/30">Off</span> : null}
+                </div>
+              );
+            })
+          ) : showLane(sound) ? (
             <div
               className={cn("flex items-center gap-1.5 border-white/[0.05] border-t ps-3 pe-1", !sound?.on && "opacity-50")}
               style={{ height: SOUND_H }}
@@ -796,7 +814,23 @@ export function Multitrack({
 
             {/* Sound design: the score's waveform; Claude writes it, so it
                 isn't cut or moved here. */}
-            {sound && showLane(sound) ? (
+            {showStems(sound) ? (
+              (["music", "effects"] as const).map((stem) => (
+                <div key={stem} className="border-white/[0.05] border-t">
+                  <StemLane
+                    stem={stem}
+                    peaks={sound.stems[stem]}
+                    empty={Boolean(sound.present && !sound.present.includes(stem))}
+                    duration={duration}
+                    width={duration * scale}
+                    height={STEM_H - 1}
+                    editor={sound.editor}
+                    dim={!sound.on || sound.muted}
+                    snaps={() => [clock.get().t, ...marks.map((m) => m.t)]}
+                  />
+                </div>
+              ))
+            ) : sound && showLane(sound) ? (
               <div
                 className={cn(
                   "relative flex items-center border-white/[0.05] border-t",

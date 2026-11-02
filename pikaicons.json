@@ -120,6 +120,10 @@
       "name": "music-beam-note",
       "variant": "stroke"
     },
+    "notification-bell-on": {
+      "name": "notification-bell-on",
+      "variant": "stroke"
+    },
     "paperclip-vertical": {
       "name": "paperclip-vertical",
       "variant": "stroke"

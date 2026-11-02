@@ -1,5 +1,5 @@
 import { type Film, STUDIO_HEADERS } from "@/lib/studio/contract";
-import type { FilmSound, SoundStatus } from "@/lib/studio/sound";
+import type { FilmSound, SoundMix, SoundSpan, SoundStatus, SoundStem } from "@/lib/studio/sound";
 import { StudioError } from "./api";
 
 // The studio's calls for a film's sound design (sound.ts): its status, a
@@ -38,6 +38,16 @@ export const soundApi = {
   },
   render: (id: string) => json<SoundStatus>(base(id), { method: "POST" }),
   peaks: (id: string, version: string) => json<number[]>(`${base(id)}/peaks.json?v=${version}`),
+  stemPeaks: (id: string, stem: SoundStem, version: string) => json<number[]>(`${base(id)}/${stem}-peaks.json?v=${version}`),
+  // The volume edits on the Music and Effects lanes. Setting them mixes the
+  // stems again (about a second) and answers with the new sound's status.
+  mix: (id: string) => json<SoundMix>(`${base(id)}/mix`),
+  setMix: (id: string, spans: SoundSpan[]) =>
+    json<{ mix: SoundMix; status: SoundStatus }>(`${base(id)}/mix`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ spans }),
+    }),
   set: (id: string, sound: FilmSound) =>
     json<Film>(`/api/studio/films/${id}`, {
       method: "PATCH",

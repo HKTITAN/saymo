@@ -8,8 +8,11 @@
 //            OfflineAudioContext the length of the film.
 //   effects  Tone.js, drawn inside Tone.Offline at exact film times.
 //
-// The two are mixed (music faded out at the end) and handed back as 32 bit
-// float stereo. Loudness is set afterwards, outside the page.
+// Each is brought to its gain (the music faded out at the end, and ducked
+// under speech) and handed back as its own 32 bit float stereo stem; the
+// two added together are the mix. Loudness is set afterwards, outside the
+// page, which also keeps the stems so the person's volume edits can be
+// mixed in again without playing the score.
 //
 // Strudel is AGPL-3.0 (in-house use only); Tone.js is MIT.
 
@@ -245,9 +248,7 @@ window.__sound = {
       effects = await renderEffects(score.effects, duration, sampleRate, kitBase);
       report.effects = true;
     }
-    const mixed = await mix({
-      music,
-      effects,
+    const settings = {
       duration,
       sampleRate,
       musicGain: clamp(score.musicGain, 0, 1, 0.6),
@@ -255,18 +256,25 @@ window.__sound = {
       fadeOut: clamp(score.musicFadeOut, 0, duration, Math.min(1, duration)),
       speech,
       duck: clamp(score.duck, 0, 1, 0.3),
-    });
+    };
+    // One stem each, mixed the same way as both at once: a mix of the two
+    // is the sum of these, sample for sample.
+    const musicStem = await mix({ ...settings, music, effects: null });
+    const effectsStem = await mix({ ...settings, music: null, effects });
     // Interleaved 32 bit float, as base64, for the page's way out.
-    const l = mixed.getChannelData(0);
-    const r = mixed.getChannelData(1);
-    const pcm = new Float32Array(l.length * 2);
-    for (let i = 0; i < l.length; i++) {
-      pcm[2 * i] = l[i];
-      pcm[2 * i + 1] = r[i];
-    }
-    const bytes = new Uint8Array(pcm.buffer);
-    let bin = "";
-    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-    return { pcm: btoa(bin), frames: l.length, report };
+    const out = (buffer) => {
+      const l = buffer.getChannelData(0);
+      const r = buffer.getChannelData(1);
+      const pcm = new Float32Array(l.length * 2);
+      for (let i = 0; i < l.length; i++) {
+        pcm[2 * i] = l[i];
+        pcm[2 * i + 1] = r[i];
+      }
+      const bytes = new Uint8Array(pcm.buffer);
+      let bin = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return btoa(bin);
+    };
+    return { music: out(musicStem), effects: out(effectsStem), frames: musicStem.length, report };
   },
 };

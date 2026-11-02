@@ -305,6 +305,11 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Edit(/${dir}/sound/peaks.json)`,
     `Edit(/${dir}/sound/status.json)`,
     `Read(/${dir}/sound/*.wav)`,
+    // The stems and the person's own volume edits are the studio's.
+    `Edit(/${dir}/sound/*.wav)`,
+    `Edit(/${dir}/sound/*-peaks.json)`,
+    `Edit(/${dir}/sound/master.json)`,
+    `Edit(/${dir}/sound/mix.json)`,
     ...FOOTAGE_FILES.map((f) => `Read(/${dir}/media/**/${f})`),
   ];
   const args = [
@@ -364,6 +369,13 @@ How to reply: work silently (write no text while you work), then end with at mos
 const FOOTAGE_FILES = ["original.*", "*.mp4", "*.mov", "*.m4v", "*.webm", "*.mkv", "*.wav", "*.mp3", "*.m4a", "*.aac", "*.aif", "*.aiff", "*.flac"];
 
 const soundCommand = (id: string) => `node ${path.join(ROOT, "scripts/studio/sound.mjs")} ${id}`;
+
+// A part of the sound picked on the timeline's Music or Effects lane.
+function soundSpanNote(s: NonNullable<ChatContext["sound"]>) {
+  const what = s.stem === "both" ? "music and the effects" : s.stem;
+  const span = `${s.from.toFixed(2)} s to ${s.to.toFixed(2)} s`;
+  return `<sound>They picked part of the sound design: the ${what} from ${span}. "This" or "this bit" means that. In sound/score.js, change only what plays on that ${s.stem === "both" ? "music and effects" : `stem (${s.stem === "music" ? "the Strudel music" : "the Tone.js effects"})`} from ${span}. Keep every other sound byte-identical in timing and level: the same notes, hits, times and gains outside that span${s.stem === "both" ? "" : `, and everything on the ${s.stem === "music" ? "effects" : "music"}`}. Load the aerchain-sound-design skill (its "Changing one part" section), then render the sound again with the sound command. Their own volume edits in sound/mix.json are applied on top of whatever you render; never edit mix.json.</sound>`;
+}
 
 const mediaTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/media-tool.mjs")} ${id}`;
 
@@ -461,6 +473,7 @@ function userMessage(
   if (context.selection?.length) {
     lines.push(`<selected>On the timeline they have selected ${context.selection.join(", ")}. "This", "these" or "the selected" means them.</selected>`);
   }
+  if (context.sound) lines.push(soundSpanNote(context.sound));
   if (undone) lines.push("<note>They undid your previous change: the files are back to how they were before it.</note>");
   if (wentBack) {
     lines.push(

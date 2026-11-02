@@ -80,7 +80,15 @@ function context(raw: unknown): ChatContext {
   const selection = Array.isArray(c.selection)
     ? c.selection.filter((s): s is string => typeof s === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(s)).slice(0, 50)
     : [];
-  const extra = selection.length ? { selection } : {};
+  // A part of the sound design: which stem, and between which film times.
+  const s = c.sound;
+  const from = Number(s?.from);
+  const to = Number(s?.to);
+  const sound =
+    s && typeof s === "object" && ["music", "effects", "both"].includes(s.stem) && Number.isFinite(from) && Number.isFinite(to) && to > from
+      ? { sound: { stem: s.stem, from: Math.max(0, from), to: Math.max(0, to) } }
+      : {};
+  const extra = { ...(selection.length ? { selection } : {}), ...sound };
   const p = c.pick;
   if (!p || typeof p !== "object") return { t, pick: null, ...extra };
   const num = (v: unknown) => (Number.isFinite(v) ? Number(v) : 0);
