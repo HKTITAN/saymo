@@ -11,6 +11,10 @@
 //   [[element, { x: [from, to] }, { at: 0.6, duration: 0.8, ease }], ...]
 // Springs work too: { type: "spring", stiffness, damping, at }.
 //
+// Parts drawn from the clock rather than by Motion (assets/parts/, such as
+// the sphere carousel) go in `parts`; each one's draw(t) runs on every seek:
+//   filmTimeline(sequence, { duration: FILM.duration, parts: [sphere] })
+//
 // How it stays exact:
 // - Motion runs every value on the page's main thread here, never on the
 //   browser's own animations, so nothing moves unless the timeline is
@@ -53,7 +57,7 @@
   };
 
   function filmTimeline(sequence, options = {}) {
-    const { duration: length = 0, ...rest } = options;
+    const { duration: length = 0, parts = [], ...rest } = options;
     const animation = Motion.animate(sequence, rest);
     animation.pause();
     let now = 0;
@@ -65,6 +69,7 @@
         animation.pause();
         animation.time = Math.min(now, animation.duration || 0);
         flush();
+        for (const part of parts) part?.draw?.(now);
         return tl;
       },
       pause() {

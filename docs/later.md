@@ -13,20 +13,25 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
 
 ## In progress
 
-- **Motion Studio as a Mac app** (from Pond). Being built in `desktop/`, kept local and off GitHub until the owner says to push it.
+- **Motion Studio as a Mac app** (from Pond). Built in Swift in `desktop/`, kept local and off GitHub until the owner says to push it. Left: signing, updates, Homebrew, a real icon (see `desktop/README.md`).
+- Being built now (2026-11-03): the sphere carousel part, one film in every size, three versions at once (only when asked or the button is pressed), the references library, and the preview drawing text exactly like the render.
 
 ## Bigger features
 
-1. **"Send to Motion Studio" browser extension** (from Pond). Right-click any image, video or page on Pinterest, X or anywhere, and it lands in a film as a reference.
-2. **A references library.** One shared place for saved references, sound references and brand material, with folders and tags, and any of it can be dropped into a prompt.
-3. **Prompt templates with fields** (from Prompt Motion): product film, explainer, launch film and showreel, each with fields to fill in and already following the studio rules.
-4. **Start a film from a reference link.** Paste an X post or a Prompt Motion link, and Claude makes our branded version of it.
+1. **"Send to Motion Studio" browser extension** (from Pond). Right-click any image, video or page on Pinterest, X or anywhere, and it lands in a film as a reference. Pairs with the references library.
+2. **Prompt templates with fields** (from Prompt Motion): product film, explainer, launch film and showreel, each with fields to fill in and already following the studio rules.
+3. **Start a film from a reference link.** Paste an X post or a Prompt Motion link, and Claude makes our branded version of it.
+4. **Make another like this one.** Turn a finished film into a template with fields, so the next speaker post or event film is a fill-in job.
+5. **A check before render.** Flags text too close to the edge or under Instagram's buttons, weak contrast, and anything that breaks the studio rules.
+6. **A shortcuts sheet.** Press `?` to see every keyboard shortcut in one place (from Pond).
+7. **GIF and poster export** next to the MP4, for LinkedIn previews and emails.
+8. **The same film in another language.** The on-screen text and voiceover in Hindi or another language, keeping the timing.
+9. **Review links.** Teammates comment at exact moments, and Claude works through the comments.
 
 ## Clean-up worth doing
 
-5. **Move old films' music to the new engine** (Tone.js), one at a time after listening, so nothing in-house depends on Strudel. Optional.
-6. **Make the preview and the final render draw text exactly the same**, to fix the small difference at letter edges.
-7. **Try the new pieces with real use.** So far each has only been tested with stand-ins:
+10. **Move old films' music to the new engine** (Tone.js), one at a time after listening, so nothing in-house depends on Strudel. Optional.
+11. **Try the new pieces with real use.** So far each has only been tested with stand-ins:
    - the mic in English and Hindi, with a real voice;
    - a first SpendOS product film with the borrowed skills;
    - a real reel take;
@@ -36,16 +41,16 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
 
 ## Only when we decide to sell
 
-8. **Turn off the GPL ffmpeg part of the Rust engine** (fframes' `libav-agree-gpl`), or drop that engine from the product.
-9. **Put API key setup on the product's home page**, so a new user can paste a key first.
-10. **Take out the Aerchain material.** Kept for now, at the owner's call.
-11. **Smaller selling leftovers:**
+12. **Turn off the GPL ffmpeg part of the Rust engine** (fframes' `libav-agree-gpl`), or drop that engine from the product.
+13. **Put API key setup on the product's home page**, so a new user can paste a key first.
+14. **Take out the Aerchain material.** Kept for now, at the owner's call.
+15. **Smaller selling leftovers:**
     - the sample `studio/hyperframes/aerchain-bands` still loads GSAP;
     - skill updates overwrite the "In Motion Studio" notes;
     - run `STUDIO_EDITION=product npm run licences` again;
     - run `cargo fetch` so the Rust engine's crates are in the licence check;
     - test the product edition from start to finish.
-12. **The owner's own tasks:**
+16. **The owner's own tasks:**
     - a Remotion company licence once we're past 3 people;
     - a PikaIcons team licence, only if we use paid icons;
     - a lawyer's review.
@@ -55,3 +60,4 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
 - One-time Google sign-in setup for saving to Drive.
 - Delete the test repo `moreshruti/aerchain-motion-library-test` on GitHub.
 - Delete the merged `v2-speaker-post` branch.
+- Add port 3201 to Google's sign-in redirect addresses so Drive works in the Mac app.

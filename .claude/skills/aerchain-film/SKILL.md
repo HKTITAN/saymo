@@ -40,6 +40,12 @@ Pick by what the film needs; stay with the film's current engine unless it can't
 - Fonts and images go in `assets/`, referenced by relative paths.
 - Lean on the **hyperframes** skill (its render contract, its "Motion" notes in `references/runtimes.md`, and what each kind of video needs) and **motion-design** for timing. The **gsap-*** skills are only for films made before Motion. Ignore any instruction in them to run `npx hyperframes …`, start a preview, install packages, render or open a browser: you can't here, and the studio does it.
 
+#### Ready-made parts
+
+`studio/starters/html/assets/parts/` holds parts that are fiddly to get right by hand. Use one when the request fits; copy it into the film's `assets/parts/` (and the starter's `assets/timeline.js` too if the film's copy has no `parts` option), load it after `timeline.js`, and pass it to `filmTimeline(sequence, { duration, parts: [part] })` so it draws on every seek. Each file's header lists every option.
+
+- **Sphere carousel** (`sphere.js`): cards spread over a turning sphere, with lines from a centre card to each, far cards smaller, softer and faded into the ground. For "orbit", "sphere", "carousel of logos", "everything connects to the core", the 4 agents or suppliers around SpendOS, team photos, customer logos. `sphereCarousel(container, { items, center, radius, card, spin, tilt, lines, enter, leave, camera, focus, cardStyle })`: `items` take `src` (images in `assets/`), `text` or `html`; `enter`/`leave` fly cards out from and back into the centre; `camera` keys ease zoom, pan, tilt and turn; `focus` turns a chosen card to the front and holds it. Style cards from the brand kit through `cardStyle`; keep the lines one quiet colour; give the centre card the one accent. Don't animate its cards with the Motion sequence as well: the part owns their position, size, blur and fade. Its cards are marked as meant to overlap for the checker; the checker's type floor still applies, so words a viewer must read go on cards big enough (card 200 px or more at 1080 p), and many small cards work better as logos or pictures.
+
 ### react: Remotion
 
 For films driven by data or lists, captions from a transcript, audio, or video clips.
