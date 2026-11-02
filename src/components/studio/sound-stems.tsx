@@ -199,7 +199,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
   // lanes, which pick again. A typed prompt asks once before it's lost.
   const panel = useRef<HTMLElement>(null);
   const [discard, setDiscard] = useState(false);
-  const typed = asking && Boolean(words.trim());
+  const typed = asking && (Boolean(words.trim()) || files.items.length > 0);
   if (discard && !asking) setDiscard(false);
   const outside = useOutsideClose(panel, () => (typed && !discard ? setDiscard(true) : editor.setPick(null)), {
     ignore: (target) => Boolean(target.closest("[data-stem-lane]")),
