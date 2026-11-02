@@ -791,10 +791,12 @@ function FolderCard({
 // left. The newest films inside peek out of the top as stills. Hovering (or
 // a film dragged over it) swings the cover wider and lifts them.
 const EASE = "duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
+// The films inside stand up like pages: taller than wide, like the folder.
+const SHEET = { w: 27, h: 38 };
 const SHEETS = [
-  { x: 35, y: 3, rotate: -6 },
-  { x: 41, y: 1, rotate: 5 },
-  { x: 38, y: 4, rotate: -1 },
+  { x: 38, y: -1, rotate: -6 },
+  { x: 48, y: -3, rotate: 6 },
+  { x: 43, y: 1, rotate: -1 },
 ];
 function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
   const id = useId();
@@ -803,10 +805,10 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
     <svg viewBox="0 0 100 125" aria-hidden="true" className="absolute inset-0 h-full w-full overflow-visible">
       <defs>
         <clipPath id={`${id}-sheet`}>
-          <rect width={36} height={23} rx={3} />
+          <rect width={SHEET.w} height={SHEET.h} rx={3} />
         </clipPath>
       </defs>
-      <g transform="translate(1 6)">
+      <g transform="translate(1 9)">
         {/* The back and its tab. */}
         <path d="M84.3 88 L95 90.2 L84.3 95.6 Z" fill="rgb(0 0 0 / 0.45)" />
         <path
@@ -821,17 +823,18 @@ function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
               key={f.id}
               className={cn("transition-transform", EASE, open ? "-translate-y-[7px]" : "group-hover/card:-translate-y-[3px]")}
             >
-              <g transform={`translate(${at.x} ${at.y}) rotate(${at.rotate} 18 11.5)`}>
-                <rect width={36} height={23} rx={3} fill="#3f3f3f" />
+              <g transform={`translate(${at.x} ${at.y}) rotate(${at.rotate} ${SHEET.w / 2} ${SHEET.h / 2})`}>
+                <rect width={SHEET.w} height={SHEET.h} rx={3} fill="#3f3f3f" />
                 {f.poster ? (
-                  <image href={f.poster} width={36} height={23} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-sheet)`} />
+                  <image href={f.poster} width={SHEET.w} height={SHEET.h} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-sheet)`} />
                 ) : (
                   <>
-                    <rect x={6} y={8} width={16} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.16)" />
-                    <rect x={6} y={13} width={24} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.09)" />
+                    <rect x={5} y={7} width={11} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.16)" />
+                    <rect x={5} y={12} width={17} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.09)" />
+                    <rect x={5} y={17} width={14} height={2.4} rx={1.2} fill="rgb(255 255 255 / 0.09)" />
                   </>
                 )}
-                <rect width={36} height={23} rx={3} fill="none" stroke="rgb(0 0 0 / 0.35)" strokeWidth={0.6} />
+                <rect width={SHEET.w} height={SHEET.h} rx={3} fill="none" stroke="rgb(0 0 0 / 0.35)" strokeWidth={0.6} />
               </g>
             </g>
           );
