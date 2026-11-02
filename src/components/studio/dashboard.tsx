@@ -6,6 +6,7 @@ import {
   ArrowLeftIcon,
   ChevronRightIcon,
   CopyIcon,
+  FileIcon,
   DeleteDustbin01Icon,
   FolderIcon,
   GridDashboard02Icon,
@@ -18,6 +19,7 @@ import {
 } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
 import { SURFACE } from "@/components/tool/dial";
+import { RulesPanel } from "./rules-panel";
 import { RenameField } from "@/components/tool/rename";
 import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
@@ -39,7 +41,7 @@ import { ReelFlow } from "./reel-flow";
 // grid, and a film moves to a folder by dragging it onto one or from its •••
 // menu. ⌘Z undoes moves and renames. Last, the brand kits.
 
-type Overlay = null | "video" | "motion" | "kit" | "script" | "reel";
+type Overlay = null | "video" | "motion" | "kit" | "script" | "reel" | "rules";
 type Sort = "edited" | "name";
 
 // What a dragged film carries, so only films can be dropped on folders.
@@ -352,6 +354,10 @@ export function Dashboard({
                 <Kbd>/</Kbd>
               )}
             </label>
+            <button type="button" onClick={() => setOverlay("rules")} className={cn(PILL_BUTTON, "h-8 text-white/65 hover:bg-white/[0.07] hover:text-white")}>
+              <FileIcon aria-hidden="true" />
+              Rules
+            </button>
             <div role="radiogroup" aria-label="Sort films" className="flex h-8 items-center gap-0.5 rounded-[10px] bg-white/[0.05] ps-3 pe-1 text-[12px]">
               <span className="me-1.5 text-white/40">Sort</span>
               {(
@@ -641,7 +647,9 @@ export function Dashboard({
 
       {overlay ? (
         <div className="absolute inset-0 z-40 bg-black/55 backdrop-blur-[2px]">
-          {overlay === "kit" ? (
+          {overlay === "rules" ? (
+            <RulesPanel onClose={() => setOverlay(null)} />
+          ) : overlay === "kit" ? (
             <KitMaker
               onDone={(kitId, reply) => {
                 setOverlay(null);

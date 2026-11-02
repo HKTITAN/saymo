@@ -1,0 +1,30 @@
+[
+  {
+    "id": "continuity",
+    "title": "One continuous film",
+    "body": "Every scene hands off to the next through a shared element: a shape, line, word, colour or object that is in the last moment of one scene and carries into the next, where it moves, grows, turns into something else, or the camera travels through it. Nothing appears out of nowhere and no scene simply cuts to something unrelated, so the whole film reads as one moving piece. Before you finish, list each scene change and the element it shares.",
+    "scope": "all",
+    "on": true
+  },
+  {
+    "id": "isometric",
+    "title": "An isometric scene",
+    "body": "Every motion film has at least one isometric scene: objects drawn on a 30 degree isometric grid in the brand's flat colours, used where it helps tell the idea (a process, a place, a system).",
+    "scope": "motion",
+    "on": true
+  },
+  {
+    "id": "camera",
+    "title": "A real 3D camera move",
+    "body": "Every motion film has at least one scene with a real 3D camera move with perspective and depth: a dolly, an orbit or a fly-through. Keep the colours flat (no glows or blur).",
+    "scope": "motion",
+    "on": true
+  },
+  {
+    "id": "peak-end",
+    "title": "Strong start, strong end",
+    "body": "People remember a film by its best moment and its last one. The first two seconds hook (no slow fade from black) and the final scene lands and holds. Spend the most craft there.",
+    "scope": "all",
+    "on": true
+  }
+]
