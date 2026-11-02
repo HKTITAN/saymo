@@ -26,7 +26,6 @@ import { Spinner } from "@/components/ui/spinner";
 import type { BrandSummary } from "@/lib/studio/brand";
 import type { FilmSummary, Folder } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
-import { AboutButton } from "./about-licences";
 import { api } from "./api";
 import { Swatches } from "./brand-row";
 import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, TinyFolder, VideoDoodle } from "./doodles";
@@ -367,7 +366,6 @@ export function Dashboard({
               <FileIcon aria-hidden="true" />
               Rules
             </button>
-            <AboutButton />
             <div role="radiogroup" aria-label="Sort films" className="flex h-8 items-center gap-0.5 rounded-[10px] bg-white/[0.05] ps-3 pe-1 text-[12px]">
               <span className="me-1.5 text-white/40">Sort</span>
               {(
