@@ -86,6 +86,17 @@ Unless asked otherwise, films look like Aerchain:
 
 Every film can have a sound track, written as a score in `sound/score.js` (Strudel music, Tone.js hits on the film's moments) and rendered by the studio. Starters come with one. Load the **aerchain-sound-design** skill before writing or changing sound, and whenever you change the film's timing or marks, check the score still lands on them: run the sound command from your instructions and read where each hit falls.
 
+## Cutting to the music
+
+When a film has music, cut it to the music, using the **stopmotion-video** skill's rules (borrowed from Kosta's skill, MIT). Keep the film's own engine; don't switch to Remotion for this. In the studio:
+
+- **The score is the clock.** Its tempo is in `sound/score.js` (`setcps(BPM/60/4)`, music starting at `musicStart`). Work out bar and beat times from that, or measure an imported song with the skill's `scripts/find-tempo.mjs`.
+- **Scenes start on bar lines** and change length by whole bars; marks in film.json sit on beats.
+- **Hits land on drum hits:** a click, a pop or a word landing goes on a kick or snare, never between. Big changes go on the big kick that opens a phrase.
+- **Let a beat go by** on purpose: hold a result for a beat after an action, hold two poses at the top of a camera rise, and step the music aside (duck it) under a click that matters.
+- **The end holds** about two seconds on the beat with the music under it.
+- The stop-motion *look* (one held pose per eighth note, a low frame rate) is a style: use it only when asked. The timing rules apply to every film with music.
+
 ## Before you finish
 
 1. Run the check, exactly as given in your instructions (`node …/scripts/studio/check-film.mjs`), and fix every error. Fix warnings that affect what's on screen; one about an empty first frame matters, since the first frame is the thumbnail.

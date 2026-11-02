@@ -7,6 +7,13 @@
     "on": true
   },
   {
+    "id": "on-the-beat",
+    "title": "Cut to the music",
+    "body": "When the film has music, everything keeps the music's time (the stopmotion-video skill): scenes start on bar lines, clicks, pops and landing words fall on drum hits, big changes land on the big kicks, a beat is left empty on purpose after an action that matters, and the end holds about two seconds on the beat.",
+    "scope": "all",
+    "on": true
+  },
+  {
     "id": "isometric",
     "title": "An isometric scene",
     "body": "Every motion film has at least one isometric scene: objects drawn on a 30 degree isometric grid in the brand's flat colours, used where it helps tell the idea (a process, a place, a system).",
