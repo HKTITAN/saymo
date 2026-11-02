@@ -1280,6 +1280,7 @@ function FilmView({
           chat={chatView}
           pinned={bubble ? null : pinned}
           sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength) } : null}
+          soundLength={soundLength}
           time={time}
           clock={clock}
           onClearPick={() => {
