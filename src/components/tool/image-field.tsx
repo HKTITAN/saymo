@@ -186,7 +186,7 @@ function Generate({
         />
       </label>
       <DialButton type="submit" loading={making} disabled={!place.trim() || (Boolean(busy) && !making)}>
-        Generate
+        Make
       </DialButton>
       <DialNote>
         Type a city or a landmark. It comes back cut out, in the same black and white style as the towers. Each

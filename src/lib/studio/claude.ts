@@ -9,6 +9,7 @@ import { atPlayhead } from "./captions";
 import type { Clip, Edit, Graphic } from "./edit";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "./brand-tokens";
 import { filmDir, pruneVersions, readFilm, recordVersion, ROOT, snapshotFilm, wentBackTo, withFilm, writeFilm } from "./films";
+import { readRules, rulesNote } from "./rules";
 import { startSound } from "./sound-render";
 
 // The studio's chat: each prompt is one Claude Code turn, run headless on
@@ -138,7 +139,7 @@ export async function runTurn(id: string, request: ChatRequest, emit: (event: Ch
   try {
     await turnFor(id, request, turn, emit);
   } catch (error) {
-    emit({ kind: "error", message: `Something went wrong: ${String((error as Error)?.message ?? error)}` });
+    emit({ kind: "error", message: `Claude stopped with an error. Try again. Details: ${String((error as Error)?.message ?? error)}` });
   } finally {
     running.delete(id);
   }
@@ -184,7 +185,8 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   // The exact command goes first in the turn's log, for debugging.
   await appendFile(logFile(id), `${JSON.stringify({ type: "studio_command", bin: CLAUDE_BIN, args })}\n`).catch(() => {});
   const edit = film.kind === "video" ? await editSummary(id, request.context.t) : null;
-  proc.stdin.end(userMessage(film, prompt, request.context, undone, wentBack, edit));
+  const rules = rulesNote(await readRules(), film.kind);
+  proc.stdin.end(userMessage(film, prompt, request.context, undone, wentBack, edit, rules));
 
   const limit = setTimeout(() => {
     turn.stopped = true;
@@ -452,6 +454,7 @@ function userMessage(
   undone: boolean,
   wentBack: string | null,
   edit: string | null,
+  rules = "",
 ) {
   const lines = [
     `<film>engine ${ENGINE_WORDS[film.engine]}, ${film.width}x${film.height}, ${film.fps} fps, ${film.duration} s, title "${film.title}"</film>`,
@@ -475,6 +478,7 @@ function userMessage(
   lines.push(
     `<brand>The film's brand kit is "${kit}": ${path.join(brandDir(ROOT, kit), "brand.json")} (colours, fonts, logos, rules and notes, with its files beside it). Follow its rules, and draw with its tokens (see the aerchain-film skill) rather than fixed colours or fonts.</brand>`,
   );
+  if (rules) lines.push(rules);
   if (edit) lines.push(`<edit>\n${edit}\n</edit>`);
   if (context.selection?.length) {
     lines.push(`<selected>On the timeline they have selected ${context.selection.join(", ")}. "This", "these" or "the selected" means them.</selected>`);

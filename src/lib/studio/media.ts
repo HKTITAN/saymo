@@ -166,7 +166,7 @@ function pump() {
         await update(job.id, job.mid, () => ({
           status: "failed",
           step: undefined,
-          error: error instanceof MediaError ? error.message : "The studio couldn't read this file. It may be damaged or in a format it doesn't know.",
+          error: error instanceof MediaError ? error.message : "The studio couldn't read this file. It may be damaged or in a format it doesn't know. Try another file.",
         }));
         console.error(`[studio media] ${key}:`, error);
       })
@@ -238,7 +238,7 @@ async function prepare({ id, mid }: Job) {
   const audio = info.streams?.find((s) => s.codec_type === "audio");
   const duration = Number(info.format?.duration ?? video?.duration ?? audio?.duration ?? 0);
   if (media.kind === "video" && !video) throw new MediaError("This file has no picture in it. Bring it in as sound, or try another file.");
-  if (!duration) throw new MediaError("The studio couldn't tell how long this file is.");
+  if (!duration) throw new MediaError("The studio couldn't tell how long this file is. Try another file.");
 
   if (media.kind === "video" && video) {
     const turned = Math.abs(video.side_data_list?.find((d) => d.rotation !== undefined)?.rotation ?? Number(video.tags?.rotate ?? 0)) % 180 === 90;
@@ -429,6 +429,6 @@ function nextTranscription() {
         error: said.startsWith("! ") ? said.slice(2) : "The studio couldn't listen to this file. Try again in a moment.",
       });
     });
-    child.on("error", () => void finish({ error: "The studio couldn't start listening." }));
+    child.on("error", () => void finish({ error: "The studio couldn't start listening. Try again in a moment." }));
   });
 }

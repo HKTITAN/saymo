@@ -1,3 +1,4 @@
+import type { Rule } from "@/lib/studio/rules";
 import {
   type ChatEvent,
   type ChatMessage,
@@ -49,6 +50,9 @@ const send = (method: string, body?: unknown): RequestInit => ({
 const film = (id: string) => `/api/studio/films/${id}`;
 
 export const api = {
+  // The studio's standing rules for every film.
+  rules: async () => (await call<{ rules: Rule[] }>("/api/studio/rules")).rules,
+  saveRules: async (rules: Rule[]) => (await call<{ rules: Rule[] }>("/api/studio/rules", send("PUT", { rules }))).rules,
   list: () => call<FilmSummary[]>("/api/studio/films"),
   create: (body: { title?: string; engine?: Engine; kind?: "motion" | "video"; width?: number; height?: number }) =>
     call<Film>("/api/studio/films", send("POST", body)),

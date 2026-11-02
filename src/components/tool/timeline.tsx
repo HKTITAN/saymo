@@ -207,7 +207,7 @@ export function Timeline({
             className="absolute top-1.5 left-1.5 rounded-[4px] px-1 font-medium text-[10px] leading-4"
             style={{ background: PALETTE.orange, color: PALETTE.ink }}
           >
-            Cover
+            Still
           </span>
         </div>
         <div

@@ -79,7 +79,7 @@ export async function runBrandTurn(
   try {
     await brandTurn(id, prompt, links, turn, emit, attachments);
   } catch (error) {
-    emit({ kind: "error", message: `Something went wrong: ${String((error as Error)?.message ?? error)}` });
+    emit({ kind: "error", message: `Claude stopped with an error. Try again. Details: ${String((error as Error)?.message ?? error)}` });
   } finally {
     running.delete(id);
   }

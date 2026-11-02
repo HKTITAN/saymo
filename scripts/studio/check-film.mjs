@@ -208,6 +208,13 @@ function checkEdit() {
         for (const k of ["x", "y"]) {
           if (item[k] !== undefined && (!isNum(item[k]) || item[k] < 0 || item[k] > 1)) say(`${it}: "${k}" is the framing centre, 0 to 1 of the source (it's ${item[k]}).`);
         }
+        if (item.box !== undefined) {
+          const b = item.box;
+          const ok = b && typeof b === "object" && ["x", "y", "w", "h"].every((k) => isNum(b[k]) && b[k] >= 0 && b[k] <= 1);
+          if (!ok || b.w < 0.05 || b.h < 0.05 || b.x + b.w > 1.0001 || b.y + b.h > 1.0001) {
+            say(`${it}: "box" is the part of the frame the clip fills, { "x", "y", "w", "h" } from 0 to 1 and inside the frame (the top half is { "x": 0, "y": 0, "w": 1, "h": 0.5 }).`);
+          }
+        }
         if (isNum(item.from) && isNum(item.to) && isNum(speed) && speed > 0) length = (item.to - item.from) / speed;
       } else if (item.type === "graphic") {
         if (track.kind !== "graphics") say(`${it}: graphics belong on a graphics track.`);

@@ -121,7 +121,7 @@ export function KitPage({
       setSave("saved");
     } catch (e) {
       setSave("failed");
-      setNote(e instanceof StudioError ? e.message : "The kit couldn't be saved.");
+      setNote(e instanceof StudioError ? e.message : "Unable to save the kit. Make any change to try again.");
     }
   }, []);
   const schedule = useCallback(() => {
@@ -230,7 +230,7 @@ export function KitPage({
           if (path.startsWith("fonts/") && FONT_FILE.test(path)) added.font.push(path);
           else if (path.startsWith("logos/") && LOGO_FILE.test(path)) added.logo.push(path);
         } catch (e) {
-          setNote(e instanceof StudioError ? e.message : `${file.name} couldn't be added.`);
+          setNote(e instanceof StudioError ? e.message : `Unable to add ${file.name}. Try again.`);
         }
       }
       setUploading(null);
@@ -260,7 +260,7 @@ export function KitPage({
     return (
       <div className="absolute inset-0 flex items-center justify-center p-6">
         <div className={cn(CARD, "flex max-w-[360px] flex-col items-start gap-3 p-5")}>
-          <p className="font-medium text-[14px] text-white/90">This kit isn’t here any more</p>
+          <p className="font-medium text-[14px] text-white/90">This kit no longer exists</p>
           <button type="button" onClick={onHome} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
             Back to the studio
           </button>
@@ -563,7 +563,7 @@ function TopBar({
                 <>
                   <button type="button" className={ITEM} disabled={busy} onClick={() => run(onDuplicate)}>
                     <CopyIcon aria-hidden="true" />
-                    Duplicate this kit
+                    Duplicate kit
                   </button>
                   <a className={ITEM} href={brandApi.exportUrl(kit.id)} download onClick={() => setOpen(false)}>
                     <DownloadDownIcon aria-hidden="true" />
@@ -575,7 +575,7 @@ function TopBar({
                     onClick={() => setConfirm(true)}
                   >
                     <DeleteDustbin01Icon aria-hidden="true" />
-                    Delete this kit
+                    Delete kit
                   </button>
                 </>
               )}
@@ -621,7 +621,7 @@ function KitSettings({
             <DialText
               label="Name"
               value={ramp.name}
-              onChange={(name) => change(`Ramp ${ri} name`, (k) => ({ ...k, colors: { ...k.colors, ramps: k.colors.ramps.map((x, i) => (i === ri ? { ...x, name } : x)) } }))}
+              onChange={(name) => change(`Ramp ${ri + 1} name`, (k) => ({ ...k, colors: { ...k.colors, ramps: k.colors.ramps.map((x, i) => (i === ri ? { ...x, name } : x)) } }))}
             />
             {ramp.steps.map((s, si) => (
               <ColorRow
@@ -642,7 +642,7 @@ function KitSettings({
             <div className="flex gap-1.5">
               <DialButton
                 onClick={() =>
-                  change("Add a step", (k) => ({
+                  change("Added a step", (k) => ({
                     ...k,
                     colors: {
                       ...k.colors,
@@ -657,7 +657,7 @@ function KitSettings({
               </DialButton>
               <DialButton
                 className="text-[#ff9592]"
-                onClick={() => change("Remove a ramp", (k) => ({ ...k, colors: { ...k.colors, ramps: k.colors.ramps.filter((_, i) => i !== ri) } }))}
+                onClick={() => change("Removed a ramp", (k) => ({ ...k, colors: { ...k.colors, ramps: k.colors.ramps.filter((_, i) => i !== ri) } }))}
               >
                 Remove ramp
               </DialButton>
@@ -666,7 +666,7 @@ function KitSettings({
         ))}
         <DialButton
           onClick={() =>
-            change("Add a ramp", (k) => ({
+            change("Added a ramp", (k) => ({
               ...k,
               colors: { ...k.colors, ramps: [...k.colors.ramps, { name: `Ramp ${k.colors.ramps.length + 1}`, steps: [{ name: "Step 1", hex: k.colors.roles.accent }] }] },
             }))
@@ -680,7 +680,7 @@ function KitSettings({
       <DialGroup title="Fonts">
         {kit.fonts.map((f, fi) => (
           <div key={`${f.file}-${fi}`} className="flex flex-col gap-1.5 rounded-[12px] bg-white/[0.02] p-1">
-            <DialText label="Family" value={f.family} onChange={(family) => change(`Font ${fi} family`, (k) => ({ ...k, fonts: k.fonts.map((x, i) => (i === fi ? { ...x, family } : x)) }))} />
+            <DialText label="Family" value={f.family} onChange={(family) => change(`Font ${fi + 1} family`, (k) => ({ ...k, fonts: k.fonts.map((x, i) => (i === fi ? { ...x, family } : x)) }))} />
             <Choice
               label="Use"
               value={f.role}
@@ -689,15 +689,15 @@ function KitSettings({
                 { value: "text", label: "Text" },
                 { value: "mono", label: "Mono" },
               ]}
-              onChange={(role) => change(`Font ${fi} use`, (k) => ({ ...k, fonts: k.fonts.map((x, i) => (i === fi ? { ...x, role: role as BrandFont["role"] } : x)) }))}
+              onChange={(role) => change(`Font ${fi + 1} use`, (k) => ({ ...k, fonts: k.fonts.map((x, i) => (i === fi ? { ...x, role: role as BrandFont["role"] } : x)) }))}
             />
             <DialText
               label="Weights"
               value={f.weights}
               placeholder="400 or 200 800"
-              onChange={(weights) => change(`Font ${fi} weights`, (k) => ({ ...k, fonts: k.fonts.map((x, i) => (i === fi ? { ...x, weights } : x)) }))}
+              onChange={(weights) => change(`Font ${fi + 1} weights`, (k) => ({ ...k, fonts: k.fonts.map((x, i) => (i === fi ? { ...x, weights } : x)) }))}
             />
-            <RemoveRow label={f.file.replace(/^fonts\//, "")} onRemove={() => change("Remove a font", (k) => ({ ...k, fonts: k.fonts.filter((_, i) => i !== fi) }))} />
+            <RemoveRow label={f.file.replace(/^fonts\//, "")} onRemove={() => change("Removed a font", (k) => ({ ...k, fonts: k.fonts.filter((_, i) => i !== fi) }))} />
           </div>
         ))}
         {!kit.fonts.length ? <DialNote>Drop font files (TTF, OTF, WOFF) on the page, or choose them below.</DialNote> : null}
@@ -706,7 +706,7 @@ function KitSettings({
       <DialGroup title="Logos">
         {kit.logos.map((l, li) => (
           <div key={`${l.file}-${li}`} className="flex flex-col gap-1.5 rounded-[12px] bg-white/[0.02] p-1">
-            <DialText label="Name" value={l.name} onChange={(name) => change(`Logo ${li} name`, (k) => ({ ...k, logos: k.logos.map((x, i) => (i === li ? { ...x, name } : x)) }))} />
+            <DialText label="Name" value={l.name} onChange={(name) => change(`Logo ${li + 1} name`, (k) => ({ ...k, logos: k.logos.map((x, i) => (i === li ? { ...x, name } : x)) }))} />
             <Choice
               label="Kind"
               value={l.kind}
@@ -715,7 +715,7 @@ function KitSettings({
                 { value: "mark", label: "Mark" },
                 { value: "lockup", label: "Lockup" },
               ]}
-              onChange={(kind) => change(`Logo ${li} kind`, (k) => ({ ...k, logos: k.logos.map((x, i) => (i === li ? { ...x, kind: kind as BrandLogo["kind"] } : x)) }))}
+              onChange={(kind) => change(`Logo ${li + 1} kind`, (k) => ({ ...k, logos: k.logos.map((x, i) => (i === li ? { ...x, kind: kind as BrandLogo["kind"] } : x)) }))}
             />
             <Choice
               label="For"
@@ -725,9 +725,9 @@ function KitSettings({
                 { value: "dark", label: "Dark" },
                 { value: "any", label: "Any" },
               ]}
-              onChange={(on) => change(`Logo ${li} ground`, (k) => ({ ...k, logos: k.logos.map((x, i) => (i === li ? { ...x, on: on as BrandLogo["on"] } : x)) }))}
+              onChange={(on) => change(`Logo ${li + 1} ground`, (k) => ({ ...k, logos: k.logos.map((x, i) => (i === li ? { ...x, on: on as BrandLogo["on"] } : x)) }))}
             />
-            <RemoveRow label={l.file.replace(/^logos\//, "")} onRemove={() => change("Remove a logo", (k) => ({ ...k, logos: k.logos.filter((_, i) => i !== li) }))} />
+            <RemoveRow label={l.file.replace(/^logos\//, "")} onRemove={() => change("Removed a logo", (k) => ({ ...k, logos: k.logos.filter((_, i) => i !== li) }))} />
           </div>
         ))}
         {!kit.logos.length ? <DialNote>Drop SVG or PNG logos on the page, or choose them below.</DialNote> : null}
@@ -752,10 +752,10 @@ function KitSettings({
               format={(v) => `${Math.round(v)} px`}
               onChange={(v) => change("Gap width", (k) => ({ ...k, texture: { ...(k.texture ?? { stroke: 8 }), gap: Math.round(v) } }))}
             />
-            <DialButton onClick={() => change("No line texture", (k) => ({ ...k, texture: undefined }))}>This brand has no line texture</DialButton>
+            <DialButton onClick={() => change("Removed the line texture", (k) => ({ ...k, texture: undefined }))}>This brand has no line texture</DialButton>
           </>
         ) : (
-          <DialButton onClick={() => change("Line texture", (k) => ({ ...k, texture: { stroke: 8, gap: 4 } }))}>Give the brand a line texture</DialButton>
+          <DialButton onClick={() => change("Added a line texture", (k) => ({ ...k, texture: { stroke: 8, gap: 4 } }))}>Give the brand a line texture</DialButton>
         )}
       </DialGroup>
 
@@ -767,10 +767,10 @@ function KitSettings({
               n={i + 1}
               value={rule}
               onChange={(text) => change(`${group.label} rule ${i + 1}`, (k) => ({ ...k, rules: { ...k.rules, [group.key]: k.rules[group.key].map((x, j) => (j === i ? text : x)) } }))}
-              onRemove={() => change(`Remove a ${group.label.toLowerCase()} rule`, (k) => ({ ...k, rules: { ...k.rules, [group.key]: k.rules[group.key].filter((_, j) => j !== i) } }))}
+              onRemove={() => change(`Removed a ${group.label.toLowerCase()} rule`, (k) => ({ ...k, rules: { ...k.rules, [group.key]: k.rules[group.key].filter((_, j) => j !== i) } }))}
             />
           ))}
-          <DialButton onClick={() => change(`Add a ${group.label.toLowerCase()} rule`, (k) => ({ ...k, rules: { ...k.rules, [group.key]: [...k.rules[group.key], ""] } }))}>
+          <DialButton onClick={() => change(`Added a ${group.label.toLowerCase()} rule`, (k) => ({ ...k, rules: { ...k.rules, [group.key]: [...k.rules[group.key], ""] } }))}>
             <PlusIcon aria-hidden="true" />
             Add a rule
           </DialButton>

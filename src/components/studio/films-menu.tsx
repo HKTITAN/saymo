@@ -88,7 +88,7 @@ export function FilmsMenu({
                   <>
                     <button type="button" className={ITEM} disabled={busy} onClick={() => run(onDuplicate)}>
                       <CopyIcon aria-hidden="true" />
-                      Duplicate
+                      Duplicate film
                     </button>
                     <button
                       type="button"
@@ -96,7 +96,7 @@ export function FilmsMenu({
                       onClick={() => setView("delete")}
                     >
                       <DeleteDustbin01Icon aria-hidden="true" />
-                      Delete
+                      Delete film
                     </button>
                   </>
                 ) : (

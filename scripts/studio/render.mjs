@@ -789,7 +789,9 @@ function hasDetailFor2x(edit, media, film) {
       if (item.type !== "clip") continue;
       const m = media[item.media];
       if (!m || m.kind === "audio" || !m.width || !m.height) continue;
-      const cover = Math.max(film.width / m.width, film.height / m.height) * Math.max(1, item.zoom ?? 1);
+      const w = film.width * (item.box?.w ?? 1);
+      const h = film.height * (item.box?.h ?? 1);
+      const cover = Math.max(w / m.width, h / m.height) * Math.max(1, item.zoom ?? 1);
       if (1 / cover < 1.8) return false;
     }
   }

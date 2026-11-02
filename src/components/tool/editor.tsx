@@ -591,7 +591,7 @@ function useSaver(id: string, onSaved: (updatedAt: string) => void) {
       await running.current;
       if (!ok) {
         setState("failed");
-        throw new Error("The post could not be saved.");
+        throw new Error("Unable to save the post. Make any change, then try again.");
       }
       if (!pending.current) setState("saved");
     }

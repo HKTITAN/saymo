@@ -359,7 +359,7 @@ export async function importBrand(body: ReadableStream<Uint8Array>): Promise<Bra
       if (inner.length === 1) base = path.join(out, inner[0]);
     }
     const raw = await readFile(path.join(base, "brand.json"), "utf8").catch(() => null);
-    if (!raw) throw new Error("The kit file has no brand.json.");
+    if (!raw) throw new Error("The kit file has no brand.json. Export a kit from the studio and import that .zip.");
     const id = newId();
     const kit = checkKit(id, JSON.parse(raw), null);
     if (typeof kit === "string") throw new Error(kit);

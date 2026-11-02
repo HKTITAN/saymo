@@ -97,7 +97,7 @@ function plain(log: string) {
     .map((l) => l.trim())
     .filter((l) => l && !l.startsWith("at ") && !/^node:|^Node\.js v/.test(l));
   const line = lines.find((l) => /error/i.test(l)) ?? lines.at(-1) ?? "";
-  return line ? `The render stopped: ${line.slice(0, 240)}` : "The render stopped before it finished.";
+  return line ? `The render stopped: ${line.slice(0, 240)}` : "The render stopped before it finished. Render it again.";
 }
 
 export async function renderStatus(id: string): Promise<RenderStatus> {

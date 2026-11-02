@@ -15,10 +15,11 @@ Read `src/lib/studio/edit.ts` once: it is the exact shape of edit.json. Also rea
   - `video` tracks hold `clip`s of footage or photos.
   - `graphics` tracks hold `graphic`s (lower thirds, titles, end cards).
   - `audio` tracks hold `clip`s used only for sound (music, a voice carried under other pictures).
-- A clip: `{ "id", "type": "clip", "media", "start", "from", "to", "speed"?, "volume"?, "fadeIn"?, "fadeOut"?, "zoom"?, "x"?, "y"? }`.
+- A clip: `{ "id", "type": "clip", "media", "start", "from", "to", "speed"?, "volume"?, "fadeIn"?, "fadeOut"?, "zoom"?, "x"?, "y"?, "box"? }`.
   - `start` is when it appears on the film's timeline.
   - `from` and `to` are the in and out points in the SOURCE, in seconds.
   - Length on screen is `(to - from) / speed`.
+  - `box` (optional) is the part of the frame the clip fills, `{ "x", "y", "w", "h" }` as 0..1 of the frame. The clip covers the box as it would cover the frame (`zoom`, `x`, `y` frame it inside the box) and nothing shows outside it. No box means the whole frame.
 - Items on one track must not overlap. Give every item a short unique id (`c1`, `c2`, `lt1`), and keep the ids of items you didn't change.
 - `captions.words` are on the FILM's timeline, not the source's.
 - `film.json` `duration` must equal where the edit ends. Update `marks` to the real beats ("Intro", "First answer", "End card"); one named exactly "Cover" is the poster frame, so put it on a strong shot.
@@ -103,6 +104,47 @@ If there's no transcript, say so. The person can press Transcribe in the studio.
 4. Add `zoom` only for punch-ins.
 5. Check frames at a few points.
 6. Move captions to `middle`, and keep graphics clear of faces.
+
+## Half-and-half reels (speaker on top, a graphic per beat below)
+
+The studio's "Record a reel" makes a 9:16 film (1080x1920) from a take read off its teleprompter, or from videos the person already had. The first message asks for this layout. Usually a script comes with it, attached in `refs/` as JSON: `{ "title", "beats": [{ "line", "visual" }] }`. `line` is what's said; `visual` is the idea for that beat's graphic.
+
+1. **Look first.**
+   - Run `list`, then `words` for the take. Without a transcript, use `silences` and say so.
+   - Run `faces` for where the speaker sits.
+   - Check `frames` at the start, middle and end.
+2. **Cut the take.**
+   - Trim the dead air before the first word and after the last, and the countdown or "okay" at the start.
+   - Cut retakes: when a line is said twice, keep the better last one.
+   - Cut long pauses as for any talking head.
+   - Don't cut inside a beat's line unless it stumbles.
+3. **Put the speaker on the top half.**
+   - Every speaker clip on the main video track gets `"box": { "x": 0, "y": 0, "w": 1, "h": 0.5 }`.
+   - A 16:9 Mac take covers that 1080x960 box with room to spare. Set `x` and `y` to the face centre from `faces` (often `y` 0.4 to 0.45, so there's headroom), and keep the eyes about a third down the box.
+   - `zoom` 1 to 1.15 only. Punch in on alternate clips to hide jump cuts.
+4. **Time the beats.**
+   - Find each beat's line in the transcript: the first and last spoken word of it, matched loosely, since speech wanders from the script.
+   - Map those times to the film (`start + (w - from) / speed`) after your cuts.
+   - Each beat's graphic runs from just before its first word (about 0.1 s) to the next beat's start. The last one runs to the end. No gaps in the bottom half.
+   - A beat that was skipped gets no graphic. Fold its idea into the next one if it fits.
+5. **Make the bottom half.**
+   - Write one graphic for the film, `graphics/beat.jsx`, plus its `graphics/beat.json` with the params (`title`, `kind`, `text`, `value`, whatever the ideas need). Place one item per beat on a graphics track with that beat's values. A beat that needs something very different can have its own `graphics/<name>.jsx`.
+   - The graphic draws ONLY in the bottom half: a container at `top: H / 2`, `height: H / 2`, full width. Fill it with the brand's ground so the half is never empty.
+   - Its subject is the beat's `visual`, drawn as motion: a number counting up, a list building, a before and after, a simple diagram, one key word set large. Not the spoken line typed out again (the captions carry the words).
+   - Every graphic enters on its first word and settles fast (0.3 to 0.6 s). Leave cleanly before the next beat's graphic arrives, or hand over with the same ground so the seam never flashes.
+   - Draw in the kit: `useBrandFont`, `usePalette`, `useTexture` and `LineBlock` from `studio-kit`, as studio/graphics/*.jsx do. Keep the palette's accent for the one point of action in each beat.
+   - Set `background` to the brand's ground.
+6. **Captions.**
+   - Build them from the words you kept (see Captions). Use `position: "middle"`: they sit on the seam between the halves, which is where these reels carry them.
+   - `lines` or `karaoke`, 2 to 5 words a line.
+7. **Ending.**
+   - End on the last word plus about 0.5 s, or a 2 s end card in the bottom half (or full frame) if the script closes with a call to action.
+   - Update `marks` per beat, named by its idea. Put "Cover" on a beat with a strong graphic and the speaker mid-word, eyes open.
+8. **Check.**
+   - Run the checker.
+   - Look at `frames` from a draft at a few beats if you can. The face must sit fully in the top half, and nothing in the bottom half may cross the seam.
+
+With several videos and no script, find the ideas yourself from the transcript: one beat per thought, 3 to 8 s each. Say in your reply how many beats you made and anything you couldn't match to the script.
 
 ## Music and sound
 

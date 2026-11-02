@@ -32,6 +32,7 @@ export function ChatPanel({
   chat,
   pinned,
   sound,
+  soundLength,
   time,
   clock,
   onClearPick,
@@ -47,6 +48,7 @@ export function ChatPanel({
   chat: ChatState;
   pinned: Pinned | null;
   sound?: { pin: SoundPin; label: string } | null; // part of the sound, picked on the timeline
+  soundLength?: number; // how long the sound is, so a whole lane reads "whole film"
   time: () => number;
   clock: Clock;
   onClearPick: () => void;
@@ -161,7 +163,7 @@ export function ChatPanel({
         turn.running ? "h-[calc(100dvh-84px)]" : "h-auto max-h-[calc(100dvh-84px)]",
       )}
       pillClassName="top-[68px] left-4"
-      pillMark={turn.running ? <ClaudeAtWork /> : undefined}
+      pillMark={<ClaudeAtWork working={turn.running} />}
       style={style}
       bodyClassName="flex flex-col"
       actions={
@@ -222,7 +224,7 @@ export function ChatPanel({
           </div>
         ) : null}
         {messages.map((m, i) => (
-          <Message key={`${m.at}-${i}`} message={m} filmId={filmId} />
+          <Message key={`${m.at}-${i}`} message={m} filmId={filmId} soundLength={soundLength} />
         ))}
         {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
         {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
@@ -273,13 +275,13 @@ export function ChatPanel({
   );
 }
 
-function Message({ message, filmId }: { message: ChatMessage; filmId: string }) {
+function Message({ message, filmId, soundLength }: { message: ChatMessage; filmId: string; soundLength?: number }) {
   if (message.role === "you") {
     return (
       <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">
         {message.context?.sound ? (
           <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
-            {soundChipLabel(message.context.sound)}
+            {soundChipLabel(message.context.sound, soundLength)}
           </span>
         ) : message.context?.pick ? (
           <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">

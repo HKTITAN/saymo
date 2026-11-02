@@ -77,7 +77,7 @@ const b64url = (buf: Buffer) => buf.toString("base64url");
 // request; the PKCE verifier stays here and proves the code is ours.
 export function googleSignInUrl(origin: string, returnTo: string): string {
   const c = client();
-  if (!c) throw new ConnectError("Google Drive isn't set up on this studio yet.");
+  if (!c) throw new ConnectError("Google Drive isn't set up on this studio yet. Follow the set-up steps under Where films are saved.");
   for (const [k, p] of pending) if (Date.now() - p.at > TEN_MINUTES) pending.delete(k);
   const state = b64url(randomBytes(32));
   const verifier = b64url(randomBytes(48));
@@ -112,7 +112,7 @@ export async function finishGoogleSignIn(state: string | null, code: string | nu
     throw Object.assign(new ConnectError(error === "access_denied" ? "Google Drive wasn't connected: access was declined." : "Google didn't finish the sign-in. Try again."), { returnTo: flow.returnTo });
   }
   const c = client();
-  if (!c) throw new ConnectError("Google Drive isn't set up on this studio yet.");
+  if (!c) throw new ConnectError("Google Drive isn't set up on this studio yet. Follow the set-up steps under Where films are saved.");
   const tokens = await tokenRequest({
     grant_type: "authorization_code",
     code,
@@ -174,7 +174,7 @@ export async function accessToken(): Promise<{ token: string; email: string }> {
   return withConnection(SECRET, async () => {
     const saved = await load();
     const a = saved.accounts.find((x) => x.email === saved.active);
-    if (!a) throw new ConnectError("No Google Drive is connected.");
+    if (!a) throw new ConnectError("No Google Drive is connected. Connect one under Where films are saved.");
     if (a.accessToken && a.expiresAt - Date.now() > 60_000) return { token: a.accessToken, email: a.email };
     const c = client();
     if (!c) throw new ConnectError("Google Drive isn't set up on this studio any more. Check .env.local.");
@@ -222,7 +222,7 @@ export async function rootFolder(): Promise<{ token: string; email: string; fold
   const { token, email } = await accessToken();
   const saved = await load();
   const a = saved.accounts.find((x) => x.email === email);
-  if (!a) throw new ConnectError("No Google Drive is connected.");
+  if (!a) throw new ConnectError("No Google Drive is connected. Connect one under Where films are saved.");
   if (a.folderId) {
     const still = await driveJson<DriveFile & { trashed?: boolean }>(token, `/drive/v3/files/${a.folderId}?fields=id,name,webViewLink,trashed`).catch(() => null);
     if (still && !still.trashed) return { token, email, folder: still };
@@ -246,7 +246,7 @@ export async function setGoogle(change: { active?: string; autoDrafts?: boolean;
   await withConnection(SECRET, async () => {
     const saved = await load();
     if (change.active !== undefined) {
-      if (!saved.accounts.some((a) => a.email === change.active)) throw new ConnectError("That Google account isn't connected here.");
+      if (!saved.accounts.some((a) => a.email === change.active)) throw new ConnectError("That Google account isn't connected here. Add it with Add another Drive.");
       saved.active = change.active;
     }
     if (change.autoDrafts !== undefined) saved.autoDrafts = change.autoDrafts;

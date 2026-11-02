@@ -34,7 +34,7 @@ export async function stagePage(film: Film): Promise<string> {
   const brand = await brandHead(film);
   if (film.engine === "html") {
     const html = await readFile(path.join(filmDir(film.id), "index.html"), "utf8").catch(() => null);
-    if (html === null) return errorPage(film, "This film has no index.html.");
+    if (html === null) return errorPage(film, "This film has no index.html. Ask Claude to fix it.");
     // The globals go first, then the brand and the bridge, then the film's own head.
     return prepareHtml(html, film, paramValues(film), `<base href="${stageBase(film.id)}">${STAGE_STYLE}${brand}${bridgeScript({ id: film.id, engine: "html" })}`);
   }
@@ -121,9 +121,9 @@ export async function stageBundle(id: string): Promise<string> {
       child.on("close", async (code) => {
         bundling.delete(file);
         if (code === 0) resolve(await readFile(file, "utf8"));
-        else resolve(failure(said.trim().split("\n").at(-1) || "The film's code could not be built."));
+        else resolve(failure(said.trim().split("\n").at(-1) || "The film's code could not be built. Ask Claude to fix it."));
       });
-      child.on("error", () => resolve(failure("The film's code could not be built.")));
+      child.on("error", () => resolve(failure("The film's code could not be built. Ask Claude to fix it.")));
     });
   bundling.set(file, job);
   return job;
@@ -180,14 +180,14 @@ function rustStage({ id, src }: { id: string; src: string }) {
       },
       { once: true },
     );
-    video.addEventListener("error", () => stage.error("The draft video could not be played."), { once: true });
+    video.addEventListener("error", () => stage.error("The draft video could not be played. Render it again."), { once: true });
   };
   let told = false;
   const check = async () => {
     const res = await fetch(`/api/studio/films/${id}/render?stage=1`, { cache: "no-store" });
     const status = (await res.json()) as { state: string; at?: string; message?: string; current?: boolean };
     if (status.current) return show(String(status.at ?? Date.now()));
-    if (status.state === "failed") return stage.error(status.message ?? "The draft could not be made.");
+    if (status.state === "failed") return stage.error(status.message ?? "Unable to make the draft. Render it again.");
     if (!told) stage.loading();
     told = true;
     setTimeout(check, 700);
