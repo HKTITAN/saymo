@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>Motion Studio</string>
+	<key>CFBundleDisplayName</key>
+	<string>Motion Studio</string>
+	<key>CFBundleExecutable</key>
+	<string>Motion Studio</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.aerchain.motion-studio</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<!-- scripts/build.sh sets both from package.json's version. -->
+	<key>CFBundleShortVersionString</key>
+	<string>0.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>0</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.video</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>14.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>Aerchain</string>
+
+	<!-- Asked the first time the studio uses each one. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Motion Studio uses the microphone when you dictate a prompt or record a voiceover.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Motion Studio uses the camera when you record a reel.</string>
+
+	<!-- The studio runs on this Mac at http://127.0.0.1, which needs this. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+
+	<!-- Updates (Sparkle) stay off: scripts/build.sh adds SUFeedURL and
+	     SUPublicEDKey only when a release feed exists. See README.md. -->
+</dict>
+</plist>

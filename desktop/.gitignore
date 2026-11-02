@@ -1,0 +1,7 @@
+# What scripts/build.sh makes
+/build/
+# Sparkle, fetched by scripts/fetch-sparkle.sh
+/vendor/
+# swift build / SourceKit
+/.build/
+/.swiftpm/

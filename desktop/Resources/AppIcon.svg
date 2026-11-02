@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Motion Studio's app icon, a placeholder: the studio's own mark (a frame
+       with a play button) on the studio's dark ground, in macOS's icon grid.
+       Rebuild AppIcon.icns from it with scripts/make-icon.sh. -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#161616"/>
+  <rect x="100.5" y="100.5" width="823" height="823" rx="184.5" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+  <rect x="262" y="322" width="500" height="380" rx="72" fill="none" stroke="#ffffff" stroke-width="40"/>
+  <path d="M470 432 L470 592 L598 512 Z" fill="#F55A00" stroke="#F55A00" stroke-width="28" stroke-linejoin="round"/>
+</svg>

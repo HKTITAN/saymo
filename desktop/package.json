@@ -1,0 +1,14 @@
+{
+  "name": "motion-studio-mac",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Motion Studio as a Mac app (Swift). No packages: everything is built with Apple's own tools.",
+  "scripts": {
+    "dev": "bash scripts/build.sh --debug && open \"build/Motion Studio.app\"",
+    "build": "bash scripts/build.sh",
+    "dmg": "bash scripts/build.sh --dmg",
+    "open": "open \"build/Motion Studio.app\"",
+    "icon": "bash scripts/make-icon.sh",
+    "sparkle": "bash scripts/fetch-sparkle.sh"
+  }
+}
