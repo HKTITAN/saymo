@@ -19,10 +19,11 @@ export const isProviderId = (value: unknown): value is ProviderId =>
 // its own.
 export const familyOf = (id: ProviderId) => (id === "codex" ? "codex" : "claude");
 
-export const PROVIDERS: Record<ProviderId, { name: string; short: string; via: string }> = {
-  claude: { name: "Claude", short: "Claude", via: "Your Claude plan" },
-  codex: { name: "Codex", short: "Codex", via: "Your ChatGPT plan" },
-  "api-key": { name: "Claude with an API key", short: "API key", via: "An Anthropic API key" },
+// `model` is what runs, in plain words, shown before the status check answers.
+export const PROVIDERS: Record<ProviderId, { name: string; short: string; via: string; model: string }> = {
+  claude: { name: "Claude", short: "Opus 5.5 · High", via: "Your Claude plan", model: "Opus 5.5, high effort" },
+  codex: { name: "Codex", short: "Codex", via: "Your ChatGPT plan", model: "Codex's own model, high effort" },
+  "api-key": { name: "Claude with an API key", short: "Opus 5.5 · Key", via: "An Anthropic API key", model: "Opus 5.5, high effort" },
 };
 
 // ready: signed in and usable. The rest say what's missing.

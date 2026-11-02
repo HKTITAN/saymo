@@ -46,7 +46,7 @@ export function ModelPicker({ provider, onChange }: { provider: ProviderId; onCh
       </Hint>
       <Popover.Portal>
         <Popover.Positioner side="top" align="start" sideOffset={8} collisionPadding={12} className="z-50">
-          <Popover.Popup className={cn(SURFACE, POPUP, "flex w-[248px] flex-col gap-0.5 p-1")}>
+          <Popover.Popup className={cn(SURFACE, POPUP, "flex w-[300px] flex-col gap-0.5 p-1")}>
             <div role="radiogroup" aria-label="AI for this prompt" className="flex flex-col gap-0.5">
               {PROVIDER_IDS.map((id) => {
                 const s = status?.providers.find((p) => p.id === id);
@@ -78,7 +78,10 @@ export function ModelPicker({ provider, onChange }: { provider: ProviderId; onCh
                         {s ? stateWords(s) : "Checking"}
                       </span>
                     </span>
-                    <span className="text-[11px] text-white/40">{s?.plan ?? PROVIDERS[id].via}</span>
+                    <span className="text-[11px] text-white/40">
+                      {s?.model ?? PROVIDERS[id].model}
+                      <span className="text-white/25"> · {s?.plan ?? PROVIDERS[id].via}</span>
+                    </span>
                   </button>
                 );
               })}
