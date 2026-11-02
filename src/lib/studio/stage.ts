@@ -31,13 +31,20 @@ async function brandHead(film: Film) {
   return brandScript(tokens, fontFaces(tokens));
 }
 
+// HyperFrames adds this to every page it renders (it turns off the pixel
+// snapping of letters), so an HTML film's stage adds it too: without it the
+// preview's letter edges came out crisper than the video's (up to 186/255
+// apart); with it the two match to within 2/255. The attribute is the one
+// HyperFrames looks for, so a page never gets it twice.
+const RENDER_TEXT_STYLE = '<style data-hyperframes-text-rendering="true">html,body,*{text-rendering:geometricPrecision}</style>';
+
 export async function stagePage(film: Film): Promise<string> {
   const brand = await brandHead(film);
   if (film.engine === "html") {
     const html = await readFile(path.join(filmDir(film.id), "index.html"), "utf8").catch(() => null);
     if (html === null) return errorPage(film, "This film has no index.html. Ask Claude to fix it.");
     // The globals go first, then the brand and the bridge, then the film's own head.
-    return prepareHtml(html, film, paramValues(film), `<base href="${stageBase(film.id)}">${STAGE_STYLE}${brand}${bridgeScript({ id: film.id, engine: "html", gsap: !IS_PRODUCT })}`);
+    return prepareHtml(html, film, paramValues(film), `<base href="${stageBase(film.id)}">${STAGE_STYLE}${RENDER_TEXT_STYLE}${brand}${bridgeScript({ id: film.id, engine: "html", gsap: !IS_PRODUCT })}`);
   }
   if (film.engine === "react") {
     const key = await sourceKey(film.id);
