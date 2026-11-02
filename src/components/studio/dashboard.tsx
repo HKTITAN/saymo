@@ -825,7 +825,7 @@ function FolderArt({ films, state }: { films: FilmSummary[]; state: FolderState 
   const slots = PAGES[state].slice(3 - inside.length);
   const opening = state !== "rest";
   const move = (delay: number) => ({
-    transition: `transform ${opening ? 460 : 320}ms ${SPRING} ${opening ? delay : 0}ms`,
+    transition: `transform ${opening ? 260 : 200}ms ${SPRING} ${opening ? delay : 0}ms`,
   });
   return (
     <svg viewBox="0 0 100 125" aria-hidden="true" className="absolute inset-0 h-full w-full overflow-visible">
@@ -859,7 +859,7 @@ function FolderArt({ films, state }: { films: FilmSummary[]; state: FolderState 
                 transformBox: "view-box",
                 transformOrigin: "0 0",
                 transform: `translate(16.5px, ${at.y}px) skewY(${at.skew}deg) scaleX(${at.scale})`,
-                ...move(i * 40),
+                ...move(i * 22),
               }}
             >
               <rect width={PAGE.w} height={PAGE.h} rx={3.5} fill={PAGE_FILL[PAGE_FILL.length - inside.length + i]} />
