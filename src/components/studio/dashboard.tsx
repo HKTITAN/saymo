@@ -717,12 +717,15 @@ function FolderCard({
   onDelete: () => Promise<void>;
 }) {
   const [over, setOver] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [landed, setLanded] = useState(0); // bumps when a film lands, for a small nod
   const latest = films[0]?.updatedAt;
   return (
     <li
       className="group/card group/doodle relative"
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes(FILM_DRAG)) return;
         e.preventDefault();
@@ -758,10 +761,10 @@ function FolderCard({
           )}
           skullet-block=""
         >
-          <FolderArt films={films} open={over} />
+          <FolderArt films={films} state={over ? "over" : hovered ? "hover" : "rest"} />
         </span>
         <span className="flex flex-col gap-0.5 px-1 pb-0.5">
-          <span className={cn("truncate text-[12.5px] text-white/90", renaming && "invisible")}>{folder.name}</span>
+          <span className={cn("truncate pe-8 text-[12.5px] text-white/90", renaming && "invisible")}>{folder.name}</span>
           <span className="truncate text-[11.5px] text-white/40" suppressHydrationWarning>
             {over ? "Drop to add it here" : films.length ? `${filmCount(films.length)}${latest && now ? ` · ${ago(latest, now)}` : ""}` : "Empty"}
           </span>
@@ -779,7 +782,7 @@ function FolderCard({
         />
       ) : null}
 
-      <div className="absolute top-3.5 right-3.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/card:opacity-100 has-[[data-popup-open]]:opacity-100 [&_button]:bg-black/55 [&_button]:backdrop-blur-md">
+      <div className="absolute right-1.5 bottom-[18px] opacity-0 transition-opacity focus-within:opacity-100 group-hover/card:opacity-100 has-[[data-popup-open]]:opacity-100">
         <FolderMenu folder={folder} count={films.length} onRename={() => setRenaming(true)} onDelete={onDelete} />
       </div>
     </li>
@@ -787,69 +790,106 @@ function FolderCard({
 }
 
 // A folder drawn the Windows way, standing up and seen from the side: the
-// back with a small tab low on its right, and the cover swung open on the
-// left. The newest films inside peek out of the top as stills. Hovering (or
-// a film dragged over it) swings the cover wider and lifts them.
-const EASE = "duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
-// The films inside stand up like pages held in the spine: the back one flat
-// against the back, each one in front leaning further toward the open cover.
-const SHEET = { w: 62, h: 84 };
-const SHEETS = [
-  { x: 15, y: 0, skew: 0, scale: 1 },
-  { x: 15, y: 2, skew: 13, scale: 0.78 },
-  { x: 15, y: 4, skew: 25, scale: 0.56 },
-];
-function FolderArt({ films, open }: { films: FilmSummary[]; open: boolean }) {
+// back with a small tab low on its right, the cover swung open on the left,
+// and the films inside standing in it like pages held in the spine.
+//
+// Three states, one motion: at rest the cover is ajar and the pages barely
+// fan; on hover the cover swings open and the pages fan out one after
+// another; with a film dragged over it, it opens wide to take it.
+type FolderState = "rest" | "hover" | "over";
+const PAGE = { w: 58, h: 80 };
+const PAGES: Record<FolderState, { skew: number; scale: number; y: number }[]> = {
+  rest: [
+    { skew: 0, scale: 1, y: 0 },
+    { skew: 4, scale: 0.93, y: 1.5 },
+    { skew: 8, scale: 0.86, y: 3 },
+  ],
+  hover: [
+    { skew: 0, scale: 1, y: -2 },
+    { skew: 13, scale: 0.8, y: 0 },
+    { skew: 25, scale: 0.6, y: 2 },
+  ],
+  over: [
+    { skew: 0, scale: 1, y: -4 },
+    { skew: 17, scale: 0.74, y: -2 },
+    { skew: 31, scale: 0.52, y: 0 },
+  ],
+};
+const COVER: Record<FolderState, number> = { rest: 0.86, hover: 1.18, over: 1.42 };
+const PAGE_FILL = ["#3a3a3a", "#454545", "#505050"];
+const SPRING = "cubic-bezier(0.23, 1, 0.32, 1)";
+function FolderArt({ films, state }: { films: FilmSummary[]; state: FolderState }) {
   const id = useId();
-  const inside = films.slice(0, 3).reverse();
+  // Newest film in front; an empty folder holds one blank page.
+  const inside: (FilmSummary | null)[] = films.length ? films.slice(0, 3).reverse() : [null];
+  const slots = PAGES[state].slice(3 - inside.length);
+  const opening = state !== "rest";
+  const move = (delay: number) => ({
+    transition: `transform ${opening ? 460 : 320}ms ${SPRING} ${opening ? delay : 0}ms`,
+  });
   return (
     <svg viewBox="0 0 100 125" aria-hidden="true" className="absolute inset-0 h-full w-full overflow-visible">
       <defs>
-        <clipPath id={`${id}-sheet`}>
-          <rect width={SHEET.w} height={SHEET.h} rx={3} />
+        <clipPath id={`${id}-page`}>
+          <rect width={PAGE.w} height={PAGE.h} rx={3.5} />
         </clipPath>
+        <linearGradient id={`${id}-cover`} x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stopColor="#3d3d3d" />
+          <stop offset="1" stopColor="#303030" />
+        </linearGradient>
+        <filter id={`${id}-soft`} x="-30%" y="-200%" width="160%" height="500%">
+          <feGaussianBlur stdDeviation={2.6} />
+        </filter>
       </defs>
       <g transform="translate(1 9)">
+        {/* One soft shadow on the ground. */}
+        <ellipse cx={50} cy={104} rx={38} ry={3.2} fill="rgb(0 0 0 / 0.55)" filter={`url(#${id}-soft)`} />
         {/* The back and its tab. */}
-        <path d="M84.3 88 L95 90.2 L84.3 95.6 Z" fill="rgb(0 0 0 / 0.45)" />
         <path
           d="M19 6.6 H73.7 Q78.7 6.6 78.7 11.6 V59.5 Q78.7 62.5 81 64 L82 64.7 Q84.3 66.2 84.3 69 V90.6 Q84.3 95.6 79.3 95.6 H19 Q14 95.6 14 90.6 V11.6 Q14 6.6 19 6.6 Z"
-          fill="#2c2c2c"
+          fill="#262626"
         />
-        {/* The films inside. */}
+        {/* The pages, fanned from the spine. */}
         {inside.map((f, i) => {
-          const at = SHEETS[SHEETS.length - inside.length + i];
+          const at = slots[i];
           return (
             <g
-              key={f.id}
-              className={cn("transition-transform", EASE, open ? "-translate-y-[7px]" : "group-hover/card:-translate-y-[3px]")}
+              key={f?.id ?? "blank"}
+              style={{
+                transformBox: "view-box",
+                transformOrigin: "0 0",
+                transform: `translate(16.5px, ${at.y}px) skewY(${at.skew}deg) scaleX(${at.scale})`,
+                ...move(i * 40),
+              }}
             >
-              <g transform={`translate(${at.x} ${at.y}) skewY(${at.skew}) scale(${at.scale} 1)`}>
-                <rect width={SHEET.w} height={SHEET.h} rx={3} fill="#3f3f3f" />
-                {f.poster ? (
-                  <image href={f.poster} width={SHEET.w} height={SHEET.h} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-sheet)`} />
-                ) : (
-                  <>
-                    <rect x={30} y={9} width={18} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.16)" />
-                    <rect x={30} y={15} width={24} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.09)" />
-                    <rect x={30} y={21} width={20} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.09)" />
-                  </>
-                )}
-                <rect width={SHEET.w} height={SHEET.h} rx={3} fill="none" stroke="rgb(0 0 0 / 0.35)" strokeWidth={0.6} />
-              </g>
+              <rect width={PAGE.w} height={PAGE.h} rx={3.5} fill={PAGE_FILL[PAGE_FILL.length - inside.length + i]} />
+              {f?.poster ? (
+                <image href={f.poster} width={PAGE.w} height={PAGE.h} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-page)`} opacity={0.9} />
+              ) : (
+                <>
+                  <rect x={7} y={8} width={20} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.18)" />
+                  <rect x={7} y={14} width={30} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.08)" />
+                </>
+              )}
+              <rect x={0.3} y={0.3} width={PAGE.w - 0.6} height={PAGE.h - 0.6} rx={3.3} fill="none" stroke="rgb(255 255 255 / 0.06)" strokeWidth={0.6} />
             </g>
           );
         })}
         {/* The cover, swung open toward you. */}
         <g
-          className={cn(
-            "transition-transform [transform-box:view-box] [transform-origin:14px_60px]",
-            EASE,
-            open ? "scale-x-[1.35]" : "group-hover/card:scale-x-[1.15]",
-          )}
+          style={{
+            transformBox: "view-box",
+            transformOrigin: "14px 60px",
+            transform: `scaleX(${COVER[state]})`,
+            ...move(0),
+          }}
         >
-          <path d="M37.8 103.5 L48 105.4 L37.8 112 Z" fill="rgb(0 0 0 / 0.45)" />
-          <path d="M14 10 Q14 5.5 17.6 8.2 L35 21.6 Q37.8 23.8 37.8 27.3 V107.6 Q37.8 113.4 33.6 110.4 L17.4 98.6 Q14 96.2 14 92 Z" fill="#3b3b3b" />
+          <path
+            d="M14 10 Q14 5.5 17.6 8.2 L35 21.6 Q37.8 23.8 37.8 27.3 V107.6 Q37.8 113.4 33.6 110.4 L17.4 98.6 Q14 96.2 14 92 Z"
+            fill={`url(#${id}-cover)`}
+            stroke="rgb(255 255 255 / 0.07)"
+            strokeWidth={0.6}
+          />
         </g>
       </g>
     </svg>
