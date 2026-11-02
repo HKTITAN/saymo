@@ -6,11 +6,12 @@ import type { Mark } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { type Clock, formatTime, useClock } from "./clock";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION } from "./panel";
-import { MotionSoundLane, type SoundLaneData, showLane } from "./sound-lane";
+import { MotionSoundLane, type SoundLaneData, showLane, showStems } from "./sound-lane";
+import { StemLane } from "./sound-stems";
 
 // The timeline along the bottom: play and pause, the film's named moments,
-// and a track to scrub, with the sound design's waveform under it once the
-// film has one. Dragging pauses; Space plays; M mutes the sound here.
+// and a track to scrub, with the sound design's waveforms under it once the
+// film has one (Music and Effects, where parts can be picked and changed). Dragging pauses; Space plays; M mutes the sound here.
 
 export function Timeline({
   clock,
@@ -151,7 +152,29 @@ export function Timeline({
           style={{ left: `${share * 100}%` }}
         />
       </div>
-      {lane && sound ? (
+      {showStems(sound) ? (
+        // Music and Effects: drag across one to pick part of it.
+        <div className={cn("flex flex-col gap-1", (!sound.on || sound.muted) && "opacity-60")}>
+          {(["music", "effects"] as const).map((stem) => (
+            <StemLane
+              key={stem}
+              stem={stem}
+              peaks={sound.stems[stem]}
+              empty={Boolean(sound.present && !sound.present.includes(stem))}
+              duration={duration}
+              width={trackW}
+              height={20}
+              editor={sound.editor}
+              dim={!sound.on || sound.muted}
+              label
+              snaps={() => [clock.get().t, ...marks.map((m) => m.t)]}
+              playhead={share}
+              above="card"
+              className="rounded-[7px] bg-white/[0.03]"
+            />
+          ))}
+        </div>
+      ) : lane && sound ? (
         // Scrubbing works here too, as on the track above.
         <div onPointerDown={down} onPointerMove={move} className="cursor-ew-resize touch-none select-none">
           <MotionSoundLane data={sound} duration={duration} width={trackW} share={share} />

@@ -3,10 +3,11 @@ import { allowed, readFilm, refused } from "@/lib/studio/films";
 import { serveFile } from "@/lib/studio/serve";
 import { soundDir } from "@/lib/studio/sound-render";
 
-const FILES = new Set(["sound.wav", "peaks.json"]);
+const FILES = new Set(["sound.wav", "peaks.json", "music-peaks.json", "effects-peaks.json"]);
 
 // The film's rendered sound (with byte ranges, so it can be played and
-// seeked) and its loudness outline for the timeline.
+// seeked) and its loudness outlines for the timeline: the whole mix, and
+// the music and the effects on their own.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/films/[id]/sound/[file]">) {
   if (!allowed(request)) return refused();
   const { id, file } = await ctx.params;

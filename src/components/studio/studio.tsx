@@ -29,7 +29,7 @@ import { clipNumber, defaults, Multitrack } from "./multitrack";
 import { CARD, PILL_BUTTON } from "./panel";
 import { RenderControl } from "./render";
 import { SoundGroup } from "./sound-group";
-import { type SoundLaneData, showLane } from "./sound-lane";
+import { type SoundLaneData, showLane, showStems } from "./sound-lane";
 import { soundApi, soundOf } from "./sound-api";
 import { createBridge, type Insets, Stage, type StageStatus, useFit } from "./stage";
 import { Timeline } from "./timeline";
@@ -37,8 +37,9 @@ import { attachFiles } from "./use-attachments";
 import { useChat } from "./use-chat";
 import { useEdit } from "./use-edit";
 import { useSound } from "./use-sound";
+import { useSoundEdit } from "./use-sound-edit";
 import { isMediaFile } from "./video-api";
-import type { Pinned } from "./words";
+import { type Pinned, type SoundPin, soundChipLabel, tryAnotherPrompt } from "./words";
 
 // The motion studio: the film fills the window and every panel floats over
 // it. The engines that make the film stay out of sight; you work by asking
@@ -371,6 +372,8 @@ function FilmView({
   const [texts, setTexts] = useState<string[]>([]);
   const [pointing, setPointing] = useState(false);
   const [pinned, setPinned] = useState<Pinned | null>(null);
+  // Part of the sound, picked on the timeline and pinned to the prompt.
+  const [soundPin, setSoundPin] = useState<SoundPin | null>(null);
   const [bubble, setBubble] = useState(false);
   const [folded, setFolded] = useState({ chat: false, inspector: false, media: false });
   // The timeline's height: a third of the window until you pull its edge.
@@ -504,6 +507,30 @@ function FilmView({
     [chat, history],
   );
 
+  // Parts of the sound picked on the timeline's Music and Effects lanes:
+  // changed by hand (each change a step for ⌘Z), pinned to the prompt, or
+  // sent to Claude for another take.
+  const soundLength = film?.duration ?? 0;
+  const soundEdit = useSoundEdit({
+    id,
+    sound,
+    duration: soundLength,
+    record: history.record,
+    onAsk: useCallback((pin: SoundPin) => {
+      setPinned(null);
+      setSoundPin(pin);
+      setFolded((f) => ({ ...f, chat: false }));
+      setTimeout(() => chatInput.current?.focus(), 0);
+    }, []),
+    onTry: useCallback(
+      (pin: SoundPin) => {
+        setFolded((f) => ({ ...f, chat: false }));
+        void chatView.send(tryAnotherPrompt(pin, soundLength), { t: clock.get().t, pick: null, sound: pin });
+      },
+      [chatView, clock, soundLength],
+    ),
+  });
+
   // A film made from a prompt sends that prompt once it's open; one made
   // from footage brings the footage in and lays it on the timeline.
   const sent = useRef(false);
@@ -595,6 +622,7 @@ function FilmView({
           const pick = filmRef.current?.kind === "video" ? pickFromEdit(m.pick) : m.pick;
           if (pick.id && filmRef.current?.kind === "video") edRef.current?.setSelected(new Set([pick.id]));
           setPinned({ pick, t: clock.get().t });
+          setSoundPin(null);
           setPointing(false);
           setBubble(true);
           break;
@@ -1079,9 +1107,13 @@ function FilmView({
     muted: sound.muted,
     error: sound.error,
     onRetry: () => void sound.render(),
+    stems: sound.stems,
+    present: sound.status.state === "ready" ? sound.status.stems : undefined,
+    editor: soundEdit,
   };
-  // The motion timeline grows by the sound lane once there is one.
-  const bottom = isVideo ? tlH + 28 : showLane(soundLane) ? 126 : 96;
+  // The motion timeline grows by the sound lane once there is one (two,
+  // Music and Effects, once the sound has stems).
+  const bottom = isVideo ? tlH + 28 : showStems(soundLane) ? 150 : showLane(soundLane) ? 126 : 96;
   const insets: Insets = hidden
     ? { top: 0, right: 0, bottom: 0, left: 0 }
     : {
@@ -1239,9 +1271,13 @@ function FilmView({
           filmId={id}
           chat={chatView}
           pinned={bubble ? null : pinned}
+          sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength) } : null}
           time={time}
           clock={clock}
-          onClearPick={() => setPinned(null)}
+          onClearPick={() => {
+            setPinned(null);
+            setSoundPin(null);
+          }}
           pointing={pointing}
           onPoint={togglePoint}
           folded={folded.chat}

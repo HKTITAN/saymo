@@ -99,6 +99,30 @@ export function useSound({
     };
   }, [id, version]);
 
+  // The music and the effects on their own, for the timeline's two lanes.
+  const stemList = status.state === "ready" ? status.stems : undefined;
+  const hasStems = Boolean(stemList);
+  const [stems, setStems] = useState<{ music: number[] | null; effects: number[] | null } | null>(null);
+  useEffect(() => {
+    if (!version || !hasStems) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- no stems rendered, so no lanes
+      setStems(null);
+      return;
+    }
+    let live = true;
+    const one = (stem: "music" | "effects") =>
+      soundApi.stemPeaks(id, stem, version).then(
+        (p) => (Array.isArray(p) ? p : null),
+        () => null,
+      );
+    void Promise.all([one("music"), one("effects")]).then(([music, effects]) => {
+      if (live) setStems({ music, effects });
+    });
+    return () => {
+      live = false;
+    };
+  }, [id, version, hasStems]);
+
   const render = useCallback(async () => {
     setError(null);
     try {
@@ -107,6 +131,15 @@ export function useSound({
       setError(e instanceof Error ? e.message : "Unable to make the sound. Try again.");
     }
   }, [id]);
+
+  // A sound rendered before the studio kept stems is rendered once more,
+  // which splits it into music and effects (it sounds the same).
+  const split = useRef<string | null>(null);
+  useEffect(() => {
+    if (!version || hasStems || claudeRunning || split.current === id) return;
+    split.current = id;
+    void render();
+  }, [id, version, hasStems, claudeRunning, render]);
 
   const setMuted = useCallback((next: boolean) => {
     setMutedState(next);
@@ -237,5 +270,18 @@ export function useSound({
     };
   }, [muted, clock, bridge]);
 
-  return { status, peaks, sound, muted, setMuted, render, refresh, error, clearError: () => setError(null) };
+  return {
+    status,
+    peaks,
+    stems,
+    sound,
+    muted,
+    setMuted,
+    render,
+    refresh,
+    // The status a mix edit answered with: a new sound to load.
+    adopt: setStatus,
+    error,
+    clearError: () => setError(null),
+  };
 }

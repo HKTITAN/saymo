@@ -70,6 +70,18 @@ Read it like a mix engineer: each intended hit should show as an onset on its ma
 
 The studio normalises every sound to about **-16 LUFS** with peaks under **-1.5 dBTP** (right for LinkedIn, X and Instagram, which all play around -14 to -16). So balance the parts against each other (`musicGain`, `effectsGain`, each node's gain); don't chase overall loudness.
 
+## Changing one part
+
+The person sees the sound on the timeline as two lanes, **Music** (your Strudel `music`) and **Effects** (your Tone.js `effects`), rendered as two stems (`sound/music.wav`, `sound/effects.wav`) that add up to `sound.wav`. They can pick a span of one lane and either change its volume themselves or ask you about just that bit. Then the message carries a `<sound>` note: the stem and the film times.
+
+- Change only what plays on that stem between those times. Everything else must render byte-identical: the same notes, hits, times and gains outside the span, and nothing on the other stem moves. Read the score first and find exactly which notes or hits fall in the span.
+- Effects: retime, replace or reshape only the hits scheduled inside the span (a tail that rings past its end is fine).
+- Music: Strudel plays in cycles, so prefer a change that is gated to the span, for example a separate `$:` line or a `.mask()` / `.when()` that is only on between those times, and a matching gate that silences the old part there. Don't change `setcps`, `musicStart`, `musicGain` or the other lines: they move the whole bed.
+- "Try another" means a fresh take on that span only: a different sound, rhythm or note in the same place, same overall level.
+- Render with the sound command as usual and check the onsets outside the span are unchanged.
+
+**Their own volume edits** live in `sound/mix.json`: spans of one stem made louder, quieter or muted, with 20 ms fades at the edges. The studio applies them on top of whatever you render (the stems are mixed again with them, then given the same loudness gain), and they stay when you change the score. Never edit `mix.json` (or the stems, `master.json` or the peaks files). The sound command's report lists them, so you know a quiet span may be their choice rather than the score.
+
 ## The Aerchain sonic language
 
 Clean, minimal, digital, warm underneath. Like the lines: flat, precise, nothing decorative.

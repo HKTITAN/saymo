@@ -4,7 +4,18 @@
 // peaks kept under -1.5 dBTP. Also writes sound/peaks.json (100 a second,
 // for the timeline) and sound/status.json.
 //
+// The music and the effects are kept as two stems (sound/music.wav and
+// sound/effects.wav, 32 bit float, before loudness, with their peaks in
+// music-peaks.json and effects-peaks.json), and the loudness gain chosen
+// for the score is kept in sound/master.json. The person's volume edits
+// (sound/mix.json: spans of one stem made louder, quieter or silent) are
+// applied to the stems when they're added together, with 20 ms fades at
+// each span's edges, and then that same loudness gain is applied, so an
+// edit changes its span and nothing else. --mix does only that last part:
+// no score is played, so it takes about a second.
+//
 //   node scripts/studio/sound.mjs <film-id>          render, then print what it hears
+//   node scripts/studio/sound.mjs <film-id> --mix    mix the kept stems again with mix.json
 //   node scripts/studio/sound.mjs <film-id> --check  render twice, say if the score is
 //                                                    deterministic; writes nothing
 //
@@ -48,6 +59,7 @@ const loudnessOf = (source) => {
 const args = process.argv.slice(2);
 const id = args.find((a) => !a.startsWith("--"));
 const checking = args.includes("--check");
+const remixing = args.includes("--mix");
 const quiet = args.includes("--quiet");
 const say = (line) => {
   if (!quiet) console.log(line);
@@ -61,6 +73,9 @@ if (!id || !/^[a-z0-9]{8}$/.test(id)) {
 const dir = path.join(ROOT, "films", id);
 const soundDir = path.join(dir, "sound");
 const statusFile = path.join(soundDir, "status.json");
+const masterFile = path.join(soundDir, "master.json");
+const mixFile = path.join(soundDir, "mix.json");
+const STEMS = ["music", "effects"];
 
 const writeJson = async (file, value) => {
   await writeFile(`${file}.tmp`, `${JSON.stringify(value, null, 2)}\n`);
@@ -217,7 +232,8 @@ async function renderInChrome(source, film) {
         },
         sampleRate: RATE,
       });
-      results.push({ pcm: new Float32Array(new Uint8Array(Buffer.from(r.pcm, "base64")).buffer), report: r.report });
+      const f32 = (b64) => new Float32Array(new Uint8Array(Buffer.from(b64, "base64")).buffer);
+      results.push({ music: f32(r.music), effects: f32(r.effects), report: r.report });
     }
     return { results, logs, context };
   } catch (e) {
@@ -334,51 +350,103 @@ function describeOnsets(onsets, marks) {
   return lines;
 }
 
-// ─── Main ───────────────────────────────────────────────────────────────────
+// ─── Stems and the mix ──────────────────────────────────────────────────────
 
-async function main() {
-  const film = JSON.parse(await readFile(path.join(dir, "film.json"), "utf8"));
-  const scoreFile = path.join(soundDir, "score.js");
-  if (!existsSync(scoreFile)) {
-    await mkdir(soundDir, { recursive: true });
-    await status({ state: "none" });
-    say("This film has no sound/score.js yet, so there is nothing to render.");
-    return;
-  }
-  const source = await readFile(scoreFile, "utf8");
-  const targetLufs = loudnessOf(source);
-  await mkdir(soundDir, { recursive: true });
-  const started = Date.now();
-  await status({ state: "rendering", step: "Playing the score" });
+// 32 bit float WAV (format 3), interleaved stereo at 48 kHz.
+function floatWav(pcm) {
+  const data = Buffer.from(pcm.buffer, pcm.byteOffset, pcm.byteLength);
+  const head = Buffer.alloc(44);
+  head.write("RIFF", 0);
+  head.writeUInt32LE(36 + data.length, 4);
+  head.write("WAVE", 8);
+  head.write("fmt ", 12);
+  head.writeUInt32LE(16, 16);
+  head.writeUInt16LE(3, 20);
+  head.writeUInt16LE(2, 22);
+  head.writeUInt32LE(RATE, 24);
+  head.writeUInt32LE(RATE * 8, 28);
+  head.writeUInt16LE(8, 32);
+  head.writeUInt16LE(32, 34);
+  head.write("data", 36);
+  head.writeUInt32LE(data.length, 40);
+  return Buffer.concat([head, data]);
+}
 
-  if (checking) {
-    // Two separate renders, each in a fresh browser, as two real renders are.
-    const one = (await renderInChrome(source, film)).results[0];
-    const two = (await renderInChrome(source, film)).results[0];
-    // Chrome's reverb sums in threads, so two renders can differ in the last
-    // bit (about -90 dB); anything louder than -60 dB is the score itself
-    // changing, from Math.random or the clock.
-    let diff = 0;
-    for (let i = 0; i < Math.min(one.pcm.length, two.pcm.length); i++) diff = Math.max(diff, Math.abs(one.pcm[i] - two.pcm[i]));
-    if (one.pcm.length !== two.pcm.length || db(diff) > -60) {
-      console.error(
-        `The score sounds different each time it renders (by ${db(diff).toFixed(0)} dB). Remove Math.random, Date.now and anything timed by the clock from score.js; Strudel's rand and perlin are fine.`,
-      );
-      process.exit(2);
+async function readFloatWav(file) {
+  const buf = await readFile(file);
+  let at = 12;
+  while (at + 8 <= buf.length) {
+    const id = buf.toString("ascii", at, at + 4);
+    const size = buf.readUInt32LE(at + 4);
+    if (id === "data") {
+      // Copied, so the floats start on a 4 byte boundary.
+      return new Float32Array(new Uint8Array(buf.subarray(at + 8, at + 8 + size)).buffer);
     }
-    say(`The score sounds the same every time it renders (${fmt(film.duration)}).`);
-    return;
+    at += 8 + size + (size % 2);
   }
+  throw new Error(`${path.basename(file)} has no sound in it.`);
+}
 
-  const { results, context } = await renderInChrome(source, film);
-  const { pcm, report } = results[0];
-  const total = Math.round(film.duration * RATE);
-  const work = path.join(soundDir, ".work");
-  await mkdir(work, { recursive: true });
-  const raw = path.join(work, "mix.f32");
-  await writeFile(raw, Buffer.from(pcm.buffer));
+// The person's edits, as the studio saved them; anything odd is left out.
+async function readSpans(duration) {
+  const raw = JSON.parse(await readFile(mixFile, "utf8").catch(() => "null"));
+  const spans = Array.isArray(raw?.spans) ? raw.spans : [];
+  return spans
+    .filter((s) => s && STEMS.includes(s.stem) && Number.isFinite(s.from) && Number.isFinite(s.to))
+    .map((s) => ({
+      stem: s.stem,
+      from: Math.max(0, Math.min(duration, s.from)),
+      to: Math.max(0, Math.min(duration, s.to)),
+      gain: Number.isFinite(s.gain) ? Math.max(-60, Math.min(12, s.gain)) : 0,
+      mute: s.mute === true,
+    }))
+    .filter((s) => s.to - s.from > 0.001 && (s.mute || Math.abs(s.gain) > 0.001));
+}
 
-  await status({ state: "rendering", step: "Setting the loudness" });
+const FADE = 0.02;
+
+// A stem with its spans applied: each span's level eases in and out over
+// 20 ms at its edges (not at the film's own start and end).
+function withSpans(pcm, spans, stem) {
+  const mine = spans.filter((s) => s.stem === stem);
+  if (!mine.length) return pcm;
+  const frames = pcm.length / 2;
+  const env = new Float32Array(frames).fill(1);
+  for (const s of mine) {
+    const g = s.mute ? 0 : 10 ** (s.gain / 20);
+    const a = Math.max(0, Math.round(s.from * RATE));
+    const b = Math.min(frames, Math.round(s.to * RATE));
+    const n = Math.max(1, Math.min(Math.round(FADE * RATE), Math.floor((b - a) / 2)));
+    for (let i = a; i < b; i++) {
+      let w = 1;
+      if (a > 0 && i < a + n) w = (i - a + 0.5) / n;
+      if (b < frames && i >= b - n) w = Math.min(w, (b - i - 0.5) / n);
+      env[i] *= 1 + (g - 1) * w;
+    }
+  }
+  const out = new Float32Array(pcm.length);
+  for (let i = 0; i < frames; i++) {
+    out[2 * i] = pcm[2 * i] * env[i];
+    out[2 * i + 1] = pcm[2 * i + 1] * env[i];
+  }
+  return out;
+}
+
+// Music and effects added together, as one render of both would be.
+function sumOf(a, b) {
+  const out = new Float32Array(Math.max(a.length, b.length));
+  for (let i = 0; i < out.length; i++) out[i] = (a[i] ?? 0) + (b[i] ?? 0);
+  return out;
+}
+
+// Catches peaks only, a little under the limit so the true peak stays
+// below it. Run at four times the sample rate, so peaks between samples
+// (the true peak) are caught too.
+const LIMITER = `alimiter=limit=${(10 ** ((TARGET_TP - 0.5) / 20)).toFixed(4)}:attack=2:release=40:level=disabled`;
+
+// How loud the score is made: measured once, on the score as Claude wrote
+// it, and kept, so the person's edits never move the rest of the sound.
+async function chooseMaster(raw, targetLufs) {
   const before = await measure(raw);
   // Silence stays silence; anything else is brought to the target loudness
   // with a true-peak limit. Two passes: measure, then a linear gain where
@@ -395,27 +463,43 @@ async function main() {
     // Too quiet to measure (a few clicks in silence) counts as silent.
     if (!Number.isFinite(Number(m.input_i)) || !Number.isFinite(Number(m.input_tp))) silent = true;
   }
+  let limited = false;
   if (!silent) {
     if (m.normalization_type === "dynamic") {
       // A plain gain change would push the peaks past the limit, and
       // loudnorm's own fallback rides the level up and down (a quiet intro
-      // ends up as loud as the beat). Instead: one steady gain to the target,
-      // then a limiter catching only the peaks, a little under the limit so
-      // the true peak stays below it.
+      // ends up as loud as the beat). Instead: one steady gain to the
+      // target, then the limiter on the peaks.
       const gain = targetLufs - Number(m.input_i);
-      // Limited at four times the sample rate, so peaks between samples
-      // (the true peak) are caught too.
-      const ceiling = 10 ** ((TARGET_TP - 0.5) / 20);
-      filters.push(
-        `volume=${gain.toFixed(2)}dB`,
-        "aresample=192000",
-        `alimiter=limit=${ceiling.toFixed(4)}:attack=2:release=40:level=disabled`,
-      );
+      filters.push(`volume=${gain.toFixed(2)}dB`, "aresample=192000", LIMITER);
+      limited = true;
     } else {
       filters.push(
         `loudnorm=I=${targetLufs}:TP=${TARGET_TP}:LRA=11:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`,
       );
     }
+  }
+  return {
+    silent,
+    filters,
+    limited,
+    before: before.lufs,
+    // About how much louder the stems are made, for drawing their outlines.
+    gain: silent ? 0 : targetLufs - before.lufs,
+  };
+}
+
+// Adds the stems (with the person's edits), sets the loudness the score
+// was given, and writes sound.wav, the outlines and the status.
+async function finish({ film, music, effects, master, spans, work, stems }) {
+  const total = Math.round(film.duration * RATE);
+  const raw = path.join(work, "mix.f32");
+  const mixed = spans.length ? sumOf(withSpans(music, spans, "music"), withSpans(effects, spans, "effects")) : sumOf(music, effects);
+  await writeFile(raw, Buffer.from(mixed.buffer));
+  const filters = [...master.filters];
+  // A span made louder could push past the peak limit; catch it.
+  if (!master.silent && !master.limited && spans.some((s) => !s.mute && s.gain > 0)) {
+    filters.push("aresample=192000", LIMITER);
   }
   // Exactly the film's length, at 48 kHz (loudnorm works at 192 kHz inside).
   filters.push(`aresample=${RATE}`, "apad", `atrim=end_sample=${total}`);
@@ -426,31 +510,127 @@ async function main() {
   ]);
 
   // Listen to the result as it will be heard.
-  await status({ state: "rendering", step: "Listening back" });
   const { stdout } = await run("ffmpeg", ["-hide_banner", "-loglevel", "error", "-i", wavTmp, "-f", "f32le", "-ac", "2", "-ar", String(RATE), "-"]);
   const final = new Float32Array(stdout.buffer, stdout.byteOffset, stdout.byteLength / 4);
   const finalRaw = path.join(work, "final.f32");
   await writeFile(finalRaw, stdout);
-  const after = silent ? { lufs: null, truePeak: null } : await measure(finalRaw);
-  const peaks = peaksOf(final);
-  const onsets = onsetsOf(final);
+  const after = master.silent ? { lufs: null, truePeak: null } : await measure(finalRaw);
+  // Each stem's outline, at about the level it's heard in the mix.
+  const scale = 10 ** (master.gain / 20);
+  const outline = (stem, pcm) => peaksOf(withSpans(pcm, spans, stem)).map((v) => Math.round(Math.min(1, v * scale) * 1000) / 1000);
 
   await rename(wavTmp, path.join(soundDir, "sound.wav"));
-  await writeJson(path.join(soundDir, "peaks.json"), peaks);
-  await rm(work, { recursive: true, force: true });
+  await writeJson(path.join(soundDir, "peaks.json"), peaksOf(final));
+  await writeJson(path.join(soundDir, "music-peaks.json"), outline("music", music));
+  await writeJson(path.join(soundDir, "effects-peaks.json"), outline("effects", effects));
   const length = final.length / 2 / RATE;
-  await status({ state: "ready", at: new Date().toISOString(), duration: Math.round(length * 1000) / 1000, loudness: after.lufs });
+  await status({ state: "ready", at: new Date().toISOString(), duration: Math.round(length * 1000) / 1000, loudness: after.lufs, stems });
+  return { final, after, length };
+}
+
+// ─── Main ───────────────────────────────────────────────────────────────────
+
+async function main() {
+  const film = JSON.parse(await readFile(path.join(dir, "film.json"), "utf8"));
+  const scoreFile = path.join(soundDir, "score.js");
+  if (!existsSync(scoreFile)) {
+    await mkdir(soundDir, { recursive: true });
+    await status({ state: "none" });
+    say("This film has no sound/score.js yet, so there is nothing to render.");
+    return;
+  }
+
+  if (remixing) {
+    // Only the person's edits changed: mix the kept stems again. No
+    // "rendering" status, so the studio keeps playing the old mix until
+    // the new one is there.
+    const started = Date.now();
+    const master = JSON.parse(await readFile(masterFile, "utf8").catch(() => "null"));
+    const files = STEMS.map((s) => path.join(soundDir, `${s}.wav`));
+    if (!master || !files.every((f) => existsSync(f))) {
+      console.error("This sound has no stems yet. Render the score once first.");
+      process.exit(3);
+    }
+    const [music, effects] = await Promise.all(files.map(readFloatWav));
+    const work = path.join(soundDir, ".work-mix");
+    await mkdir(work, { recursive: true });
+    try {
+      const spans = await readSpans(film.duration);
+      const { length } = await finish({ film, music, effects, master, spans, work, stems: master.stems ?? STEMS });
+      say(`Mixed sound/sound.wav again from its stems with ${spans.length} edit${spans.length === 1 ? "" : "s"}: ${fmt(length)}, in ${((Date.now() - started) / 1000).toFixed(1)} s.`);
+    } finally {
+      await rm(work, { recursive: true, force: true });
+    }
+    return;
+  }
+
+  const source = await readFile(scoreFile, "utf8");
+  const targetLufs = loudnessOf(source);
+  await mkdir(soundDir, { recursive: true });
+  const started = Date.now();
+  await status({ state: "rendering", step: "Playing the score" });
+
+  if (checking) {
+    // Two separate renders, each in a fresh browser, as two real renders are.
+    const one = (await renderInChrome(source, film)).results[0];
+    const two = (await renderInChrome(source, film)).results[0];
+    const a = sumOf(one.music, one.effects);
+    const b = sumOf(two.music, two.effects);
+    // Chrome's reverb sums in threads, so two renders can differ in the last
+    // bit (about -90 dB); anything louder than -60 dB is the score itself
+    // changing, from Math.random or the clock.
+    let diff = 0;
+    for (let i = 0; i < Math.min(a.length, b.length); i++) diff = Math.max(diff, Math.abs(a[i] - b[i]));
+    if (a.length !== b.length || db(diff) > -60) {
+      console.error(
+        `The score sounds different each time it renders (by ${db(diff).toFixed(0)} dB). Remove Math.random, Date.now and anything timed by the clock from score.js; Strudel's rand and perlin are fine.`,
+      );
+      process.exit(2);
+    }
+    say(`The score sounds the same every time it renders (${fmt(film.duration)}).`);
+    return;
+  }
+
+  const { results, context } = await renderInChrome(source, film);
+  const { music, effects, report } = results[0];
+  const stems = STEMS.filter((s) => (s === "music" ? report.music : report.effects));
+  const work = path.join(soundDir, ".work");
+  await mkdir(work, { recursive: true });
+
+  await status({ state: "rendering", step: "Setting the loudness" });
+  // The loudness is chosen from the score alone, before any edits.
+  const raw = path.join(work, "score.f32");
+  await writeFile(raw, Buffer.from(sumOf(music, effects).buffer));
+  const master = { ...(await chooseMaster(raw, targetLufs)), stems };
+  for (const [stem, pcm] of [["music", music], ["effects", effects]]) {
+    await writeFile(path.join(work, `${stem}.wav`), floatWav(pcm));
+    await rename(path.join(work, `${stem}.wav`), path.join(soundDir, `${stem}.wav`));
+  }
+  await writeJson(masterFile, master);
+
+  await status({ state: "rendering", step: "Listening back" });
+  const spans = await readSpans(film.duration);
+  const { final, after, length } = await finish({ film, music, effects, master, spans, work, stems });
+  const onsets = onsetsOf(final);
+  await rm(work, { recursive: true, force: true });
 
   // What Claude reads back.
   const lines = [
     `Rendered sound/sound.wav: ${fmt(length)}, 48 kHz stereo, in ${((Date.now() - started) / 1000).toFixed(1)} s.`,
-    silent
+    master.silent
       ? "It is silent."
-      : `Loudness ${after.lufs?.toFixed(1)} LUFS (the score alone was ${before.lufs?.toFixed(1)}), true peak ${after.truePeak?.toFixed(1)} dBTP.`,
+      : `Loudness ${after.lufs?.toFixed(1)} LUFS (the score alone was ${master.before?.toFixed(1)}), true peak ${after.truePeak?.toFixed(1)} dBTP.`,
     report.music
       ? `Music: ${report.music.notes} notes at ${report.music.cps} cycles a second (${(report.music.cps * 60).toFixed(0)} cycles a minute), from ${fmt(report.music.start)}.`
       : "Music: none.",
     `Effects: ${report.effects ? "yes" : "none"}.`,
+    ...(spans.length
+      ? [
+          `The person's own volume edits, from sound/mix.json, are applied on top (leave that file alone): ${spans
+            .map((s) => `${s.stem} ${s.from.toFixed(2)} to ${s.to.toFixed(2)} s ${s.mute ? "muted" : `${s.gain > 0 ? "+" : ""}${s.gain.toFixed(1)} dB`}`)
+            .join(", ")}.`,
+        ]
+      : []),
     `Onsets (${onsets.length}), with the film mark each lands on:`,
     ...describeOnsets(onsets, [...(film.marks ?? []), ...context.graphics.map((g) => ({ t: g.start, label: `${g.graphic} appears`, after: Math.min(0.8, g.duration) }))]),
     ...(context.graphics.length ? [`Graphics: ${context.graphics.map((g) => `${g.graphic} ${g.start.toFixed(2)} to ${(g.start + g.duration).toFixed(2)} s`).join(", ")}.`] : []),

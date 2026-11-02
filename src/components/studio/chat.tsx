@@ -14,7 +14,7 @@ import { ClaudeAtWork } from "./mascot";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
 import { VersionsButton } from "./versions";
-import { chipLabel, type Pinned } from "./words";
+import { chipLabel, type Pinned, type SoundPin, soundChipLabel } from "./words";
 
 // The chat with Claude, on the left. It grows to full height while Claude
 // works and settles back when the turn ends.
@@ -31,6 +31,7 @@ export function ChatPanel({
   filmId,
   chat,
   pinned,
+  sound,
   time,
   clock,
   onClearPick,
@@ -45,6 +46,7 @@ export function ChatPanel({
   filmId: string;
   chat: ChatState;
   pinned: Pinned | null;
+  sound?: { pin: SoundPin; label: string } | null; // part of the sound, picked on the timeline
   time: () => number;
   clock: Clock;
   onClearPick: () => void;
@@ -138,6 +140,7 @@ export function ChatPanel({
       t: pinned?.t ?? time(),
       pick: pinned?.pick ?? null,
       ...(attached.length ? { attachments: attached } : {}),
+      ...(sound ? { sound: sound.pin } : {}),
     });
     onClearPick();
   };
@@ -245,7 +248,7 @@ export function ChatPanel({
           running={turn.running}
           queueing
           placeholder="Make the title come in from the left"
-          chip={pinned ? chipLabel(pinned.pick, pinned.t) : null}
+          chip={sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
           onClearChip={onClearPick}
           meta={<PlayheadChip clock={clock} />}
           tools={
@@ -274,7 +277,11 @@ function Message({ message, filmId }: { message: ChatMessage; filmId: string }) 
   if (message.role === "you") {
     return (
       <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">
-        {message.context?.pick ? (
+        {message.context?.sound ? (
+          <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
+            {soundChipLabel(message.context.sound)}
+          </span>
+        ) : message.context?.pick ? (
           <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
             {chipLabel(message.context.pick, message.context.t)}
           </span>
