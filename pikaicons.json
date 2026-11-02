@@ -24,6 +24,10 @@
       "name": "arrow-up",
       "variant": "stroke"
     },
+    "bot": {
+      "name": "bot",
+      "variant": "stroke"
+    },
     "calendar-default": {
       "name": "calendar-default",
       "variant": "stroke"
@@ -106,6 +110,10 @@
     },
     "information-circle": {
       "name": "information-circle",
+      "variant": "stroke"
+    },
+    "key-left": {
+      "name": "key-left",
       "variant": "stroke"
     },
     "layer-three": {

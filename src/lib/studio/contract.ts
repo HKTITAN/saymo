@@ -7,6 +7,8 @@
 // never "HyperFrames", "Remotion" or "fframes"; the engine is a detail of how
 // a film is written and rendered, chosen by Claude (or the starter).
 
+import type { ProviderId } from "./ai-types";
+
 // ─── Films ──────────────────────────────────────────────────────────────────
 
 // How a film is written.
@@ -208,7 +210,8 @@ export type Attachment = {
   seconds?: number; // audio: its length
 };
 
-export type ChatRequest = { prompt: string; context: ChatContext };
+// `provider`: which AI runs this prompt (ai-types.ts); Claude when left out.
+export type ChatRequest = { prompt: string; context: ChatContext; provider?: ProviderId };
 
 export type ChatEvent =
   | { kind: "start"; turn: number }
@@ -224,6 +227,7 @@ export type ChatMessage = {
   at: string; // ISO
   context?: ChatContext; // on yours
   steps?: string[]; // on Claude's
+  provider?: ProviderId; // which AI it was sent to or came from (Claude when missing)
 };
 
 // One version of a film in its history: the film as it stood after one of

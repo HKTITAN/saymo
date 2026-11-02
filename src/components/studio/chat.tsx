@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import type { ChatMessage } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { Hint, PILL_BUTTON, Panel } from "./panel";
+import { ModelPicker } from "./model-picker";
 import { PromptBox } from "./prompt-box";
 import { SentFiles } from "./sent-files";
 import { ClaudeAtWork } from "./mascot";
@@ -254,6 +255,7 @@ export function ChatPanel({
           onClearChip={onClearPick}
           meta={<PlayheadChip clock={clock} />}
           tools={
+            <>
             <Hint label={pointing ? "Stop pointing" : "Point at the film"} keys={["P"]}>
               <button
                 type="button"
@@ -268,6 +270,8 @@ export function ChatPanel({
                 Point
               </button>
             </Hint>
+            <ModelPicker provider={chat.provider} onChange={chat.setProvider} />
+            </>
           }
         />
       </div>

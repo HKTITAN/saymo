@@ -10,6 +10,21 @@ Motion Studio runs on your own Mac. Each person on the team installs it once and
 - Apple's command line tools (`xcode-select --install`), for the background remover and face finder
 - [Claude Code](https://claude.com/claude-code), signed in. The studio's chat runs on your Claude plan, so its requests count against your usage. Every studio turn uses Claude Opus 5.5 at high effort, so keep Claude Code up to date (`claude update`). To change it on one Mac, set `STUDIO_MODEL` or `STUDIO_EFFORT` in `.env.local`.
 
+## AI for the chat
+
+Claude on your Claude plan is the default and needs nothing more. Two other AIs are optional, set up from the link button at the top right of the studio, under AI:
+
+- **Codex, on your ChatGPT plan.** Install it yourself, then sign in:
+
+  ```bash
+  npm install --global @openai/codex   # or: brew install codex
+  codex login                          # sign in with ChatGPT
+  ```
+
+- **Claude with an API key**, for teammates without a Claude plan. Make a key at console.anthropic.com and paste it into the AI section. It stays on this Mac in `.studio/connections/anthropic.json` and is billed to that key's account.
+
+Then pick the AI in any prompt box with the small picker next to Point. More in [connections.md](connections.md).
+
 ## Install
 
 ```bash
@@ -58,6 +73,7 @@ Restart `npm run dev` after changing `.env.local`.
 - The server only answers this Mac (`127.0.0.1`). Studio requests must come from the studio page itself.
 - Claude in the studio can only change the open film, and can only run that film's checks, renders and media tools. It has no web access, except for links you give it while making a brand kit.
 - Sign-ins for Google Drive and GitHub are kept in `.studio/connections/`, readable only by your Mac user, and never sent to the page or to Claude.
+- The API key, if you add one, is kept there too and goes only to the AI you picked it for. Codex runs in macOS's sandbox: it can write only the open film, can't read `.env` files, `.studio/` or other films, and has no web access. The studio never reads or copies Claude's or Codex's own sign-ins.
 
 ## If something goes wrong
 

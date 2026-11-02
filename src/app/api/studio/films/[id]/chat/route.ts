@@ -1,4 +1,5 @@
 import { connection } from "next/server";
+import { DEFAULT_PROVIDER, isProviderId } from "@/lib/studio/ai-types";
 import { isRunning, readChat, runTurn, stopTurn } from "@/lib/studio/claude";
 import type { ChatContext, ChatEvent, ChatRequest } from "@/lib/studio/contract";
 import { checkAttachments } from "@/lib/studio/attachments";
@@ -30,8 +31,13 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/film
   if (!prompt.trim() && attachments.length) prompt = "Have a look at what I attached.";
   if (!prompt.trim()) return Response.json({ error: "Type what you'd like changed." }, { status: 400 });
   const turnContext = { ...context(body?.context), ...(attachments.length ? { attachments } : {}) };
+  // Which AI runs it: one of the studio's own, or Claude when not given.
+  if (body?.provider !== undefined && !isProviderId(body.provider)) {
+    return Response.json({ error: "Pick Claude, Codex or the API key to send this to." }, { status: 400 });
+  }
+  const provider = body?.provider ?? DEFAULT_PROVIDER;
   if (isRunning(id)) {
-    return Response.json({ error: "Claude is still working on this film. Wait for it, or stop it first." }, { status: 409 });
+    return Response.json({ error: "The studio is still working on this film. Wait for it, or stop it first." }, { status: 409 });
   }
 
   const encoder = new TextEncoder();
@@ -46,7 +52,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/studio/film
           open = false;
         }
       };
-      void runTurn(id, { prompt, context: turnContext }, emit).finally(() => {
+      void runTurn(id, { prompt, context: turnContext, provider }, emit).finally(() => {
         if (!open) return;
         open = false;
         controller.close();
