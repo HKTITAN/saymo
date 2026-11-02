@@ -1,17 +1,21 @@
 "use client";
 
-import { type KeyboardEvent, type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowUpIcon, MultipleCrossCancelIcon, MusicBeamNoteIcon, PaperclipVerticalIcon } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { DictationNotice, MicButton, RecordingBar } from "./mic-button";
 import { Hint } from "./panel";
 import { acceptFor, type Attachments, clockText, KIND_LABEL } from "./use-attachments";
+import { useDictation } from "./use-dictation";
 
 // Where a prompt is typed: in the chat panel and in the bubble on the film.
 // Enter sends, Shift+Enter starts a new line. Grows with its words. While
 // Claude works, Enter adds the prompt to the queue (where the box allows it).
 // With `attachments`, files can come along too: the paperclip, a drop onto
-// the box, or a pasted screenshot.
+// the box, or a pasted screenshot. The mic writes down what you say
+// (use-dictation.ts): ⌘ ⇧ D or hold ⌥ Space; while it listens, Enter
+// stops and Esc discards it, and nothing is sent.
 
 export function PromptBox({
   value,
@@ -54,9 +58,28 @@ export function PromptBox({
   const ref = inputRef ?? own;
   const picker = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
-  // Sends (or queues, while Claude works) once there are words or files and
-  // every file is in.
-  const canSend = (!running || Boolean(queueing)) && !attachments?.uploading && Boolean(value.trim() || attachments?.hasFiles);
+  // The words as they are now, for the mic to add to (it may add twice
+  // before the box has drawn the first).
+  const latest = useRef(value);
+  useEffect(() => {
+    latest.current = value;
+  }, [value]);
+  const { d, view } = useDictation({
+    value: () => latest.current,
+    set: (next) => {
+      latest.current = next;
+      onChange(next);
+    },
+    textarea: () => ref.current,
+  });
+  const listening = view.phase === "recording" || view.phase === "starting";
+  // Holding ⌥ Space talks while it's held; a quick press starts, and the
+  // next one stops.
+  const hold = useRef<number | null>(null);
+  // Sends (or queues, while Claude works) once there are words or files,
+  // every file is in, and nothing said is still being written down.
+  const canSend =
+    (!running || Boolean(queueing)) && !attachments?.uploading && view.phase === "idle" && view.waiting === 0 && Boolean(value.trim() || attachments?.hasFiles);
 
   // Fit the box to its lines, up to maxRows.
   useLayoutEffect(() => {
@@ -68,9 +91,23 @@ export function PromptBox({
   }, [value, maxRows, ref]);
 
   const keys = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+    if (e.metaKey && e.shiftKey && !e.altKey && e.key.toLowerCase() === "d") {
       e.preventDefault();
-      if (canSend) onSend();
+      d.toggle();
+    } else if (e.code === "Space" && e.altKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      if (e.repeat) return;
+      if (view.phase === "idle" && !view.elsewhere) {
+        hold.current = performance.now();
+        void d.start();
+      } else if (listening) {
+        hold.current = null;
+        void d.stop();
+      }
+    } else if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      if (listening) void d.stop();
+      else if (canSend) onSend();
     } else if (e.key === "Escape") {
       e.preventDefault();
       onEscape?.();
@@ -162,6 +199,7 @@ export function PromptBox({
           {attachments.notice}
         </p>
       ) : null}
+      <DictationNotice d={d} view={view} />
       {chip ? (
         <span className="flex h-6 max-w-full items-center gap-1 self-start rounded-[7px] bg-[#F55A00]/15 ps-2 pe-1 text-[11.5px] text-[#ff9a5c]">
           <span className="truncate">{chip}</span>
@@ -184,10 +222,16 @@ export function PromptBox({
         rows={1}
         value={value}
         autoFocus={autoFocus}
-        placeholder={running && queueing ? "Next change, runs after this one" : placeholder}
+        placeholder={listening ? "Listening. Press Enter when you're done." : running && queueing ? "Next change, runs after this one" : placeholder}
         aria-label="Prompt for Claude"
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={keys}
+        onKeyUp={(e) => {
+          if (e.code !== "Space" || hold.current === null) return;
+          const held = performance.now() - hold.current;
+          hold.current = null;
+          if (held > 450 && view.phase === "recording") void d.stop();
+        }}
         onPaste={
           attachments
             ? (e) => {
@@ -200,6 +244,9 @@ export function PromptBox({
         }
         className="w-full resize-none bg-transparent px-1.5 py-1 text-[13px] text-white/90 leading-[19px] outline-none placeholder:text-white/30"
       />
+      {listening ? (
+        <RecordingBar d={d} view={view} />
+      ) : (
       <div className="flex items-center gap-1">
         {attachments ? (
           <>
@@ -230,6 +277,7 @@ export function PromptBox({
         ) : null}
         {tools}
         <span className="ms-auto" />
+        <MicButton d={d} view={view} />
         {running && onStop ? (
           <Hint label="Stop Claude">
             <button
@@ -256,6 +304,7 @@ export function PromptBox({
           </Hint>
         ) : null}
       </div>
+      )}
     </div>
   );
 }
