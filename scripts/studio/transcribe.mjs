@@ -52,6 +52,29 @@ const run = (cmd, args) =>
     child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(err))));
   });
 
+// The whisper build records the folder it was built in as where to find its
+// libraries, so moving or renaming the project broke it. Point it at its own
+// folder instead (once), and re-sign it so macOS still runs it.
+async function findOwnLibraries() {
+  if (process.platform !== "darwin") return;
+  const bin = path.join(WHISPER, "build/bin/whisper-cli");
+  if (!existsSync(bin)) return;
+  const paths = await new Promise((resolve) => {
+    const child = spawn("otool", ["-l", bin], { stdio: ["ignore", "pipe", "ignore"] });
+    let out = "";
+    child.stdout.on("data", (c) => (out += c));
+    child.on("close", () => resolve(out));
+    child.on("error", () => resolve(""));
+  });
+  if (String(paths).includes("@executable_path")) return;
+  try {
+    await run("install_name_tool", ["-add_rpath", "@executable_path", bin]);
+    await run("codesign", ["--force", "-s", "-", bin]);
+  } catch {
+    // Left as it is; transcribing reports its own error if it can't start.
+  }
+}
+
 async function setup() {
   await mkdir(HOME, { recursive: true });
   if (!existsSync(path.join(WHISPER, "build/bin/whisper-cli"))) {
@@ -64,6 +87,7 @@ async function setup() {
       fail("Setting up listening failed. It needs the internet once, Xcode's command line tools and cmake (brew install cmake).");
     }
   }
+  await findOwnLibraries();
   let shown = -1;
   await mkdir(MODELS, { recursive: true });
   await downloadWhisperModel({
