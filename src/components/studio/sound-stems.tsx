@@ -6,6 +6,7 @@ import { MultipleCrossCancelIcon, RefreshIcon } from "@/components/icons";
 import type { SoundStem } from "@/lib/studio/sound";
 import { GAIN_MAX, GAIN_MIN } from "@/lib/studio/sound-mix";
 import { DialButton, DialSlider, DialToggle } from "@/components/tool/dial";
+import { PromptBox } from "./prompt-box";
 import { cn } from "@/lib/utils";
 import { CARD, ICON_BUTTON } from "./panel";
 import { SoundWave } from "./sound-lane";
@@ -152,12 +153,17 @@ export function StemLane({
 }
 
 const W = 264;
+const ASK_W = 320; // the panel widens as it turns into a prompt box
 
 // The panel over the pick: a DialKit group, in a floating card.
 function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement | null>; card: boolean; editor: SoundEditor }) {
   const [box, setBox] = useState<{ left: number; bottom: number } | null>(null);
   const [draft, setDraft] = useState<number | null>(null);
+  // "Change with Claude" turns the panel into a prompt box, right here.
+  const [asking, setAsking] = useState(false);
+  const [words, setWords] = useState("");
   const { pick } = editor;
+  const width = asking ? ASK_W : W;
 
   // Over the pick, kept inside the window; follows it as the timeline
   // scrolls or the window resizes.
@@ -166,7 +172,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
       const r = anchor.current?.getBoundingClientRect();
       if (!r) return;
       const mid = Math.min(Math.max(r.left + r.width / 2, r.left), r.right);
-      const left = Math.min(Math.max(16, mid - W / 2), window.innerWidth - W - 16);
+      const left = Math.min(Math.max(16, mid - width / 2), window.innerWidth - width - 16);
       // Over the whole card (the motion timeline is short), so the track
       // and the other lane stay in view.
       const top = card ? Math.min(r.top, anchor.current?.closest("section")?.getBoundingClientRect().top ?? r.top) : r.top;
@@ -179,19 +185,19 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
       window.removeEventListener("resize", place);
       window.removeEventListener("scroll", place, true);
     };
-  }, [anchor, card, pick?.from, pick?.to, pick?.stem]);
+  }, [anchor, card, pick?.from, pick?.to, pick?.stem, width]);
 
   // Escape lets go of the pick before anything else in the studio.
   useEffect(() => {
     const keys = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
+      if (e.key !== "Escape" || asking) return; // the prompt box handles its own Esc
       e.preventDefault();
       e.stopPropagation();
       editor.setPick(null);
     };
     window.addEventListener("keydown", keys, true);
     return () => window.removeEventListener("keydown", keys, true);
-  }, [editor]);
+  }, [editor, asking]);
 
   if (!box || typeof document === "undefined") return null;
   const gain = draft ?? editor.level.gain;
@@ -199,9 +205,43 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
     <section
       aria-label={`Sound, ${editor.label}`}
       onPointerDown={(e) => e.stopPropagation()}
-      className={cn(CARD, "fixed z-50 flex animate-in flex-col gap-1.5 p-2 fade-in-0 zoom-in-95 duration-150")}
-      style={{ left: box.left, bottom: box.bottom, width: W }}
+      className={cn(
+        CARD,
+        "fixed z-50 flex animate-in flex-col gap-1.5 p-2 fade-in-0 zoom-in-95 duration-150 transition-[width,left] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+      )}
+      style={{ left: box.left, bottom: box.bottom, width }}
     >
+      {asking ? (
+        <div key="ask" className="flex animate-in flex-col gap-1 fade-in-0 slide-in-from-bottom-1 duration-200">
+          <header className="flex h-7 items-center gap-1 ps-1.5">
+            <h2 className="me-auto truncate font-medium text-[12px] text-white/85">Ask Claude about this sound</h2>
+            <button type="button" className={cn(ICON_BUTTON, "size-6 [&_svg]:size-3.5")} onClick={() => setAsking(false)} aria-label="Back to the sound controls">
+              <MultipleCrossCancelIcon aria-hidden="true" />
+            </button>
+          </header>
+          <PromptBox
+            value={words}
+            onChange={setWords}
+            onSend={() => {
+              const text = words.trim();
+              if (!text) return;
+              editor.send(text);
+              setWords("");
+              setAsking(false);
+              editor.setPick(null);
+            }}
+            running={editor.running}
+            queueing
+            autoFocus
+            onEscape={() => setAsking(false)}
+            maxRows={4}
+            placeholder="Make the hit softer and a little later"
+            chip={editor.label}
+            className="bg-white/[0.04]"
+          />
+        </div>
+      ) : (
+      <>
       <header className="flex h-7 items-center gap-1 ps-1.5">
         <h2 className="me-auto truncate font-medium text-[12px] text-white/85">{editor.label}</h2>
         <button type="button" className={cn(ICON_BUTTON, "size-6 [&_svg]:size-3.5")} onClick={() => editor.setPick(null)} aria-label="Close">
@@ -227,14 +267,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
         Reset
       </DialButton>
       <div className="my-0.5 h-px bg-white/[0.06]" />
-      <DialButton
-        onClick={() => {
-          editor.ask();
-          editor.setPick(null);
-        }}
-      >
-        Change with Claude
-      </DialButton>
+      <DialButton onClick={() => setAsking(true)}>Change with Claude</DialButton>
       <DialButton
         onClick={() => {
           editor.tryAnother();
@@ -253,6 +286,8 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
           <span className="studio-shimmer">Mixing the sound</span>
         </p>
       ) : null}
+      </>
+      )}
     </section>,
     document.body,
   );

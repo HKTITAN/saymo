@@ -25,6 +25,8 @@ export function useSoundEdit({
   record,
   onAsk,
   onTry,
+  onSend,
+  running = false,
 }: {
   id: string;
   sound: SoundState;
@@ -32,6 +34,8 @@ export function useSoundEdit({
   record: (entry: Omit<Entry, "at">) => void;
   onAsk: (pin: SoundPin) => void; // pins it to the prompt box
   onTry: (pin: SoundPin) => void; // asks Claude for another take straight away
+  onSend?: (pin: SoundPin, words: string) => void; // a prompt typed in the panel itself
+  running?: boolean; // Claude is working (new prompts wait in the queue)
 }) {
   const [spans, setSpansState] = useState<SoundSpan[]>([]);
   const [pick, setPick] = useState<SoundPick | null>(null);
@@ -165,7 +169,9 @@ export function useSoundEdit({
       reset,
       ask: () => pick && onAsk({ ...pick }),
       tryAnother: () => pick && onTry({ ...pick }),
+      send: (words: string) => (pick && onSend ? onSend({ ...pick }, words) : pick && onAsk({ ...pick })),
+      running,
     }),
-    [spans, pick, pickAt, level, edited, mixing, error, duration, where, setVolume, setMute, reset, onAsk, onTry],
+    [spans, pick, pickAt, level, edited, mixing, error, duration, where, setVolume, setMute, reset, onAsk, onTry, onSend, running],
   );
 }

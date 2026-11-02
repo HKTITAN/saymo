@@ -529,6 +529,14 @@ function FilmView({
       },
       [chatView, clock, soundLength],
     ),
+    // Typed in the sound panel itself: sent with that stretch of sound.
+    onSend: useCallback(
+      (pin: SoundPin, words: string) => {
+        void chatView.send(words, { t: clock.get().t, pick: null, sound: pin });
+      },
+      [chatView, clock],
+    ),
+    running: chatView.turn.running,
   });
 
   // A film made from a prompt sends that prompt once it's open; one made
@@ -1309,7 +1317,7 @@ function FilmView({
             folded={folded.inspector}
             onFold={(f) => setFolded((s) => ({ ...s, inspector: f }))}
             hidden={hidden}
-            style={{ maxHeight: column }}
+            style={{ height: column }}
           />
         ) : (
           <Inspector
@@ -1324,8 +1332,8 @@ function FilmView({
             folded={folded.inspector}
             onFold={(f) => setFolded((s) => ({ ...s, inspector: f }))}
             hidden={hidden}
-            // It ends above the timeline, which grows with the sound lane.
-            style={{ maxHeight: isVideo ? column : winH - 68 - bottom - 12 }}
+            // The side columns run to the bottom; the timeline sits between them.
+            style={{ height: column }}
             editLength={isVideo && ed.edit ? editEnd(ed.edit) : undefined}
             soundGroup={
               <SoundGroup

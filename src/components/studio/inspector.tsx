@@ -53,10 +53,9 @@ export function Inspector({
   soundGroup?: React.ReactNode; // the film's sound design, last
 }) {
   const size = SIZES.find((s) => s.width === film.width && s.height === film.height);
-  // Words go on the film (when the studio can edit them there); the rest
+  // Words shown on the film are edited there, by clicking them; the rest
   // stay as rows.
   const onFilm = (p: Param) => Boolean(onWords) && p.type === "text" && (texts ?? []).includes(p.key);
-  const words = film.params.filter(onFilm);
   const settings = film.params.filter((p) => !onFilm(p));
   return (
     <Panel
@@ -104,33 +103,13 @@ export function Inspector({
           />
         )}
       </DialGroup>
-      {/* Words are edited on the film itself; here, each text is a chip that
-          jumps to where it shows and starts editing it. */}
-      {words.length && onWords ? (
-        <DialGroup title="Words">
-          <DialNote>Click any words on the film to change them. Or pick them here:</DialNote>
-          <div className="flex flex-wrap gap-1.5 px-0.5">
-            {words.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => onWords(p.key)}
-                title={String(values[p.key] ?? p.value)}
-                className="inline-flex h-7 max-w-full cursor-pointer items-center truncate rounded-[8px] bg-white/[0.06] px-2.5 text-[12px] text-white/75 outline-none transition-colors hover:bg-white/[0.1] hover:text-white focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="truncate">{p.label}</span>
-              </button>
-            ))}
-          </div>
-        </DialGroup>
-      ) : null}
       {editLength !== undefined && !settings.length ? null : settings.length ? (
         <DialGroup title="Settings">
           {settings.map((p) => (
             <ParamRow key={p.key} param={p} value={values[p.key] ?? p.value} onChange={(v) => onParam(p.key, v)} />
           ))}
         </DialGroup>
-      ) : words.length && onWords ? null : (
+      ) : (
         <DialNote>
           Ask Claude to add settings here, such as colours, speeds or words you want to change without asking again.
         </DialNote>
