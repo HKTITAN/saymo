@@ -86,6 +86,10 @@ Unless asked otherwise, films look like Aerchain:
 
 Every film can have a sound track, written as a score in `sound/score.js` (Strudel music, Tone.js hits on the film's moments) and rendered by the studio. Starters come with one. Load the **aerchain-sound-design** skill before writing or changing sound, and whenever you change the film's timing or marks, check the score still lands on them: run the sound command from your instructions and read where each hit falls.
 
+## Product films and app walkthroughs
+
+For a film about a product (SpendOS launch films, feature films, promos), load the **product-film** skill (borrowed, MIT). For a film that shows an app being used step by step (a SpendOS walkthrough, a feature in action), load the **html-demo** skill (borrowed, MIT). Each has an "In Motion Studio" section at its end with what applies here. Both keep the brand kit and the studio rules on top.
+
 ## Cutting to the music
 
 When a film has music, cut it to the music, using the **stopmotion-video** skill's rules (borrowed from Kosta's skill, MIT). Keep the film's own engine; don't switch to Remotion for this. In the studio:
