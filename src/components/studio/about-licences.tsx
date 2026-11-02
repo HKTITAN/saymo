@@ -12,8 +12,8 @@ import { Hint, ICON_BUTTON } from "./panel";
 // "About and licences": the studio's version, then everything in it made by
 // others, grouped by licence, with a search. Each row opens its licence
 // text. The list is public/licences.json, made by `npm run licences`
-// (scripts/licences.mjs) along with THIRD-PARTY-NOTICES.md. Shown in the
-// product edition only, so the in-house studio stays as it was. Esc or a
+// (scripts/licences.mjs) along with THIRD-PARTY-NOTICES.md. It is
+// shown in both editions (in-house, it says the list is the product's). Esc or a
 // press outside closes it.
 
 type Item = {
@@ -66,7 +66,6 @@ const loadLicences = () =>
 
 export function AboutButton() {
   const [open, setOpen] = useState(false);
-  if (!IS_PRODUCT) return null;
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Hint label="About and licences">
@@ -133,10 +132,16 @@ function AboutPanel() {
             : "Built with packages, models, fonts and skills made by others. Open one to read its licence."}
         </p>
         {data && data.studio.edition !== EDITION ? (
-          <p className="rounded-[10px] bg-[#ff9a5c]/10 px-3 py-2 text-[11.5px] text-[#ff9a5c] leading-relaxed">
-            This list was made for the {data.studio.edition} edition. To update it, run{" "}
-            <span className="font-mono">STUDIO_EDITION={EDITION} npm run licences</span>.
-          </p>
+          IS_PRODUCT ? (
+            <p className="rounded-[10px] bg-[#ff9a5c]/10 px-3 py-2 text-[11.5px] text-[#ff9a5c] leading-relaxed">
+              This list was made for the {data.studio.edition} edition. To update it, run{" "}
+              <span className="font-mono">STUDIO_EDITION={EDITION} npm run licences</span>.
+            </p>
+          ) : (
+            <p className="rounded-[10px] bg-white/[0.04] px-3 py-2 text-[11.5px] text-white/55 leading-relaxed">
+              This is the list for the {data.studio.edition} edition, what a version for sale would ship. The in-house studio also uses Strudel and GSAP for older films.
+            </p>
+          )
         ) : null}
       </div>
 
