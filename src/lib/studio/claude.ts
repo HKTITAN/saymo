@@ -14,6 +14,17 @@ import type { Clip, Edit, Graphic } from "./edit";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "./brand-tokens";
 import { filmDir, pruneVersions, readFilm, recordVersion, ROOT, snapshotFilm, wentBackTo, withFilm, writeFilm } from "./films";
 import { readRules, rulesNote } from "./rules";
+import {
+  CARRY_ON_PROMPT,
+  type CarryOn,
+  cancelCarryOn,
+  clockTime,
+  isUsageLimit,
+  limitResetsAt,
+  MAX_IN_A_ROW,
+  planCarryOn,
+  readCarryOn,
+} from "./carry-on";
 import { startSound } from "./sound-render";
 
 // The studio's chat: each prompt is one Claude Code turn, run headless on
@@ -46,7 +57,8 @@ const ENGINE_WORDS: Record<Film["engine"], string> = {
   rust: "rust (fframes: a Cargo crate)",
 };
 
-const TURN_LIMIT_MS = 15 * 60 * 1000;
+// STUDIO_TURN_LIMIT_MS lets a test shorten it.
+const TURN_LIMIT_MS = Number(process.env.STUDIO_TURN_LIMIT_MS) || 15 * 60 * 1000;
 // The model, the programs and the clean environment live in ai-env.ts
 // (shared with the providers and Codex); the kit maker and the script writer
 // still import them from here.
@@ -113,6 +125,8 @@ export const isRunning = (id: string) => running.has(id);
 // Stops the film's turn, if one is running: the whole process group, so
 // nothing it started keeps going.
 export function stopTurn(id: string) {
+  // Stop also means: don't carry on by itself later.
+  void cancelCarryOn(id);
   const turn = running.get(id);
   if (!turn) return false;
   turn.stopped = true;
@@ -149,7 +163,18 @@ type Outcome = {
   steps: string[];
   changedAny: boolean;
   problem: string | null;
+  raw?: string; // the AI's own error words, for spotting a usage limit
 };
+
+// The studio carrying on by itself (see carry-on.ts). If someone is mid-turn
+// on the film when the time comes, it tries again a minute later.
+export function runAutoTurn(id: string, plan: CarryOn) {
+  if (running.has(id)) {
+    void planCarryOn(id, { ...plan, at: new Date(Date.now() + 60_000).toISOString() }, runAutoTurn);
+    return;
+  }
+  void runTurn(id, { prompt: CARRY_ON_PROMPT, context: plan.context, provider: plan.provider, auto: plan.count }, () => {});
+}
 
 async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (event: ChatEvent) => void) {
   const film = await readFilm(id);
@@ -183,7 +208,12 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   });
   emit({ kind: "start", turn: n });
   const earlier = await readChat(id);
-  await addChat(id, { role: "you", text: prompt, at: new Date().toISOString(), context: request.context, provider });
+  const auto = request.auto !== undefined;
+  // A prompt sent while the studio was waiting to carry on: it takes over,
+  // and is told to finish the unfinished work too.
+  const waiting = auto ? null : await readCarryOn(id);
+  if (waiting) await cancelCarryOn(id);
+  await addChat(id, { role: "you", text: prompt, at: new Date().toISOString(), context: request.context, provider, ...(auto ? { auto: true } : {}) });
 
   const undone = existsSync(undoneFlag(id));
   await rm(undoneFlag(id), { force: true });
@@ -197,7 +227,10 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   const thread = family === "codex" ? await readThread(id) : undefined;
   const session = family === "codex" ? thread : film.session;
   const recap = recapFor(earlier, family, Boolean(session));
-  const message = userMessage(film, prompt, request.context, undone, wentBack, edit, rules, recap);
+  const unfinished = waiting
+    ? `<note>Your previous turn on this film stopped before it finished (${waiting.reason === "time" ? "it hit the studio's 15-minute limit" : "the usage limit was reached"}). Read the film's files to see what's done, finish that work, then do this request.</note>\n`
+    : "";
+  const message = unfinished + userMessage(film, prompt, request.context, undone, wentBack, edit, rules, recap);
 
   const limit = setTimeout(() => {
     turn.stopped = true;
@@ -239,14 +272,43 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
 
   const { problem } = outcome;
   const text = outcome.reply.trim();
+
+  // Carry on by itself when the turn couldn't finish: right away after the
+  // 15-minute cap, or when a usage limit resets.
+  const count = (request.auto ?? 0) + 1;
+  const limited = !turn.stopped && Boolean(problem) && isUsageLimit(`${outcome.raw ?? ""}\n${problem}`);
+  let carry: CarryOn | null = null;
+  if (turn.timedOut && count <= MAX_IN_A_ROW) {
+    carry = { reason: "time", at: new Date(Date.now() + 3000).toISOString(), count, provider, context: request.context };
+  } else if (limited && count <= MAX_IN_A_ROW * 4) {
+    // When it resets, plus a minute; if the AI doesn't say, wait longer each time.
+    const resets = limitResetsAt(`${outcome.raw ?? ""}\n${problem}`);
+    const fallback = Math.min(30 * 60_000 * 2 ** Math.min(count - 1, 3), 4 * 3600_000);
+    const at = resets ? new Date(Math.max(resets.getTime(), Date.now()) + 60_000) : new Date(Date.now() + fallback);
+    carry = { reason: "limit", at: at.toISOString(), count, provider, context: request.context };
+  }
+  if (carry) await planCarryOn(id, carry, runAutoTurn);
+
+  const carryWords = carry
+    ? carry.reason === "time"
+      ? `${who} reached the studio's 15-minute limit for one turn, so the studio is carrying on in a fresh turn by itself.`
+      : `You've hit your ${who} usage limit. The studio will carry on by itself at ${clockTime(carry.at)}.`
+    : null;
   await addChat(id, {
     role: "claude",
-    text: turn.stopped ? (text ? `${text}\n\n(Stopped.)` : "Stopped.") : text || problem || "Done.",
+    text: carryWords
+      ? `${text ? `${text}\n\n` : ""}${carryWords}`
+      : turn.stopped
+        ? text
+          ? `${text}\n\n(Stopped.)`
+          : "Stopped."
+        : text || problem || "Done.",
     at: new Date().toISOString(),
     steps: outcome.steps,
     provider,
   });
-  if (turn.timedOut) emit({ kind: "error", message: `${who} took longer than 15 minutes, so the studio stopped it. What it changed is kept; Undo puts it back.` });
+  if (carry) emit({ kind: "carry-on", reason: carry.reason, at: carry.at });
+  else if (turn.timedOut) emit({ kind: "error", message: `${who} kept reaching the 15-minute limit, so the studio stopped carrying on. What it changed is kept; send "carry on" to continue.` });
   else if (turn.stopped) emit({ kind: "error", message: `Stopped. Anything ${who} had already changed is kept; Undo puts it back.` });
   else if (problem) emit({ kind: "error", message: problem });
   emit({ kind: "done", film: after });
@@ -327,6 +389,7 @@ async function runClaude(
     steps: reader.steps,
     changedAny: reader.changedAny,
     problem,
+    raw: [reader.failure, reader.lastError, stderr].filter(Boolean).join("\n"),
   };
 }
 

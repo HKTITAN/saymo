@@ -56,6 +56,10 @@ export function useChat(
   const [restoring, setRestoring] = useState(false);
   const [queue, setQueue] = useState<Queued[]>([]);
   const [paused, setPaused] = useState(false);
+  // When the studio will carry on by itself (after the 15-minute cap or a
+  // usage limit), and why.
+  const [carryOn, setCarryOn] = useState<{ reason: "time" | "limit"; at: string } | null>(null);
+  const follow = useRef<() => void>(() => {});
   // Which AI the next prompt goes to: the last one picked for this film.
   const [provider, setProviderState] = useState<ProviderId>(DEFAULT_PROVIDER);
   useEffect(() => {
@@ -96,9 +100,15 @@ export function useChat(
         return;
       }
       setMessages(h.messages);
+      setCarryOn(h.carryOn);
       if (h.running) {
         setTurn((t) => (t.running ? t : { ...IDLE, running: true, resumed: true }));
         timer = setTimeout(() => check(false), 2000);
+      } else if (h.carryOn) {
+        // Waiting to carry on: look again soon, so the next turn shows when it starts.
+        setTurn((t) => (t.resumed ? IDLE : t));
+        const wait = Math.min(Math.max(Date.parse(h.carryOn.at) - Date.now(), 1500), 30_000);
+        timer = setTimeout(() => check(false), wait);
       } else if (!first) {
         setTurn(IDLE);
         const film = await api.get(id).catch(() => null);
@@ -107,6 +117,10 @@ export function useChat(
       }
     };
     void check(true);
+    follow.current = () => {
+      clearTimeout(timer);
+      void check(false);
+    };
     return () => {
       live = false;
       clearTimeout(timer);
@@ -145,6 +159,9 @@ export function useChat(
               case "done":
                 callbacks.current.onFilm(event.film);
                 break;
+              case "carry-on":
+                setCarryOn({ reason: event.reason, at: event.at });
+                break;
               case "error":
                 error = event.message;
                 setTurn((t) => ({ ...t, error: event.message }));
@@ -173,6 +190,11 @@ export function useChat(
             steps,
           },
         ]);
+      // The studio is carrying on by itself: follow the next turn too.
+      if (saved?.carryOn || saved?.running) {
+        setCarryOn(saved.carryOn);
+        follow.current();
+      }
     },
     [id],
   );
@@ -209,10 +231,17 @@ export function useChat(
   const resume = useCallback(() => setPaused(false), []);
 
   const stop = useCallback(async () => {
-    // Stopping halts this turn and pauses whatever is waiting behind it.
+    // Stopping halts this turn and pauses whatever is waiting behind it,
+    // and the studio won't carry on by itself.
     setPaused(true);
+    setCarryOn(null);
     await api.stop(id).catch(() => {});
     abort.current?.abort();
+  }, [id]);
+  // Keeps things as they are instead of carrying on by itself later.
+  const cancelCarryOn = useCallback(async () => {
+    setCarryOn(null);
+    await api.stop(id).catch(() => {});
   }, [id]);
 
   const undo = useCallback(async () => {
@@ -252,7 +281,26 @@ export function useChat(
     [id],
   );
 
-  return { messages, turn, send, stop, undo, restore, undoing, restoring, loaded, queue, paused, removeQueued, clearQueue, resume, provider, setProvider };
+  return {
+    messages,
+    turn,
+    send,
+    stop,
+    undo,
+    restore,
+    undoing,
+    restoring,
+    loaded,
+    queue,
+    paused,
+    removeQueued,
+    clearQueue,
+    resume,
+    provider,
+    setProvider,
+    carryOn,
+    cancelCarryOn,
+  };
 }
 
 export type ChatState = ReturnType<typeof useChat>;

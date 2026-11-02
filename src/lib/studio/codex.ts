@@ -38,6 +38,7 @@ export type CodexOutcome = {
   steps: string[];
   changedAny: boolean;
   problem: string | null;
+  raw: string; // Codex's own error words, for spotting a usage limit
 };
 
 const homeOf = (id: string) => path.join(STUDIO_DIR, "codex", id);
@@ -155,7 +156,7 @@ export async function runCodex(o: {
 }): Promise<CodexOutcome> {
   const dir = filmDir(o.id);
   const bin = codexBin();
-  const empty = { thread: o.thread, lost: false, reply: "", steps: [], changedAny: false };
+  const empty = { thread: o.thread, lost: false, reply: "", steps: [], changedAny: false, raw: "" };
   if (!bin) return { ...empty, code: -1, problem: "Codex isn't installed on this Mac. Open Connections, then AI, for the set-up steps." };
 
   const home = await prepareHome(o.id, o.instructions);
@@ -217,6 +218,7 @@ export async function runCodex(o: {
     steps: reader.steps,
     changedAny: reader.changedAny,
     problem,
+    raw: [reader.failure, reader.lastError, stderr].filter(Boolean).join("\n"),
   };
 }
 

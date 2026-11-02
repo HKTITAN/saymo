@@ -228,6 +228,7 @@ export function ChatPanel({
           <Message key={`${m.at}-${i}`} message={m} filmId={filmId} soundLength={soundLength} />
         ))}
         {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
+        {!turn.running && chat.carryOn ? <CarryOnNote carryOn={chat.carryOn} onCancel={() => void chat.cancelCarryOn()} /> : null}
         {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
         {chat.queue.length ? (
           <Queue
@@ -279,7 +280,33 @@ export function ChatPanel({
   );
 }
 
+// The studio waiting to carry on by itself: after the 15-minute cap, a
+// moment; after a usage limit, until it resets.
+function CarryOnNote({ carryOn, onCancel }: { carryOn: { reason: "time" | "limit"; at: string }; onCancel: () => void }) {
+  const at = new Date(carryOn.at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }).toLowerCase();
+  return (
+    <div className="flex flex-col gap-1 rounded-[10px] bg-white/[0.04] px-3 py-2.5 text-[12px] leading-relaxed" role="status">
+      <p className="text-white/75">
+        {carryOn.reason === "time" ? (
+          <span className="studio-shimmer">Carrying on in a fresh turn</span>
+        ) : (
+          <>{`You've hit your usage limit. The studio carries on by itself at ${at}.`}</>
+        )}
+      </p>
+      <p className="text-white/40">
+        {carryOn.reason === "time" ? "The last turn reached the 15-minute limit. " : "You can close the studio; it picks up when the limit resets. "}
+        <button type="button" onClick={onCancel} className="cursor-pointer text-white/70 underline-offset-2 hover:text-white hover:underline">
+          {"Don't carry on"}
+        </button>
+      </p>
+    </div>
+  );
+}
+
 function Message({ message, filmId, soundLength }: { message: ChatMessage; filmId: string; soundLength?: number }) {
+  if (message.role === "you" && message.auto) {
+    return <p className="text-center text-[11.5px] text-white/35">The studio carried on by itself</p>;
+  }
   if (message.role === "you") {
     return (
       <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">

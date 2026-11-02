@@ -213,7 +213,12 @@ export type Attachment = {
 };
 
 // `provider`: which AI runs this prompt (ai-types.ts); Claude when left out.
-export type ChatRequest = { prompt: string; context: ChatContext; provider?: ProviderId };
+export type ChatRequest = {
+  prompt: string;
+  context: ChatContext;
+  provider?: ProviderId;
+  auto?: number; // set by the studio when it carries on by itself: automatic turns in a row
+};
 
 export type ChatEvent =
   | { kind: "start"; turn: number }
@@ -221,6 +226,7 @@ export type ChatEvent =
   | { kind: "step"; label: string } // plain English: "Editing the film", "Checking it"
   | { kind: "changed"; files: string[] } // film files written; reload the stage
   | { kind: "done"; film: Film } // the turn ended; film.json as it is now
+  | { kind: "carry-on"; reason: "time" | "limit"; at: string } // the studio carries on by itself at `at` (ISO)
   | { kind: "error"; message: string }; // plain English
 
 export type ChatMessage = {
@@ -230,6 +236,7 @@ export type ChatMessage = {
   context?: ChatContext; // on yours
   steps?: string[]; // on Claude's
   provider?: ProviderId; // which AI it was sent to or came from (Claude when missing)
+  auto?: boolean; // on yours: sent by the studio itself to carry on
 };
 
 // One version of a film in its history: the film as it stood after one of

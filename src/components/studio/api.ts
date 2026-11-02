@@ -72,7 +72,10 @@ export const api = {
     }
     if (!res.ok) throw new StudioError(`Unable to load the chat (error ${res.status}). Try again in a moment.`);
     const messages = ((await res.json().catch(() => [])) ?? []) as ChatMessage[];
-    return { messages, running: res.headers.get("x-studio-running") === "1" };
+    // When the studio will carry on by itself, and why: "time|ISO" or "limit|ISO".
+    const [reason, at] = (res.headers.get("x-studio-carry-on") ?? "").split("|");
+    const carryOn = (reason === "time" || reason === "limit") && at ? { reason: reason as "time" | "limit", at } : null;
+    return { messages, running: res.headers.get("x-studio-running") === "1", carryOn };
   },
   stop: (id: string) => call<void>(`${film(id)}/chat`, { method: "DELETE" }),
   undo: (id: string) => call<Film>(`${film(id)}/undo`, send("POST")),

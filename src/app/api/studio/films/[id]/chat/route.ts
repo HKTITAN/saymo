@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { DEFAULT_PROVIDER, isProviderId } from "@/lib/studio/ai-types";
-import { isRunning, readChat, runTurn, stopTurn } from "@/lib/studio/claude";
+import { isRunning, readChat, runAutoTurn, runTurn, stopTurn } from "@/lib/studio/claude";
+import { readCarryOn, restoreCarryOns } from "@/lib/studio/carry-on";
 import type { ChatContext, ChatEvent, ChatRequest } from "@/lib/studio/contract";
 import { checkAttachments } from "@/lib/studio/attachments";
 import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films";
@@ -17,7 +18,15 @@ export async function GET(request: Request, ctx: RouteContext<"/api/studio/films
   if (!allowed(request)) return refused();
   const { id } = await ctx.params;
   if (!(await readFilm(id))) return missing();
-  return Response.json(await readChat(id), { headers: { "x-studio-running": isRunning(id) ? "1" : "0" } });
+  // Plans to carry on by themselves, picked back up after a restart.
+  void restoreCarryOns(runAutoTurn);
+  const carry = await readCarryOn(id);
+  return Response.json(await readChat(id), {
+    headers: {
+      "x-studio-running": isRunning(id) ? "1" : "0",
+      ...(carry ? { "x-studio-carry-on": `${carry.reason}|${carry.at}` } : {}),
+    },
+  });
 }
 
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/films/[id]/chat">) {
