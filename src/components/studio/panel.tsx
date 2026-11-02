@@ -45,6 +45,32 @@ export function Hint({ label, keys, children }: { label: string; keys?: string[]
   );
 }
 
+// Asked once, inside a pop-up, before closing it would throw away what was
+// typed or attached. Discard is focused, as it's the choice being asked.
+export function DiscardAsk({ what, onKeep, onDiscard }: { what: string; onKeep: () => void; onDiscard: () => void }) {
+  return (
+    <div
+      role="alertdialog"
+      aria-label={`Discard ${what}?`}
+      className="flex items-center gap-2 rounded-[12px] bg-white/[0.06] py-1.5 ps-3 pe-1.5 animate-in fade-in-0 duration-150"
+    >
+      <p className="me-auto text-[12px] text-white/85">Discard {what}?</p>
+      <button type="button" onClick={onKeep} className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/70 hover:bg-white/[0.08] hover:text-white")}>
+        Keep it
+      </button>
+      <button
+        type="button"
+        // biome-ignore lint/a11y/noAutofocus: the one choice that needs a decision
+        autoFocus
+        onClick={onDiscard}
+        className={cn(PILL_BUTTON, "h-7 px-2.5 bg-[#ff9592]/15 text-[#ffb3b0] hover:bg-[#ff9592]/25")}
+      >
+        Discard
+      </button>
+    </div>
+  );
+}
+
 export function Panel({
   title,
   folded,

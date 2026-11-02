@@ -8,10 +8,11 @@ import { GAIN_MAX, GAIN_MIN } from "@/lib/studio/sound-mix";
 import { DialButton, DialSlider, DialToggle } from "@/components/tool/dial";
 import { PromptBox } from "./prompt-box";
 import { cn } from "@/lib/utils";
-import { CARD, ICON_BUTTON } from "./panel";
+import { CARD, DiscardAsk, ICON_BUTTON } from "./panel";
 import { SoundWave } from "./sound-lane";
 import { isAudioFile, useAttachments } from "./use-attachments";
 import type { SoundEditor } from "./use-sound-edit";
+import { useOutsideClose } from "./use-outside";
 
 // The sound design as two lanes, Music and Effects, each its own stem's
 // waveform. Drag across a lane to pick a stretch of it (it snaps to the
@@ -101,6 +102,7 @@ export function StemLane({
   return (
     <div
       ref={lane}
+      data-stem-lane=""
       role="group"
       aria-label={empty ? `${STEM_LABEL[stem]}, none in this sound` : `${STEM_LABEL[stem]}. Drag to pick part of it`}
       onPointerDown={down}
@@ -193,17 +195,28 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
     };
   }, [anchor, card, pick?.from, pick?.to, pick?.stem, width]);
 
+  // A press outside lets go of the pick too, except on the Music and Effects
+  // lanes, which pick again. A typed prompt asks once before it's lost.
+  const panel = useRef<HTMLElement>(null);
+  const [discard, setDiscard] = useState(false);
+  const typed = asking && Boolean(words.trim());
+  if (discard && !asking) setDiscard(false);
+  const outside = useOutsideClose(panel, () => (typed && !discard ? setDiscard(true) : editor.setPick(null)), {
+    ignore: (target) => Boolean(target.closest("[data-stem-lane]")),
+  });
+
   // Escape lets go of the pick before anything else in the studio.
   useEffect(() => {
     const keys = (e: KeyboardEvent) => {
-      if (e.key !== "Escape" || asking) return; // the prompt box handles its own Esc
+      if (e.key !== "Escape" || (asking && !discard)) return; // the prompt box handles its own Esc
       e.preventDefault();
       e.stopPropagation();
-      editor.setPick(null);
+      if (discard) setDiscard(false);
+      else editor.setPick(null);
     };
     window.addEventListener("keydown", keys, true);
     return () => window.removeEventListener("keydown", keys, true);
-  }, [editor, asking]);
+  }, [editor, asking, discard]);
 
   if (!box || typeof document === "undefined") return null;
   const gain = draft ?? editor.level.gain;
@@ -244,6 +257,8 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
   };
   return createPortal(
     <section
+      ref={panel}
+      {...outside}
       aria-label={`Sound, ${editor.label}`}
       onPointerDown={(e) => e.stopPropagation()}
       onDragOver={onDragOver}
@@ -327,6 +342,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
       ) : null}
       </>
       )}
+      {asking && discard ? <DiscardAsk what="this prompt" onKeep={() => setDiscard(false)} onDiscard={() => editor.setPick(null)} /> : null}
     </section>,
     document.body,
   );

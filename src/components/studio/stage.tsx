@@ -116,6 +116,29 @@ export function Stage({
     bridge.post({ type: "studio:point", on: pointing });
   }, [bridge, pointing]);
 
+  // A press on the film lands in the film's own page, where the studio's
+  // pop-ups can't hear it. The film taking the focus means it was pressed,
+  // so that's passed on as a press on the frame, and pop-ups close just as
+  // they do for a press anywhere else outside them.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const blur = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const frame = ref.current;
+        if (!frame || document.activeElement !== frame) return;
+        const at = { bubbles: true, cancelable: true, composed: true, button: 0 };
+        frame.dispatchEvent(new PointerEvent("pointerdown", { ...at, pointerType: "mouse", isPrimary: true }));
+        frame.dispatchEvent(new MouseEvent("click", at));
+      }, 0);
+    };
+    window.addEventListener("blur", blur);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("blur", blur);
+    };
+  }, []);
+
   // A rust film can't tell what's under the pointer, and a video film's parts
   // are known from its edit, so for those the studio takes the click itself
   // and passes on only where it was.
@@ -128,6 +151,7 @@ export function Stage({
   // stretching on the way.
   return (
     <div
+      data-film-stage=""
       className="absolute top-0 left-0 overflow-hidden rounded-[3px] bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)] transition-[transform,width,height] duration-[450ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       style={{ width: fit.width, height: fit.height, transform: `translate(${fit.x}px, ${fit.y}px)` }}
     >
