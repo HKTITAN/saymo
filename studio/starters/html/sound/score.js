@@ -1,15 +1,31 @@
 // The sound of the line field: a low, slow pulse underneath, a soft tick as
 // the headline rises, filtered air that travels in from the right with the
 // accent, one bright note when it lands, and the air drawing back out as
-// black returns. Music in Strudel, hits in Tone.js (src/lib/studio/sound.ts).
+// black returns. Music as a music bed, hits in Tone.js
+// (src/lib/studio/sound.ts).
 
 export default {
-  // Two seconds a cycle: a sub pulse on the beat and a few quiet, high
+  // Two seconds a bar: a sub pulse on the beat and a few quiet, high
   // notes with a short echo, like light catching the lines.
-  music: `setcps(0.5)
-$: note("c1 ~ c1 ~").s("sine").attack(0.01).decay(0.5).sustain(0).lpf(180).gain(0.9)
-$: note("<g4 ~ ~ bb4 ~ ~ c5 ~>*2").s("triangle").decay(0.12).sustain(0).lpf(2600).gain(0.1)
-  .delay(0.35).delaytime(0.375).delayfeedback(0.35)`,
+  music: {
+    bpm: 120,
+    parts: {
+      pulse: { sound: "sine", notes: "c1 . c1 .", attack: 0.01, decay: 0.5, sustain: 0, release: 0.01, lowpass: 180, gain: 0.9 },
+      glints: {
+        sound: "triangle",
+        notes: "g4 . | . bb4 | . | c5 .",
+        attack: 0.001,
+        decay: 0.12,
+        sustain: 0,
+        release: 0.01,
+        lowpass: 2600,
+        gain: 0.1,
+        delay: 0.35,
+        delayTime: 0.375,
+        delayFeedback: 0.35,
+      },
+    },
+  },
   musicGain: 0.5,
   musicFadeOut: 0.8,
 

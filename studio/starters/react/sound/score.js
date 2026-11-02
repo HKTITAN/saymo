@@ -2,12 +2,16 @@
 // bar, a fine digital tick for each step of the count (fast, then slowing
 // as it eases in), one bright note when the figure settles, and the air
 // leaving with the black. A quiet pulse runs under it all.
-// Music in Strudel, hits in Tone.js (src/lib/studio/sound.ts).
+// Music as a music bed, hits in Tone.js (src/lib/studio/sound.ts).
 
 export default {
-  music: `setcps(0.5)
-$: note("c1 ~ ~ c1 ~ ~ ~ ~").s("sine").attack(0.01).decay(0.6).sustain(0).lpf(160).gain(0.9)
-$: note("~ ~ eb5 ~ ~ ~ g5 ~").s("sine").decay(0.2).sustain(0).gain(0.06).room(0.4)`,
+  music: {
+    bpm: 120,
+    parts: {
+      pulse: { sound: "sine", notes: "c1 . . c1 . . . .", attack: 0.01, decay: 0.6, sustain: 0, release: 0.01, lowpass: 160, gain: 0.9 },
+      glints: { sound: "sine", notes: ". . eb5 . . . g5 .", attack: 0.001, decay: 0.2, sustain: 0, release: 0.01, gain: 0.06, room: 0.4 },
+    },
+  },
   musicGain: 0.45,
   musicFadeOut: 1,
 

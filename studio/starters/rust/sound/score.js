@@ -1,15 +1,27 @@
 // The sound of the swelling accent field: a low pad that breathes with the
 // wave rolling through the lines, air arriving from the right with the
 // accent, one bright note as it lands, and the air leaving with the black.
-// Music in Strudel, hits in Tone.js (src/lib/studio/sound.ts).
+// Music as a music bed, hits in Tone.js (src/lib/studio/sound.ts).
 
 export default {
   // A slow chord on soft sawtooths, its filter opening and closing like
-  // the wave, with a sub underneath.
-  music: `setcps(0.25)
-$: note("<[c3,g3,eb4] [ab2,eb3,c4]>").s("sawtooth").attack(0.6).release(1.2).sustain(0.8)
-  .lpf(sine.range(300, 1100).slow(2)).lpq(2).gain(0.18)
-$: note("<c2 ab1>").s("sine").attack(0.2).release(1).gain(0.5)`,
+  // the wave over two bars, with a sub underneath.
+  music: {
+    bpm: 60,
+    parts: {
+      pad: {
+        sound: "sawtooth",
+        notes: "c3+g3+eb4 | ab2+eb3+c4",
+        attack: 0.6,
+        sustain: 0.8,
+        release: 1.2,
+        lowpass: { from: 300, to: 1100, shape: "sine", bars: 2 },
+        lowpassQ: 2,
+        gain: 0.18,
+      },
+      sub: { sound: "sine", notes: "c2 | ab1", attack: 0.2, release: 1, gain: 0.5 },
+    },
+  },
   musicGain: 0.5,
   musicFadeOut: 1.2,
 

@@ -1,17 +1,21 @@
 // Sound design: every film (motion or video) can have a sound track that
-// Claude composes as code and the studio renders to audio. Music beds are
-// written in Strudel (pattern-based live-coding music), effects that must
-// land on exact moments (a whoosh as orange arrives, a tick per bar) in
+// Claude composes as code and the studio renders to audio. Music is a
+// music bed (studio/sound/bed.js: named parts, each a loop of notes with a
+// sound, envelope, filters, room and echo); effects that must land on
+// exact moments (a whoosh as orange arrives, a tick per bar) are drawn with
 // Tone.js. Both are rendered offline in headless Chrome to one WAV the
-// length of the film, which the studio plays in sync and every render mixes
-// in. Same contract for the engine, the interface and Claude.
+// length of the film, which the studio plays in sync and every render
+// mixes in. Same contract for the engine, the interface and Claude.
 //
-// Strudel is AGPL-3.0: fine for this in-house tool on this Mac; it must not
-// be offered to people outside Aerchain as a hosted service without
-// publishing the source. Tone.js is MIT.
+// The bed is the studio's own code and Tone.js is MIT. Films scored before
+// the bed have Strudel code (AGPL-3.0) as their music: the in-house edition
+// still plays it, the product edition never loads Strudel (see
+// docs/launch/README.md), and scripts/studio/convert-score.mjs turns it
+// into a music bed.
 
 // films/<id>/sound/
 //   score.js       the score Claude writes (see SoundScore below)
+//   score.strudel.js  a converted film's old Strudel score, kept as it was
 //   sound.wav      48 kHz stereo, exactly film.duration long (rendered)
 //   peaks.json     number[] 0..1, 100 per second (rendered)
 //   status.json    SoundStatus
@@ -23,14 +27,15 @@
 //                  Claude never does)
 
 // score.js is an ES module whose default export is a SoundScore. It runs in
-// the renderer's page with Strudel and Tone available; it must be
-// deterministic (no Math.random without a seed) so a re-render sounds the
-// same.
+// the renderer's page with Tone available; it must be deterministic (no
+// Math.random without a seed) so a re-render sounds the same.
 export type SoundScore = {
-  // Strudel code, evaluated as in the Strudel REPL (e.g. `setcps(0.5)\nstack(s("bd*2"), note("c2 eb2").s("sawtooth").lpf(400))`).
-  // Starts at film time `musicStart` (default 0) and is faded out over
-  // `musicFadeOut` seconds (default 1) at the film's end.
-  music?: string;
+  // The music: a music bed (MusicBed below), or a function that draws
+  // music with Tone itself (it gets the SoundKit plus `start`, which is
+  // musicStart). In-house only, a string of Strudel code from before the
+  // bed. Starts at film time `musicStart` (default 0) and is faded out
+  // over `musicFadeOut` seconds (default 1) at the film's end.
+  music?: MusicBed | ((kit: SoundKit & { start: number }) => void | Promise<void>) | string;
   musicStart?: number;
   musicFadeOut?: number;
   musicGain?: number; // 0..1, default 0.6
@@ -45,6 +50,49 @@ export type SoundScore = {
   // right for most social films; a launch film may ask for -14.
   loudness?: number;
 };
+
+// The music bed: parts that loop at one tempo. A bar is beatsPerBar beats.
+export type MusicBed = {
+  bpm: number;
+  beatsPerBar?: number; // default 4
+  parts: Record<string, MusicPart | null | false>; // null or false: switched off
+};
+
+// One part. `notes` is one loop: bars split by "|", each bar into equal
+// steps by spaces. A step is a note (c2, eb3, f#4, or a MIDI number),
+// notes joined by "+" for a chord, "." for a rest, "_" to hold the step
+// before, or "x" for a hit with no pitch (noise sounds). Each part loops
+// on its own length.
+export type MusicPart = {
+  sound?: "sine" | "triangle" | "square" | "sawtooth" | "white" | "pink" | "brown"; // default sine
+  notes: string;
+  // A linear envelope held for each note's length, in seconds (sustain 0..1).
+  attack?: number; // default 0.01
+  decay?: number; // default 0
+  sustain?: number; // default 1
+  release?: number; // default 0.1
+  gain?: MusicValue; // default 0.5; 1 is one strong voice, a bed's parts sit around 0.02 to 0.5
+  lowpass?: MusicValue; // Hz
+  lowpassQ?: number; // dB, default 1
+  highpass?: MusicValue; // Hz
+  highpassQ?: number; // dB, default 1
+  pan?: MusicValue; // -1 (left) to 1 (right), default 0
+  room?: number; // 0..1, how much goes into the room (reverb)
+  roomSize?: number; // seconds until the room fades by 60 dB, default 2
+  delay?: number; // 0..1, how much goes into the echo
+  delayTime?: number; // seconds, default 3/16 of a bar
+  delayFeedback?: number; // 0..0.95, default 0.5
+  from?: number; // film seconds: notes start from here
+  to?: number; // and stop starting here
+};
+
+// A number, or a slow wave between two numbers: sine (starts in the
+// middle, rising), rise, fall, triangle or square, once every `bars` bars.
+// It glides through each note; with `hold`, each note keeps the value the
+// wave had when the note started.
+export type MusicValue =
+  | number
+  | { from: number; to: number; shape?: "sine" | "rise" | "fall" | "triangle" | "square"; bars?: number; phase?: number; hold?: boolean };
 
 // What effects() gets. `Tone` is the Tone.js module bound to the offline
 // context; `at` turns a film time into the context time; `marks` and

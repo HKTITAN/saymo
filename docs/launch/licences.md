@@ -6,7 +6,9 @@ Checked on 2026-11-03 against the licence of every one of the 730 packages insta
 
 ### 1. The sound engine is AGPL-3.0
 
-`@strudel/core`, `@strudel/draw`, `@strudel/mini`, `@strudel/tonal`, `@strudel/transpiler`, `@strudel/webaudio`, `superdough`, `supradough`, `@kabelsalat/core`, `@kabelsalat/lib` and `@kabelsalat/web`, all `AGPL-3.0-or-later`, all in `studio/sound` (used by `studio/sound/engine.js` and `scripts/studio/sound.mjs`).
+`@strudel/core`, `@strudel/draw`, `@strudel/mini`, `@strudel/tonal`, `@strudel/transpiler`, `@strudel/webaudio`, `superdough`, `supradough`, `@kabelsalat/core`, `@kabelsalat/lib` and `@kabelsalat/web`, all `AGPL-3.0-or-later`.
+
+**Done (step 1 of [the plan](README.md)):** music is now written as the studio's own music bed, played with Tone.js. Strudel moved to its own package, `studio/sound/strudel`, used only by `studio/sound/strudel/music.js` to play films scored before the bed. The product edition never installs it (`npm run setup -- --product`) and never bundles it (`scripts/studio/sound-engine.mjs` builds the product engine from `studio/sound/engine.js` alone and refuses any Strudel import). What follows explains why it had to go.
 
 AGPL applies whether the studio is sold as a download or run as a website. Its network clause exists to close the "it only runs on our server" route, so a SaaS doesn't escape it. Selling it closed would mean publishing the source of at least the sound engine, and arguably the whole studio, under AGPL. The README already notes this for use outside Aerchain.
 
@@ -62,13 +64,13 @@ The brand kit (`studio/brands/aerchain`: logos, guideline, rules), the `aerchain
 
 ## Running the check again
 
-`npm run licences` writes the full list, with each licence text, to `THIRD-PARTY-NOTICES.md` and `public/licences.json` (see [setup.md](../setup.md)). For a quick look at just the packages whose licence isn't plainly permissive, run this from the repo root:
+`npm run licences` writes the full list, with each licence text, to `THIRD-PARTY-NOTICES.md` and `public/licences.json` (see [setup.md](../setup.md)). For a quick look at just the packages whose licence isn't plainly permissive, run this from the repo root: After a product setup (`npm run setup -- --product`) there's no `studio/sound/strudel/node_modules`, so no AGPL package should be listed.
 
 ```bash
 node --input-type=module -e '
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import path from "node:path";
-const roots = ["node_modules", "studio/remotion/node_modules", "studio/hyperframes/node_modules", "studio/sound/node_modules"];
+const roots = ["node_modules", "studio/remotion/node_modules", "studio/hyperframes/node_modules", "studio/sound/node_modules", "studio/sound/strudel/node_modules"];
 const seen = new Map();
 const walk = (dir, root) => {
   if (!existsSync(dir)) return;

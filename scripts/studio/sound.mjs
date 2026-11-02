@@ -1,5 +1,5 @@
-// Renders a film's sound design: films/<id>/sound/score.js (Strudel music,
-// Tone.js effects; see src/lib/studio/sound.ts) into sound/sound.wav,
+// Renders a film's sound design: films/<id>/sound/score.js (the music bed
+// and Tone.js effects; see src/lib/studio/sound.ts) into sound/sound.wav,
 // exactly as long as the film, 48 kHz stereo, at about -16 LUFS with the
 // peaks kept under -1.5 dBTP. Also writes sound/peaks.json (100 a second,
 // for the timeline) and sound/status.json.
@@ -25,12 +25,10 @@
 // with: loudness, peak, and every onset with the film mark it lands on.
 
 import { spawn } from "node:child_process";
-import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
-import http from "node:http";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { openEngine, ROOT } from "./sound-engine.mjs";
 
 // Importing the studio's TypeScript (captions.ts) makes Node warn that the
 // project isn't marked as ES modules; that note means nothing here.
@@ -42,9 +40,6 @@ import { fileURLToPath } from "node:url";
   });
 }
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const ENGINE_DIR = path.join(ROOT, "studio/sound");
-const CACHE = path.join(ROOT, "node_modules/.cache/studio-sound");
 const RATE = 48000;
 const TARGET_LUFS = -16;
 const TARGET_TP = -1.5;
@@ -102,72 +97,6 @@ const run = (cmd, argv, { input } = {}) =>
       proc.stdin.end(input);
     }
   });
-
-// ─── The engine page ────────────────────────────────────────────────────────
-
-// Strudel's published build carries its audio worklets inline, as base64
-// modules. Worklets keep their own Math.random (the supersaw's starting
-// phases), so each one gets the same seeded generator as the page.
-const SEEDED = `Math.random=(()=>{let s=7;return()=>{s|=0;s=(s+0x6d2b79f5)|0;let t=Math.imul(s^(s>>>15),1|s);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296}})();\n`;
-const seedWorklets = {
-  name: "seed-worklets",
-  setup(build) {
-    build.onLoad({ filter: /(superdough|supradough)[\\/]dist[\\/]index\.mjs$/ }, async (a) => {
-      const text = await readFile(a.path, "utf8");
-      const contents = text.replace(/data:text\/javascript;base64,([A-Za-z0-9+/=]{200,})/g, (_, b64) => {
-        const source = Buffer.from(b64, "base64").toString("utf8");
-        return `data:text/javascript;base64,${Buffer.from(SEEDED + source).toString("base64")}`;
-      });
-      return { contents, loader: "js" };
-    });
-  },
-};
-
-// Bundled once and kept until the engine or its packages change.
-async function engineBundle() {
-  const sources = [path.join(ENGINE_DIR, "engine.js"), path.join(ENGINE_DIR, "package-lock.json"), fileURLToPath(import.meta.url)];
-  const stamp = createHash("sha1");
-  for (const f of sources) stamp.update(String((await stat(f).catch(() => ({ mtimeMs: 0 }))).mtimeMs));
-  const file = path.join(CACHE, `engine-${stamp.digest("hex").slice(0, 12)}.js`);
-  if (existsSync(file)) return readFile(file, "utf8");
-  if (!existsSync(path.join(ENGINE_DIR, "node_modules"))) {
-    throw new Error("The sound engine isn't installed. Run: npm ci --prefix studio/sound");
-  }
-  const { build } = await import(path.join(ENGINE_DIR, "node_modules/esbuild/lib/main.js"));
-  await mkdir(CACHE, { recursive: true });
-  await build({
-    entryPoints: [path.join(ENGINE_DIR, "engine.js")],
-    bundle: true,
-    format: "esm",
-    platform: "browser",
-    target: "chrome120",
-    outfile: file,
-    absWorkingDir: ENGINE_DIR,
-    nodePaths: [path.join(ENGINE_DIR, "node_modules")],
-    logLevel: "silent",
-    legalComments: "none",
-    plugins: [seedWorklets],
-  });
-  return readFile(file, "utf8");
-}
-
-// The page is served from this Mac (a real origin, so worklets and module
-// imports behave as they do in the studio).
-function servePage(script) {
-  const html = `<!doctype html><meta charset="utf-8"><title>sound</title><script type="module" src="/engine.js"></script>`;
-  const server = http.createServer((req, res) => {
-    if (req.url === "/engine.js") {
-      res.writeHead(200, { "content-type": "text/javascript; charset=utf-8" });
-      res.end(script);
-    } else {
-      res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-      res.end(html);
-    }
-  });
-  return new Promise((resolve) =>
-    server.listen(0, "127.0.0.1", () => resolve({ url: `http://127.0.0.1:${server.address().port}/`, close: () => server.close() })),
-  );
-}
 
 // ─── A motion film's voiceover ──────────────────────────────────────────────
 //
@@ -243,23 +172,12 @@ async function videoContext(film, voice = null) {
 
 // Renders the score in the page; returns interleaved float32 stereo.
 async function renderInChrome(source, film, voice = null) {
-  const script = await engineBundle();
   const context = await videoContext(film, voice);
-  const server = await servePage(script);
-  const { chromium } = await import(path.join(ROOT, "node_modules/playwright/index.mjs"));
-  const browser = await chromium.launch({ channel: "chrome", args: ["--autoplay-policy=no-user-gesture-required"] });
-  const logs = [];
+  const engine = await openEngine();
   try {
-    const page = await browser.newPage();
-    page.on("console", (m) => {
-      if (m.type() === "warning" || m.type() === "error") logs.push(m.text());
-    });
-    page.on("pageerror", (e) => logs.push(String(e)));
-    await page.goto(server.url, { waitUntil: "load" });
-    await page.waitForFunction(() => window.__sound, null, { timeout: 30000 });
     const results = [];
     for (let i = 0; i < 1; i++) {
-      const r = await page.evaluate((input) => window.__sound.render(input), {
+      const r = await engine.page.evaluate((input) => window.__sound.render(input), {
         source,
         film: {
           duration: film.duration,
@@ -273,13 +191,13 @@ async function renderInChrome(source, film, voice = null) {
       const f32 = (b64) => new Float32Array(new Uint8Array(Buffer.from(b64, "base64")).buffer);
       results.push({ music: f32(r.music), effects: f32(r.effects), report: r.report });
     }
-    return { results, logs, context };
+    return { results, logs: engine.logs, context, inputs: engine.inputs };
   } catch (e) {
-    const detail = logs.filter((l) => !/AudioContext was not allowed/.test(l)).slice(-4).join("\n");
-    throw new Error(`${e.message.split("\n")[0]}${detail ? `\n${detail}` : ""}`);
+    const detail = engine.logs.filter((l) => !/AudioContext was not allowed/.test(l)).slice(-4).join("\n");
+    const said = e.message.split("\n")[0].replace(/^page\.evaluate: (Error: )?/, "");
+    throw new Error(`${said}${detail ? `\n${detail}` : ""}`);
   } finally {
-    await browser.close();
-    server.close();
+    await engine.close();
   }
 }
 
@@ -367,6 +285,14 @@ function onsetsOf(pcm) {
 }
 
 const fmt = (t) => `${t.toFixed(2)} s`;
+
+function musicLine(m) {
+  if (m.engine === "strudel") {
+    return `Music (Strudel, from before the music bed): ${m.notes} notes at ${m.cps} cycles a second (${(m.cps * 60).toFixed(0)} cycles a minute), from ${fmt(m.start)}.`;
+  }
+  if (m.engine === "bed") return `Music: ${m.notes} notes at ${Number(m.bpm.toFixed(3))} BPM, from ${fmt(m.start)}.`;
+  return `Music: drawn with Tone by the score, from ${fmt(m.start)}.`;
+}
 
 function describeOnsets(onsets, marks) {
   if (!onsets.length) return ["No clear onsets: the sound is a smooth bed, or silent."];
@@ -625,7 +551,7 @@ async function main() {
     for (let i = 0; i < Math.min(a.length, b.length); i++) diff = Math.max(diff, Math.abs(a[i] - b[i]));
     if (a.length !== b.length || db(diff) > -60) {
       console.error(
-        `The score sounds different each time it renders (by ${db(diff).toFixed(0)} dB). Remove Math.random, Date.now and anything timed by the clock from score.js; Strudel's rand and perlin are fine.`,
+        `The score sounds different each time it renders (by ${db(diff).toFixed(0)} dB). Remove Math.random, Date.now and anything timed by the clock from score.js.`,
       );
       process.exit(2);
     }
@@ -665,9 +591,7 @@ async function main() {
     master.silent
       ? "It is silent."
       : `Loudness ${after.lufs?.toFixed(1)} LUFS (the ${voice ? "score and voiceover were" : "score alone was"} ${master.before?.toFixed(1)}), true peak ${after.truePeak?.toFixed(1)} dBTP.`,
-    report.music
-      ? `Music: ${report.music.notes} notes at ${report.music.cps} cycles a second (${(report.music.cps * 60).toFixed(0)} cycles a minute), from ${fmt(report.music.start)}.`
-      : "Music: none.",
+    report.music ? musicLine(report.music) : "Music: none.",
     `Effects: ${report.effects ? "yes" : "none"}.`,
     ...(spans.length
       ? [

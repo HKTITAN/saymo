@@ -5,12 +5,20 @@
 #
 #   npm run setup                 everything but the Rust engine
 #   npm run setup -- --with-rust  also the Rust engine (fframes)
+#   npm run setup -- --product    the product edition: leaves out Strudel
+#                                 (AGPL-3.0), which only plays old in-house films
 
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 WITH_RUST=0
-[[ "${1:-}" == "--with-rust" ]] && WITH_RUST=1
+PRODUCT=0
+for arg in "$@"; do
+  case "$arg" in
+    --with-rust) WITH_RUST=1 ;;
+    --product) PRODUCT=1 ;;
+  esac
+done
 
 step() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 ok() { printf '  done: %s\n' "$1"; }
@@ -64,6 +72,14 @@ for engine in remotion hyperframes sound; do
   npm ci --prefix "studio/$engine" --no-audit --no-fund
   ok "$engine"
 done
+# Strudel plays the music of films scored before the music bed. In-house
+# only: it's AGPL-3.0, so the product edition never installs it.
+if (( PRODUCT )); then
+  ok "left out Strudel (product edition)"
+else
+  npm ci --prefix studio/sound/strudel --no-audit --no-fund
+  ok "sound/strudel (old films' music, in-house only)"
+fi
 (cd studio/hyperframes && npx --no-install hyperframes telemetry disable >/dev/null 2>&1 || true)
 
 if (( WITH_RUST )); then

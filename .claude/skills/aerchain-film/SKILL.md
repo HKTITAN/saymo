@@ -86,7 +86,7 @@ Unless asked otherwise, films look like Aerchain:
 
 ## Sound
 
-Every film can have a sound track, written as a score in `sound/score.js` (Strudel music, Tone.js hits on the film's moments) and rendered by the studio. Starters come with one. Load the **aerchain-sound-design** skill before writing or changing sound, and whenever you change the film's timing or marks, check the score still lands on them: run the sound command from your instructions and read where each hit falls.
+Every film can have a sound track, written as a score in `sound/score.js` (a music bed of looping parts, Tone.js hits on the film's moments) and rendered by the studio. Starters come with one. Load the **aerchain-sound-design** skill before writing or changing sound, and whenever you change the film's timing or marks, check the score still lands on them: run the sound command from your instructions and read where each hit falls.
 
 ## Product films and app walkthroughs
 
@@ -96,7 +96,7 @@ For a film about a product (SpendOS launch films, feature films, promos), load t
 
 When a film has music, cut it to the music, using the **stopmotion-video** skill's rules (borrowed from Kosta's skill, MIT). Keep the film's own engine; don't switch to Remotion for this. In the studio:
 
-- **The score is the clock.** Its tempo is in `sound/score.js` (`setcps(BPM/60/4)`, music starting at `musicStart`). Work out bar and beat times from that, or measure an imported song with the skill's `scripts/find-tempo.mjs`.
+- **The score is the clock.** Its tempo is in `sound/score.js` (`music.bpm`, a bar of `beatsPerBar` beats, default 4, with bar 1 at `musicStart`). Work out bar and beat times from that, or measure an imported song with the skill's `scripts/find-tempo.mjs`.
 - **Scenes start on bar lines** and change length by whole bars; marks in film.json sit on beats.
 - **Hits land on drum hits:** a click, a pop or a word landing goes on a kick or snare, never between. Big changes go on the big kick that opens a phrase.
 - **Let a beat go by** on purpose: hold a result for a beat after an action, hold two poses at the top of a camera rise, and step the music aside (duck it) under a click that matters.
