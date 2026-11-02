@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Attachment } from "@/lib/studio/contract";
 import type { SoundSpan, SoundStem } from "@/lib/studio/sound";
 import { clearSpan, isEdited, levelOf, placeSpan } from "@/lib/studio/sound-mix";
 import type { Entry } from "./history";
@@ -34,7 +35,7 @@ export function useSoundEdit({
   record: (entry: Omit<Entry, "at">) => void;
   onAsk: (pin: SoundPin) => void; // pins it to the prompt box
   onTry: (pin: SoundPin) => void; // asks Claude for another take straight away
-  onSend?: (pin: SoundPin, words: string) => void; // a prompt typed in the panel itself
+  onSend?: (pin: SoundPin, words: string, attachments: Attachment[]) => void; // a prompt typed in the panel itself, with any reference files
   running?: boolean; // Claude is working (new prompts wait in the queue)
 }) {
   const [spans, setSpansState] = useState<SoundSpan[]>([]);
@@ -169,9 +170,10 @@ export function useSoundEdit({
       reset,
       ask: () => pick && onAsk({ ...pick }),
       tryAnother: () => pick && onTry({ ...pick }),
-      send: (words: string) => (pick && onSend ? onSend({ ...pick }, words) : pick && onAsk({ ...pick })),
+      send: (words: string, attachments: Attachment[] = []) => (pick && onSend ? onSend({ ...pick }, words, attachments) : pick && onAsk({ ...pick })),
+      filmId: id,
       running,
     }),
-    [spans, pick, pickAt, level, edited, mixing, error, duration, where, setVolume, setMute, reset, onAsk, onTry, onSend, running],
+    [spans, pick, pickAt, level, edited, mixing, error, duration, where, setVolume, setMute, reset, onAsk, onTry, onSend, running, id],
   );
 }

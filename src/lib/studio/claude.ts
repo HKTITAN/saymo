@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "./contract";
 import { attachmentNote } from "./attachments";
+import { listenCommand, referenceSoundNote, refAudioDenies } from "./listen";
 import { atPlayhead } from "./captions";
 import type { Clip, Edit, Graphic } from "./edit";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "./brand-tokens";
@@ -287,6 +288,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Bash(${sound})`,
     `Bash(${media} *)`,
     `Bash(${voiceTool(id)} *)`,
+    `Bash(${listenCommand(id)} *)`, // hears this film's refs/ and stems only
     "Skill",
     "TodoWrite",
   ];
@@ -303,6 +305,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Edit(/${dir}/media/**)`,
     // What they attach is theirs: read it, never change it.
     `Edit(/${dir}/refs/**)`,
+    ...refAudioDenies(dir), // sounds are heard with the listening tool
     // A rust film's build script is the studio's own (it runs code when the
     // film is built); Claude may not change it.
     `Edit(/${dir}/build.rs)`,
@@ -492,6 +495,8 @@ function userMessage(
   }
   const attached = attachmentNote(filmDir(film.id), context.attachments ?? []);
   if (attached) lines.push(attached);
+  const heard = referenceSoundNote(film.id, film.kind, context.attachments ?? [], context.sound);
+  if (heard) lines.push(heard);
   lines.push(`<request>\n${prompt}\n</request>`);
   // Repeated every turn, since a conversation keeps its first system prompt.
   lines.push("<reply>Work silently. Then answer in at most two short plain sentences (under 35 words), no lists or formatting. Ask one short question only if you truly can't guess.</reply>");
@@ -617,6 +622,7 @@ function stepFor(name: string, input: Json, dir: string): string | null {
       if (command.includes("check-film")) return "Checking it";
       if (command.includes("render.mjs")) return "Making a draft";
       if (command.includes("sound.mjs")) return "Listening to the sound";
+      if (command.includes("listen.mjs")) return command.includes("--stem") ? "Listening to the sound" : "Listening to your reference";
       if (command.includes("media-tool")) return MEDIA_STEPS[command.split(/\s+/)[3] ?? ""] ?? "Looking at the footage";
       return "Running a command";
     }

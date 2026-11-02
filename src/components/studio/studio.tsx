@@ -6,7 +6,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { BrandSummary } from "@/lib/studio/brand";
-import type { Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/contract";
+import type { Attachment, Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/contract";
 import type { FilmSound } from "@/lib/studio/sound";
 import { editEnd, type GraphicInfo, type Media } from "@/lib/studio/edit";
 import { cn } from "@/lib/utils";
@@ -538,10 +538,11 @@ function FilmView({
       },
       [chatView, clock, soundLength],
     ),
-    // Typed in the sound panel itself: sent with that stretch of sound.
+    // Typed in the sound panel itself: sent with that stretch of sound, and
+    // any reference sounds attached there.
     onSend: useCallback(
-      (pin: SoundPin, words: string) => {
-        void chatView.send(words, { t: clock.get().t, pick: null, sound: pin });
+      (pin: SoundPin, words: string, attachments: Attachment[]) => {
+        void chatView.send(words, { t: clock.get().t, pick: null, sound: pin, ...(attachments.length ? { attachments } : {}) });
       },
       [chatView, clock],
     ),

@@ -1,11 +1,11 @@
 "use client";
 
 import { type KeyboardEvent, type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from "react";
-import { ArrowUpIcon, MultipleCrossCancelIcon, PaperclipVerticalIcon } from "@/components/icons";
+import { ArrowUpIcon, MultipleCrossCancelIcon, MusicBeamNoteIcon, PaperclipVerticalIcon } from "@/components/icons";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { Hint } from "./panel";
-import { ACCEPT, type Attachments, KIND_LABEL } from "./use-attachments";
+import { acceptFor, type Attachments, clockText, KIND_LABEL } from "./use-attachments";
 
 // Where a prompt is typed: in the chat panel and in the bubble on the film.
 // Enter sends, Shift+Enter starts a new line. Grows with its words. While
@@ -123,12 +123,19 @@ export function PromptBox({
                 // biome-ignore lint/performance/noImgElement: a local preview of a file being attached
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={a.preview} alt="" className="size-5 shrink-0 rounded-[4px] object-cover" />
+              ) : a.kind === "audio" ? (
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-[#F55A00]/15 text-[#ff9a5c] [&_svg]:size-3">
+                  <MusicBeamNoteIcon aria-hidden="true" />
+                </span>
               ) : (
                 <span className="flex h-5 shrink-0 items-center rounded-[4px] bg-white/[0.08] px-1 font-medium text-[10px] text-white/60 uppercase tracking-[0.04em]">
                   {KIND_LABEL[a.kind]}
                 </span>
               )}
               <span className={cn("max-w-40 truncate", !a.done && !a.error && "text-white/50")}>{a.name}</span>
+              {a.kind === "audio" && (a.seconds ?? a.done?.seconds) ? (
+                <span className="shrink-0 font-mono text-[10.5px] text-white/45 tabular-nums">{clockText(a.seconds ?? a.done?.seconds ?? 0)}</span>
+              ) : null}
               <button
                 type="button"
                 onClick={() => attachments.remove(a.key)}
@@ -196,7 +203,7 @@ export function PromptBox({
       <div className="flex items-center gap-1">
         {attachments ? (
           <>
-            <Hint label="Attach images, PDFs or documents">
+            <Hint label={attachments.audio ? "Attach sounds, images, PDFs or documents" : "Attach images, PDFs or documents"}>
               <button
                 type="button"
                 onClick={() => picker.current?.click()}
@@ -210,7 +217,7 @@ export function PromptBox({
               ref={picker}
               type="file"
               multiple
-              accept={ACCEPT}
+              accept={acceptFor(attachments.audio)}
               className="hidden"
               tabIndex={-1}
               onChange={(e) => {

@@ -26,18 +26,46 @@ const KINDS: Record<string, AttachmentKind> = {
   json: "text",
   docx: "doc",
 };
-export const ACCEPT = Object.keys(KINDS)
-  .map((e) => `.${e}`)
-  .join(",");
-export const KIND_LABEL: Record<AttachmentKind, string> = { image: "Image", pdf: "PDF", text: "Text", doc: "Doc" };
+// A film's prompts also take sounds, as references Claude listens to.
+const AUDIO_EXTS = ["mp3", "wav", "m4a", "aif", "aiff", "aac", "ogg", "flac"];
+export const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
+const kindsFor = (audio: boolean): Record<string, AttachmentKind> =>
+  audio ? { ...KINDS, ...Object.fromEntries(AUDIO_EXTS.map((e) => [e, "audio" as const])) } : KINDS;
+export const acceptFor = (audio: boolean) =>
+  Object.keys(kindsFor(audio))
+    .map((e) => `.${e}`)
+    .join(",");
+export const KIND_LABEL: Record<AttachmentKind, string> = { image: "Image", pdf: "PDF", text: "Text", doc: "Doc", audio: "Sound" };
 
 const extOf = (name: string) => name.split(".").pop()?.toLowerCase() ?? "";
+export const isAudioFile = (file: File) => AUDIO_EXTS.includes(extOf(file.name)) || (file.type.startsWith("audio/") && extOf(file.name) !== "");
+
+// A length as m:ss, for sound chips.
+export const clockText = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+
+// A sound's length, read by the browser (null if it can't play the format;
+// the server measures it again either way).
+function lengthOf(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const audio = new Audio();
+    const done = (v: number | null) => {
+      URL.revokeObjectURL(url);
+      resolve(v);
+    };
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => done(Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : null);
+    audio.onerror = () => done(null);
+    audio.src = url;
+  });
+}
 
 export type PendingFile = {
   key: string;
   name: string;
   kind: AttachmentKind;
   preview: string | null; // object URL for images the browser can show
+  seconds: number | null; // sounds: their length, once known
   progress: number; // 0..1
   sending: boolean;
   done: Attachment | null;
@@ -83,7 +111,8 @@ export async function attachFiles(url: string, files: File[]): Promise<Attachmen
   return out;
 }
 
-export function useAttachments(url: string | null) {
+// `audio`: sounds can come along too (a film's prompts, not a kit's).
+export function useAttachments(url: string | null, { audio = false }: { audio?: boolean } = {}) {
   const [items, setItems] = useState<PendingFile[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const itemsRef = useRef(items);
@@ -120,14 +149,18 @@ export function useAttachments(url: string | null) {
       }
       if (files.length > room) setNotice(`Attach up to ${MAX_FILES} files to one message. The rest were left out.`);
       const fresh: PendingFile[] = [];
+      const kinds = kindsFor(audio);
       for (const file of files.slice(0, room)) {
-        const kind = KINDS[extOf(file.name)] ?? (file.type.startsWith("image/") ? "image" : null);
+        const kind = kinds[extOf(file.name)] ?? (file.type.startsWith("image/") ? "image" : null);
         if (!kind) {
-          setNotice(`Claude can't open ${file.name}. Attach an image, a PDF, a Word file or plain text.`);
+          setNotice(
+            `Claude can't open ${file.name}. Attach ${audio ? "a sound, an image, a PDF, a Word file or plain text" : "an image, a PDF, a Word file or plain text"}.`,
+          );
           continue;
         }
-        if (file.size > MAX_BYTES) {
-          setNotice(`${file.name} is over 25 MB. Attach a smaller file.`);
+        const limit = kind === "audio" ? MAX_AUDIO_BYTES : MAX_BYTES;
+        if (file.size > limit) {
+          setNotice(`${file.name} is over ${limit / 1024 / 1024} MB. Attach a smaller file${kind === "audio" ? " or a shorter clip" : ""}.`);
           continue;
         }
         // A pasted screenshot arrives as "image.png"; give it a clearer name.
@@ -138,6 +171,7 @@ export function useAttachments(url: string | null) {
           name: named.name,
           kind,
           preview: showable ? URL.createObjectURL(named) : null,
+          seconds: null,
           progress: 0,
           sending: false,
           done: null,
@@ -147,9 +181,12 @@ export function useAttachments(url: string | null) {
       }
       if (!fresh.length) return;
       setItems((list) => [...list, ...fresh]);
+      for (const item of fresh) {
+        if (item.kind === "audio") void lengthOf(item.file).then((s) => s && patch(item.key, { seconds: s }));
+      }
       if (url) for (const item of fresh) void upload(item, url);
     },
-    [url, upload],
+    [url, upload, audio, patch],
   );
 
   const remove = useCallback((key: string) => {
@@ -194,5 +231,5 @@ export function useAttachments(url: string | null) {
 
   const uploading = items.some((i) => i.sending);
   const ready = items.map((i) => i.done).filter((d): d is Attachment => d !== null);
-  return { items, add, remove, clear, flush, notice, uploading, ready, hasFiles: items.some((i) => !i.error) };
+  return { items, add, remove, clear, flush, notice, uploading, ready, hasFiles: items.some((i) => !i.error), audio };
 }

@@ -130,7 +130,7 @@ export function ChatPanel({
     toLatest();
   }, [filmId, chat.loaded, messages.length, lastRole, chat.queue.length, toLatest]);
 
-  const files = useAttachments(`/api/studio/films/${filmId}/attachments`);
+  const files = useAttachments(`/api/studio/films/${filmId}/attachments`, { audio: true });
 
   const send = async () => {
     const attached = await files.flush();

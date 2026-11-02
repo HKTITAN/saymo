@@ -60,7 +60,7 @@ export function Bubble({
   }
   top = Math.min(Math.max(16, top), vh - 150);
 
-  const files = useAttachments(`/api/studio/films/${filmId}/attachments`);
+  const files = useAttachments(`/api/studio/films/${filmId}/attachments`, { audio: true });
 
   const send = async () => {
     const attached = await files.flush();
