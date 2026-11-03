@@ -127,11 +127,11 @@ function Card({
         style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.45)" }}
       />
       <span className="relative flex items-start justify-between px-[18px] pt-[16px]">
-        <span className="flex items-center gap-2 text-white/80" style={ETCHED}>
+        <span className="flex items-center gap-2 text-white/95" style={ETCHED}>
           {look.mark("size-[18px]")}
           <span className="font-semibold text-[15px] tracking-[-0.01em]">{look.name}</span>
         </span>
-        <span className="pt-0.5 text-[9.5px] text-white/60 uppercase tracking-[0.18em]" style={ETCHED}>{look.via}</span>
+        <span className="pt-0.5 text-[9.5px] text-white/85 uppercase tracking-[0.18em]" style={ETCHED}>{look.via}</span>
       </span>
     </button>
   );
@@ -140,9 +140,9 @@ function Card({
 // Black metal: a soft sheen across, a fine grain, a hairline bevel.
 // Etched into the foil: the cut is shaded along its top edge and catches
 // the light along its bottom edge (filter, so the logo's shape gets it too).
+// The text keeps one steady colour whatever the light does on the metal.
 const ETCHED: CSSProperties = {
-  filter: "drop-shadow(0 -1px 0 rgba(0,0,0,0.35)) drop-shadow(0 1px 0 rgba(255,255,255,0.4))",
-  mixBlendMode: "luminosity",
+  filter: "drop-shadow(0 -1px 0 rgba(0,0,0,0.4)) drop-shadow(0 1px 0 rgba(255,255,255,0.35)) drop-shadow(0 0 6px rgba(0,0,0,0.18))",
 };
 
 // Coloured foil: deep in one corner, light in the other, a soft band of
