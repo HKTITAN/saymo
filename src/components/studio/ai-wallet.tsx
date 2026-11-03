@@ -7,7 +7,7 @@ import { SURFACE } from "@/components/tool/dial";
 import { type AiChoice, OFFERED_PROVIDERS, type ProviderId } from "@/lib/studio/ai-types";
 import { cn } from "@/lib/utils";
 import { aiApi } from "./ai-api";
-import { ClaudeMark, CodexMark } from "./ai-marks";
+import { ClaudeMark, ClaudeWordmark, CodexMark, CodexWordmark } from "./ai-marks";
 import { Foil } from "./foil";
 import { ITEM, MENU_POPUP } from "./home-parts";
 import { PILL_BUTTON } from "./panel";
@@ -27,13 +27,13 @@ const CARD_TOP = 18;
 const POCKET_TOP = 86; // the pocket's edge at the sides
 const POCKET_DIP = 112; // and in the middle
 
-type Look = { name: string; via: string; mark: (c: string) => ReactNode; metal: FoilColors };
+type Look = { name: string; via: string; mark: (c: string) => ReactNode; word: (c: string) => ReactNode; metal: FoilColors };
 // A foil: its deep corner, its middle, its light corner.
 type FoilColors = [string, string, string];
 const CARDS: Record<ProviderId, Look> = {
-  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, metal: ["#c2410f", "#ec6a2c", "#ffb27a"] },
-  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, metal: ["#2f37d8", "#6670f0", "#c3b8f5"] },
-  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, metal: ["#7a2e12", "#b8532a", "#e79a6e"] },
+  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, word: (c) => <ClaudeWordmark className={c} />, metal: ["#c2410f", "#ec6a2c", "#ffb27a"] },
+  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, word: (c) => <CodexWordmark className={c} />, metal: ["#2f37d8", "#6670f0", "#c3b8f5"] },
+  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, word: (c) => <ClaudeWordmark className={c} />, metal: ["#7a2e12", "#b8532a", "#e79a6e"] },
 };
 
 export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provider: ProviderId) => void }) {
@@ -97,7 +97,7 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
         {/* the card, inside the wallet */}
         <div className="absolute overflow-hidden" style={{ left: 0, top: 0, width: W, height: H, borderRadius: R }}>
           <div
-            className="absolute rounded-[20px] transition-[top] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+            className="absolute rounded-[20px] shadow-[0_6px_14px_-4px_rgba(0,0,0,0.6),0_1px_2px_rgba(0,0,0,0.5)] transition-[top] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
             style={{ width: CARD_W, height: CARD_H, left: (W - CARD_W) / 2, top: down ? H : CARD_TOP }}
           >
             <span className="absolute inset-0 overflow-hidden rounded-[20px]" style={metal(look.metal)}>
@@ -109,7 +109,7 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
             <span className="absolute inset-x-[20px] top-[18px] flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-white/95" style={ETCHED}>
                 {look.mark("size-4")}
-                <span className="font-bold text-[13px] uppercase tracking-[0.2em]">{look.name}</span>
+                {look.word("h-[15px] w-auto")}
               </span>
               <span
                 className="truncate font-semibold text-[9.5px] text-white uppercase tracking-[0.18em]"
@@ -189,7 +189,8 @@ function metal([deep, mid, light]: FoilColors): CSSProperties {
   };
 }
 
-// Leather, warm brown, a little lighter at the top.
+// Leather, warm brown, a little lighter at the top, and the shared
+// filters: a fine lit grain, soft blurs, and the shadows.
 function Leather({ id }: { id: string }) {
   return (
     <defs>
@@ -201,51 +202,74 @@ function Leather({ id }: { id: string }) {
         <stop offset="0" stopColor="#3f2016" />
         <stop offset="1" stopColor="#4c281b" />
       </linearGradient>
-      <linearGradient id={`${id}-pocket`} x1="0" y1="0" x2="0.2" y2="1">
+      <linearGradient id={`${id}-pocket`} x1="0" y1="0" x2="0.15" y2="1">
         <stop offset="0" stopColor="#8b4d33" />
         <stop offset="0.35" stopColor="#7a4129" />
         <stop offset="1" stopColor="#5e301e" />
       </linearGradient>
-      <linearGradient id={`${id}-lip`} x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stopColor="#000" stopOpacity="0" />
-        <stop offset="1" stopColor="#000" stopOpacity="0.35" />
-      </linearGradient>
+      <radialGradient id={`${id}-sheen`} cx="0.3" cy="0.25" r="0.75">
+        <stop offset="0" stopColor="#ffd9bd" stopOpacity="0.07" />
+        <stop offset="1" stopColor="#ffd9bd" stopOpacity="0" />
+      </radialGradient>
+      <radialGradient id={`${id}-corners`} cx="0.5" cy="0.35" r="0.8">
+        <stop offset="0.55" stopColor="#000" stopOpacity="0" />
+        <stop offset="1" stopColor="#000" stopOpacity="0.32" />
+      </radialGradient>
       <filter id={`${id}-grain`} x="0" y="0" width="100%" height="100%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" result="n" />
+        <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="5" result="n" />
         <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.14 0" />
         <feComposite in2="SourceGraphic" operator="in" />
-      </filter>
-      <filter id={`${id}-cast`} x="-10%" y="-30%" width="120%" height="160%">
-        <feDropShadow dx="0" dy="-3" stdDeviation="4" floodColor="#000" floodOpacity="0.45" />
       </filter>
       <filter id={`${id}-soft`} x="-20%" y="-20%" width="140%" height="140%">
         <feGaussianBlur stdDeviation="6" />
       </filter>
-      <filter id={`${id}-drop`} x="-10%" y="-10%" width="120%" height="140%">
-        <feDropShadow dx="0" dy="14" stdDeviation="14" floodColor="#000" floodOpacity="0.55" />
+      <filter id={`${id}-hair`} x="-5%" y="-5%" width="110%" height="110%">
+        <feGaussianBlur stdDeviation="1.2" />
+      </filter>
+      <filter id={`${id}-cast`} x="-10%" y="-40%" width="120%" height="180%">
+        <feDropShadow dx="0" dy="-4" stdDeviation="6" floodColor="#140803" floodOpacity="0.55" />
+        <feDropShadow dx="0" dy="-1" stdDeviation="1.5" floodColor="#140803" floodOpacity="0.35" />
+      </filter>
+      <filter id={`${id}-ground`} x="-20%" y="-20%" width="140%" height="160%">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.55" />
+        <feDropShadow dx="0" dy="10" stdDeviation="9" floodColor="#000" floodOpacity="0.45" />
+        <feDropShadow dx="0" dy="26" stdDeviation="22" floodColor="#000" floodOpacity="0.4" />
       </filter>
     </defs>
   );
 }
 
-// The wallet's back: a lighter leather rim round a darker recess the card
-// sits in.
+// The wallet's back: a raised leather rim, lit along its top and shaded
+// along its bottom, round a darker recess the card sits down in.
 function Back() {
   const id = useId().replace(/:/g, "");
+  const inset = 10;
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 overflow-visible" aria-hidden="true">
       <Leather id={id} />
-      <rect width={W} height={H} rx={R} fill={`url(#${id}-back)`} filter={`url(#${id}-drop)`} />
+      <clipPath id={`${id}-recess-clip`}>
+        <rect x={inset} y={inset} width={W - inset * 2} height={H - inset * 2} rx={R - inset} />
+      </clipPath>
+      <rect width={W} height={H} rx={R} fill={`url(#${id}-back)`} filter={`url(#${id}-ground)`} />
       <rect width={W} height={H} rx={R} fill="#000" filter={`url(#${id}-grain)`} />
-      <rect x={0.5} y={0.5} width={W - 1} height={H - 1} rx={R - 0.5} fill="none" stroke="rgba(255,210,180,0.22)" />
-      <rect x={10} y={10} width={W - 20} height={H - 20} rx={R - 10} fill={`url(#${id}-recess)`} />
-      <rect x={10} y={10} width={W - 20} height={H - 20} rx={R - 10} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="2" />
+      {/* the rim: a painted edge, a light along the top, a shade along the bottom */}
+      <rect x={0.75} y={0.75} width={W - 1.5} height={H - 1.5} rx={R - 0.75} fill="none" stroke="#2f170e" strokeWidth="1.5" />
+      <rect x={2} y={2} width={W - 4} height={H - 4} rx={R - 2} fill="none" stroke="rgba(255,214,186,0.28)" strokeWidth="1.2" filter={`url(#${id}-hair)`} />
+      {/* the recess, with a soft shadow inside its top edge */}
+      <rect x={inset} y={inset} width={W - inset * 2} height={H - inset * 2} rx={R - inset} fill={`url(#${id}-recess)`} />
+      <g clipPath={`url(#${id}-recess-clip)`}>
+        <rect x={inset} y={inset} width={W - inset * 2} height={H - inset * 2} rx={R - inset} fill="none" stroke="#000" strokeOpacity="0.55" strokeWidth="12" transform="translate(0 4)" filter={`url(#${id}-soft)`} />
+      </g>
+      <rect x={inset - 0.5} y={inset - 0.5} width={W - inset * 2 + 1} height={H - inset * 2 + 1} rx={R - inset + 0.5} fill="none" stroke="rgba(255,214,186,0.12)" />
     </svg>
   );
 }
 
-// The front pocket: its top edge dips gently in the middle, a lit lip, a
-// soft shade under it, tonal stitching, and the AI's mark pressed in.
+// The front pocket: its top edge dips gently in the middle. A fine lit
+// grain, a soft sheen across the upper left, shading gathering in the
+// bottom corners, a painted edge with a bevel just inside it, a lit lip,
+// a soft shadow cast up onto the card, tonal stitching, and the AI's mark
+// pressed in deep.
 function Pocket({ mark }: { mark: (c: string) => ReactNode }) {
   const id = useId().replace(/:/g, "");
   const a = W * 0.22, b = W * 0.36, c = W * 0.38;
@@ -263,17 +287,27 @@ function Pocket({ mark }: { mark: (c: string) => ReactNode }) {
         <path d={edge} fill={`url(#${id}-pocket)`} filter={`url(#${id}-cast)`} />
         <g clipPath={`url(#${id}-clip)`}>
           <path d={edge} fill="#000" filter={`url(#${id}-grain)`} />
-          {/* the lip: lit along the edge, shaded just under it */}
-          <path d={edge} fill="none" stroke="rgba(255,214,186,0.36)" strokeWidth="2.2" />
-          <path d={edge} fill="none" stroke="rgba(255,220,196,0.1)" strokeWidth="14" transform="translate(0 5)" filter={`url(#${id}-soft)`} />
-          <path d={edge} fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="14" transform="translate(0 16)" filter={`url(#${id}-soft)`} />
-          <rect x={0} y={H - 30} width={W} height={30} fill={`url(#${id}-lip)`} />
+          <path d={edge} fill={`url(#${id}-sheen)`} />
+          <path d={edge} fill={`url(#${id}-corners)`} />
+          {/* padded: a soft light just under the lip, a soft shade below that */}
+          <path d={edge} fill="none" stroke="rgba(255,222,198,0.06)" strokeWidth="12" transform="translate(0 6)" filter={`url(#${id}-soft)`} />
+          <path d={edge} fill="none" stroke="rgba(30,12,5,0.3)" strokeWidth="14" transform="translate(0 18)" filter={`url(#${id}-soft)`} />
+          {/* the bevel just inside the edge */}
+          <path d={edge} fill="none" stroke="rgba(255,214,186,0.18)" strokeWidth="3" filter={`url(#${id}-hair)`} transform="translate(0 1.2)" />
         </g>
-        <Stitches path={stitch} thread="#9b6447" shine={0.22} />
+        {/* the painted edge and its lit lip */}
+        <path d={edge} fill="none" stroke="#2f170e" strokeWidth="1.4" />
+        <path d={edge} fill="none" stroke="rgba(255,214,186,0.42)" strokeWidth="1" clipPath={`url(#${id}-clip)`} transform="translate(0 0.9)" />
+        <Stitches path={stitch} thread="#9b6447" shine={0.24} />
       </svg>
+      {/* the mark, pressed in: deep shade above, a lit lip below */}
       <span
-        className="absolute left-1/2 -translate-x-1/2 text-[#4a2618]"
-        style={{ top: (d + H) / 2 - 10, filter: "drop-shadow(0 1px 0 rgba(255,205,175,0.2)) drop-shadow(0 -1px 0 rgba(0,0,0,0.45))" }}
+        className="absolute left-1/2 -translate-x-1/2 text-[#45230f]"
+        style={{
+          top: (d + H) / 2 - 10,
+          filter:
+            "drop-shadow(0 1px 0 rgba(255,205,175,0.24)) drop-shadow(0 -1px 0 rgba(0,0,0,0.5)) drop-shadow(0 -1.5px 1.5px rgba(0,0,0,0.25))",
+        }}
       >
         {mark("size-8")}
       </span>
