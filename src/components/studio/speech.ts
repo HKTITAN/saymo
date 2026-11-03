@@ -129,9 +129,9 @@ export function listen({
       failures++;
       if (e.error === "not-allowed" || e.error === "service-not-allowed") {
         stopped = true;
-        onProblem("The browser won't let the prompter listen. Allow the microphone for this page, or move the script with the arrow keys.");
+        onProblem("Mic blocked, allow it or move the script with the arrow keys");
       } else if (e.error === "network") {
-        onProblem("The browser's speech service can't be reached, so the prompter can't follow your voice. Move the script with the arrow keys.");
+        onProblem("Speech service unreachable, move the script with the arrow keys");
       } else if (e.error === "language-not-supported") {
         stopped = true;
         onProblem("The browser can't follow this language. Move the script with the arrow keys.");

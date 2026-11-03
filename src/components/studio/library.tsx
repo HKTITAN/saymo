@@ -744,7 +744,7 @@ export function LibraryView({
             <Empty
               doodle={<LibraryDoodle className="h-[84px] w-[120px]" />}
               title="Your library is empty"
-              note="Keep pictures, clips, GIFs, sounds, PDFs, notes and links here, then add them to any prompt. Drop files on this page, paste a picture or a link, or add files."
+              note="Pictures, clips, sounds, PDFs and links for any prompt, drop or paste them here"
             >
               <button type="button" onClick={() => picker.current?.click()} className={cn(PILL_BUTTON, "mt-2 bg-studio text-[#1f0612] hover:bg-studio-hover")}>
                 <UploadUpIcon aria-hidden="true" />

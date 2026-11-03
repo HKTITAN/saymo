@@ -263,8 +263,8 @@ function ScriptStep({
           </h1>
           <p className="text-pretty text-[12.5px] text-white/55 leading-relaxed">
             {start === "reel"
-              ? "Start with the script: type a topic, or paste one you've written. Then read it to your camera; the prompter follows your voice."
-              : "Type a topic, or paste a script you've written. Claude splits it into beats: what you say, and what's shown while you say it."}
+              ? "Type a topic or paste a script, then read it to camera"
+              : "Type a topic or paste a script, Claude splits it into beats"}
           </p>
         </div>
         <PromptBox

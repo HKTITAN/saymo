@@ -23,9 +23,9 @@ const APPS: [App, string][] = [
 
 const WHERE: Record<App, string> = {
   code: "Paste this in Terminal. Claude Code can then use the studio in any folder.",
-  desktop: "In Claude Desktop, open Settings, Developer, Edit Config. Add this to claude_desktop_config.json, then restart Claude.",
-  cursor: "Add this to ~/.cursor/mcp.json (or Cursor Settings, MCP, Add new server), then reload Cursor.",
-  terminal: "List, make, change and render films from Terminal. Run the doctor first to check everything is in place.",
+  desktop: "Claude Desktop › Settings › Developer › Edit Config, paste this, then restart Claude",
+  cursor: "Paste this into ~/.cursor/mcp.json, then reload Cursor",
+  terminal: "Make and render films from Terminal, run the doctor first",
 };
 
 // A word for the shell: quoted only when it needs to be.
@@ -166,7 +166,7 @@ export function OutsideAppsSection() {
           <DialNote>
             {fresh
               ? "New token made. The old one no longer works."
-              : "For your own scripts, sent as Authorization: Bearer. Claude and the command line find it on their own. Keep it private."}
+              : "For your own scripts, as Authorization: Bearer, keep it private"}
           </DialNote>
           {asking ? (
             <div className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] p-2">

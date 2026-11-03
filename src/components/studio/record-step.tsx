@@ -112,7 +112,7 @@ export function RecordStep({
         if (live) {
           setBlocked(
             name === "NotAllowedError"
-              ? "The studio can't use your camera and microphone. Allow them for this page (the camera button in the address bar), then try again."
+              ? "Camera and mic blocked, allow them from the camera icon in the address bar"
               : name === "NotFoundError"
                 ? "No camera was found. Connect one, then try again."
                 : "The camera couldn't start. Close other apps using it, then try again.",
@@ -403,7 +403,7 @@ export function RecordStep({
           ? "The prompter follows your voice, listening on this Mac."
           : support.kind === "none"
             ? "This browser can't follow your voice. Move the script with the arrow keys."
-            : "The prompter follows your voice. Your audio goes to the browser's speech service to be understood.";
+            : "The prompter follows your voice, using the browser's speech service";
 
   return (
     <div className="absolute inset-0 bg-[#0b0b0b]">

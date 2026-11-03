@@ -40,7 +40,7 @@ const kindOf = (file: File): FileKind | null => {
 // What a link chip says when Claude can't open that kind of link.
 const linkNote = (link: SharedLink, figmaReady: boolean): string | null => {
   if (link.kind === "figma" && !figmaReady) {
-    return "Claude can't open Figma links yet. Export the frames as PDF or PNG and drop them in, or add a Figma token.";
+    return "Figma links don't open yet, drop in a PDF or PNG export instead";
   }
   if (link.kind === "drive") return "Google Drive links can't be opened from here. Download the file and drop it in.";
   if (link.kind === "video") return "Claude can't watch videos from here. Add a note on what's in it.";

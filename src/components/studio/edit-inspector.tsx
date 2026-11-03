@@ -427,7 +427,7 @@ function CaptionsPanel({ id, ed }: { id: string; ed: EditState }) {
         throw new StudioError(
           failed.length
             ? `Unable to write down what’s said in ${failed.join(", ")}. Try again.`
-            : "No speech was found in the clips on the timeline. Add footage where someone speaks, then try again.",
+            : "No speech in these clips, add footage where someone speaks",
         );
       }
       // Laid along the edit as it is now, in case it changed meanwhile.

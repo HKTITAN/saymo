@@ -474,11 +474,11 @@ export class Dictation {
   private wordsFor(error: unknown, kept: boolean) {
     if (error instanceof Unreachable) {
       return kept
-        ? "Unable to reach the studio, so this isn't written down yet. Your recording is kept here. Try again once the studio is running."
+        ? "Studio not running, your recording is kept, try again soon"
         : "Unable to reach the studio. Check that it's still running, then try again.";
     }
     if ((error as { code?: string }).code === "setup") {
-      return "Listening isn't set up on this Mac yet. Set it up once (a 1.6 GB download, a few minutes), and your recording will be written down.";
+      return "Set up listening once (1.6 GB) to write this down";
     }
     return error instanceof Error ? error.message : "Writing this down failed. Try again.";
   }

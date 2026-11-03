@@ -431,7 +431,7 @@ export function SlidesFlow({
               <DialNote>
                 {voiceUsable
                   ? `The voiceover reads your speaker notes (${withNotes} of ${plural(kept.length, "slide")} ${withNotes === 1 ? "has" : "have"} them).`
-                  : "None of these slides have speaker notes, so there's no voiceover. PowerPoint and Keynote files bring their notes with them."}
+                  : "No speaker notes, so no voiceover, PowerPoint and Keynote files bring theirs"}
               </DialNote>
             </DialGroup>
           </div>

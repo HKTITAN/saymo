@@ -59,8 +59,8 @@ export function AiSection() {
       </h3>
       <DialNote>
         {IS_PRODUCT
-          ? "The studio runs Claude Code on this Mac with your own Claude: your Claude plan, signed in through Claude Code, or your own Anthropic API key. There’s no extra AI plan to buy."
-          : "The studio uses the AI you already pay for, so there’s no extra AI plan to buy. Pick one in each prompt box; Claude is the default."}
+          ? "Runs on your own Claude plan or API key, no extra plan to buy"
+          : "Uses the AI you already pay for, no extra plan to buy"}
       </DialNote>
       {error ? <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
       {status ? (

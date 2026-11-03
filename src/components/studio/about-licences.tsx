@@ -129,7 +129,7 @@ function AboutPanel() {
         <p className="px-1 pt-0.5 text-[11.5px] text-white/45 leading-relaxed">
           {data
             ? `Built with ${count.format(data.total)} packages, models, fonts and skills made by others. Open one to read its licence.`
-            : "Built with packages, models, fonts and skills made by others. Open one to read its licence."}
+            : "Built with work by others, open one to read its licence"}
         </p>
         {data && data.studio.edition !== EDITION ? (
           IS_PRODUCT ? (
