@@ -1532,37 +1532,21 @@ function RefPanel({
 
 // ─── Its drawing ──────────────────────────────────────────────────────────────
 
-// An empty library: a picture, a sound and a note held together, which fan
-// out a little on hover. Plain greys, like the studio's other drawings.
-const SOFT = "rgb(255 255 255 / 0.07)";
+// An empty library: one picture, with a second card tucked behind it that
+// leans out a little on hover. Plain greys, like the studio's other drawings.
 const MID = "rgb(255 255 255 / 0.16)";
 const GROUND = "#0b0b0b";
 const MOVE = "transition-[translate,rotate] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] [transform-box:view-box] motion-reduce:transition-none";
 export function LibraryDoodle({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 120 84" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={cn("shrink-0 overflow-visible", className)}>
-      <g className={cn(MOVE, "[transform-origin:60px_76px] -rotate-[14deg] motion-safe:group-hover/doodle:-rotate-[22deg]")}>
-        <rect x={40} y={20} width={40} height={50} rx={5} fill={GROUND} stroke="currentColor" strokeWidth={1.5} className="text-white/45" />
-        {[0.5, 0.9, 0.6, 1, 0.7, 0.4].map((h, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: fixed bars
-          <rect key={i} x={47 + i * 4.6} y={45 - h * 10} width={2.4} height={h * 20} rx={1.2} fill={MID} />
-        ))}
-      </g>
-      <g className={cn(MOVE, "[transform-origin:60px_76px] rotate-[14deg] motion-safe:group-hover/doodle:rotate-[22deg]")}>
-        <rect x={40} y={20} width={40} height={50} rx={5} fill={GROUND} stroke="currentColor" strokeWidth={1.5} className="text-white/45" />
-        <rect x={47} y={28} width={20} height={3} rx={1.5} fill={MID} />
-        <rect x={47} y={35} width={26} height={3} rx={1.5} fill={SOFT} />
-        <rect x={47} y={42} width={22} height={3} rx={1.5} fill={SOFT} />
+      <g className={cn(MOVE, "[transform-origin:60px_74px] rotate-[10deg] motion-safe:group-hover/doodle:rotate-[16deg]")}>
+        <rect x={40} y={18} width={40} height={50} rx={6} fill={GROUND} stroke="currentColor" strokeWidth={1.5} className="text-white/30" />
       </g>
       <g className={cn(MOVE, "motion-safe:group-hover/doodle:-translate-y-[3px]")}>
-        <rect x={40} y={20} width={40} height={50} rx={5} fill="#1d1d1d" stroke="currentColor" strokeWidth={1.5} className="text-white/60" />
-        <path d="M44 62 L54 50 L61 57 L66 52 L76 62 Z" fill={MID} />
-        <circle cx={70} cy={30} r={3.2} fill={SOFT} stroke="currentColor" strokeWidth={1.2} className="text-white/35" />
-        <g className="text-white/70">
-          <circle cx={55} cy={38} r={1.4} fill="currentColor" />
-          <circle cx={65} cy={38} r={1.4} fill="currentColor" />
-          <path d="M57.4 41.6 q2.6 2.4 5.2 0" stroke="currentColor" strokeWidth={1.3} />
-        </g>
+        <rect x={40} y={18} width={40} height={50} rx={6} fill="#1d1d1d" stroke="currentColor" strokeWidth={1.5} className="text-white/55" />
+        <path d="M46 60 L56 48 L63 55 L67 51 L74 60 Z" fill={MID} />
+        <circle cx={68} cy={30} r={3.5} fill={MID} />
       </g>
     </svg>
   );
