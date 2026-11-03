@@ -511,7 +511,7 @@ export function LibraryView({
 
   return (
     <section aria-label={folder ? folder.name : "Library"} className="flex flex-col gap-3" hidden={!active}>
-      <div className="sticky top-16 z-10 -mx-3 flex flex-col gap-2.5 bg-[#0b0b0b]/85 px-3 pt-1 pb-2.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-10 -mx-3 flex flex-col gap-2.5 bg-[#0e0e0e]/90 px-3 pt-1 pb-2.5 backdrop-blur-xl">
         <header className="flex h-8 items-center gap-1.5 px-1">
           {folder || place === "brands" ? (
             <>

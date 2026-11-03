@@ -228,6 +228,12 @@ export function SideNav({
       </div>
 
       <ul className="flex flex-col gap-0.5">
+        <li>
+          <button type="button" onClick={onRules} className={ROW}>
+            <FileIcon aria-hidden="true" />
+            Rules
+          </button>
+        </li>
         <NavRow
           icon={<Settings01Icon aria-hidden="true" />}
           label="Settings"
@@ -235,12 +241,6 @@ export function SideNav({
           on={section === "settings"}
           onClick={() => onSection("settings")}
         />
-        <li>
-          <button type="button" onClick={onRules} className={ROW}>
-            <FileIcon aria-hidden="true" />
-            Rules
-          </button>
-        </li>
       </ul>
     </nav>
   );
