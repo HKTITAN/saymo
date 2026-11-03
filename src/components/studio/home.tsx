@@ -11,13 +11,11 @@ import {
   HomeIcon,
   LayerThreeIcon,
   MultipleCrossCancelIcon,
-  PencilEditIcon,
   PlayCircleIcon,
   PlusIcon,
   SearchIcon,
   SidebarMenuIcon,
   Settings01Icon,
-  VideoCallIcon,
 } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
 import { RenameField } from "@/components/tool/rename";
@@ -25,7 +23,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { type FilmSummary, type Folder, SIZES } from "@/lib/studio/contract";
 import { LIBRARY_DRAG } from "@/lib/studio/references-shared";
 import { cn } from "@/lib/utils";
-import { StudioMark } from "./doodles";
+import { ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, VideoDoodle } from "./doodles";
 import { FolderMenu, ITEM, MENU_POPUP, useSpringOpen } from "./home-parts";
 import { cachedLibrary, filesFor } from "./library-api";
 import { Hint } from "./panel";
@@ -624,11 +622,13 @@ function FolderRow({
 
 // ─── The prompt at the top of Home ──────────────────────────────────────
 
-const WAYS: { way: Way; label: string; icon: ReactNode }[] = [
-  { way: "video", label: "Edit a video", icon: <PlayCircleIcon aria-hidden="true" /> },
-  { way: "script", label: "Write a script", icon: <PencilEditIcon aria-hidden="true" /> },
-  { way: "reel", label: "Record a reel", icon: <VideoCallIcon aria-hidden="true" /> },
-  { way: "slides", label: "Turn slides into a video", icon: <LayerThreeIcon aria-hidden="true" /> },
+// The other ways to start, each a tile with its little scene, which plays
+// on hover (doodles.tsx).
+const WAYS: { way: Way; label: string; note: string; art: ReactNode }[] = [
+  { way: "video", label: "Edit a video", note: "Cut footage, add captions", art: <VideoDoodle className="size-full" /> },
+  { way: "script", label: "Write a script", note: "A topic becomes beats", art: <ScriptDoodle className="size-full" /> },
+  { way: "reel", label: "Record a reel", note: "Read to a prompter", art: <ReelDoodle className="size-full" /> },
+  { way: "slides", label: "Slides to video", note: "Your deck, narrated", art: <SlidesDoodle className="size-full" /> },
 ];
 
 export function Hero({
@@ -712,20 +712,26 @@ export function Hero({
       </div>
       {error ? <p className="mt-3 self-start px-1 text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
 
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-        <span className="me-1 text-[12px] text-white/35">Or</span>
+      <div className="mt-12 grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
         {WAYS.map((w) => (
           <button
             key={w.way}
             type="button"
             disabled={busy}
             onClick={() => onWay(w.way)}
-            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.05] px-3 text-[12px] text-white/70 outline-none transition-[background-color,color] duration-150 hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-45 [&_svg]:size-3.5 [&_svg]:text-white/50"
+            className="group/doodle flex cursor-pointer flex-col gap-2 rounded-[14px] p-1.5 text-left outline-none transition-[background-color] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-45"
           >
-            {w.icon}
-            {w.label}
+            <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+              {w.art}
+            </span>
+            <span className="flex flex-col gap-0.5 px-1 pb-0.5">
+              <span className="text-[12.5px] text-white/90">{w.label}</span>
+              <span className="text-[11.5px] text-white/40 leading-snug">{w.note}</span>
+            </span>
           </button>
         ))}
+      </div>
+      <div className="mt-3 flex justify-center">
         <button
           type="button"
           disabled={busy}
