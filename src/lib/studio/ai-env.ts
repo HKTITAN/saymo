@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { type AiChoice, DEFAULT_CHOICE, isEffort, isModelId } from "./ai-types";
+import { type AiChoice, DEFAULT_CHOICE, isEffort, isModelId, isProviderId } from "./ai-types";
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -21,18 +21,20 @@ const choiceFile = () => path.join(process.cwd(), ".studio", "ai-model.json");
 export function aiChoice(): AiChoice & { chosen: boolean } {
   try {
     const saved = JSON.parse(readFileSync(choiceFile(), "utf8")) as Partial<AiChoice>;
-    if (isModelId(saved.model) && isEffort(saved.effort)) return { model: saved.model, effort: saved.effort, chosen: true };
+    const provider = isProviderId(saved.provider) ? saved.provider : DEFAULT_CHOICE.provider;
+    if (isModelId(saved.model) && isEffort(saved.effort)) return { model: saved.model, effort: saved.effort, provider, chosen: true };
+    return { model: MODEL, effort: EFFORT, provider, chosen: true };
   } catch {
     // Nothing chosen yet: the environment's, else the default.
   }
-  return { model: MODEL, effort: EFFORT, chosen: false };
+  return { model: MODEL, effort: EFFORT, provider: DEFAULT_CHOICE.provider, chosen: false };
 }
 
 export function saveAiChoice(choice: AiChoice) {
   const dir = path.dirname(choiceFile());
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   const tmp = `${choiceFile()}.tmp`;
-  writeFileSync(tmp, `${JSON.stringify({ model: choice.model, effort: choice.effort }, null, 2)}\n`, { mode: 0o600 });
+  writeFileSync(tmp, `${JSON.stringify({ model: choice.model, effort: choice.effort, provider: choice.provider }, null, 2)}\n`, { mode: 0o600 });
   renameSync(tmp, choiceFile());
   chmodSync(choiceFile(), 0o600);
 }

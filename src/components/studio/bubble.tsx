@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
-import { ModelPicker } from "./model-picker";
 import { CARD, DiscardAsk } from "./panel";
 import { PromptBox } from "./prompt-box";
 import type { Fit } from "./stage";
@@ -140,7 +139,6 @@ export function Bubble({
         placeholder={pinned ? "Make this bigger and bring it in later" : "Describe a change to the film"}
         chip={chipLabel(pinned?.pick ?? null, pinned?.t ?? time())}
         className="bg-transparent has-[:focus-visible]:bg-transparent has-[:focus-visible]:ring-0"
-        tools={<ModelPicker provider={chat.provider} onChange={chat.setProvider} />}
       />
       {asking ? <DiscardAsk what="this prompt" onKeep={keep} onDiscard={onClose} /> : null}
       <style>{`@keyframes bubble-in { from { opacity: 0; transform: translateY(-4px) scale(0.97); } }`}</style>

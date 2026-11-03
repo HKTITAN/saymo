@@ -25,6 +25,7 @@ export type ProviderId = (typeof PROVIDER_IDS)[number];
 // The AIs this build offers, in the order the picker lists them.
 export const OFFERED_PROVIDERS: readonly ProviderId[] = IS_PRODUCT ? ["claude", "api-key"] : PROVIDER_IDS;
 export const DEFAULT_PROVIDER: ProviderId = "claude";
+export const DEFAULT_CHOICE: AiChoice = { model: "claude-opus-5-5", effort: "high", provider: DEFAULT_PROVIDER };
 
 // True only for an AI this build offers, so a pick saved by another build
 // (or sent by hand) falls back to the default or is refused.
@@ -53,8 +54,8 @@ export const EFFORTS = [
   { id: "max", name: "Max" },
 ] as const;
 export type Effort = (typeof EFFORTS)[number]["id"];
-export type AiChoice = { model: string; effort: string };
-export const DEFAULT_CHOICE: AiChoice = { model: "claude-opus-5-5", effort: "high" };
+// `provider`: which AI every prompt goes to (also chosen in Settings).
+export type AiChoice = { model: string; effort: string; provider: ProviderId };
 export const isModelId = (v: unknown): v is ModelId => MODELS.some((m) => m.id === v);
 export const isEffort = (v: unknown): v is Effort => EFFORTS.some((e) => e.id === v);
 const modelName = (id: string) => MODELS.find((m) => m.id === id)?.name ?? id;

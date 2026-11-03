@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { type AiChoice, type AiStatus, DEFAULT_CHOICE, DEFAULT_PROVIDER, isProviderId, type ProviderId } from "@/lib/studio/ai-types";
+import { type AiChoice, type AiStatus, DEFAULT_CHOICE } from "@/lib/studio/ai-types";
 import { STUDIO_HEADERS } from "@/lib/studio/contract";
 import { StudioError } from "./api";
 
@@ -28,7 +28,7 @@ let choice: AiChoice | null = null;
 let asked = false;
 const listeners = new Set<() => void>();
 const setChoice = (c: AiChoice) => {
-  choice = { model: c.model, effort: c.effort };
+  choice = { model: c.model, effort: c.effort, provider: c.provider };
   for (const l of listeners) l();
 };
 async function choiceCall(init?: RequestInit): Promise<AiChoice> {
@@ -67,22 +67,3 @@ export const aiApi = {
   saveKey: (key: string) => call("/api/studio/ai/key", { method: "POST", body: JSON.stringify({ key }) }),
   removeKey: () => call("/api/studio/ai/key", { method: "DELETE" }),
 };
-
-// The AI last picked for a film, kept in this browser.
-const pickKey = (filmId: string) => `studio:ai:${filmId}`;
-
-export function loadPick(filmId: string): ProviderId {
-  try {
-    const saved = window.localStorage.getItem(pickKey(filmId));
-    return isProviderId(saved) ? saved : DEFAULT_PROVIDER;
-  } catch {
-    return DEFAULT_PROVIDER;
-  }
-}
-
-export function savePick(filmId: string, provider: ProviderId) {
-  try {
-    if (provider === DEFAULT_PROVIDER) window.localStorage.removeItem(pickKey(filmId));
-    else window.localStorage.setItem(pickKey(filmId), provider);
-  } catch {}
-}

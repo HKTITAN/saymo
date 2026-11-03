@@ -125,7 +125,7 @@ export function SettingsPage() {
             <GithubSection status={status} onChange={refresh} onNote={setNote} name={repo} setName={setRepo} />
           </div>
           <div className={CARD}>
-            <Heading icon={<FilterHorizontalIcon aria-hidden="true" />}>Model and effort</Heading>
+            <Heading icon={<FilterHorizontalIcon aria-hidden="true" />}>AI for every prompt</Heading>
             <ModelChoice />
           </div>
           <div className={CARD}>

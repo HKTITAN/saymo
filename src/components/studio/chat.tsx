@@ -9,7 +9,6 @@ import type { ChatContext, ChatMessage } from "@/lib/studio/contract";
 import { asksForThree } from "@/lib/studio/takes-shared";
 import { cn } from "@/lib/utils";
 import { Hint, PILL_BUTTON, Panel } from "./panel";
-import { ModelPicker } from "./model-picker";
 import { PromptBox } from "./prompt-box";
 import { SentFiles } from "./sent-files";
 import { ClaudeAtWork } from "./mascot";
@@ -298,14 +297,13 @@ export function ChatPanel({
                 aria-pressed={pointing}
                 className={cn(
                   PILL_BUTTON,
-                  "h-7 px-1.5",
+                  "h-7 px-2.5",
                   pointing ? "bg-[#F55A00] text-white hover:bg-[#ff6a14]" : "text-white/60 hover:bg-white/[0.08] hover:text-white",
                 )}
               >
                 Point
               </button>
             </Hint>
-            <ModelPicker provider={chat.provider} onChange={chat.setProvider} />
             </>
           }
         />

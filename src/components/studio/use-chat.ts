@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_PROVIDER, type ProviderId } from "@/lib/studio/ai-types";
 import type { ChatContext, ChatMessage, Film } from "@/lib/studio/contract";
-import { loadPick, savePick } from "./ai-api";
+import { useAiChoice } from "./ai-api";
 import { api, chat, StudioError } from "./api";
 
 // One film's conversation with Claude, shared by the chat panel and the
@@ -60,21 +60,13 @@ export function useChat(
   // usage limit), and why.
   const [carryOn, setCarryOn] = useState<{ reason: "time" | "limit"; at: string } | null>(null);
   const follow = useRef<() => void>(() => {});
-  // Which AI the next prompt goes to: the last one picked for this film.
-  const [provider, setProviderState] = useState<ProviderId>(DEFAULT_PROVIDER);
+  // Which AI the next prompt goes to: the one chosen in Settings.
+  const { provider } = useAiChoice();
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read once per film from this browser
     setQueue(loadQueue(id));
     setPaused(false);
-    setProviderState(loadPick(id));
   }, [id]);
-  const setProvider = useCallback(
-    (next: ProviderId) => {
-      setProviderState(next);
-      savePick(id, next);
-    },
-    [id],
-  );
   useEffect(() => {
     saveQueue(id, queue);
   }, [id, queue]);
@@ -305,7 +297,6 @@ export function useChat(
     clearQueue,
     resume,
     provider,
-    setProvider,
     carryOn,
     cancelCarryOn,
   };
