@@ -32,34 +32,38 @@ const LINES = [
 const JACKPOT = "Jackpot. Three versions, coming right up.";
 
 // ─── The drawing ────────────────────────────────────────────────────────────
-// Drawn in the reference image's own coordinates (it's 1536 by 1024), so
-// its proportions carry over exactly, then shown at S px per unit.
+// Drawn in the reference image's own coordinates (it's 2000 by 1333), so
+// its outlines line up with it, then shown at S px per unit.
 
-const S = 0.66;
-const VX = 270;
-const VY = 165;
-const VW = 990;
-const VH = 725;
+const S = 0.52;
+const VX = 350;
+const VY = 215;
+const VW = 1300;
+const VH = 945;
 const VIEW = `${VX} ${VY} ${VW} ${VH}`;
 const W = VW * S;
 const H = VH * S;
 const px = (x: number, y: number) => ({ left: (x - VX) * S, top: (y - VY) * S });
 
-const CX = 760; // the body's centre
-// The hood: a wide, low graphite arch, a pink half-disc in a thick rim.
-const HOOD = "M562,356 A198,170 0 0 1 958,356 Z";
-const DISC = "M621,343 A139,113 0 0 1 899,343 Z";
+const CX = 994; // the hood's centre
+// The body and its hood as one shape: a rounded block whose top rises into
+// a circular arch (radius 268) through softly curved shoulders.
+const SHELL =
+  "M629,900 V479 Q629,437 671,437 H716 Q734,437 738,421 A268,268 0 0 1 1250,421 Q1254,437 1272,437 H1307 Q1349,437 1349,479 V900 Z";
+// The pink panel: a concentric dome (radius 202), cut flat at the bottom
+// with softly rounded corners.
+const DISC = "M826,447 H1162 Q1184,447 1183,428 A202,202 0 0 0 805,428 Q804,447 826,447 Z";
 
 // The reels, inside the window.
-const REELS = { x: 548, y: 414, w: 424, h: 211 };
-const DIVIDER = 2; // px
+const REELS = { x: 714, y: 539, w: 556, h: 275 };
+const DIVIDER = 5; // px
 
-// The lever: a slim arm leaning out from a small hub low on the body's
-// right side, a pink ball on top. Pulled, it swings towards you, so seen
-// from the front the ball drops past the hub and grows a little as it
-// comes closer.
-const PIVOT = { x: 1062, y: 566 };
-const BALL = { x: 1112, y: 412, r: 40 };
+// The lever: a thick arm leaning out from a chunky hub on the body's right
+// side at reel height, a big pink ball on top. Pulled, it swings towards
+// you, so seen from the front the ball drops past the hub and grows a
+// little as it comes closer.
+const PIVOT = { x: 1384, y: 735 };
+const BALL = { x: 1447, y: 538, r: 52 };
 const ARM = Math.hypot(BALL.x - PIVOT.x, BALL.y - PIVOT.y);
 const LEAN = Math.atan2(BALL.x - PIVOT.x, PIVOT.y - BALL.y);
 const PULL_MAX = 150; // degrees
@@ -71,7 +75,7 @@ const lever = (deg: number) => {
 };
 const REST = lever(0);
 // Three short dashes that pop out from the hood's upper right.
-const BURST = ["M987,236 L1013,197", "M1022,262 L1062,233", "M1034,294 L1070,292"];
+const BURST = ["M1290,303 L1320,255", "M1335,345 L1385,308", "M1348,381 L1393,380"];
 
 // ─── The reels ──────────────────────────────────────────────────────────────
 
@@ -347,7 +351,7 @@ export function SlotMachine({
 
           {/* The reels: near-white drums behind thin grey dividers. */}
           <div
-            className="absolute flex overflow-hidden rounded-[12px] bg-[#8f8897]"
+            className="absolute flex overflow-hidden rounded-[16px] bg-[#8a8293]"
             style={{ ...px(REELS.x, REELS.y), width: REELS.w * S, height: WINDOW, gap: DIVIDER }}
           >
             {[0, 1, 2].map((i) => (
@@ -372,16 +376,16 @@ export function SlotMachine({
                 <div className="slot-drum-shade pointer-events-none absolute inset-0" />
               </div>
             ))}
-            <div className="slot-screen-shade pointer-events-none absolute inset-0 rounded-[12px]" />
+            <div className="slot-screen-shade pointer-events-none absolute inset-0 rounded-[16px]" />
           </div>
 
           {/* The lever goes over everything else. */}
           <svg className="pointer-events-none absolute inset-0 overflow-visible" width={W} height={H} viewBox={VIEW}>
-            <line ref={arm} x1={PIVOT.x} y1={PIVOT.y} x2={REST.x} y2={REST.y} stroke="url(#slot-arm)" strokeWidth="24" strokeLinecap="round" />
-            <rect x={PIVOT.x - 28} y={PIVOT.y - 30} width="56" height="80" rx="28" fill="url(#slot-hub)" filter="url(#slot-clay)" />
+            <line ref={arm} x1={PIVOT.x} y1={PIVOT.y} x2={REST.x} y2={REST.y} stroke="url(#slot-arm)" strokeWidth="30" strokeLinecap="round" />
+            <rect x="1340" y="698" width="78" height="104" rx="38" fill="url(#slot-hub)" filter="url(#slot-clay)" />
             <g ref={knob} transform={REST.knob}>
               <circle r={BALL.r} fill="url(#slot-ball)" />
-              <ellipse cx="-12" cy="-15" rx="13" ry="8" fill="#fff" opacity="0.45" transform="rotate(-32 -12 -15)" filter="url(#slot-blur-3)" />
+              <ellipse cx="-17" cy="-20" rx="17" ry="10" fill="#fff" opacity="0.45" transform="rotate(-32 -17 -20)" filter="url(#slot-blur-3)" />
             </g>
             {pop > 0 ? (
               <g key={pop} className="slot-burst">
@@ -410,9 +414,9 @@ export function SlotMachine({
 // drawn, each lit from the upper left.
 function Symbol({ s }: { s: Sym }) {
   if (s === "1" || s === "2" || s === "3" || s === "7")
-    return <span className="slot-num font-black text-[82px] leading-none tracking-[-0.03em]">{s}</span>;
+    return <span className="slot-num font-black text-[84px] leading-none tracking-[-0.03em]">{s}</span>;
   return (
-    <svg width="66" height="66" viewBox="0 0 64 64" aria-hidden="true">
+    <svg width="82" height="82" viewBox="0 0 64 64" aria-hidden="true">
       {s === "cherry" ? (
         <>
           <path d="M19 41 C21 28 27 17 34 11 M44 40 C43 28 39 18 34 11" fill="none" stroke="#4a4652" strokeWidth="3.5" strokeLinecap="round" />
@@ -445,17 +449,17 @@ function Symbol({ s }: { s: Sym }) {
   );
 }
 
-// A big, chunky coin lying flat (or tipped by `tilt` degrees): a bevelled
-// graphite rim round an embossed ring.
-function Coin({ x, y, depth = 17, ry = 24, tilt = 0 }: { x: number; y: number; depth?: number; ry?: number; tilt?: number }) {
+// A big, chunky coin lying flat: a bevelled graphite rim round a light
+// top with an embossed ring.
+function Coin({ x, y, rx = 78, ry = 28, depth = 22 }: { x: number; y: number; rx?: number; ry?: number; depth?: number }) {
   return (
-    <g transform={tilt ? `rotate(${tilt} ${x} ${y})` : undefined}>
-      <ellipse cx={x} cy={y + depth} rx="60" ry={ry} fill="#2e2a33" />
-      <rect x={x - 60} y={y} width="120" height={depth} fill="url(#slot-coin-side)" />
-      <ellipse cx={x} cy={y} rx="60" ry={ry} fill="url(#slot-coin)" />
-      <ellipse cx={x} cy={y + 1} rx="56" ry={ry - 3} fill="none" stroke="#fff" strokeOpacity="0.22" strokeWidth="2" />
-      <ellipse cx={x} cy={y + 1.5} rx="34" ry={ry * 0.58} fill="none" stroke="#5a5462" strokeWidth="6" />
-      <ellipse cx={x} cy={y - 1.5} rx="34" ry={ry * 0.58} fill="none" stroke="#fff" strokeOpacity="0.25" strokeWidth="2" />
+    <g>
+      <ellipse cx={x} cy={y + depth} rx={rx} ry={ry} fill="#2c2932" />
+      <rect x={x - rx} y={y} width={rx * 2} height={depth} fill="url(#slot-coin-side)" />
+      <ellipse cx={x} cy={y} rx={rx} ry={ry} fill="url(#slot-coin)" />
+      <ellipse cx={x} cy={y + 1.5} rx={rx - 5} ry={ry - 4} fill="none" stroke="#fff" strokeOpacity="0.2" strokeWidth="2.5" />
+      <ellipse cx={x} cy={y + 2} rx={rx * 0.5} ry={ry * 0.5} fill="none" stroke="#3a3641" strokeWidth="8" />
+      <ellipse cx={x} cy={y - 1.5} rx={rx * 0.5} ry={ry * 0.5} fill="none" stroke="#fff" strokeOpacity="0.22" strokeWidth="2.5" />
     </g>
   );
 }
@@ -467,17 +471,17 @@ function Drawing() {
     <svg className="absolute inset-0 overflow-visible" width={W} height={H} viewBox={VIEW} aria-hidden="true">
       <defs>
         {/* Clay: a soft light along the top inside edge and a soft shade
-            along the bottom, as if lit from above. */}
+            along the bottom, as if lit from the upper left. */}
         <filter id="slot-clay" x="-10%" y="-10%" width="120%" height="120%">
-          <feFlood floodColor="#fff" floodOpacity="0.18" />
+          <feFlood floodColor="#fff" floodOpacity="0.22" />
           <feComposite in2="SourceAlpha" operator="out" />
-          <feGaussianBlur stdDeviation="6" />
-          <feOffset dx="3" dy="6" />
+          <feGaussianBlur stdDeviation="8" />
+          <feOffset dx="5" dy="8" />
           <feComposite in2="SourceAlpha" operator="in" result="light" />
           <feFlood floodColor="#0c0b10" floodOpacity="0.45" />
           <feComposite in2="SourceAlpha" operator="out" />
-          <feGaussianBlur stdDeviation="14" />
-          <feOffset dx="-4" dy="-14" />
+          <feGaussianBlur stdDeviation="18" />
+          <feOffset dx="-6" dy="-18" />
           <feComposite in2="SourceAlpha" operator="in" result="shade" />
           <feMerge>
             <feMergeNode in="SourceGraphic" />
@@ -485,12 +489,12 @@ function Drawing() {
             <feMergeNode in="shade" />
           </feMerge>
         </filter>
-        {/* A deep recess: shadow falling in from the top edge. */}
+        {/* A recess: shadow falling in from the top edge. */}
         <filter id="slot-inset" x="-10%" y="-10%" width="120%" height="120%">
           <feFlood floodColor="#000" floodOpacity="0.7" />
           <feComposite in2="SourceAlpha" operator="out" />
-          <feGaussianBlur stdDeviation="9" />
-          <feOffset dy="8" />
+          <feGaussianBlur stdDeviation="10" />
+          <feOffset dy="10" />
           <feComposite in2="SourceAlpha" operator="in" result="in" />
           <feMerge>
             <feMergeNode in="SourceGraphic" />
@@ -498,50 +502,46 @@ function Drawing() {
           </feMerge>
         </filter>
         <filter id="slot-blur-3" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4" />
+          <feGaussianBlur stdDeviation="5" />
         </filter>
         <filter id="slot-ao" x="-30%" y="-100%" width="160%" height="300%">
-          <feGaussianBlur stdDeviation="9" />
+          <feGaussianBlur stdDeviation="10" />
         </filter>
         <filter id="slot-glow" x="-50%" y="-60%" width="200%" height="220%">
-          <feGaussianBlur stdDeviation="26" />
+          <feGaussianBlur stdDeviation="34" />
         </filter>
         <filter id="slot-floor" x="-10%" y="-100%" width="120%" height="300%">
-          <feGaussianBlur stdDeviation="7" />
+          <feGaussianBlur stdDeviation="10" />
         </filter>
         {/* Graphite, a little warm, lit from the upper left. */}
-        <linearGradient id="slot-body" x1="0.1" y1="0" x2="0.55" y2="1">
-          <stop offset="0" stopColor="#67626f" />
-          <stop offset="0.4" stopColor="#4b4754" />
+        <linearGradient id="slot-body" x1="0.1" y1="0" x2="0.5" y2="1">
+          <stop offset="0" stopColor="#635e6c" />
+          <stop offset="0.45" stopColor="#4c4855" />
           <stop offset="1" stopColor="#38343f" />
         </linearGradient>
-        <linearGradient id="slot-hood" x1="0.15" y1="0" x2="0.6" y2="1">
-          <stop offset="0" stopColor="#625d6b" />
-          <stop offset="1" stopColor="#403c48" />
+        {/* The bezel round the window: in shade along the top, catching
+            the light on its lower lip and right side. */}
+        <linearGradient id="slot-bezel" x1="0.3" y1="0" x2="0.5" y2="1">
+          <stop offset="0" stopColor="#37333f" />
+          <stop offset="0.45" stopColor="#524d5a" />
+          <stop offset="1" stopColor="#857b8a" />
         </linearGradient>
-        {/* The bezel round the window: a raised frame, a touch lighter
-            than the body. */}
-        <linearGradient id="slot-bezel" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#57525f" />
-          <stop offset="1" stopColor="#4a4553" />
-        </linearGradient>
+        {/* The base: lit along its upper face, darker towards the floor. */}
         <linearGradient id="slot-base" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#4a4652" />
-          <stop offset="1" stopColor="#635d6b" />
+          <stop offset="0" stopColor="#47434f" />
+          <stop offset="0.4" stopColor="#5f5b68" />
+          <stop offset="0.72" stopColor="#4a4653" />
+          <stop offset="1" stopColor="#2e2b36" />
         </linearGradient>
-        <linearGradient id="slot-slab" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#3b3742" />
-          <stop offset="0.25" stopColor="#322f39" />
-          <stop offset="1" stopColor="#29262f" />
+        <linearGradient id="slot-arm" gradientUnits="userSpaceOnUse" x1={PIVOT.x} y1="0" x2={PIVOT.x + 90} y2="0">
+          <stop offset="0" stopColor="#6e6876" />
+          <stop offset="0.5" stopColor="#56505d" />
+          <stop offset="1" stopColor="#433f4b" />
         </linearGradient>
-        <linearGradient id="slot-arm" gradientUnits="userSpaceOnUse" x1={PIVOT.x - 10} y1="0" x2={PIVOT.x + 60} y2="0">
-          <stop offset="0" stopColor="#7a7381" />
-          <stop offset="0.6" stopColor="#5d5866" />
-          <stop offset="1" stopColor="#45414d" />
-        </linearGradient>
-        <linearGradient id="slot-hub" x1="0.2" y1="0" x2="0.7" y2="1">
-          <stop offset="0" stopColor="#5f5a68" />
-          <stop offset="1" stopColor="#3a3641" />
+        <linearGradient id="slot-hub" x1="0.2" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stopColor="#8f8798" />
+          <stop offset="0.35" stopColor="#696371" />
+          <stop offset="1" stopColor="#3f3b47" />
         </linearGradient>
         <radialGradient id="slot-ball" cx="0.35" cy="0.3" r="0.78">
           <stop offset="0" style={{ stopColor: "var(--slot-pink-light)" }} />
@@ -565,8 +565,8 @@ function Drawing() {
           <stop offset="1" style={{ stopColor: "var(--slot-pink-dark)" }} />
         </linearGradient>
         <linearGradient id="slot-coin" x1="0.2" y1="0" x2="0.8" y2="1">
-          <stop offset="0" stopColor="#a69eae" />
-          <stop offset="1" stopColor="#857e8d" />
+          <stop offset="0" stopColor="#a39bab" />
+          <stop offset="1" stopColor="#837c8b" />
         </linearGradient>
         <linearGradient id="slot-coin-side" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#4b4653" />
@@ -575,52 +575,53 @@ function Drawing() {
         </linearGradient>
       </defs>
 
-      {/* The soft floor everything stands on, and the shade right under
-          the machine. */}
-      <ellipse cx="765" cy="846" rx="488" ry="30" fill="#1b1a21" filter="url(#slot-floor)" />
-      <ellipse cx={CX} cy="852" rx="300" ry="12" fill="#000" opacity="0.6" filter="url(#slot-ao)" />
+      {/* The wide, soft floor everything stands on, and the shade right
+          under the machine. */}
+      <ellipse cx="996" cy="1100" rx="632" ry="46" fill="#1c1a23" filter="url(#slot-floor)" />
+      <ellipse cx="990" cy="1110" rx="400" ry="16" fill="#000" opacity="0.55" filter="url(#slot-ao)" />
 
-      {/* The body, then the hood sitting on it. */}
-      <rect x="484" y="336" width="552" height="380" rx="40" fill="url(#slot-body)" filter="url(#slot-clay)" />
-      <path d={HOOD} fill="url(#slot-hood)" filter="url(#slot-clay)" />
-      {/* Soft shade on the body's top, just under the hood. */}
-      <rect x="575" y="340" width="370" height="30" rx="15" fill="#120f16" opacity="0.55" filter="url(#slot-ao)" />
+      {/* The body with its hood, and the pink panel in the hood. */}
+      <path d={SHELL} fill="url(#slot-body)" filter="url(#slot-clay)" />
       <path d={DISC} className="slot-disc-glow" fill="var(--slot-pink)" filter="url(#slot-glow)" />
+      <ellipse cx={CX} cy="452" rx="188" ry="9" fill="#120f16" opacity="0.8" filter="url(#slot-blur-3)" />
       <path d={DISC} fill="url(#slot-disc)" />
       <path d={DISC} className="slot-disc-bright" fill="#fff" />
-      <text x={CX} y="312" textAnchor="middle" className="slot-disc-text">
+      <text x={CX} y="406" textAnchor="middle" className="slot-disc-text">
         3
       </text>
 
-      {/* The reel window: a thick rounded bezel round a deep inset. */}
-      <rect x="516" y="380" width="488" height="284" rx="36" fill="url(#slot-bezel)" filter="url(#slot-clay)" />
-      <rect x="543" y="402" width="434" height="228" rx="22" fill="#2b2831" filter="url(#slot-inset)" />
+      {/* The reel window: a thick rounded bezel round a snug recess. */}
+      <rect x="675" y="495" width="635" height="365" rx="54" fill="url(#slot-bezel)" filter="url(#slot-clay)" />
+      <rect x="708" y="531" width="568" height="290" rx="34" fill="#1d1a22" filter="url(#slot-inset)" />
 
-      {/* The base: a sloped block, then a wider chunky slab under it. */}
-      <rect x="479" y="676" width="562" height="140" rx="24" fill="url(#slot-base)" filter="url(#slot-clay)" />
-      <rect x="490" y="672" width="540" height="8" rx="4" fill="#000" opacity="0.35" filter="url(#slot-blur-3)" />
-      <rect x="468" y="786" width="584" height="68" rx="22" fill="url(#slot-slab)" />
-      <rect x="480" y="787" width="560" height="2" rx="1" fill="#fff" opacity="0.1" />
+      {/* A deep groove where the body meets the base. */}
+      <rect x="640" y="864" width="700" height="24" rx="12" fill="#120f16" opacity="0.85" filter="url(#slot-blur-3)" />
 
-      {/* The big pink SPIN pill, sitting high on the base. */}
-      <ellipse className="slot-button-shadow" cx={CX} cy="782" rx="150" ry="10" fill="#000" opacity="0.4" filter="url(#slot-blur-3)" />
-      <rect x={CX - 156} y="708" width="312" height="72" rx="36" fill="var(--slot-pink-deep)" />
+      {/* The base: one chunky block, a little wider than the body, its top
+          edge soft and lit. */}
+      <rect x="609" y="885" width="761" height="227" rx="30" fill="url(#slot-base)" filter="url(#slot-clay)" />
+      <rect x="611" y="905" width="5" height="190" rx="2.5" fill="#fff" opacity="0.14" filter="url(#slot-blur-3)" />
+
+      {/* The big pink SPIN pill on the base's upper part, on a darker pink
+          lip. */}
+      <ellipse className="slot-button-shadow" cx="991" cy="1014" rx="200" ry="12" fill="#000" opacity="0.4" filter="url(#slot-blur-3)" />
+      <rect x="784" y="922" width="414" height="90" rx="45" fill="var(--slot-pink-deep)" />
       <g className="slot-button-face">
-        <rect className="slot-button-glow" x={CX - 156} y="694" width="312" height="72" rx="36" fill="var(--slot-pink)" filter="url(#slot-glow)" />
-        <rect x={CX - 156} y="694" width="312" height="72" rx="36" fill="url(#slot-button)" />
-        <rect className="slot-button-bright" x={CX - 156} y="694" width="312" height="72" rx="36" fill="#fff" />
-        <text x={CX} y="742" textAnchor="middle" className="slot-button-text">
+        <rect className="slot-button-glow" x="784" y="905" width="414" height="90" rx="45" fill="var(--slot-pink)" filter="url(#slot-glow)" />
+        <rect x="784" y="905" width="414" height="90" rx="45" fill="url(#slot-button)" />
+        <rect className="slot-button-bright" x="784" y="905" width="414" height="90" rx="45" fill="#fff" />
+        <text x="991" y="968" textAnchor="middle" className="slot-button-text">
           SPIN
         </text>
       </g>
 
-      {/* Coins: a stack overlapping the base's corner with one tipped on
-          top, and one lying flat on the right. */}
-      <Coin x={387} y={804} />
-      <Coin x={389} y={786} />
-      <Coin x={386} y={768} />
-      <Coin x={410} y={722} ry={29} tilt={-13} />
-      <Coin x={1140} y={800} depth={24} ry={22} />
+      {/* Coins: a stack of four at the left, the top one set up and to the
+          right, and one lying flat on the right. */}
+      <Coin x={503} y={1050} />
+      <Coin x={505} y={1025} />
+      <Coin x={502} y={1000} />
+      <Coin x={534} y={935} rx={75} ry={32} />
+      <Coin x={1483} y={1044} rx={75} ry={28} depth={30} />
     </svg>
   );
 }
