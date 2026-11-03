@@ -278,7 +278,12 @@ export function ChatPanel({
         {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">
-        <WorkingCard on={turn.running} steps={turn.steps} resumed={turn.resumed} />
+        <WorkingCard
+          running={turn.running}
+          steps={turn.steps}
+          resumed={turn.resumed}
+          last={messages.findLast((m) => m.role === "you" && !m.auto)?.text ?? null}
+        />
         {/* Opaque underneath, so the working card tucks behind the box. */}
         <div className="relative z-10 rounded-[12px] bg-[#161616]">
         <PromptBox
@@ -428,27 +433,21 @@ function Live({ text }: { text: string }) {
   );
 }
 
-// While Claude works, a pink card rises from behind the prompt box: which
-// AI is on it, then what it's doing, one line that shimmers and changes in
-// place from step to step. The box sits in front, over the card's foot, so
-// the two read as one stack; it slides back down when the turn ends.
+// A pink card behind the prompt box, the box over its foot, so the two read
+// as one stack: which AI is on it, then, while it works, what it's doing,
+// one line that shimmers and changes in place from step to step. Between
+// turns it shows your last request.
 const WORKING_CARD: CSSProperties = {
   background: "linear-gradient(180deg, #2a1622 0%, #5c2a47 70%, #7a3a5f 100%)",
   boxShadow: "inset 0 1px 0 rgba(255,190,225,0.16), inset 0 0 0 1px rgba(255,170,215,0.1)",
 };
-function WorkingCard({ on, steps, resumed }: { on: boolean; steps: string[]; resumed: boolean }) {
+function WorkingCard({ running, steps, resumed, last }: { running: boolean; steps: string[]; resumed: boolean; last: string | null }) {
   const choice = useAiChoice();
   const codex = choice.provider === "codex";
   const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
   return (
-    <div
-      aria-hidden={!on}
-      className={cn(
-        "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-        on ? "-mb-3 grid-rows-[1fr] opacity-100" : "mb-0 grid-rows-[0fr] opacity-0",
-      )}
-    >
-      <div className="min-h-0 overflow-hidden">
+    <div className="-mb-3">
+      <div>
         <div className="flex flex-col gap-2 rounded-t-[16px] px-3.5 pt-3 pb-[26px]" style={WORKING_CARD} aria-live="polite">
           <p className="flex items-center justify-between gap-3 text-[12px]">
             <span className="flex items-center gap-2 font-medium text-white/90">
@@ -457,7 +456,7 @@ function WorkingCard({ on, steps, resumed }: { on: boolean; steps: string[]; res
             </span>
             {codex ? null : <span className="truncate text-white/50">{modelName(choice.model)}</span>}
           </p>
-          {on ? (
+          {running ? (
             <p className="flex min-h-5 items-center gap-2 overflow-hidden text-[13px]">
               <WorkingMark />
               <span key={`${steps.length}-${step}`} className="studio-shimmer block truncate animate-in fade-in slide-in-from-bottom-1 duration-200">
@@ -465,7 +464,9 @@ function WorkingCard({ on, steps, resumed }: { on: boolean; steps: string[]; res
               </span>
             </p>
           ) : (
-            <p className="min-h-5" />
+            <p key="last" className="line-clamp-2 min-h-5 text-[13px] text-white/75 leading-snug animate-in fade-in duration-200">
+              {last ?? "Ready when you are."}
+            </p>
           )}
         </div>
       </div>
