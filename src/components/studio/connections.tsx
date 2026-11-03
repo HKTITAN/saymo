@@ -351,24 +351,23 @@ export function GithubSection({
 
   if (!github.connected) {
     const canConnect = github.deviceFlow || github.ghAvailable;
+    // One row: what it's for, and Connect. A note only when it can't.
     return (
-      <Section icon={<GithubIcon aria-hidden="true" />} title="GitHub">
-        <DialButton
-          loading={busy}
-          disabled={!canConnect}
-          className="bg-white text-[#141414] hover:bg-white/90"
-          onClick={() => void act(() => connectApi.startGithub(), "Unable to connect GitHub. Try again.")}
-        >
-          Connect GitHub
-        </DialButton>
-        <DialNote>
-          {github.deviceFlow
-            ? "You'll get a code to enter on github.com."
-            : github.ghAvailable
-              ? "Uses this Mac's GitHub sign-in."
-              : "Set GITHUB_CLIENT_ID in .env.local, or sign in to GitHub in Terminal with gh auth login."}
-        </DialNote>
-      </Section>
+      <div className="flex flex-col gap-1.5">
+        <div className={cn(ROW, "gap-3 ps-3 pe-1")}>
+          <span className={LABEL}>GitHub library</span>
+          <span className="min-w-0 flex-1 truncate text-white/35">Keeps each film&rsquo;s files</span>
+          <button
+            type="button"
+            disabled={!canConnect || busy}
+            onClick={() => void act(() => connectApi.startGithub(), "Unable to connect GitHub. Try again.")}
+            className="inline-flex h-7 shrink-0 cursor-pointer items-center rounded-[8px] bg-white/[0.1] px-2.5 text-[12px] text-white/90 outline-none transition-colors hover:bg-white/[0.15] focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-45"
+          >
+            {busy ? "Connecting" : "Connect"}
+          </button>
+        </div>
+        {canConnect ? null : <DialNote>Sign in to GitHub in Terminal with gh auth login, then come back.</DialNote>}
+      </div>
     );
   }
 

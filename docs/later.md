@@ -59,6 +59,10 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
     - a PikaIcons team licence, only if we use paid icons;
     - a lawyer's review.
 
+## Taken off a page for now
+
+- **Google Drive without its app** (2026-11-04): Settings was simplified to two cards (AI, Saving), and the older Drive sign-in for a Mac without Google's app left the page. The code stays: `GoogleSection` in `src/components/studio/connections.tsx` (still used by the film page's connections pop-up). To bring it back to Settings, render `<GoogleSection status={status} onChange={refresh} onNote={setNote} />` in the Saving card of `src/components/studio/settings-page.tsx`.
+
 ## Small leftovers, the owner's
 
 - One-time Google sign-in setup for saving to Drive.

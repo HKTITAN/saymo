@@ -3,7 +3,7 @@
 import { type ReactNode, useCallback, useEffect, useId, useState } from "react";
 import { BotIcon, ChevronDownIcon, CopyIcon, KeyLeftIcon } from "@/components/icons";
 import { DialButton, DialNote, LABEL, ROW } from "@/components/tool/dial";
-import { type AiStatus, PROVIDERS, type ProviderState, type ProviderStatus } from "@/lib/studio/ai-types";
+import { type AiStatus, PROVIDERS, type ProviderId, type ProviderState, type ProviderStatus } from "@/lib/studio/ai-types";
 import { IS_PRODUCT } from "@/lib/studio/edition";
 import { cn } from "@/lib/utils";
 import { aiApi } from "./ai-api";
@@ -308,6 +308,62 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     <div className={cn(ROW, "gap-3 px-3")}>
       <span className={LABEL}>{label}</span>
       <span className="ms-auto flex min-w-0 items-center gap-2 truncate text-white/85">{children}</span>
+    </div>
+  );
+}
+
+// Settings shows only the AI chosen for every prompt: one line saying
+// whether it's ready, the key box for the API key, and the steps only
+// while it isn't ready.
+export function SelectedAi({ provider }: { provider: ProviderId }) {
+  const [status, setStatus] = useState<AiStatus | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const load = useCallback(async (fresh: boolean) => {
+    setChecking(true);
+    try {
+      setStatus(await aiApi.status(fresh));
+      setError(null);
+    } catch (e) {
+      setError(message(e, "Unable to check the AI. Try again."));
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- checks once when Settings opens, and when the AI changes
+    void load(false);
+  }, [load, provider]);
+
+  const s = status?.providers.find((p) => p.id === provider);
+  if (error) return <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p>;
+  if (!s) {
+    return (
+      <p className="px-1 text-[11.5px]">
+        <span className="studio-shimmer">Checking</span>
+      </p>
+    );
+  }
+  const ready = s.state === "ready";
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className={cn("flex items-center gap-1.5 px-1 text-[11.5px]", ready ? "text-white/55" : "text-[#ff9a5c]")}>
+        <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", ready ? "bg-[#3dd68c]" : "bg-[#ff9a5c]")} />
+        <span>
+          {stateWords(s)}
+          {ready && s.plan ? <span className="text-white/35">{`, ${s.plan}`}</span> : null}
+          {!ready && s.detail ? <span className="text-white/45">{`. ${s.detail}`}</span> : null}
+        </span>
+      </p>
+      {s.id === "api-key" ? <ApiKey status={s} onStatus={setStatus} onError={setError} /> : null}
+      {!ready && s.id !== "api-key" ? (
+        <>
+          <Steps status={s} />
+          <DialButton loading={checking} onClick={() => void load(true)}>
+            Check again
+          </DialButton>
+        </>
+      ) : null}
     </div>
   );
 }
