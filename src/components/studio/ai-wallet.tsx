@@ -7,7 +7,7 @@ import { SURFACE } from "@/components/tool/dial";
 import { type AiChoice, OFFERED_PROVIDERS, type ProviderId } from "@/lib/studio/ai-types";
 import { cn } from "@/lib/utils";
 import { aiApi } from "./ai-api";
-import { ClaudeMark, ClaudeWordmark, CodexMark, CodexWordmark } from "./ai-marks";
+import { ClaudeLockup, ClaudeMark, CodexMark, CodexWordmark } from "./ai-marks";
 import { Foil } from "./foil";
 import { ITEM, MENU_POPUP } from "./home-parts";
 import { PILL_BUTTON } from "./panel";
@@ -27,14 +27,26 @@ const CARD_TOP = 18;
 const POCKET_TOP = 86; // the pocket's edge at the sides
 const POCKET_DIP = 112; // and in the middle
 
-type Look = { name: string; via: string; mark: (c: string) => ReactNode; word: (c: string) => ReactNode; metal: FoilColors };
+type Look = { name: string; via: string; mark: (c: string) => ReactNode; lockup: ReactNode; metal: FoilColors };
 // A foil: its deep corner, its middle, its light corner.
 type FoilColors = [string, string, string];
 const CARDS: Record<ProviderId, Look> = {
-  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, word: (c) => <ClaudeWordmark className={c} />, metal: ["#c2410f", "#ec6a2c", "#ffb27a"] },
-  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, word: (c) => <CodexWordmark className={c} />, metal: ["#2f37d8", "#6670f0", "#c3b8f5"] },
-  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, word: (c) => <ClaudeWordmark className={c} />, metal: ["#7a2e12", "#b8532a", "#e79a6e"] },
+  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, lockup: <ClaudeLockup className="h-[18px] w-auto" />, metal: ["#c2410f", "#ec6a2c", "#ffb27a"] },
+  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, lockup: <CodexLockup />, metal: ["#2f37d8", "#6670f0", "#c3b8f5"] },
+  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, lockup: <ClaudeLockup className="h-[18px] w-auto" />, metal: ["#7a2e12", "#b8532a", "#e79a6e"] },
 };
+
+// Codex has no published lockup, so its mark and wordmark are set
+// together here at the same proportions as Claude's: the mark as tall as
+// the name's capitals plus a little, with the gap a third of its width.
+function CodexLockup() {
+  return (
+    <span className="flex items-center gap-[6px]">
+      <CodexMark className="size-[17px]" />
+      <CodexWordmark className="h-[15px] w-auto" />
+    </span>
+  );
+}
 
 export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provider: ProviderId) => void }) {
   // The card in the wallet; on a change it goes down into the pocket, then
@@ -101,8 +113,7 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
             <span className="pointer-events-none absolute inset-0 rounded-[20px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" />
             <span className="absolute inset-x-[20px] top-[18px] flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-white/95" style={ETCHED}>
-                {look.mark("size-4")}
-                {look.word("h-[15px] w-auto")}
+                {look.lockup}
               </span>
               <span
                 className="truncate font-semibold text-[9.5px] text-white uppercase tracking-[0.18em]"
@@ -269,7 +280,7 @@ function Pocket({ mark }: { mark: (c: string) => ReactNode }) {
   const t = POCKET_TOP, d = POCKET_DIP;
   const edge = `M0 ${t + 18} Q0 ${t} 18 ${t} L${a} ${t} C${b} ${t} ${c} ${d} ${W / 2} ${d} C${W - c} ${d} ${W - b} ${t} ${W - a} ${t} L${W - 18} ${t} Q${W} ${t} ${W} ${t + 18} L${W} ${H - R} Q${W} ${H} ${W - R} ${H} L${R} ${H} Q0 ${H} 0 ${H - R} Z`;
   const i = 9;
-  const stitch = `M${i} ${H - R} L${i} ${t + i + 12} Q${i} ${t + i} ${i + 12} ${t + i} L${a - 2} ${t + i} C${b - 3} ${t + i} ${c - 3} ${d + i} ${W / 2} ${d + i} C${W - c + 3} ${d + i} ${W - b + 3} ${t + i} ${W - a + 2} ${t + i} L${W - i - 12} ${t + i} Q${W - i} ${t + i} ${W - i} ${t + i + 12} L${W - i} ${H - R}`;
+  const stitch = `M${i} ${H - R} L${i} ${t + i + 12} Q${i} ${t + i} ${i + 12} ${t + i} L${a - 2} ${t + i} C${b - 3} ${t + i} ${c - 3} ${d + i} ${W / 2} ${d + i} C${W - c + 3} ${d + i} ${W - b + 3} ${t + i} ${W - a + 2} ${t + i} L${W - i - 12} ${t + i} Q${W - i} ${t + i} ${W - i} ${t + i + 12} L${W - i} ${H - R} Q${W - i} ${H - i} ${W - R} ${H - i} L${R} ${H - i} Q${i} ${H - i} ${i} ${H - R}`;
   return (
     <div className="pointer-events-none absolute inset-0">
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 overflow-visible" aria-hidden="true">
