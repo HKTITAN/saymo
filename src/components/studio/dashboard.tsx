@@ -32,7 +32,7 @@ import { NewKitMenu, PersonalStyleMaker } from "./personal-style";
 import { LibraryView } from "./library";
 import { cachedLibrary, filesFor } from "./library-api";
 import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
-import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu, shapeOf } from "./home";
+import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu } from "./home";
 import { SettingsPage } from "./settings-page";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { ReelFlow } from "./reel-flow";
@@ -799,25 +799,14 @@ function FilmCard({
             )}
           </span>
         )}
-        {/* The name, then one quiet line: its shape, its length, when it was
-            last edited (and its kind only when it's a video edit). */}
-        <span className="flex flex-col gap-1 px-1.5 pb-1">
-          <span className={cn("truncate font-medium text-[13px] text-white/90 leading-[18px]", renaming && "invisible")}>{f.title}</span>
-          <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-white/40 tabular-nums leading-4">
-            {[
-              f.kind === "video" ? "Video edit" : null,
-              shapeOf(f),
-              `${Number.isInteger(f.duration) ? f.duration : f.duration.toFixed(1)}\u2009s`,
-              now ? ago(f.updatedAt, now) : null,
-              folderLabel,
-            ]
-              .filter(Boolean)
-              .map((bit, i) => (
-                <span key={i} className={cn("flex items-center gap-1.5", i > 1 ? "min-w-0 truncate" : "shrink-0")} suppressHydrationWarning>
-                  {i > 0 ? <span aria-hidden="true" className="size-[3px] shrink-0 rounded-full bg-white/25" /> : null}
-                  <span className="truncate">{bit}</span>
-                </span>
-              ))}
+        {/* The name, then when it was last edited (and its folder); the
+            preview shows its shape and its length. */}
+        <span className="flex flex-col gap-0.5 px-0.5 pb-1">
+          <span className={cn("truncate text-[13px] text-white/90 leading-[18px]", renaming && "invisible")}>{f.title}</span>
+          <span className="truncate text-[12px] text-white/40 leading-4" suppressHydrationWarning>
+            {f.kind === "video" ? "Video edit, edited " : "Edited "}
+            {now ? ago(f.updatedAt, now) : "\u00a0"}
+            {folderLabel ? ` in ${folderLabel}` : ""}
           </span>
         </span>
       </button>
@@ -826,7 +815,7 @@ function FilmCard({
         // Over the card's own name, so typing doesn't open the film.
         <RenameField
           value={f.title}
-          className="absolute right-2 bottom-[27px] left-2 h-6 text-[13px]"
+          className="absolute right-1 bottom-[23px] left-1 h-6 text-[13px]"
           onDone={(next) => {
             setRenaming(false);
             if (next) onRename(next);

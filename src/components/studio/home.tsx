@@ -4,6 +4,7 @@ import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import {
   BookmarkIcon,
+  CheckTickCircleIcon,
   ChevronDownIcon,
   FileIcon,
   FolderIcon,
@@ -660,25 +661,23 @@ export function SortMenu({ sort, onSort }: { sort: Order; onSort: (s: Order) => 
       <Popover.Portal>
         <Popover.Positioner side="bottom" align="end" sideOffset={6} collisionPadding={12} className="z-50">
           <Popover.Popup className={cn(SURFACE, MENU_POPUP, "flex w-[168px] flex-col")}>
-            <p className="ps-6 pe-2 pt-1 pb-1 text-[11px] text-white/35">Sort by</p>
-            {/* As in a Mac menu: rows light only under the pointer, and a dot marks the order in use. */}
+            <p className="ps-[30px] pe-2 pt-1 pb-1 text-[11px] text-white/35">Sort by</p>
+            {/* As in a Mac menu: rows light only under the pointer, and a tick marks the order in use. */}
             {ORDERS.map(([k, text]) => (
               <button
                 key={k}
                 type="button"
                 role="menuitemradio"
                 aria-checked={sort === k}
-                className={cn(
-                  ITEM,
-                  "min-h-8 gap-2 ps-2.5",
-                  "before:size-1.5 before:shrink-0 before:rounded-full before:content-['']",
-                  sort === k ? "text-white before:bg-white/85" : "text-white/65 before:bg-transparent",
-                )}
+                className={cn(ITEM, "min-h-8 gap-2 ps-2", sort === k ? "text-white" : "text-white/65")}
                 onClick={() => {
                   onSort(k);
                   setOpen(false);
                 }}
               >
+                <span aria-hidden="true" className="flex size-3.5 shrink-0 items-center justify-center [&_svg]:size-3.5">
+                  {sort === k ? <CheckTickCircleIcon /> : null}
+                </span>
                 <span className="flex-1 text-left">{text}</span>
               </button>
             ))}
@@ -720,9 +719,19 @@ export function FilmStage({ film }: { film: FilmSummary }) {
           </span>
         )}
       </span>
+      {/* Its length, in the corner, as on any video. */}
+      <span className="absolute right-2 bottom-2 rounded-[6px] bg-black/60 px-1.5 py-0.5 font-medium text-[10.5px] text-white/85 tabular-nums leading-[14px] backdrop-blur-sm">
+        {clock(film.duration)}
+      </span>
     </span>
   );
 }
+
+// 8 s reads "0:08"; 82 s reads "1:22".
+const clock = (seconds: number) => {
+  const s = Math.max(0, Math.round(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
 
 // "16:9" for a film of that shape, or its pixel size when it's another.
 export const shapeOf = (film: Pick<FilmSummary, "width" | "height">) =>
