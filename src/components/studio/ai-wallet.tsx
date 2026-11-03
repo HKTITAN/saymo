@@ -154,7 +154,10 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
               <Foil colors={look.metal} light={null} drift={false} />
             </span>
             {/* the card's bezel: a hairline inset from its edge, and its pale rim */}
-            <span className="pointer-events-none absolute inset-[7px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" style={{ borderRadius: CARD_R - 7 }} />
+            <span
+              className="pointer-events-none absolute inset-[7px]"
+              style={{ borderRadius: CARD_R - 7, boxShadow: `inset 0 0 0 1px ${look.ink}4d, 0 1px 0 rgba(255,255,255,0.18)` }}
+            />
             <span className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" style={{ borderRadius: CARD_R }} />
             <span className="absolute inset-x-[20px] top-[18px] flex items-center justify-between gap-3">
               <span className="flex items-center gap-2" style={stamped(look.ink)}>
