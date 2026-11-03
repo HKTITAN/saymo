@@ -14,13 +14,13 @@ import { Foil } from "./foil";
 // up (that's the choice for every prompt). The chosen AI's mark is pressed
 // into the leather. Whether it's ready shows under the sleeve (SelectedAi).
 
-const W = 320; // the sleeve
-const SLEEVE_H = 150;
-const AREA_H = 240; // sleeve plus the cards above it
-const CARD_W = 276;
+const W = 280; // the sleeve
+const SLEEVE_H = 132;
+const AREA_H = 212; // sleeve plus the cards above it
+const CARD_W = 242;
 const CARD_H = Math.round(CARD_W / 1.586);
-const DOWN = 42; // a card's top while tucked in
-const UP = 6; // the chosen card's top
+const DOWN = 38; // a card's top while tucked in
+const UP = 5; // the chosen card's top
 
 type Look = { name: string; via: string; mark: (c: string) => ReactNode; metal: Foil };
 // A foil: its deep corner, its middle, its light corner.
@@ -32,8 +32,8 @@ const CARDS: Record<ProviderId, Look> = {
 };
 // The two cards not chosen fan out behind it, one to each side.
 const FAN = [
-  { x: -32, r: -7 },
-  { x: 32, r: 7 },
+  { x: -28, r: -7 },
+  { x: 28, r: 7 },
 ];
 
 export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provider: ProviderId) => void }) {
@@ -172,8 +172,8 @@ function Sleeve({ mark }: { mark: (c: string) => ReactNode }) {
   const id = useId().replace(/:/g, "");
   const h = SLEEVE_H;
   const a = W * 0.295, b = W * 0.375, c = W * 0.395;
-  const edge = `M0 24 Q0 0 24 0 L${a} 0 C${b} 0 ${c} 25 ${W / 2} 25 C${W - c} 25 ${W - b} 0 ${W - a} 0 L${W - 24} 0 Q${W} 0 ${W} 24 L${W} ${h - 24} Q${W} ${h} ${W - 24} ${h} L24 ${h} Q0 ${h} 0 ${h - 24} Z`;
-  const stitch = `M11 29 Q11 11 29 11 L${a - 2} 11 C${b - 3} 11 ${c - 3} 36 ${W / 2} 36 C${W - c + 3} 36 ${W - b + 3} 11 ${W - a + 2} 11 L${W - 29} 11 Q${W - 11} 11 ${W - 11} 29 L${W - 11} ${h - 29} Q${W - 11} ${h - 11} ${W - 29} ${h - 11} L29 ${h - 11} Q11 ${h - 11} 11 ${h - 29} Z`;
+  const edge = `M0 24 Q0 0 24 0 L${a} 0 C${b} 0 ${c} 22 ${W / 2} 22 C${W - c} 22 ${W - b} 0 ${W - a} 0 L${W - 24} 0 Q${W} 0 ${W} 24 L${W} ${h - 24} Q${W} ${h} ${W - 24} ${h} L24 ${h} Q0 ${h} 0 ${h - 24} Z`;
+  const stitch = `M11 29 Q11 11 29 11 L${a - 2} 11 C${b - 3} 11 ${c - 3} 32 ${W / 2} 32 C${W - c + 3} 32 ${W - b + 3} 11 ${W - a + 2} 11 L${W - 29} 11 Q${W - 11} 11 ${W - 11} 29 L${W - 11} ${h - 29} Q${W - 11} ${h - 11} ${W - 29} ${h - 11} L29 ${h - 11} Q11 ${h - 11} 11 ${h - 29} Z`;
   return (
     <div className="pointer-events-none absolute bottom-0 left-0 z-20" style={{ width: W, height: h }}>
       <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} className="absolute inset-0 overflow-visible" aria-hidden="true">
@@ -204,7 +204,7 @@ function Sleeve({ mark }: { mark: (c: string) => ReactNode }) {
         <path d={edge} fill="#000" filter={`url(#${id}-grain)`} />
         {/* the lit lip along the top edge, and its shade just below */}
         <path d={edge} fill="none" stroke="rgba(255,214,190,0.22)" strokeWidth="1.2" />
-        <path d={stitch} fill="none" stroke="rgba(255,214,190,0.26)" strokeWidth="1.2" strokeDasharray="5 4" strokeLinecap="round" />
+        <Stitches path={stitch} />
       </svg>
       {/* the mark, pressed into the leather: dark inside, a light lip below */}
       <span
@@ -214,5 +214,45 @@ function Sleeve({ mark }: { mark: (c: string) => ReactNode }) {
         {mark("size-8")}
       </span>
     </div>
+  );
+}
+
+// Saddle stitching along a path, stitch by stitch: each one a short,
+// slanted, rounded length of waxed tan thread with a shine along it, its
+// shadow, and the two holes it goes in and out of. Worked out from the
+// path once the page is in the browser.
+type Stitch = { x: number; y: number; a: number };
+const STITCH_GAP = 6.5;
+const STITCH_LEN = 4;
+function Stitches({ path }: { path: string }) {
+  const [stitches, setStitches] = useState<Stitch[]>([]);
+  useEffect(() => {
+    const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    el.setAttribute("d", path);
+    const total = el.getTotalLength();
+    const n = Math.floor(total / STITCH_GAP);
+    const out: Stitch[] = [];
+    for (let i = 0; i < n; i++) {
+      const at = (i + 0.5) * (total / n);
+      const p = el.getPointAtLength(at);
+      const q = el.getPointAtLength(Math.min(total, at + 0.5));
+      out.push({ x: p.x, y: p.y, a: (Math.atan2(q.y - p.y, q.x - p.x) * 180) / Math.PI });
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- measured from the path in the browser
+    setStitches(out);
+  }, [path]);
+  const half = STITCH_LEN / 2;
+  return (
+    <g>
+      {stitches.map((s, i) => (
+        <g key={i} transform={`translate(${s.x} ${s.y}) rotate(${s.a + 22})`}>
+          <circle cx={-half - 0.6} cy={0.3} r={0.7} fill="rgba(20,8,3,0.6)" />
+          <circle cx={half + 0.6} cy={0.3} r={0.7} fill="rgba(20,8,3,0.7)" />
+          <rect x={-half} y={-0.25} width={STITCH_LEN} height={1.5} rx={0.75} fill="rgba(20,8,3,0.5)" />
+          <rect x={-half} y={-0.85} width={STITCH_LEN} height={1.5} rx={0.75} fill="#b98d66" />
+          <rect x={-half + 0.7} y={-0.7} width={STITCH_LEN - 1.4} height={0.45} rx={0.22} fill="rgba(255,236,214,0.45)" />
+        </g>
+      ))}
+    </g>
   );
 }
