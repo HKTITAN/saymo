@@ -36,7 +36,7 @@ export function SentFiles({ files, urlOf }: { files: Attachment[]; urlOf: (path:
               </span>
             )}
             <span className="truncate">{f.name}</span>
-            {f.kind === "audio" && f.seconds ? <span className="shrink-0 font-mono text-[10.5px] text-white/40 tabular-nums">{clockText(f.seconds)}</span> : null}
+            {f.kind === "audio" && f.seconds ? <span className="shrink-0 text-[10.5px] text-white/40 tabular-nums">{clockText(f.seconds)}</span> : null}
           </a>
           {f.kind !== "slides" ? (
             <span className="absolute end-1 top-1/2 flex -translate-y-1/2 rounded-[6px] bg-[#262626] opacity-0 transition-opacity focus-within:opacity-100 group-hover/sent:opacity-100">

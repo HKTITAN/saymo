@@ -110,7 +110,7 @@ export function Timeline({
           {playing ? <PauseCircleIcon aria-hidden="true" /> : <PlayCircleIcon aria-hidden="true" />}
         </button>
       </Hint>
-      <p className="w-[124px] shrink-0 font-mono text-[11.5px] tabular-nums">
+      <p className="w-[124px] shrink-0 text-[11.5px] tabular-nums">
         <span className="text-white/90">{formatTime(t)}</span>
         <span className="text-white/35"> / {formatTime(duration)}</span>
       </p>

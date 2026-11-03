@@ -250,7 +250,7 @@ function Calendar({
                     onFocus={() => setFocus(value)}
                     onPointerEnter={() => setHover(value)}
                     className={cn(
-                      "relative flex h-9 w-full cursor-pointer items-center justify-center rounded-[9px] font-mono text-[12px] tabular-nums outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                      "relative flex h-9 w-full cursor-pointer items-center justify-center rounded-[9px] text-[12px] tabular-nums outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                       ends
                         ? "bg-white text-black"
                         : within
@@ -419,7 +419,7 @@ function TimeList({
             onFocus={() => setFocus(t)}
             className={cn(
               "flex h-8 shrink-0 cursor-pointer items-center rounded-[8px] px-2.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-35",
-              t ? "font-mono tabular-nums" : "",
+              t ? "tabular-nums" : "",
               t === value ? "bg-white text-black" : "text-white/75 hover:bg-white/[0.08]",
             )}
           >

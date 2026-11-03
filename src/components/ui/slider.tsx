@@ -76,7 +76,7 @@ export function SliderValue({
 }: SliderPrimitive.Value.Props): React.ReactElement {
   return (
     <SliderPrimitive.Value
-      className={cn("ms-auto font-mono text-white/90 tabular-nums", className)}
+      className={cn("ms-auto text-white/90 tabular-nums", className)}
       data-slot="slider-value"
       {...props}
     />

@@ -471,7 +471,7 @@ export function RecordStep({
 
           {phase === "countdown" ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
-              <span key={count} className="font-mono font-medium text-[120px] text-white tabular-nums animate-in fade-in zoom-in-75 duration-300">
+              <span key={count} className="font-medium text-[120px] text-white tabular-nums animate-in fade-in zoom-in-75 duration-300">
                 {count}
               </span>
             </div>
@@ -480,7 +480,7 @@ export function RecordStep({
           {phase === "recording" ? (
             <div className="absolute right-3 bottom-3 flex h-7 items-center gap-2 rounded-full bg-black/55 px-3 text-[12px] backdrop-blur-md">
               <span className="size-2 animate-pulse rounded-full bg-[#ff5f57]" aria-hidden="true" />
-              <span className="font-mono text-white/90 tabular-nums">{clock(elapsed)}</span>
+              <span className="text-white/90 tabular-nums">{clock(elapsed)}</span>
             </div>
           ) : null}
 
@@ -505,7 +505,7 @@ export function RecordStep({
                 Retake
               </button>
               <span className="text-[12px] text-white/45">
-                <span className="font-mono">{clock(take.seconds)}</span>
+                <span className="tabular-nums">{clock(take.seconds)}</span>
               </span>
               <Hint label={playing ? "Pause" : "Play"} keys={["Space"]}>
                 <button type="button" className={ICON_BUTTON} onClick={toggleTake} aria-label={playing ? "Pause the take" : "Play the take"}>

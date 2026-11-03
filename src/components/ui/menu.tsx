@@ -239,7 +239,7 @@ export function MenuShortcut({
   return (
     <kbd
       className={cn(
-        "ms-auto font-mono text-[11px] text-white/40 tabular-nums",
+        "ms-auto text-[11px] text-white/40 tabular-nums",
         className,
       )}
       data-slot="menu-shortcut"

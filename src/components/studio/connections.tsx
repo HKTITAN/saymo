@@ -199,14 +199,14 @@ export function GoogleSection({ status, onChange, onNote }: SectionProps) {
               void navigator.clipboard.writeText(google.redirectUri).then(() => setCopied(true));
               setTimeout(() => setCopied(false), 1500);
             }}
-            className="flex min-h-8 cursor-pointer items-center gap-2 rounded-[8px] bg-white/[0.06] px-2.5 py-1.5 text-left font-mono text-[11px] text-white/80 outline-none hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0"
+            className="flex min-h-8 cursor-pointer items-center gap-2 rounded-[8px] bg-white/[0.06] px-2.5 py-1.5 text-left tabular-nums text-[11px] text-white/80 outline-none hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0"
           >
             <span className="min-w-0 flex-1 break-all">{google.redirectUri}</span>
             {copied ? <span className="font-sans text-white/50">Copied</span> : <CopyIcon aria-hidden="true" />}
           </button>
           <ol start={4} className="flex list-decimal flex-col gap-1 ps-4">
             <li>
-              Put its client ID and secret in <span className="font-mono text-white/75">.env.local</span> as GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then restart the studio.
+              Put its client ID and secret in <span className="tabular-nums text-white/75">.env.local</span> as GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then restart the studio.
             </li>
           </ol>
         </div>
@@ -332,7 +332,7 @@ export function GithubSection({
               void navigator.clipboard.writeText(pending.userCode).then(() => setCopied(true));
               setTimeout(() => setCopied(false), 1500);
             }}
-            className="cursor-pointer rounded-[8px] px-2 font-mono text-[22px] text-white tracking-[0.12em] outline-none hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring"
+            className="cursor-pointer rounded-[8px] px-2 tabular-nums text-[22px] text-white tracking-[0.12em] outline-none hover:bg-white/[0.06] focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Copy the code"
           >
             {pending.userCode}

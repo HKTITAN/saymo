@@ -88,7 +88,7 @@ export function Inspector({
         {editLength !== undefined ? (
           <DialNote>
             The film runs as long as its timeline,{" "}
-            <span className="font-mono tabular-nums">{editLength.toFixed(1)}</span>{"\u2009"}s. Changing the size keeps each
+            <span className="tabular-nums">{editLength.toFixed(1)}</span>{"\u2009"}s. Changing the size keeps each
             clip framed where you put it.
           </DialNote>
         ) : (
@@ -184,7 +184,7 @@ export function Choice({
             aria-label={o.hint}
             onClick={() => onChange(o.value)}
             className={cn(
-              "h-7 cursor-pointer rounded-[7px] px-2.5 font-mono text-[11.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+              "h-7 cursor-pointer rounded-[7px] px-2.5 tabular-nums text-[11.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
               !/\d/.test(o.label) && "font-sans text-[12px]",
               value === o.value ? "bg-white/[0.13] text-white" : "text-white/45 hover:text-white/75",
             )}

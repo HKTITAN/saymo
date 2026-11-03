@@ -186,7 +186,7 @@ function Command({ command }: { command: string }) {
         });
       }}
       aria-label={`Copy: ${command}`}
-      className="flex min-h-7 w-fit max-w-full cursor-pointer items-center gap-2.5 rounded-[7px] bg-white/[0.06] ps-2.5 pe-2 py-1 text-left font-mono text-[11px] text-white/85 outline-none transition-colors hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-white/45"
+      className="flex min-h-7 w-fit max-w-full cursor-pointer items-center gap-2.5 rounded-[7px] bg-white/[0.06] ps-2.5 pe-2 py-1 text-left tabular-nums text-[11px] text-white/85 outline-none transition-colors hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-white/45"
     >
       <span className="min-w-0 flex-1 break-all">{command}</span>
       {copied ? <span className="font-sans text-white/50">Copied</span> : <CopyIcon aria-hidden="true" />}
@@ -229,7 +229,7 @@ function ApiKey({
       <>
         <Row label="Key">
           <span className="text-white/70">
-            Saved, ends in <span className="font-mono">{status.keyEnding}</span>
+            Saved, ends in <span className="tabular-nums">{status.keyEnding}</span>
           </span>
         </Row>
         {asking ? (
@@ -284,7 +284,7 @@ function ApiKey({
           spellCheck={false}
           placeholder="sk-ant-…"
           onChange={(e) => setKey(e.target.value)}
-          className="h-full min-w-0 flex-1 bg-transparent text-right font-mono text-white/90 outline-none placeholder:text-white/30"
+          className="h-full min-w-0 flex-1 bg-transparent text-right tabular-nums text-white/90 outline-none placeholder:text-white/30"
         />
       </label>
       {/* White once there's a key to save; until then a quiet row, not a faded slab. */}

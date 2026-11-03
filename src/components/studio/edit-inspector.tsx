@@ -127,7 +127,7 @@ function ClipPanel({
       <DialNote>
         {media?.name ?? "This footage is missing from Media. Delete the clip, or ask Claude to replace it."}
         <br />
-        <span className="font-mono tabular-nums">
+        <span className="tabular-nums">
           {formatTime(clip.start)} to {formatTime(endOf(clip))}
         </span>
         {!isPhoto ? (
@@ -514,7 +514,7 @@ function CaptionRow({ time, text, onChange }: { time: number; text: string; onCh
         "h-auto min-h-9 cursor-text items-start gap-2.5 px-3 py-2 hover:bg-white/[0.07] has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
       )}
     >
-      <span className={cn(LABEL, "pt-px font-mono text-[11px] text-white/40 tabular-nums")}>{formatTime(time)}</span>
+      <span className={cn(LABEL, "pt-px text-[11px] text-white/40 tabular-nums")}>{formatTime(time)}</span>
       <textarea
         id={id}
         rows={1}

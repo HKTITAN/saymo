@@ -183,7 +183,7 @@ function Showcase() {
               </Tooltip>
             </ToolbarGroup>
             <ToolbarSeparator orientation="vertical" />
-            <span className="flex items-center px-2 font-mono text-[11.5px] text-white/45 tabular-nums">
+            <span className="flex items-center px-2 text-[11.5px] text-white/45 tabular-nums">
               {current.duration}s loop
             </span>
             <ToolbarSeparator orientation="vertical" />

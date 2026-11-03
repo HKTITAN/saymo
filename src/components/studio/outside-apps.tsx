@@ -137,7 +137,7 @@ export function OutsideAppsSection() {
             aria-label={`Copy the ${APPS.find(([k]) => k === app)?.[1]} set-up`}
             className="group relative flex cursor-pointer rounded-[8px] bg-white/[0.06] px-2.5 py-2 pe-14 text-left outline-none hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <pre className="min-w-0 flex-1 whitespace-pre-wrap break-all font-mono text-[10.5px] text-white/80 leading-[1.55]">{text}</pre>
+            <pre className="min-w-0 flex-1 whitespace-pre-wrap break-all tabular-nums text-[10.5px] text-white/80 leading-[1.55]">{text}</pre>
             <span className="absolute top-2 right-2.5 flex items-center gap-1 text-[11px] text-white/50 group-hover:text-white/75 [&_svg]:size-3.5">
               {copied === app ? "Copied" : <CopyIcon aria-hidden="true" />}
             </span>
@@ -145,7 +145,7 @@ export function OutsideAppsSection() {
 
           <div className={cn(ROW, "mt-1 gap-2 ps-3 pe-1")}>
             <span className={LABEL}>Token</span>
-            <span className="ms-auto min-w-0 truncate font-mono text-[11px] text-white/80">{shown ? info.token : masked}</span>
+            <span className="ms-auto min-w-0 truncate tabular-nums text-[11px] text-white/80">{shown ? info.token : masked}</span>
             <button
               type="button"
               onClick={() => setShown((s) => !s)}

@@ -149,7 +149,7 @@ export function RenderControl({
                 style={{ width: `${Math.round(progress * 100)}%` }}
                 aria-hidden="true"
               />
-              <span className="relative font-mono tabular-nums">
+              <span className="relative tabular-nums">
                 {status.state === "queued" ? "Waiting for another render" : `Rendering ${Math.round(progress * 100)}%`}
               </span>
             </>

@@ -570,7 +570,7 @@ export function Multitrack({
             {playing ? <PauseCircleIcon aria-hidden="true" /> : <PlayCircleIcon aria-hidden="true" />}
           </button>
         </Hint>
-        <p className="w-[124px] shrink-0 font-mono text-[11.5px] tabular-nums">
+        <p className="w-[124px] shrink-0 text-[11.5px] tabular-nums">
           <span className="text-white/90">{formatTime(t)}</span>
           <span className="text-white/35"> / {formatTime(duration)}</span>
         </p>
@@ -738,7 +738,7 @@ export function Multitrack({
               {ticks.map((x) => (
                 <span
                   key={x}
-                  className="pointer-events-none absolute top-0 h-full border-white/10 border-l ps-1 pt-1 font-mono text-[9.5px] text-white/35 tabular-nums"
+                  className="pointer-events-none absolute top-0 h-full border-white/10 border-l ps-1 pt-1 text-[9.5px] text-white/35 tabular-nums"
                   style={{ left: x * scale }}
                 >
                   {short(x, step)}
@@ -1025,7 +1025,7 @@ function ItemBlock({
           {name}
         </span>
         {item.type === "clip" && (item.speed ?? 1) !== 1 ? (
-          <span className="pointer-events-none absolute end-1.5 top-1 rounded-[4px] bg-black/55 px-1 font-mono text-[10px] text-white/80">
+          <span className="pointer-events-none absolute end-1.5 top-1 rounded-[4px] bg-black/55 px-1 tabular-nums text-[10px] text-white/80">
             {(item.speed ?? 1).toFixed(2)}×
           </span>
         ) : null}

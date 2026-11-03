@@ -133,7 +133,7 @@ export function StemLane({
               style={{ left: share(s.from), width: `calc(${share(s.to)} - ${share(s.from)})` }}
             >
               {wide ? (
-                <span className="absolute top-0 right-1 font-mono text-[9.5px] text-white/60 tabular-nums leading-[14px]">
+                <span className="absolute top-0 right-1 text-[9.5px] text-white/60 tabular-nums leading-[14px]">
                   {s.mute ? "Muted" : dbText(s.gain)}
                 </span>
               ) : null}

@@ -121,7 +121,7 @@ export function MediaBin({
                   <span className="h-9 w-14 shrink-0 rounded-[6px]" skullet-block="" />
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="truncate text-[12px]">{name}</span>
-                    <span className="font-mono text-[11px]">0:42 · 1920 × 1080</span>
+                    <span className="tabular-nums text-[11px]">0:42 · 1920 × 1080</span>
                   </span>
                 </div>
               ))}
@@ -142,7 +142,7 @@ export function MediaBin({
                       Dismiss
                     </button>
                   ) : (
-                    <span className="font-mono text-[11px] text-white/45 tabular-nums">{Math.round(u.progress * 100)}%</span>
+                    <span className="text-[11px] text-white/45 tabular-nums">{Math.round(u.progress * 100)}%</span>
                   )}
                 </div>
                 {u.error ? (
@@ -200,7 +200,7 @@ export function MediaBin({
                   <LayerThreeIcon aria-hidden="true" className="size-3.5" />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[12px] text-white/85">{g.label}</span>
-                <span className="text-[11px] text-white/40"><span className="font-mono tabular-nums">{g.duration.toFixed(1)}</span>{"\u2009"}s</span>
+                <span className="text-[11px] text-white/40"><span className="tabular-nums">{g.duration.toFixed(1)}</span>{"\u2009"}s</span>
               </button>
             ))}
             {!ed.graphics.length ? (
@@ -281,7 +281,7 @@ function MediaRow({
           ) : media.transcribing ? (
             <span className="studio-shimmer truncate text-[11.5px] text-white/50">Writing down what’s said</span>
           ) : (
-            <span className="font-mono text-[11px] text-white/40 tabular-nums">
+            <span className="text-[11px] text-white/40 tabular-nums">
               {media.kind === "image" ? "Photo" : media.duration ? formatTime(media.duration) : ""}
               {used ? <span className="ms-1.5 font-sans text-white/30">In the film</span> : null}
             </span>

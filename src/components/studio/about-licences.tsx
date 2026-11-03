@@ -135,7 +135,7 @@ function AboutPanel() {
           IS_PRODUCT ? (
             <p className="rounded-[10px] bg-[#ff9a5c]/10 px-3 py-2 text-[11.5px] text-[#ff9a5c] leading-relaxed">
               This list was made for the {data.studio.edition} edition. To update it, run{" "}
-              <span className="font-mono">STUDIO_EDITION={EDITION} npm run licences</span>.
+              <span className="tabular-nums">STUDIO_EDITION={EDITION} npm run licences</span>.
             </p>
           ) : (
             <p className="rounded-[10px] bg-white/[0.04] px-3 py-2 text-[11.5px] text-white/55 leading-relaxed">
@@ -172,7 +172,7 @@ function AboutPanel() {
       <div className={cn("-mx-2 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pb-1", NO_SCROLLBAR)}>
         {failed ? (
           <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">
-            Unable to load the licences. Run <span className="font-mono">npm run licences</span>, then reopen this panel.
+            Unable to load the licences. Run <span className="tabular-nums">npm run licences</span>, then reopen this panel.
           </p>
         ) : !data ? (
           <p className="px-1 py-1 text-[11.5px]">
@@ -242,7 +242,7 @@ function LicenceGroup({
               >
                 <span className="min-w-0 flex-1 truncate text-white/75">{item.name}</span>
                 {item.kind !== "npm" ? <span className="shrink-0 text-[11px] text-white/30">{KIND_WORDS[item.kind]}</span> : null}
-                {item.version ? <span className="max-w-[90px] shrink-0 truncate font-mono text-[11px] text-white/40 tabular-nums">{item.version}</span> : null}
+                {item.version ? <span className="max-w-[90px] shrink-0 truncate text-[11px] text-white/40 tabular-nums">{item.version}</span> : null}
               </button>
             </li>
           ))}
@@ -317,7 +317,7 @@ function LicenceText({ item, texts, onBack }: { item: Item; texts: Record<string
 
 function TextBlock({ text }: { text: string }) {
   return (
-    <pre className="mt-1 shrink-0 whitespace-pre-wrap break-words rounded-[10px] bg-white/[0.04] px-3 py-2.5 font-mono text-[10.5px] text-white/65 leading-relaxed">
+    <pre className="mt-1 shrink-0 whitespace-pre-wrap break-words rounded-[10px] bg-white/[0.04] px-3 py-2.5 tabular-nums text-[10.5px] text-white/65 leading-relaxed">
       {text}
     </pre>
   );

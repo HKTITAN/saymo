@@ -214,10 +214,10 @@ function LibraryPicker({ attachments, onBack, onClose }: { attachments: Attachme
                         {e.brand ? e.brand.name : KIND_NAME[e.kind]}
                         {e.kind === "video" ? (
                           <>
-                            {e.duration ? <> · <span className="font-mono tabular-nums">{formatTime(e.duration)}</span></> : null} · comes in as {e.attach.length} stills
+                            {e.duration ? <> · <span className="tabular-nums">{formatTime(e.duration)}</span></> : null} · comes in as {e.attach.length} stills
                           </>
                         ) : e.kind === "audio" && e.duration ? (
-                          <> · <span className="font-mono tabular-nums">{formatTime(e.duration)}</span></>
+                          <> · <span className="tabular-nums">{formatTime(e.duration)}</span></>
                         ) : e.kind === "link" && e.site ? (
                           ` · ${e.site}`
                         ) : null}

@@ -153,7 +153,7 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
             </>
           ) : m.percent !== null ? (
             <>
-              <span className="ms-auto font-mono text-white/60 tabular-nums">{m.percent}%</span>
+              <span className="ms-auto text-white/60 tabular-nums">{m.percent}%</span>
               <button type="button" className={SMALL_BUTTON} onClick={() => void act("stop", { model: which })}>
                 Stop
               </button>
@@ -217,7 +217,7 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
             {status?.leftovers.map((l) => (
               <div key={l.id} className={cn(ROW, "gap-2 ps-3 pe-1")}>
                 <span className={cn(LABEL, "truncate")}>
-                  Recording <span className="font-mono text-white/45 tabular-nums">{clockText(l.seconds)}</span>
+                  Recording <span className="text-white/45 tabular-nums">{clockText(l.seconds)}</span>
                 </span>
                 <button
                   type="button"
@@ -317,7 +317,7 @@ export function RecordingBar({ d, view }: { d: Dictation; view: DictationView })
       ) : (
         <Meter d={d} />
       )}
-      <span className="font-mono text-[11.5px] text-white/60 tabular-nums" aria-live="off">
+      <span className="text-[11.5px] text-white/60 tabular-nums" aria-live="off">
         {clockText(view.seconds)}
       </span>
       <span className="sr-only" aria-live="polite">

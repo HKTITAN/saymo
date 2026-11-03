@@ -221,7 +221,7 @@ function ExportChip({ summary }: { summary: PostSummary }) {
     case "running":
       return (
         <Badge variant="info">
-          Making video <span className="font-mono tabular-nums">{status.percent}%</span>
+          Making video <span className="tabular-nums">{status.percent}%</span>
         </Badge>
       );
     case "queued":

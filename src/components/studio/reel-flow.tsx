@@ -346,7 +346,7 @@ function ScriptStep({
           </p>
         ) : (
           <p className="text-[12px] text-white/45">
-            <span className="font-mono">{beats.length}</span> {beats.length === 1 ? "beat" : "beats"}, about <span className="font-mono">{Math.max(1, Math.round(total))}</span> s read
+            <span className="tabular-nums">{beats.length}</span> {beats.length === 1 ? "beat" : "beats"}, about <span className="tabular-nums">{Math.max(1, Math.round(total))}</span> s read
             aloud. Click any words to change them.
           </p>
         )}
@@ -416,7 +416,7 @@ const SAMPLE_BEAT: Beat = { line: "Most procurement teams still chase approvals 
 
 const Seconds = ({ n }: { n: number }) => (
   <>
-    <span className="font-mono">{n}</span> s
+    <span className="tabular-nums">{n}</span> s
   </>
 );
 
@@ -525,10 +525,10 @@ function BeatView({
         title={locked ? undefined : "Drag to move"}
         className={cn("flex w-8 shrink-0 flex-col items-center gap-0.5 pt-0.5 select-none", !locked && "cursor-grab active:cursor-grabbing")}
       >
-        <span className="font-mono text-[12px] text-white/55 tabular-nums">{n}</span>
+        <span className="text-[12px] text-white/55 tabular-nums">{n}</span>
         {beat.line ? (
           <span className="text-[10.5px] text-white/30">
-            <span className="font-mono">{Math.max(1, Math.round(secs))}</span> s
+            <span className="tabular-nums">{Math.max(1, Math.round(secs))}</span> s
           </span>
         ) : null}
       </span>
@@ -847,7 +847,7 @@ function Making({ progress, problem, onRetry, onBack }: { progress: Progress | n
             <span key={progress?.label} className="studio-shimmer animate-in fade-in duration-200">
               {progress?.label ?? "Making the film"}
             </span>
-            {share != null ? <span className="font-mono text-white/45 tabular-nums">{Math.round(share * 100)}%</span> : null}
+            {share != null ? <span className="text-white/45 tabular-nums">{Math.round(share * 100)}%</span> : null}
           </p>
           <p className="text-[12px] text-white/40 leading-relaxed">
             When it&apos;s in, the film opens and Claude lays out the reel. Stay on this page until then.

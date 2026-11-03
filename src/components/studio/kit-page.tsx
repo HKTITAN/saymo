@@ -860,7 +860,7 @@ function AddToKit({ uploading, onUpload }: { uploading: string | null; onUpload:
 function RemoveRow({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
     <div className={cn(ROW, "ps-3 pe-1")}>
-      <span className={cn(LABEL, "min-w-0 truncate font-mono text-[11px] text-white/40")}>{label}</span>
+      <span className={cn(LABEL, "min-w-0 truncate tabular-nums text-[11px] text-white/40")}>{label}</span>
       <Hint label="Remove">
         <button type="button" onClick={onRemove} className={cn(ICON_BUTTON, "ms-auto")} aria-label={`Remove ${label}`}>
           <DeleteDustbin01Icon aria-hidden="true" />
@@ -873,7 +873,7 @@ function RemoveRow({ label, onRemove }: { label: string; onRemove: () => void })
 function RuleRow({ n, value, onChange, onRemove }: { n: number; value: string; onChange: (v: string) => void; onRemove: () => void }) {
   return (
     <div className={cn(ROW, "h-auto min-h-9 items-start gap-2 py-1.5 ps-3 pe-1")}>
-      <span className="pt-0.5 font-mono text-[11px] text-white/35 tabular-nums">{n}</span>
+      <span className="pt-0.5 text-[11px] text-white/35 tabular-nums">{n}</span>
       <textarea
         aria-label={`Rule ${n}`}
         value={value}

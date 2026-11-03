@@ -339,7 +339,7 @@ export function SlidesFlow({
             Turn slides into a video
           </h1>
           <p className="text-[12px] text-white/45">
-            <span className="font-mono">{kept.length}</span> {kept.length === 1 ? "slide" : "slides"} from {sources.join(", ")}
+            <span className="tabular-nums">{kept.length}</span> {kept.length === 1 ? "slide" : "slides"} from {sources.join(", ")}
           </p>
         </header>
 
@@ -442,7 +442,7 @@ export function SlidesFlow({
           <p className="text-[12px] text-white/45">
             {total === null ? "Each slide stays on screen for its voice." : (
               <>
-                About <span className="font-mono">{total}</span> s in all.
+                About <span className="tabular-nums">{total}</span> s in all.
               </>
             )}
           </p>
@@ -498,7 +498,7 @@ function Preview({ importId, slide, n }: { importId: string; slide: Slide | null
         ) : (
           <p className="max-w-[70%] text-balance text-center text-[14px] text-white/60">{slide.title || "This slide has no picture yet"}</p>
         )}
-        <span className="absolute bottom-2 left-2 rounded-[6px] bg-black/55 px-1.5 py-0.5 font-mono text-[11px] text-white/80">{n}</span>
+        <span className="absolute bottom-2 left-2 rounded-[6px] bg-black/55 px-1.5 py-0.5 tabular-nums text-[11px] text-white/80">{n}</span>
       </div>
       <dl className="grid gap-x-4 gap-y-1 text-[12px] sm:grid-cols-2">
         <div className="min-w-0">
@@ -620,7 +620,7 @@ function Strip({
             ) : (
               <span className="flex size-full items-center justify-center p-2 text-center text-[10px] text-white/45 leading-tight">{s.title || "No picture"}</span>
             )}
-            <span className="absolute bottom-1 left-1 rounded-[4px] bg-black/60 px-1 font-mono text-[10px] text-white/80">{i + 1}</span>
+            <span className="absolute bottom-1 left-1 rounded-[4px] bg-black/60 px-1 tabular-nums text-[10px] text-white/80">{i + 1}</span>
             {s.notes ? <span className="absolute right-1 bottom-1 size-1.5 rounded-full bg-white/70" title="Has speaker notes" /> : null}
           </div>
           <Hint label="Drop this slide" keys={["⌫"]}>
@@ -674,7 +674,7 @@ function SizeRow({ value, onChange }: { value: (typeof SIZES)[number]; onChange:
               aria-label={s.label}
               onClick={() => onChange(s)}
               className={cn(
-                "flex h-7 cursor-pointer items-center gap-1.5 rounded-[7px] px-2 font-mono text-[11px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                "flex h-7 cursor-pointer items-center gap-1.5 rounded-[7px] px-2 tabular-nums text-[11px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 value.label === s.label ? "bg-white/[0.13] text-white" : "text-white/45 hover:text-white/75",
               )}
             >

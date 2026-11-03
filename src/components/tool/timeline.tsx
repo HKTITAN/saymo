@@ -161,7 +161,7 @@ export function Timeline({
         </TooltipPopup>
       </Tooltip>
 
-      <p className="shrink-0 font-mono text-[12px] text-white/85 tabular-nums">
+      <p className="shrink-0 text-[12px] text-white/85 tabular-nums">
         {clock(time)}
         <span className="text-white/35"> / {clock(duration)}</span>
       </p>

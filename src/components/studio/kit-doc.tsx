@@ -174,7 +174,7 @@ export function KitDoc({
                   </span>
                   <span className="flex flex-col gap-0.5 p-3">
                     <span className="font-medium text-[13px]">{role.label}</span>
-                    <span className="font-mono text-[11.5px] text-[#706b62] tabular-nums">
+                    <span className="text-[11.5px] text-[#706b62] tabular-nums">
                       {r[role.key]}
                     </span>
                     <span className="text-[11.5px] text-white/45 leading-snug">{role.note}</span>
@@ -202,7 +202,7 @@ export function KitDoc({
                             className="group relative h-14 flex-1 cursor-pointer outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[#F55A00]"
                             style={{ background: s.hex }}
                           >
-                            <span className="absolute inset-x-0 bottom-1 hidden text-center font-mono text-[9.5px] text-white mix-blend-difference group-hover:block group-focus-visible:block">
+                            <span className="absolute inset-x-0 bottom-1 hidden text-center tabular-nums text-[9.5px] text-white mix-blend-difference group-hover:block group-focus-visible:block">
                               {s.hex.replace("#", "")}
                             </span>
                           </button>
@@ -224,7 +224,7 @@ export function KitDoc({
                     <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px] text-white/45" style={{ fontFamily: "system-ui" }}>
                       <span className="font-medium">{f.family}</span>
                       <span>{f.role === "display" ? "Display" : f.role === "text" ? "Text" : "Mono"}</span>
-                      <span className="font-mono tabular-nums">weights {f.weights}</span>
+                      <span className="tabular-nums">weights {f.weights}</span>
                       {f.licence ? <span>{f.licence}</span> : null}
                     </figcaption>
                     <span className="text-[clamp(44px,7vw,72px)] leading-none" style={{ fontFamily: family(f), fontWeight: f.role === "display" ? 600 : 400 }}>
@@ -276,7 +276,7 @@ export function KitDoc({
             <DocSection id="texture" title="Line texture" onEdit={() => onOpenPanel("Line texture")}>
               <LineField kit={kit} />
               <p className="text-[14px] text-white/60 leading-relaxed">
-                <span className="font-mono text-[13px] tabular-nums">
+                <span className="text-[13px] tabular-nums">
                   {kit.texture.stroke} px lines, {kit.texture.gap} px gaps
                 </span>
                 {kit.texture.note ? `. ${kit.texture.note}` : null}
@@ -310,7 +310,7 @@ export function KitDoc({
                     aria-label="The guideline"
                     value={kit.notes}
                     onChange={(e) => change("Guideline", (k) => ({ ...k, notes: e.target.value }))}
-                    className="min-h-[360px] w-full resize-y rounded-[10px] bg-white/[0.05] p-3 font-mono text-[12px] text-white/90 leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-white/20 [scrollbar-width:none]"
+                    className="min-h-[360px] w-full resize-y rounded-[10px] bg-white/[0.05] p-3 tabular-nums text-[12px] text-white/90 leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-white/20 [scrollbar-width:none]"
                   />
                 </EditTray>
               ) : (
@@ -502,7 +502,7 @@ function RuleGroup({
         <EditTray onDone={onEdit} note="One plain sentence each. Rules that start with “Never” or “Don’t” show as Don’ts.">
           {rules.map((rule, i) => (
             <div key={`${i}-${rules.length}`} className="flex min-h-9 items-start gap-2 rounded-[10px] bg-white/[0.05] py-1.5 ps-3 pe-1">
-              <span className="pt-0.5 font-mono text-[11px] text-white/35 tabular-nums">{i + 1}</span>
+              <span className="pt-0.5 text-[11px] text-white/35 tabular-nums">{i + 1}</span>
               <textarea
                 aria-label={`${label} rule ${i + 1}`}
                 value={rule}
@@ -739,7 +739,7 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
           case "ol": {
             const List = b.t === "ul" ? "ul" : "ol";
             return (
-              <List key={key} className={cn("flex flex-col gap-1.5 ps-5 marker:text-white/35", b.t === "ul" ? "list-disc" : "list-decimal marker:font-mono marker:text-[13px]")}>
+              <List key={key} className={cn("flex flex-col gap-1.5 ps-5 marker:text-white/35", b.t === "ul" ? "list-disc" : "list-decimal marker:tabular-nums marker:text-[13px]")}>
                 {b.items.map((item, j) => (
                   <li key={j} className="ps-1">
                     <Inline text={item.text} onCopy={onCopy} />
@@ -765,7 +765,7 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
             );
           case "code":
             return (
-              <pre key={key} className="overflow-x-auto rounded-[12px] bg-black/40 p-4 font-mono text-[12.5px] text-white/85 leading-relaxed [scrollbar-width:none]">
+              <pre key={key} className="overflow-x-auto rounded-[12px] bg-black/40 p-4 tabular-nums text-[12.5px] text-white/85 leading-relaxed [scrollbar-width:none]">
                 {b.text}
               </pre>
             );
@@ -818,7 +818,7 @@ function Inline({ text, onCopy }: { text: string; onCopy: (hex: string) => void 
           const inner = part.slice(1, -1);
           if (/^#[0-9a-fA-F]{6}$/.test(inner)) return <Swatch key={i} hex={inner.toUpperCase()} onCopy={onCopy} />;
           return (
-            <code key={i} className="rounded-[5px] bg-white/[0.06] px-1.5 py-0.5 font-mono text-[0.85em] text-white/90">
+            <code key={i} className="rounded-[5px] bg-white/[0.06] px-1.5 py-0.5 tabular-nums text-[0.85em] text-white/90">
               {inner}
             </code>
           );
@@ -856,7 +856,7 @@ function Swatch({ hex, onCopy }: { hex: string; onCopy: (hex: string) => void })
       type="button"
       onClick={() => onCopy(hex)}
       title={`${hex}, click to copy`}
-      className="inline cursor-pointer whitespace-nowrap rounded-[4px] bg-white/[0.06] px-[0.3em] py-[0.12em] align-baseline font-mono text-[0.85em] text-white/90 outline-none transition-colors [box-decoration-break:clone] hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+      className="inline cursor-pointer whitespace-nowrap rounded-[4px] bg-white/[0.06] px-[0.3em] py-[0.12em] align-baseline tabular-nums text-[0.85em] text-white/90 outline-none transition-colors [box-decoration-break:clone] hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
     >
       <span className="me-[0.35em] inline-block size-[0.72em] rounded-[2px] align-[-0.04em] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
       {hex}

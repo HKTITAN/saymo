@@ -1236,7 +1236,7 @@ function FilmView({
             role="alert"
           >
             <p className="font-medium text-[13px] text-white/90">The film stopped playing</p>
-            <p className="line-clamp-4 font-mono text-[11.5px] text-white/50 leading-relaxed">{status.message}</p>
+            <p className="line-clamp-4 tabular-nums text-[11.5px] text-white/50 leading-relaxed">{status.message}</p>
             <div className="mt-1 flex gap-1.5">
               <button
                 type="button"

@@ -190,7 +190,7 @@ export function ColorRow({ label, value, onChange }: { label: string; value: str
                   }
                 }}
                 onBlur={() => setText(hex)}
-                className="h-full min-w-0 flex-1 bg-transparent text-right font-mono text-[12px] text-white/90 uppercase outline-none"
+                className="h-full min-w-0 flex-1 bg-transparent text-right tabular-nums text-[12px] text-white/90 uppercase outline-none"
               />
             </label>
             <div className="flex gap-1.5 px-0.5 pb-0.5">

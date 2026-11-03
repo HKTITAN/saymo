@@ -19,8 +19,9 @@ a visual designer; explain in plain words.
 
 ## The interface (the tool, the studio)
 
-- Type: the system font (`font-sans`), with `font-mono` for numbers. Never a
-  display face such as Bricolage or Clash Display in the interface.
+- Type: the system font (`font-sans`) for everything, numbers too (with
+  `tabular-nums` where they should line up). No mono font anywhere in the
+  interface, and never a display face such as Bricolage or Clash Display.
 - Controls follow Josh Puckett's DialKit (`src/components/tool/dial.tsx`):
   each control is one quiet rounded row, label on the left and value on the
   right; a slider is the row filled to its value; on and off is an

@@ -135,7 +135,7 @@ export function ExportControl({ doc, flush }: { doc: PostDoc; flush: () => Promi
     const item = (file: string, label: string, size: string) => (
       <MenuLinkItem href={downloadUrl(doc.id, file)} download={file}>
         <span className="flex-1">{label}</span>
-        <span className="font-mono text-[11px] text-white/40 tabular-nums">{size}</span>
+        <span className="text-[11px] text-white/40 tabular-nums">{size}</span>
       </MenuLinkItem>
     );
     return (

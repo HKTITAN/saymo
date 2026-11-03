@@ -83,7 +83,7 @@ export function ProgressValue({
   return (
     <ProgressPrimitive.Value
       className={cn(
-        "relative ms-auto shrink-0 pe-3 font-mono text-white/90 tabular-nums",
+        "relative ms-auto shrink-0 pe-3 text-white/90 tabular-nums",
         className,
       )}
       data-slot="progress-value"

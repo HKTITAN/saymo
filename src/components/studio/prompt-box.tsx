@@ -174,7 +174,7 @@ export function PromptBox({
               )}
               <span className={cn("max-w-40 truncate", !a.done && !a.error && "text-white/50")}>{a.name}</span>
               {a.kind === "audio" && (a.seconds ?? a.done?.seconds) ? (
-                <span className="shrink-0 font-mono text-[10.5px] text-white/45 tabular-nums">{clockText(a.seconds ?? a.done?.seconds ?? 0)}</span>
+                <span className="shrink-0 text-[10.5px] text-white/45 tabular-nums">{clockText(a.seconds ?? a.done?.seconds ?? 0)}</span>
               ) : null}
               {/* Keep it for later: saved to the reference library. */}
               <span className="hidden group-hover/chip:flex group-focus-within/chip:flex">

@@ -63,7 +63,7 @@ const isLink = (text: string) => /^https?:\/\/\S+$/i.test(text.trim());
 
 // What the line under a card says: "Clip · 0:12", "Image · 1920 × 1080".
 function detailOf(e: RefEntry): ReactNode {
-  const mono = (s: string) => <span className="font-mono tabular-nums">{s}</span>;
+  const mono = (s: string) => <span className="tabular-nums">{s}</span>;
   if (e.brand) return e.brand.name;
   if ((e.kind === "video" || e.kind === "audio") && e.duration) return mono(formatTime(e.duration));
   if ((e.kind === "image" || e.kind === "gif") && e.width && e.height) return mono(`${e.width} × ${e.height}`);
@@ -532,7 +532,7 @@ export function LibraryView({
               ) : (
                 <h2 className="truncate font-medium text-[13px] text-white/90">{folder ? folder.name : "Brand kits"}</h2>
               )}
-              <span className="ms-1 font-mono text-[11.5px] text-white/35 tabular-nums">{folder ? counts(folder.id) : brands.length}</span>
+              <span className="ms-1 text-[11.5px] text-white/35 tabular-nums">{folder ? counts(folder.id) : brands.length}</span>
               {folder ? (
                 <FolderMenu
                   folder={folder}
@@ -1064,7 +1064,7 @@ function RefCard({
         >
           <RefPreview entry={e} hovered={hovered} />
           {e.kind === "video" && e.duration ? (
-            <span className="pointer-events-none absolute right-2 bottom-2 rounded-[6px] bg-black/60 px-1.5 py-0.5 font-mono text-[10.5px] text-white/80 tabular-nums backdrop-blur-md">
+            <span className="pointer-events-none absolute right-2 bottom-2 rounded-[6px] bg-black/60 px-1.5 py-0.5 text-[10.5px] text-white/80 tabular-nums backdrop-blur-md">
               {formatTime(e.duration)}
             </span>
           ) : null}
@@ -1352,7 +1352,7 @@ function RefPanel({
           <span className="me-auto shrink-0 text-[11.5px] text-white/40">
             {KIND_NAME[e.kind]}
             {detail ? <> · {detail}</> : null}
-            {e.size ? <> · <span className="font-mono tabular-nums">{sizeText(e.size)}</span></> : null}
+            {e.size ? <> · <span className="tabular-nums">{sizeText(e.size)}</span></> : null}
           </span>
           <Hint label="Close" keys={["Esc"]}>
             <button type="button" onClick={done} aria-label="Close" className={ICON_BUTTON}>

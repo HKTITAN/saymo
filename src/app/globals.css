@@ -8,7 +8,8 @@
   /* The interface's type: the system's own, as DialKit uses it. The post sets
      its own, Bricolage Grotesque, as --font-post. */
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  /* The interface has no mono font: font-mono is the system font. */
+  --font-mono: var(--font-sans);
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --animate-caret-blink: 1s ease-out infinite caret-blink;
   --animate-toast-success-odd: toast-success-odd 0.32s cubic-bezier(0.5, 1, 0.89, 1);
@@ -241,8 +242,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* No mono font anywhere in the interface: code and keys read in the
+     system font too (numbers use tabular figures where they line up). */
   code, kbd, samp, pre {
-    font-family: var(--font-mono);
+    font-family: inherit;
   }
   html {
     @apply font-sans;

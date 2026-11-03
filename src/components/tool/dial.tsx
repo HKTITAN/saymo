@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 export const ROW = "flex h-9 w-full items-center rounded-[10px] bg-white/[0.05] text-[12px] transition-colors";
 export const LABEL = "shrink-0 text-white/65";
-export const VALUE = "font-mono text-white/90 tabular-nums";
+export const VALUE = "text-white/90 tabular-nums";
 // A row that opens something, such as a picker.
 export const ROW_BUTTON = `${ROW} cursor-pointer gap-3 px-3 text-left outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-white/[0.08]`;
 // A floating panel: a picker, or the toolbar over selected words.

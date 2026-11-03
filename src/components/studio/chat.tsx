@@ -351,7 +351,7 @@ function Message({ message, filmId, soundLength, video }: { message: ChatMessage
             {chipLabel(message.context.pick, message.context.t)}
           </span>
         ) : message.context ? (
-          <span className="rounded-[6px] bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] text-white/45 tabular-nums">
+          <span className="rounded-[6px] bg-white/[0.06] px-1.5 py-0.5 text-[11px] text-white/45 tabular-nums">
             At {formatTime(message.context.t)}
           </span>
         ) : null}
@@ -441,7 +441,7 @@ function PlayheadChip({ clock }: { clock: Clock }) {
   return (
     <span className="flex h-6 items-center gap-1.5 self-start rounded-[7px] bg-white/[0.06] px-2 text-[11.5px] text-white/50">
       At
-      <span className="font-mono text-white/75 tabular-nums">{formatTime(t)}</span>
+      <span className="text-white/75 tabular-nums">{formatTime(t)}</span>
     </span>
   );
 }
@@ -476,7 +476,7 @@ function Queue({
       </p>
       {queue.map((q, i) => (
         <div key={q.key} className="group/q flex items-start justify-end gap-1.5">
-          <span className="pt-2 font-mono text-[10.5px] text-white/30 tabular-nums">{i + 1}</span>
+          <span className="pt-2 text-[10.5px] text-white/30 tabular-nums">{i + 1}</span>
           <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] border border-white/[0.1] border-dashed px-3 py-2 text-[12.5px] text-white/55 leading-relaxed">
             {q.prompt}
             {q.context.attachments?.length ? (
@@ -511,7 +511,7 @@ function Rich({ text }: { text: string }) {
             {part.slice(2, -2)}
           </strong>
         ) : part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
-          <code key={i} className="rounded-[4px] bg-white/[0.06] px-1 font-mono text-[0.92em]">
+          <code key={i} className="rounded-[4px] bg-white/[0.06] px-1 tabular-nums text-[0.92em]">
             {part.slice(1, -1)}
           </code>
         ) : (
