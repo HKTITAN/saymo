@@ -8,6 +8,7 @@ import { ACCURACIES, type DictationStatus, EXTRA_MB, type ExtraModel, LANGUAGES,
 import { cn } from "@/lib/utils";
 import { clockText } from "./use-attachments";
 import { DiscardAsk, Hint, PILL_BUTTON } from "./panel";
+import { Kbd } from "@/components/ui/kbd";
 import { type Dictation, type DictationView, dictationApi, setDictationSettings, useDictationSettings } from "./use-dictation";
 
 // The mic in a prompt box (use-dictation.ts does the work): the button,
@@ -190,15 +191,15 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
               onChange={(script) => setDictationSettings({ script })}
             />
             {hindi && settings.script === "roman" && h && !h.installed && !(settings.accuracy === "best" && best?.installed) ? (
-              <DialNote>Fast spells Hindi out letter by letter, which can garble English words said in Hindi. Most accurate, or Fast with the Hinglish model, gets these right more often.</DialNote>
+              <DialNote>Mixed Hindi and English comes out better with Most accurate or the Hinglish model.</DialNote>
             ) : null}
             <Choice label="Accuracy" options={ACCURACIES} value={settings.accuracy} onChange={(accuracy) => setDictationSettings({ accuracy })} />
             {settings.accuracy === "best" && best && !best.installed ? (
-              <DialNote>{"Most accurate needs its model, below. Until it's on this Mac, Fast is used."}</DialNote>
+              <DialNote>Most accurate needs its model below. Until then, Fast is used.</DialNote>
             ) : null}
             {model("best", "Most accurate model")}
             {model("hinglish", "Hinglish model")}
-            <DialNote>Most accurate is best for English, Hindi and the two mixed, and takes about twice as long. The Hinglish model makes Fast better at Hindi in Roman letters.</DialNote>
+            <DialNote>Most accurate takes about twice as long as Fast.</DialNote>
             {status && !status.ready ? (
               <div className={cn(ROW, "gap-2 ps-3 pe-1")}>
                 <span className={LABEL}>Listening</span>
@@ -212,7 +213,7 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
               </div>
             ) : null}
             {status?.setup.error ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{status.setup.error}</p> : null}
-            {status?.leftovers.length ? <DialNote>{"Kept, not written down yet. Write one into this box, or discard it."}</DialNote> : null}
+            {status?.leftovers.length ? <DialNote>Kept, not written down yet.</DialNote> : null}
             {status?.leftovers.map((l) => (
               <div key={l.id} className={cn(ROW, "gap-2 ps-3 pe-1")}>
                 <span className={cn(LABEL, "truncate")}>
@@ -241,9 +242,26 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
               </div>
             ))}
             {problem ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{problem}</p> : null}
-            <DialNote>
-              Click the mic or press ⌘ ⇧ D to talk, or hold ⌥ Space while you talk. Enter stops, Esc discards it. Your words go where the cursor is, and nothing is sent until you send it.
-            </DialNote>
+            {/* The keys, as key caps: talk, stop, discard. */}
+            <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1.5 px-3 pt-1 pb-2 text-[11.5px] text-white/45">
+              <dt>Talk</dt>
+              <dd className="flex flex-wrap items-center gap-1">
+                <Kbd>⌘</Kbd>
+                <Kbd>⇧</Kbd>
+                <Kbd>D</Kbd>
+                <span className="mx-1">or hold</span>
+                <Kbd>⌥</Kbd>
+                <Kbd>Space</Kbd>
+              </dd>
+              <dt>Stop</dt>
+              <dd className="flex items-center gap-1">
+                <Kbd>Enter</Kbd>
+              </dd>
+              <dt>Discard</dt>
+              <dd className="flex items-center gap-1">
+                <Kbd>Esc</Kbd>
+              </dd>
+            </dl>
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>
