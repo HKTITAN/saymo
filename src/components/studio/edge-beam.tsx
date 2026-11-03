@@ -5,7 +5,7 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 
 // A light that rides a box's edge (border-beam, MIT, libraries.dev/beam).
 // Two moods:
-//   "work"  a calm grey light while Claude makes the film
+//   "work"  a pink light while Claude makes the film
 //   "drop"  a warm Aerchain-orange light while something is held over a
 //           place that takes it
 // It sits on top of its box as an overlay (absolute, inset 0, no pointer
@@ -18,49 +18,52 @@ type Tone = "work" | "drop";
 
 const ORANGE = "245, 90, 0";
 
-// The library's own layers, recoloured to Aerchain orange for "drop":
-// the stroke (::after), the soft inner glow (::before) and the bloom.
-const DROP_CSS = `
+// The library's own layers, recoloured: the stroke (::after), the soft
+// inner glow (::before) and the bloom. "work" is pink, "drop" Aerchain
+// orange.
+const tint = (rgb: string, hot: string) => `
 [data-beam="{id}"][data-active]::after,
 [data-beam="{id}"][data-fading]::after {
   background: conic-gradient(
     from var(--beam-angle-{id}),
     transparent 0%, transparent 52%,
-    rgba(${ORANGE}, 0.18) 56%,
-    rgba(${ORANGE}, 0.6) 61%,
-    rgba(255, 150, 90, 1) 66%,
-    rgba(${ORANGE}, 0.6) 71%,
-    rgba(${ORANGE}, 0.18) 76%,
+    rgba(${rgb}, 0.18) 56%,
+    rgba(${rgb}, 0.6) 61%,
+    rgba(${hot}, 1) 66%,
+    rgba(${rgb}, 0.6) 71%,
+    rgba(${rgb}, 0.18) 76%,
     transparent 80%, transparent 100%
   );
 }
 [data-beam="{id}"][data-active]::before,
 [data-beam="{id}"][data-fading]::before {
-  background: rgba(${ORANGE}, 0.06);
-  box-shadow: inset 0 0 6px 1px rgba(${ORANGE}, 0.45);
+  background: rgba(${rgb}, 0.06);
+  box-shadow: inset 0 0 6px 1px rgba(${rgb}, 0.45);
 }
 [data-beam="{id}"] [data-beam-bloom] {
   background: conic-gradient(
     from var(--beam-angle-{id}),
     transparent 0%, transparent 60%,
-    rgba(${ORANGE}, 0.25) 66%,
-    rgba(255, 140, 70, 0.9) 70%,
-    rgba(${ORANGE}, 0.25) 74%,
+    rgba(${rgb}, 0.25) 66%,
+    rgba(${hot}, 0.9) 70%,
+    rgba(${rgb}, 0.25) 74%,
     transparent 80%
   );
 }
 `;
+const PINK = "255, 105, 180";
+const CSS: Record<Tone, string> = { work: tint(PINK, "255, 170, 214"), drop: tint(ORANGE, "255, 150, 90") };
 
 // The library's md preset keeps its stroke faint (it leans on a coloured
 // inner glow); on these dark greys that reads as nothing, so the stroke
 // and bloom are lifted through the library's own opacity variables.
 const LAYERS: Record<Tone, Record<string, number>> = {
-  work: { "--beam-stroke-opacity": 4, "--beam-inner-opacity": 1, "--beam-bloom-opacity": 1.6 },
+  work: { "--beam-stroke-opacity": 5, "--beam-inner-opacity": 1.2, "--beam-bloom-opacity": 2.2 },
   drop: { "--beam-stroke-opacity": 5, "--beam-inner-opacity": 1, "--beam-bloom-opacity": 2 },
 };
 
 const STILL: Record<Tone, string> = {
-  work: "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.22)]",
+  work: "shadow-[inset_0_0_0_1px_rgba(255,105,180,0.55)]",
   drop: "shadow-[inset_0_0_0_1px_rgba(245,90,0,0.6)]",
 };
 
@@ -91,12 +94,12 @@ export function EdgeBeam({ on, tone = "work" }: { on: boolean; tone?: Tone }) {
         onDeactivate={() => setMounted(false)}
         size="md"
         theme="dark"
-        colorVariant={tone === "work" ? "mono" : "sunset"}
+        colorVariant="sunset"
         staticColors
-        strength={tone === "work" ? 0.7 : 0.85}
+        strength={0.85}
         duration={tone === "work" ? 3.6 : 2.6}
         borderRadius={radius}
-        css={tone === "drop" ? DROP_CSS : undefined}
+        css={CSS[tone]}
         style={{ position: "absolute", inset: 0, ...LAYERS[tone] }}
       >
         <span />
