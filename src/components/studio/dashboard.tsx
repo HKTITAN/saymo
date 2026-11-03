@@ -54,6 +54,15 @@ type Overlay = null | "video" | "motion" | "kit" | "personal" | "script" | "reel
 type Sort = "edited" | "name";
 type Tab = "films" | "library";
 const tabFromUrl = (): Tab => (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("library") ? "library" : "films");
+// Brand kits, Rules and Settings, kept in the address too (/studio?settings),
+// so a reload or a link lands on the same page.
+type Aside = null | "kits" | "rules" | "settings";
+const ASIDES = ["kits", "rules", "settings"] as const;
+const asideFromUrl = (): Aside => {
+  if (typeof window === "undefined") return null;
+  const q = new URLSearchParams(window.location.search);
+  return ASIDES.find((a) => q.has(a)) ?? null;
+};
 
 // What a dragged film carries, so only films can be dropped on folders.
 const FILM_DRAG = "application/x-studio-film";
@@ -168,7 +177,13 @@ export function Dashboard({
   const zip = useRef<HTMLInputElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const now = useSyncExternalStore(everyMinute, thisMinute, () => 0);
-  const [aside, setAside] = useState<null | "kits" | "rules" | "settings">(null);
+  const [aside, setAsideState] = useState<Aside>(asideFromUrl);
+  const setAside = useCallback((next: Aside) => {
+    setAsideState(next);
+    if (!next) return;
+    const url = `/studio?${next}`;
+    if (window.location.pathname + window.location.search !== url) window.history.replaceState(null, "", url);
+  }, []);
   // Moves and renames are undone here; there's no Claude turn to undo.
   const history = useHistory({ undoClaude: async () => "Nothing to undo", claudeBusy: () => false });
 
@@ -203,7 +218,10 @@ export function Dashboard({
     if (window.location.pathname + window.location.search !== url) window.history.replaceState(null, "", url);
   }, []);
   useEffect(() => {
-    const sync = () => setTabState(tabFromUrl());
+    const sync = () => {
+      setTabState(tabFromUrl());
+      setAsideState(asideFromUrl());
+    };
     window.addEventListener("studio:navigate", sync);
     window.addEventListener("popstate", sync);
     return () => {
