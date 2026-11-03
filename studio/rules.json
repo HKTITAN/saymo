@@ -3,7 +3,7 @@
     "id": "continuity",
     "title": "One continuous film",
     "body": "Every scene hands off to the next through a shared element: a shape, line, word, colour or object that is in the last moment of one scene and carries into the next, where it moves, grows, turns into something else, or the camera travels through it. Nothing appears out of nowhere and no scene simply cuts to something unrelated, so the whole film reads as one moving piece. Before you finish, list each scene change and the element it shares.",
-    "scope": "all",
+    "scope": "video",
     "on": true
   },
   {
@@ -24,6 +24,13 @@
     "id": "peak-end",
     "title": "Strong start, strong end",
     "body": "People remember a film by its best moment and its last one. The first two seconds hook (no slow fade from black) and the final scene lands and holds. Spend the most craft there.",
+    "scope": "all",
+    "on": true
+  },
+  {
+    "id": "pace",
+    "title": "Fast, but readable",
+    "body": "Keep it fast: something on screen changes every 0.5 to 1.5 seconds (a move, a cut, a new word), and no shot sits still for longer than about 2.5 seconds, the length of a typical shot in films today. Vary the rhythm rather than keeping one even speed: a quick run of changes, then one moment that holds. Fast never beats readable: every line of text stays up for about 0.4 seconds per word plus half a second (people read about 2.5 words a second, the subtitle standard), and never less than 1 second.",
     "scope": "all",
     "on": true
   },
