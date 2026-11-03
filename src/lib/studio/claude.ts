@@ -330,6 +330,9 @@ async function turnFor(id: string, request: ChatRequest, turn: Running, emit: (e
   else if (turn.stopped) emit({ kind: "error", message: `Stopped. Anything ${who} had already changed is kept; Undo puts it back.` });
   else if (problem) emit({ kind: "error", message: problem });
   emit({ kind: "done", film: after });
+  // A film still called by a quick name gets a proper one (naming.ts), in
+  // the background; the home page shows it next time it looks.
+  if (!turn.stopped && outcome.changedAny) void import("./naming").then((m) => m.autoName(id)).catch(() => {});
 }
 
 // film.json after a turn: its Claude session and when it last changed.

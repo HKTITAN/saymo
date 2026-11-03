@@ -62,6 +62,7 @@ export type Film = {
   brand?: string; // brand kit id (brand.ts); missing = "aerchain"
   folder?: string; // the folder (project) it's filed in; missing = none
   take?: { of: string; n: number }; // one of three versions Claude is trying for film `of` (takes.ts); hidden from the list
+  named?: boolean; // true once the person typed its title: the studio never renames it (naming.ts)
 };
 
 // A folder on the studio's home page, for grouping films by project.

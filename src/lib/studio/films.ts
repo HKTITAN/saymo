@@ -140,6 +140,8 @@ export async function editFilm(id: string, edit: FilmEdit): Promise<Film | null>
     // "last edited" time, so the list order doesn't jump.
     const edited = Object.keys(rest).length > 0 || params !== undefined;
     const next: Film = { ...film, ...rest, updatedAt: edited ? new Date().toISOString() : film.updatedAt };
+    // A title typed by the person is theirs: the studio stops naming it.
+    if (rest.title !== undefined && rest.title !== film.title) next.named = true;
     if (folder === null) delete next.folder;
     else if (folder !== undefined) next.folder = folder;
     if (params) {

@@ -1,6 +1,7 @@
 import { restoreCarryOns } from "@/lib/studio/carry-on";
 import { runAutoTurn } from "@/lib/studio/claude";
 import { allowed, createFilm, listFilms, refused } from "@/lib/studio/films";
+import { nameOldFilms } from "@/lib/studio/naming";
 import { startSound } from "@/lib/studio/sound-render";
 import { newFilm } from "@/lib/studio/validate";
 
@@ -9,6 +10,8 @@ export async function GET(request: Request) {
   if (!allowed(request)) return refused();
   // After a restart, films waiting to carry on by themselves pick up again.
   void restoreCarryOns(runAutoTurn);
+  // Films made before films named themselves get a name, once per server.
+  nameOldFilms();
   return Response.json(await listFilms());
 }
 
