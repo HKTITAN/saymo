@@ -2,12 +2,12 @@
 
 import { Popover } from "@base-ui/react/popover";
 import { useEffect, useState } from "react";
-import { DownloadDownIcon, EyeOffIcon, VideoCallIcon } from "@/components/icons";
+import { CheckTickCircleIcon, DownloadDownIcon, EyeOffIcon, LinkChainHorizontalIcon, VideoCallIcon } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
 import type { RenderQuality, RenderStatus } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { api, outUrl, StudioError } from "./api";
-import { ConnectionsButton, SavedTo } from "./connections";
+import { SavedTo } from "./connections";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON } from "./panel";
 
 // Top right: make the video, follow its progress, then download it. One
@@ -101,7 +101,7 @@ export function RenderControl({
           <EyeOffIcon aria-hidden="true" />
         </button>
       </Hint>
-      <ConnectionsButton />
+      <CopyVideoLink id={id} files={status.state === "done" ? status.files : []} />
       <span className="flex-1" aria-hidden="true" />
 
       {status.state === "done" && !working ? (
@@ -188,5 +188,39 @@ export function RenderControl({
         </Popover.Portal>
       </Popover.Root>
     </div>
+  );
+}
+
+// "Copy link to video": the best video from the latest render (4K, then
+// 1080p, then the draft, then any other size). Dimmed until there's one.
+const BEST = ["4k.mp4", "1080p.mp4", "draft.mp4"];
+function CopyVideoLink({ id, files }: { id: string | null; files: string[] }) {
+  const [copied, setCopied] = useState(false);
+  const video = BEST.find((f) => files.includes(f)) ?? files.find((f) => f.endsWith(".mp4"));
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(t);
+  }, [copied]);
+  const copy = async () => {
+    if (!id || !video) return;
+    await navigator.clipboard
+      .writeText(new URL(outUrl(id, video), window.location.origin).toString())
+      .then(() => setCopied(true))
+      .catch(() => {});
+  };
+  const label = copied ? "Copied" : video ? "Copy link to video" : "Render the film to get a link";
+  return (
+    <Hint label={label}>
+      <button
+        type="button"
+        onClick={() => void copy()}
+        aria-disabled={!video}
+        aria-label={label}
+        className={cn(ICON_BUTTON, "size-8", !video && "cursor-default opacity-40 hover:bg-transparent")}
+      >
+        {copied ? <CheckTickCircleIcon aria-hidden="true" /> : <LinkChainHorizontalIcon aria-hidden="true" />}
+      </button>
+    </Hint>
   );
 }
