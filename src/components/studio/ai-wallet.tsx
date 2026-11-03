@@ -17,14 +17,14 @@ import { PILL_BUTTON } from "./panel";
 // how it's paid, and "Change AI". Changing slides the card down into the
 // pocket and the new one up. Whether it's ready shows under it (SelectedAi).
 
-const W = 360; // the wallet
-const H = 244;
-const R = 22; // its corners
-const CARD_W = 316;
+const W = 340; // the wallet
+const H = 236;
+const R = 34; // its corners
+const CARD_W = 296;
 const CARD_H = Math.round(CARD_W / 1.586);
 const CARD_TOP = 18;
 const POCKET_TOP = 86; // the pocket's edge at the sides
-const POCKET_DIP = 106; // and in the middle
+const POCKET_DIP = 112; // and in the middle
 
 type Look = { name: string; via: string; mark: (c: string) => ReactNode; metal: FoilColors };
 // A foil: its deep corner, its middle, its light corner.
@@ -79,25 +79,18 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
         {/* the card, inside the wallet */}
         <div className="absolute overflow-hidden" style={{ left: 0, top: 0, width: W, height: H, borderRadius: R }}>
           <div
-            className="absolute rounded-[14px] transition-[top] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+            className="absolute rounded-[20px] transition-[top] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
             style={{ width: CARD_W, height: CARD_H, left: (W - CARD_W) / 2, top: down ? H : CARD_TOP }}
           >
-            <span className="absolute inset-0 overflow-hidden rounded-[14px]" style={metal(look.metal)}>
+            <span className="absolute inset-0 overflow-hidden rounded-[20px]" style={metal(look.metal)}>
               <Foil colors={look.metal} light={light} drift />
             </span>
             {/* the card's bezel: a hairline inset from its edge, and its pale rim */}
-            <span className="pointer-events-none absolute inset-[7px] rounded-[9px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" />
-            <span className="pointer-events-none absolute inset-0 rounded-[14px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" />
+            <span className="pointer-events-none absolute inset-[7px] rounded-[14px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" />
+            <span className="pointer-events-none absolute inset-0 rounded-[20px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" />
             <span className="absolute inset-x-0 top-[17px] flex items-center justify-center gap-2 text-white/95" style={ETCHED}>
               {look.mark("size-4")}
               <span className="font-bold text-[13px] uppercase tracking-[0.2em]">{look.name}</span>
-            </span>
-            {/* the round emblem, peeking above the pocket */}
-            <span
-              className="absolute left-1/2 flex size-[74px] -translate-x-1/2 items-center justify-center rounded-full text-white/90 shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.35),inset_0_0_0_7px_rgba(0,0,0,0.08),inset_0_0_0_8px_rgba(255,255,255,0.22)]"
-              style={{ top: POCKET_DIP - CARD_TOP - 36, ...ETCHED }}
-            >
-              {look.mark("size-8")}
             </span>
           </div>
         </div>
@@ -216,8 +209,8 @@ function Back() {
       <rect width={W} height={H} rx={R} fill={`url(#${id}-back)`} filter={`url(#${id}-drop)`} />
       <rect width={W} height={H} rx={R} fill="#000" filter={`url(#${id}-grain)`} />
       <rect x={0.5} y={0.5} width={W - 1} height={H - 1} rx={R - 0.5} fill="none" stroke="rgba(255,210,180,0.22)" />
-      <rect x={9} y={9} width={W - 18} height={H - 18} rx={R - 8} fill={`url(#${id}-recess)`} />
-      <rect x={9} y={9} width={W - 18} height={H - 18} rx={R - 8} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="2" />
+      <rect x={10} y={10} width={W - 20} height={H - 20} rx={R - 10} fill={`url(#${id}-recess)`} />
+      <rect x={10} y={10} width={W - 20} height={H - 20} rx={R - 10} fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="2" />
     </svg>
   );
 }
@@ -226,11 +219,11 @@ function Back() {
 // soft shade under it, tonal stitching, and the AI's mark pressed in.
 function Pocket({ mark }: { mark: (c: string) => ReactNode }) {
   const id = useId().replace(/:/g, "");
-  const a = W * 0.27, b = W * 0.38, c = W * 0.42;
+  const a = W * 0.22, b = W * 0.36, c = W * 0.38;
   const t = POCKET_TOP, d = POCKET_DIP;
-  const edge = `M0 ${t + 10} Q0 ${t} 10 ${t} L${a} ${t} C${b} ${t} ${c} ${d} ${W / 2} ${d} C${W - c} ${d} ${W - b} ${t} ${W - a} ${t} L${W - 10} ${t} Q${W} ${t} ${W} ${t + 10} L${W} ${H - R} Q${W} ${H} ${W - R} ${H} L${R} ${H} Q0 ${H} 0 ${H - R} Z`;
+  const edge = `M0 ${t + 18} Q0 ${t} 18 ${t} L${a} ${t} C${b} ${t} ${c} ${d} ${W / 2} ${d} C${W - c} ${d} ${W - b} ${t} ${W - a} ${t} L${W - 18} ${t} Q${W} ${t} ${W} ${t + 18} L${W} ${H - R} Q${W} ${H} ${W - R} ${H} L${R} ${H} Q0 ${H} 0 ${H - R} Z`;
   const i = 9;
-  const stitch = `M${i} ${H - R} L${i} ${t + i + 4} Q${i} ${t + i} ${i + 6} ${t + i} L${a - 2} ${t + i} C${b - 3} ${t + i} ${c - 3} ${d + i} ${W / 2} ${d + i} C${W - c + 3} ${d + i} ${W - b + 3} ${t + i} ${W - a + 2} ${t + i} L${W - i - 6} ${t + i} Q${W - i} ${t + i} ${W - i} ${t + i + 4} L${W - i} ${H - R}`;
+  const stitch = `M${i} ${H - R} L${i} ${t + i + 12} Q${i} ${t + i} ${i + 12} ${t + i} L${a - 2} ${t + i} C${b - 3} ${t + i} ${c - 3} ${d + i} ${W / 2} ${d + i} C${W - c + 3} ${d + i} ${W - b + 3} ${t + i} ${W - a + 2} ${t + i} L${W - i - 12} ${t + i} Q${W - i} ${t + i} ${W - i} ${t + i + 12} L${W - i} ${H - R}`;
   return (
     <div className="pointer-events-none absolute inset-0">
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 overflow-visible" aria-hidden="true">
@@ -242,8 +235,9 @@ function Pocket({ mark }: { mark: (c: string) => ReactNode }) {
         <g clipPath={`url(#${id}-clip)`}>
           <path d={edge} fill="#000" filter={`url(#${id}-grain)`} />
           {/* the lip: lit along the edge, shaded just under it */}
-          <path d={edge} fill="none" stroke="rgba(255,214,186,0.32)" strokeWidth="1.6" />
-          <path d={edge} fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="10" transform="translate(0 7)" />
+          <path d={edge} fill="none" stroke="rgba(255,214,186,0.36)" strokeWidth="2.2" />
+          <path d={edge} fill="none" stroke="rgba(255,220,196,0.07)" strokeWidth="18" transform="translate(0 6)" />
+          <path d={edge} fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="12" transform="translate(0 14)" />
           <rect x={0} y={H - 30} width={W} height={30} fill={`url(#${id}-lip)`} />
         </g>
         <Stitches path={stitch} thread="#9b6447" shine={0.22} />
@@ -252,7 +246,7 @@ function Pocket({ mark }: { mark: (c: string) => ReactNode }) {
         className="absolute left-1/2 -translate-x-1/2 text-[#4a2618]"
         style={{ top: (d + H) / 2 - 10, filter: "drop-shadow(0 1px 0 rgba(255,205,175,0.2)) drop-shadow(0 -1px 0 rgba(0,0,0,0.45))" }}
       >
-        {mark("size-7")}
+        {mark("size-8")}
       </span>
     </div>
   );
