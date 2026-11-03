@@ -4,9 +4,9 @@ import { Popover } from "@base-ui/react/popover";
 import { useEffect, useState } from "react";
 import { ChevronDownIcon } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
-import { type AiStatus, DEFAULT_PROVIDER, OFFERED_PROVIDERS, PROVIDERS, type ProviderId } from "@/lib/studio/ai-types";
+import { type AiStatus, choiceShort, DEFAULT_PROVIDER, OFFERED_PROVIDERS, PROVIDERS, type ProviderId } from "@/lib/studio/ai-types";
 import { cn } from "@/lib/utils";
-import { aiApi } from "./ai-api";
+import { aiApi, useAiChoice } from "./ai-api";
 import { stateWords } from "./ai-connections";
 import { Hint, PILL_BUTTON } from "./panel";
 
@@ -21,6 +21,9 @@ const POPUP =
 export function ModelPicker({ provider, onChange }: { provider: ProviderId; onChange: (provider: ProviderId) => void }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<AiStatus | null>(null);
+  // "Opus 5.5 · High" as chosen in Settings; Codex keeps its own name.
+  const choice = useAiChoice();
+  const short = provider === "codex" ? PROVIDERS.codex.short : provider === "api-key" ? choiceShort(choice).replace(/ · .*$/, " · Key") : choiceShort(choice);
 
   useEffect(() => {
     if (!open) return;
@@ -44,9 +47,9 @@ export function ModelPicker({ provider, onChange }: { provider: ProviderId; onCh
           {/* "Opus 5.5 · High": when the row is tight, the effort shortens
               first and the model's name stays whole. */}
           <span className="flex min-w-0">
-            <span className="shrink-0">{PROVIDERS[provider].short.split(" · ")[0]}</span>
-            {PROVIDERS[provider].short.includes(" · ") ? (
-              <span className="min-w-0 truncate whitespace-pre">{` · ${PROVIDERS[provider].short.split(" · ").slice(1).join(" · ")}`}</span>
+            <span className="shrink-0">{short.split(" · ")[0]}</span>
+            {short.includes(" · ") ? (
+              <span className="min-w-0 truncate whitespace-pre">{` · ${short.split(" · ").slice(1).join(" · ")}`}</span>
             ) : null}
           </span>
           <ChevronDownIcon aria-hidden="true" />

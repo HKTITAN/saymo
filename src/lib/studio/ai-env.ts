@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
-import { existsSync, readdirSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { type AiChoice, DEFAULT_CHOICE, isEffort, isModelId } from "./ai-types";
 import { homedir } from "node:os";
 import path from "node:path";
 
@@ -10,8 +11,31 @@ import path from "node:path";
 // Everyone's studio uses the same Claude by default: Opus 5.5 at high effort,
 // named exactly so an older alias can't pick an older model on someone's Mac.
 // STUDIO_MODEL and STUDIO_EFFORT in .env.local change it for one machine.
-export const MODEL = process.env.STUDIO_MODEL ?? "claude-opus-5-5";
-export const EFFORT = process.env.STUDIO_EFFORT ?? "high";
+// The choice made in Settings (.studio/ai-model.json) wins over both, and is
+// read again for every turn, so a change applies to the next prompt.
+export const MODEL = process.env.STUDIO_MODEL ?? DEFAULT_CHOICE.model;
+export const EFFORT = process.env.STUDIO_EFFORT ?? DEFAULT_CHOICE.effort;
+
+const choiceFile = () => path.join(process.cwd(), ".studio", "ai-model.json");
+
+export function aiChoice(): AiChoice & { chosen: boolean } {
+  try {
+    const saved = JSON.parse(readFileSync(choiceFile(), "utf8")) as Partial<AiChoice>;
+    if (isModelId(saved.model) && isEffort(saved.effort)) return { model: saved.model, effort: saved.effort, chosen: true };
+  } catch {
+    // Nothing chosen yet: the environment's, else the default.
+  }
+  return { model: MODEL, effort: EFFORT, chosen: false };
+}
+
+export function saveAiChoice(choice: AiChoice) {
+  const dir = path.dirname(choiceFile());
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const tmp = `${choiceFile()}.tmp`;
+  writeFileSync(tmp, `${JSON.stringify({ model: choice.model, effort: choice.effort }, null, 2)}\n`, { mode: 0o600 });
+  renameSync(tmp, choiceFile());
+  chmodSync(choiceFile(), 0o600);
+}
 
 // Claude Code's own install, not the `claude` shell function some people
 // have in zsh: spawn() never sees shell functions, so the real file is used.

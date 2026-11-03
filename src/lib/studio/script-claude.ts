@@ -2,7 +2,8 @@ import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { CLAUDE_BIN, EFFORT, explain, killGroup, MODEL } from "./claude";
+import { aiChoice } from "./ai-env";
+import { CLAUDE_BIN, explain, killGroup } from "./claude";
 import { claudeEnvFor, keyProblem } from "./providers";
 import { type Beat, cleanScript, type ScriptEvent, type ScriptRequest, tidy } from "./script";
 
@@ -64,8 +65,8 @@ export async function writeScript(request: ScriptRequest, emit: (event: ScriptEv
     "--output-format", "stream-json",
     "--verbose",
     "--include-partial-messages",
-    "--model", MODEL,
-    "--effort", EFFORT,
+    "--model", aiChoice().model,
+    "--effort", aiChoice().effort,
     "--tools", "",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
     "--setting-sources", "",

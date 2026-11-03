@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { CLAUDE_BIN, codexBin, EFFORT, killGroup, MODEL } from "./ai-env";
+import { aiChoice, CLAUDE_BIN, codexBin, killGroup } from "./ai-env";
 import { DEFAULT_PROVIDER, familyOf, isProviderId, type ProviderId } from "./ai-types";
 import { IS_PRODUCT } from "./edition";
 import { runCodex, readThread, writeThread } from "./codex";
@@ -496,8 +496,8 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     "--output-format", "stream-json",
     "--verbose",
     "--include-partial-messages",
-    "--model", MODEL,
-    "--effort", EFFORT,
+    "--model", aiChoice().model,
+    "--effort", aiChoice().effort,
     "--permission-mode", "dontAsk",
     "--setting-sources", "project,local",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',

@@ -188,7 +188,7 @@ export function RulesPanel({ onClose }: { onClose: () => void }) {
 
 // Options in a row with one highlight that slides to the chosen one.
 // Segments share one width, so the highlight moves by whole segments.
-function Slide<T extends string | boolean>({
+export function Slide<T extends string | boolean>({
   label,
   value,
   options,

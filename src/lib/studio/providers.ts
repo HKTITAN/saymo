@@ -1,7 +1,7 @@
 import { chmod, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { CLAUDE_BIN, childEnv, codexBin, EFFORT, MODEL, runQuick } from "./ai-env";
-import { type AiStatus, DEFAULT_PROVIDER, type ProviderId, type ProviderStatus } from "./ai-types";
+import { aiChoice, CLAUDE_BIN, childEnv, codexBin, runQuick } from "./ai-env";
+import { type AiStatus, choiceWords, DEFAULT_PROVIDER, type ProviderId, type ProviderStatus } from "./ai-types";
 import { ConnectError, readSecret, removeSecret, STUDIO_DIR, writeSecret } from "./connect-store";
 import { IS_PRODUCT } from "./edition";
 
@@ -93,10 +93,7 @@ export async function claudeEnvFor(provider: ProviderId = DEFAULT_PROVIDER): Pro
 
 // ─── Status ──────────────────────────────────────────────────────────────────
 
-const modelWords = () => {
-  const name = MODEL === "claude-opus-5-5" ? "Opus 5.5" : MODEL;
-  return `${name}, ${EFFORT} effort`;
-};
+const modelWords = () => choiceWords(aiChoice());
 
 const INSTALL_CLAUDE = { text: "Install Claude Code", command: "curl -fsSL https://claude.ai/install.sh | bash" };
 const LOGIN_CLAUDE = { text: "Sign in with your Claude plan", command: "claude auth login" };
@@ -198,6 +195,10 @@ async function apiKeyStatus(claudeInstalled: boolean): Promise<ProviderStatus> {
 }
 
 let cached: { at: number; status: AiStatus } | null = null;
+// A new model or effort from Settings shows straight away.
+export const forgetStatus = () => {
+  cached = null;
+};
 
 export async function aiStatus(fresh = false): Promise<AiStatus> {
   if (!fresh && cached && Date.now() - cached.at < 20_000) return cached.status;

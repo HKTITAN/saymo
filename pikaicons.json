@@ -96,6 +96,10 @@
       "name": "file-default",
       "variant": "stroke"
     },
+    "filter-horizontal": {
+      "name": "filter-horizontal",
+      "variant": "stroke"
+    },
     "folder-default": {
       "name": "folder-default",
       "variant": "stroke"
@@ -202,6 +206,10 @@
     },
     "upload-up": {
       "name": "upload-up",
+      "variant": "stroke"
+    },
+    "user-default": {
+      "name": "user-default",
       "variant": "stroke"
     },
     "video-call-default": {

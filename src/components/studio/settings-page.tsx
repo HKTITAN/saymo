@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { ChevronDownIcon, CloudIcon, ExternalLinkSquareIcon, FolderIcon } from "@/components/icons";
+import { ChevronDownIcon, CloudIcon, ExternalLinkSquareIcon, FilterHorizontalIcon, FolderIcon } from "@/components/icons";
 import { DialButton, DialNote, LABEL, ROW } from "@/components/tool/dial";
 import type { ConnectionsStatus, Destination, DestinationsStatus } from "@/lib/studio/connect-types";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { AiSection } from "./ai-connections";
 import { StudioError } from "./api";
 import { connectApi } from "./connect-api";
 import { DEFAULT_REPO, GithubSection, GoogleSection } from "./connections";
+import { ModelChoice } from "./model-choice";
 
 // Settings, on the home page: where finished films go, the GitHub library,
 // which AI makes the changes, and Google Drive for a Mac without Google's
@@ -122,6 +123,10 @@ export function SettingsPage() {
         <>
           <div className={CARD}>
             <GithubSection status={status} onChange={refresh} onNote={setNote} name={repo} setName={setRepo} />
+          </div>
+          <div className={CARD}>
+            <Heading icon={<FilterHorizontalIcon aria-hidden="true" />}>Model and effort</Heading>
+            <ModelChoice />
           </div>
           <div className={CARD}>
             <AiSection />

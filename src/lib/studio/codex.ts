@@ -2,7 +2,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { chmod, lstat, mkdir, readdir, readFile, readlink, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-import { childEnv, codexBin, EFFORT, killGroup } from "./ai-env";
+import { aiChoice, childEnv, codexBin, killGroup } from "./ai-env";
 import type { ChatEvent } from "./contract";
 import { STUDIO_DIR } from "./connect-store";
 import { filmDir, ROOT } from "./films";
@@ -95,7 +95,8 @@ export function codexConfig(id: string, instructions: string) {
     'cli_auth_credentials_store = "file"',
     'forced_login_method = "chatgpt"',
     'web_search = "disabled"',
-    `model_reasoning_effort = ${toml(EFFORT)}`,
+    // Codex's own scale tops out at high.
+    `model_reasoning_effort = ${toml(["low", "medium", "high"].includes(aiChoice().effort) ? aiChoice().effort : "high")}`,
     `developer_instructions = ${toml(instructions)}`,
     "",
     "[features]",

@@ -4,7 +4,8 @@ import path from "node:path";
 import { attachmentNote } from "./attachments";
 import type { BrandKit } from "./brand";
 import { checkKit, kitDir, readBrand, restoreBrand, snapshotBrand, withBrand, writeBrand } from "./brands";
-import { CLAUDE_BIN, EFFORT, explain, killGroup, MODEL, StreamReader } from "./claude";
+import { aiChoice } from "./ai-env";
+import { CLAUDE_BIN, explain, killGroup, StreamReader } from "./claude";
 import { claudeEnvFor, keyProblem } from "./providers";
 import type { Attachment, ChatEvent, ChatMessage, Film } from "./contract";
 import { figmaReady, pullFigma } from "./figma";
@@ -253,8 +254,8 @@ function brandArgs(id: string, session: string | undefined, sites: string[]) {
     "--output-format", "stream-json",
     "--verbose",
     "--include-partial-messages",
-    "--model", MODEL,
-    "--effort", EFFORT,
+    "--model", aiChoice().model,
+    "--effort", aiChoice().effort,
     "--permission-mode", "dontAsk",
     "--setting-sources", "project,local",
     "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
