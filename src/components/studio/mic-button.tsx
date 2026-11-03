@@ -37,7 +37,7 @@ export function MicButton({ d, view }: { d: Dictation; view: DictationView }) {
           aria-label={recording ? "Stop recording" : "Talk instead of typing"}
           className={cn(
             "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-white/55 outline-none transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4",
-            recording && "bg-[#F55A00] text-white hover:bg-[#ff6a14]",
+            recording && "bg-studio text-white hover:bg-studio-hover",
             blocked && "cursor-default opacity-40 hover:bg-transparent hover:text-white/55",
           )}
         >
@@ -309,7 +309,7 @@ function Meter({ d }: { d: Dictation }) {
 export function RecordingBar({ d, view }: { d: Dictation; view: DictationView }) {
   return (
     <div className="flex h-7 items-center gap-2 ps-1.5">
-      <span className="size-1.5 shrink-0 rounded-full bg-[#F55A00] motion-safe:animate-pulse" aria-hidden="true" />
+      <span className="size-1.5 shrink-0 rounded-full bg-studio motion-safe:animate-pulse" aria-hidden="true" />
       {view.phase === "starting" ? (
         <span className="text-[12px] text-white/50">Starting the mic</span>
       ) : view.plain ? (

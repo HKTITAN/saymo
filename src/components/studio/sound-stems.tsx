@@ -141,7 +141,7 @@ export function StemLane({
       {pick ? (
         <div
           ref={picked}
-          className="pointer-events-none absolute inset-y-0 rounded-[3px] bg-[#F55A00]/15 ring-1 ring-[#F55A00] ring-inset"
+          className="pointer-events-none absolute inset-y-0 rounded-[3px] bg-studio/15 ring-1 ring-studio ring-inset"
           style={{ left: share(pick.from), width: `calc(${share(pick.to)} - ${share(pick.from)})` }}
         />
       ) : null}
@@ -264,7 +264,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
       className={cn(
         CARD,
         "fixed z-50 flex animate-in flex-col gap-1.5 p-2 fade-in-0 zoom-in-95 duration-150 transition-[width,left] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-        over && "ring-1 ring-[#F55A00]",
+        over && "ring-1 ring-studio",
       )}
       style={{ left: box.left, bottom: box.bottom, width }}
     >

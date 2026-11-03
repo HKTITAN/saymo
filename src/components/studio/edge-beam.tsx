@@ -6,7 +6,7 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 // A light that rides a box's edge (border-beam, MIT, libraries.dev/beam).
 // Two moods:
 //   "work"  a pink light while Claude makes the film
-//   "drop"  a warm Aerchain-orange light while something is held over a
+//   "drop"  a pink light while something is held over a
 //           place that takes it
 // It sits on top of its box as an overlay (absolute, inset 0, no pointer
 // events), so the box never changes size or moves when it turns on. The
@@ -16,11 +16,9 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 
 type Tone = "work" | "drop";
 
-const ORANGE = "245, 90, 0";
 
 // The library's own layers, recoloured: the stroke (::after), the soft
-// inner glow (::before) and the bloom. "work" is pink, "drop" Aerchain
-// orange.
+// inner glow (::before) and the bloom. both pink, the studio's accent.
 const tint = (rgb: string, hot: string) => `
 [data-beam="{id}"][data-active]::after,
 [data-beam="{id}"][data-fading]::after {
@@ -52,7 +50,9 @@ const tint = (rgb: string, hot: string) => `
 }
 `;
 const PINK = "255, 105, 180";
-const CSS: Record<Tone, string> = { work: tint(PINK, "255, 170, 214"), drop: tint(ORANGE, "255, 150, 90") };
+// Working: the library's own pink "candy" light, drifting a little in hue.
+// Drop: a steady pink, the studio's accent.
+const CSS: Record<Tone, string | undefined> = { work: undefined, drop: tint(PINK, "255, 170, 214") };
 
 // The library's md preset keeps its stroke faint (it leans on a coloured
 // inner glow); on these dark greys that reads as nothing, so the stroke
@@ -64,7 +64,7 @@ const LAYERS: Record<Tone, Record<string, number>> = {
 
 const STILL: Record<Tone, string> = {
   work: "shadow-[inset_0_0_0_1px_rgba(255,105,180,0.55)]",
-  drop: "shadow-[inset_0_0_0_1px_rgba(245,90,0,0.6)]",
+  drop: "shadow-[inset_0_0_0_1px_rgba(255,105,180,0.7)]",
 };
 
 export function EdgeBeam({ on, tone = "work" }: { on: boolean; tone?: Tone }) {
@@ -94,8 +94,10 @@ export function EdgeBeam({ on, tone = "work" }: { on: boolean; tone?: Tone }) {
         onDeactivate={() => setMounted(false)}
         size="md"
         theme="dark"
-        colorVariant="sunset"
-        staticColors
+        colorVariant="candy"
+        staticColors={tone === "drop"}
+        hueRange={24}
+        glowSize={tone === "work" ? 1.3 : 1}
         strength={0.85}
         duration={tone === "work" ? 3.6 : 2.6}
         borderRadius={radius}

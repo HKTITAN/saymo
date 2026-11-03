@@ -156,7 +156,7 @@ export function KitDoc({
                     onCopy(r[role.key]);
                     setCopied(role.key);
                   }}
-                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-studio"
                   aria-label={`${role.label} ${r[role.key]}, copy`}
                 >
                   <span className="h-20 shadow-[inset_0_-1px_0_rgba(255,255,255,0.05)]" style={{ background: r[role.key] }} />
@@ -199,7 +199,7 @@ export function KitDoc({
                             onClick={() => onCopy(s.hex)}
                             title={`${s.name} ${s.hex}, click to copy`}
                             aria-label={`${s.name} ${s.hex}, copy`}
-                            className="group relative h-14 flex-1 cursor-pointer outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+                            className="group relative h-14 flex-1 cursor-pointer outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-studio"
                             style={{ background: s.hex }}
                           >
                             <span className="absolute inset-x-0 bottom-1 hidden text-center tabular-nums text-[9.5px] text-white mix-blend-difference group-hover:block group-focus-visible:block">
@@ -381,7 +381,7 @@ function DocSection({
             onClick={onEdit}
             aria-expanded={editing}
             data-edit-toggle=""
-            className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5"
+            className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-[12.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-studio [&_svg]:size-3.5"
           >
             <PencilEditIcon aria-hidden="true" />
             {editing ? "Done" : "Edit"}
@@ -454,7 +454,7 @@ function Arrival({ text, onDismiss, onCopy }: { text: string; onDismiss: () => v
           <p className="text-[14px] text-white/60 leading-relaxed"><Inline text={guessed} onCopy={onCopy} /></p>
         </div>
       ) : null}
-      <button type="button" onClick={onDismiss} aria-label="Dismiss what Claude did" className="absolute top-3 right-3 inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-white/45 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3.5">
+      <button type="button" onClick={onDismiss} aria-label="Dismiss what Claude did" className="absolute top-3 right-3 inline-flex size-7 cursor-pointer items-center justify-center rounded-full text-white/45 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-studio [&_svg]:size-3.5">
         <MultipleCrossCancelIcon aria-hidden="true" />
       </button>
     </aside>
@@ -492,7 +492,7 @@ function RuleGroup({
           onClick={onEdit}
           aria-expanded={editing}
           data-edit-toggle=""
-          className="flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-[12px] text-white/60 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-[#F55A00] [&_svg]:size-3"
+          className="flex h-7 shrink-0 cursor-pointer items-center gap-1.5 rounded-full px-2.5 text-[12px] text-white/60 outline-none hover:bg-white/[0.06] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-studio [&_svg]:size-3"
         >
           <PencilEditIcon aria-hidden="true" />
           {editing ? "Done" : "Edit"}
@@ -538,7 +538,7 @@ function RuleGroup({
             <ul className="flex flex-col divide-y divide-white/[0.07] border-white/[0.07] border-y">
               {keys.map((rule) => (
                 <li key={rule} className="flex gap-3.5 py-3.5 font-medium text-[15.5px] text-white/90 leading-snug">
-                  <span className="mt-[7px] size-1.5 shrink-0 bg-[#F55A00]" aria-hidden="true" />
+                  <span className="mt-[7px] size-1.5 shrink-0 bg-studio" aria-hidden="true" />
                   <span>
                     <Inline text={rule} onCopy={onCopy} />
                   </span>
@@ -759,7 +759,7 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
           }
           case "quote":
             return (
-              <blockquote key={key} className="rounded-[12px] border-[#F55A00] border-l-[3px] bg-[#F55A00]/[0.08] px-4 py-3 font-medium text-white/90">
+              <blockquote key={key} className="rounded-[12px] border-studio border-l-[3px] bg-studio/[0.08] px-4 py-3 font-medium text-white/90">
                 <Inline text={b.text} onCopy={onCopy} />
               </blockquote>
             );
@@ -856,7 +856,7 @@ function Swatch({ hex, onCopy }: { hex: string; onCopy: (hex: string) => void })
       type="button"
       onClick={() => onCopy(hex)}
       title={`${hex}, click to copy`}
-      className="inline cursor-pointer whitespace-nowrap rounded-[4px] bg-white/[0.06] px-[0.3em] py-[0.12em] align-baseline tabular-nums text-[0.85em] text-white/90 outline-none transition-colors [box-decoration-break:clone] hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-[#F55A00]"
+      className="inline cursor-pointer whitespace-nowrap rounded-[4px] bg-white/[0.06] px-[0.3em] py-[0.12em] align-baseline tabular-nums text-[0.85em] text-white/90 outline-none transition-colors [box-decoration-break:clone] hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-studio"
     >
       <span className="me-[0.35em] inline-block size-[0.72em] rounded-[2px] align-[-0.04em] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
       {hex}

@@ -878,7 +878,7 @@ export function Multitrack({
 
             {/* Snap guide and playhead */}
             {guide !== null ? (
-              <div className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-[#F55A00]" style={{ left: guide * scale }} />
+              <div className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-studio" style={{ left: guide * scale }} />
             ) : null}
             <div
               className="pointer-events-none absolute top-0 bottom-0 z-20 w-0.5 -translate-x-1/2 bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.3)]"

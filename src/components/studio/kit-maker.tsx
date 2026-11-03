@@ -506,7 +506,7 @@ function Building({
                 <span
                   className={cn(
                     "flex size-4 shrink-0 items-center justify-center rounded-full transition-[background-color,box-shadow] duration-300 [&_svg]:size-4",
-                    isDone ? "text-[#F55A00]" : isNow ? "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.7)]" : "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.15)]",
+                    isDone ? "text-studio" : isNow ? "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.7)]" : "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.15)]",
                   )}
                 >
                   {isDone ? <CheckTickCircleIcon aria-hidden="true" className="animate-in zoom-in-50 duration-300" /> : isNow ? <span className="size-1.5 animate-pulse rounded-full bg-white" /> : null}

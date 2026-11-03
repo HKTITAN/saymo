@@ -1253,10 +1253,10 @@ function FilmView({
       <div className="pointer-events-none absolute inset-0">
         {pointing ? (
           <div
-            className="absolute rounded-[4px] ring-2 ring-[#F55A00] ring-offset-0"
+            className="absolute rounded-[4px] ring-2 ring-studio ring-offset-0"
             style={{ left: fit.x, top: fit.y, width: fit.width, height: fit.height }}
           >
-            <span className="absolute -top-8 left-1/2 flex h-6 -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-[7px] bg-[#F55A00] px-2 font-medium text-[11.5px] text-white">
+            <span className="absolute -top-8 left-1/2 flex h-6 -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-[7px] bg-studio px-2 font-medium text-[11.5px] text-white">
               Click the part you want to change <Kbd className="bg-white/20 text-white">Esc</Kbd>
             </span>
           </div>

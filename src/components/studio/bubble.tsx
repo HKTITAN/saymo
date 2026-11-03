@@ -153,7 +153,7 @@ export function PickOutline({ fit, pinned }: { fit: Fit; pinned: Pinned }) {
     return (
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute z-20 rounded-[3px] outline-[1.5px] outline-[#F55A00] outline-solid outline-offset-2 transition-[left,top,width,height] duration-200"
+        className="pointer-events-none absolute z-20 rounded-[3px] outline-[1.5px] outline-studio outline-solid outline-offset-2 transition-[left,top,width,height] duration-200"
         style={{
           left: fit.x + pick.rect.x * fit.scale,
           top: fit.y + pick.rect.y * fit.scale,
@@ -166,7 +166,7 @@ export function PickOutline({ fit, pinned }: { fit: Fit; pinned: Pinned }) {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute z-20 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F55A00] ring-4 ring-[#F55A00]/25"
+      className="pointer-events-none absolute z-20 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-studio ring-4 ring-studio/25"
       style={{ left: fit.x + pick.x * fit.scale, top: fit.y + pick.y * fit.scale }}
     />
   );

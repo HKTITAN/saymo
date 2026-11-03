@@ -299,7 +299,7 @@ export function ChatPanel({
                 className={cn(
                   PILL_BUTTON,
                   "h-7 px-2.5",
-                  pointing ? "bg-[#F55A00] text-white hover:bg-[#ff6a14]" : "text-white/60 hover:bg-white/[0.08] hover:text-white",
+                  pointing ? "bg-studio text-white hover:bg-studio-hover" : "text-white/60 hover:bg-white/[0.08] hover:text-white",
                 )}
               >
                 Point
@@ -344,11 +344,11 @@ function Message({ message, filmId, soundLength, video }: { message: ChatMessage
     return (
       <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">
         {message.context?.sound ? (
-          <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
+          <span className="rounded-[6px] bg-studio/12 px-1.5 py-0.5 text-[11px] text-studio-soft/90">
             {soundChipLabel(message.context.sound, soundLength, video)}
           </span>
         ) : message.context?.pick ? (
-          <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
+          <span className="rounded-[6px] bg-studio/12 px-1.5 py-0.5 text-[11px] text-studio-soft/90">
             {chipLabel(message.context.pick, message.context.t)}
           </span>
         ) : message.context ? (

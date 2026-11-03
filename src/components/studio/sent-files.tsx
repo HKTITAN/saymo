@@ -27,7 +27,7 @@ export function SentFiles({ files, urlOf }: { files: Attachment[]; urlOf: (path:
               // eslint-disable-next-line @next/next/no-img-element
               <img src={urlOf(f.path)} alt="" className="size-5 shrink-0 rounded-[4px] object-cover" />
             ) : f.kind === "audio" ? (
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-[#F55A00]/15 text-[#ff9a5c] [&_svg]:size-3">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-studio/15 text-studio-soft [&_svg]:size-3">
                 <MusicBeamNoteIcon aria-hidden="true" />
               </span>
             ) : (

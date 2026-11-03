@@ -178,7 +178,7 @@ export function PromptBox({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={a.preview} alt="" className="size-5 shrink-0 rounded-[4px] object-cover" />
               ) : a.kind === "audio" ? (
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-[#F55A00]/15 text-[#ff9a5c] [&_svg]:size-3">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-[4px] bg-studio/15 text-studio-soft [&_svg]:size-3">
                   <MusicBeamNoteIcon aria-hidden="true" />
                 </span>
               ) : (
@@ -222,14 +222,14 @@ export function PromptBox({
       ) : null}
       <DictationNotice d={d} view={view} />
       {chip ? (
-        <span className="flex h-6 max-w-full items-center gap-1 self-start rounded-[7px] bg-[#F55A00]/15 ps-2 pe-1 text-[11.5px] text-[#ff9a5c]">
+        <span className="flex h-6 max-w-full items-center gap-1 self-start rounded-[7px] bg-studio/15 ps-2 pe-1 text-[11.5px] text-studio-soft">
           <span className="truncate">{chip}</span>
           {onClearChip ? (
             <button
               type="button"
               onClick={onClearChip}
               aria-label="Stop pointing at this"
-              className="inline-flex size-4 cursor-pointer items-center justify-center rounded-[4px] text-[#ff9a5c]/70 outline-none hover:bg-[#F55A00]/20 hover:text-[#ffb27f] focus-visible:ring-1 focus-visible:ring-[#F55A00] [&_svg]:size-3"
+              className="inline-flex size-4 cursor-pointer items-center justify-center rounded-[4px] text-studio-soft/70 outline-none hover:bg-studio/20 hover:text-[#ffb27f] focus-visible:ring-1 focus-visible:ring-studio [&_svg]:size-3"
             >
               <MultipleCrossCancelIcon aria-hidden="true" />
             </button>

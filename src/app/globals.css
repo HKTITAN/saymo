@@ -3,6 +3,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* The studio's own accent: pink. bg-studio, text-studio-soft, ring-studio
+     and so on. Aerchain orange stays in Aerchain artwork and brand kits. */
+  --color-studio: #ff4fa3;
+  --color-studio-hover: #ff6db4;
+  --color-studio-soft: #ff9fcd;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /* The interface's type: the system's own, as DialKit uses it. The post sets

@@ -340,7 +340,7 @@ export function FolderChip({
         // Its insides never take the pointer, so a drag over them stays a drag over the folder.
         "group/doodle inline-flex h-8 cursor-pointer items-center gap-2 rounded-[10px] px-2.5 text-[12px] outline-none transition-[background-color,color,box-shadow,scale] duration-150 focus-visible:ring-2 focus-visible:ring-ring [&_*]:pointer-events-none",
         over
-          ? "scale-[1.04] bg-[#F55A00]/12 text-white ring-1 ring-[#F55A00]/70"
+          ? "scale-[1.04] bg-studio/12 text-white ring-1 ring-studio/70"
           : current
             ? "bg-white/[0.12] text-white"
             : "bg-white/[0.04] text-white/60 hover:bg-white/[0.07] hover:text-white/85",

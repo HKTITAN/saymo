@@ -294,7 +294,7 @@ function FramingPad({
           grab.current = null;
         }}
         onKeyDown={keys}
-        className="absolute cursor-grab touch-none rounded-[3px] shadow-[0_0_0_999px_rgba(0,0,0,0.45)] outline-none ring-2 ring-white focus-visible:ring-[#F55A00] active:cursor-grabbing"
+        className="absolute cursor-grab touch-none rounded-[3px] shadow-[0_0_0_999px_rgba(0,0,0,0.45)] outline-none ring-2 ring-white focus-visible:ring-studio active:cursor-grabbing"
         style={{ left: `${(x - vw / 2) * 100}%`, top: `${(y - vh / 2) * 100}%`, width: `${vw * 100}%`, height: `${vh * 100}%` }}
       />
     </div>

@@ -159,7 +159,7 @@ function Row({
             {v.detail ?? v.label}
           </p>
           <p className="flex flex-wrap items-center gap-1.5 text-[11.5px] text-white/40">
-            {v.current ? <span className="font-medium text-[#ff9a5c]">Now</span> : <span>{now ? ago(v.at, now) : ""}</span>}
+            {v.current ? <span className="font-medium text-studio-soft">Now</span> : <span>{now ? ago(v.at, now) : ""}</span>}
             {v.t !== null ? (
               <span className="rounded-[5px] bg-white/[0.06] px-1.5 py-px text-[10.5px] text-white/45 tabular-nums">
                 At {formatTime(v.t)}
