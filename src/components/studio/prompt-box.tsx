@@ -22,7 +22,7 @@ import { useDictation } from "./use-dictation";
 // stops and Esc discards it, and nothing is sent.
 // A light rides the box's edge (edge-beam.tsx): an orange one while files
 // are held over it (or `held`, something its parent takes, such as a
-// library item), and with `glow`, a calm grey one while Claude works.
+// library item), and with `glow`, a pink one, always on.
 
 export function PromptBox({
   value,
@@ -62,7 +62,7 @@ export function PromptBox({
   maxRows?: number;
   className?: string;
   attachments?: Attachments;
-  glow?: boolean; // the working light while `running`
+  glow?: boolean; // the pink light round the box (Border Beam), always on
   held?: boolean; // something the parent takes is held over the box
 }) {
   const own = useRef<HTMLTextAreaElement>(null);
@@ -325,7 +325,7 @@ export function PromptBox({
       </div>
       )}
       <EdgeBeam on={over || Boolean(held)} tone="drop" />
-      <EdgeBeam on={Boolean(glow && running) && !over && !held} />
+      <EdgeBeam on={Boolean(glow) && !over && !held} />
     </div>
   );
 }
