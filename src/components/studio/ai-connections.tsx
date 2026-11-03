@@ -315,7 +315,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 // Settings shows only the AI chosen for every prompt: one line saying
 // whether it's ready, the key box for the API key, and the steps only
 // while it isn't ready.
-export function SelectedAi({ provider }: { provider: ProviderId }) {
+export function SelectedAi({ provider, quiet = false }: { provider: ProviderId; quiet?: boolean }) {
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
@@ -347,7 +347,8 @@ export function SelectedAi({ provider }: { provider: ProviderId }) {
   const ready = s.state === "ready";
   return (
     <div className="flex flex-col gap-1.5">
-      <p className={cn("flex items-center gap-1.5 px-1 text-[11.5px]", ready ? "text-white/55" : "text-[#ff9a5c]")}>
+      {/* Quiet: the card above already says whether it's ready. */}
+      <p className={cn("flex items-center gap-1.5 px-1 text-[11.5px]", ready ? "text-white/55" : "text-[#ff9a5c]", quiet && ready && "hidden")}>
         <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", ready ? "bg-[#3dd68c]" : "bg-[#ff9a5c]")} />
         <span>
           {stateWords(s)}
