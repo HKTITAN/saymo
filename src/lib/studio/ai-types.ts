@@ -10,18 +10,21 @@ import { IS_PRODUCT } from "./edition";
 //  - api-key: Claude Code paid by an Anthropic API key pasted into the
 //    studio, for teammates without a Claude plan.
 //
-// The product edition (edition.ts) offers the API key only: Anthropic
-// doesn't allow a product to run on a person's Claude plan, and Codex on a
-// ChatGPT plan isn't checked (docs/launch/ai-providers.md). Later options,
-// such as Claude through Bedrock or Vertex, or other models, join
-// PROVIDER_IDS and the product's list here.
+// The product edition (edition.ts) offers the customer's own Claude, signed
+// in through Claude Code itself: their Claude plan or their API key.
+// Anthropic allows a product to run unmodified Claude Code that way and
+// says it mustn't restrict Claude Code's sign-in methods; we never offer a
+// Claude sign-in of our own or touch its tokens. Codex on a ChatGPT plan
+// stays out until OpenAI's terms are checked (docs/launch/ai-providers.md).
+// Later options, such as Claude through Bedrock or Vertex, or other models,
+// join PROVIDER_IDS and the product's list here.
 
 export const PROVIDER_IDS = ["claude", "codex", "api-key"] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 // The AIs this build offers, in the order the picker lists them.
-export const OFFERED_PROVIDERS: readonly ProviderId[] = IS_PRODUCT ? ["api-key"] : PROVIDER_IDS;
-export const DEFAULT_PROVIDER: ProviderId = IS_PRODUCT ? "api-key" : "claude";
+export const OFFERED_PROVIDERS: readonly ProviderId[] = IS_PRODUCT ? ["claude", "api-key"] : PROVIDER_IDS;
+export const DEFAULT_PROVIDER: ProviderId = "claude";
 
 // True only for an AI this build offers, so a pick saved by another build
 // (or sent by hand) falls back to the default or is refused.

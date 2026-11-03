@@ -44,15 +44,16 @@ export async function readApiKey(): Promise<string | null> {
 
 const OVERRIDDEN = "The key comes from the file named in STUDIO_ANTHROPIC_KEY_FILE. Change that file, or remove the setting to paste a key here.";
 
-// Said by every Claude action in the product edition when no key is saved.
+// Said when a run that needs the API key has none saved.
 export const NO_KEY =
   "Claude needs an Anthropic API key. Open a film, then Connections (the link button in the top right), and paste your key under AI.";
 
 // Why a Claude run can't start for want of a key, or null when it can.
 export async function keyProblem(provider: ProviderId = DEFAULT_PROVIDER): Promise<string | null> {
-  if (!IS_PRODUCT && provider !== "api-key") return null;
+  // The plan path needs no key, in either edition.
+  if (provider !== "api-key") return null;
   if (await readApiKey()) return null;
-  return IS_PRODUCT ? NO_KEY : "No API key is saved. Add one under Connections, then AI, or switch this prompt to Claude.";
+  return "No API key is saved. Add one under Connections, then AI, or switch this prompt to Claude.";
 }
 
 export async function saveApiKey(raw: unknown) {
@@ -76,13 +77,15 @@ export async function removeApiKey() {
 const PRODUCT_CLAUDE_HOME = path.join(STUDIO_DIR, "claude");
 
 // The environment for one provider's Claude Code run (a film's turn, the
-// kit maker, the script writer). In-house, the plan path gets no key at
-// all and the API-key path gets only the studio's own. In the product
-// every run is the API-key path, whatever was asked for. childEnv() has
-// already removed every other sign-in or billing route.
+// kit maker, the script writer). The plan path gets no key at all: Claude
+// Code uses the sign-in the person made in it themselves (in the product
+// too, which mustn't restrict Claude Code's sign-in methods). The API-key
+// path gets only the studio's own key, and in the product a settings
+// folder of its own, so it never mixes with the person's sign-in.
+// childEnv() has already removed every other sign-in or billing route.
 export async function claudeEnvFor(provider: ProviderId = DEFAULT_PROVIDER): Promise<NodeJS.ProcessEnv> {
   const env = childEnv();
-  if (!IS_PRODUCT && provider !== "api-key") return env;
+  if (provider !== "api-key") return env;
   const key = await readApiKey();
   if (!key) throw new ConnectError((await keyProblem(provider)) ?? NO_KEY);
   if (!IS_PRODUCT) return { ...env, ANTHROPIC_API_KEY: key };
@@ -203,10 +206,10 @@ export const forgetStatus = () => {
 export async function aiStatus(fresh = false): Promise<AiStatus> {
   if (!fresh && cached && Date.now() - cached.at < 20_000) return cached.status;
   if (IS_PRODUCT) {
-    // The key only: Claude Code's version says it's installed, without
-    // asking it about any sign-in.
-    const installed = !(await runQuick(CLAUDE_BIN, ["--version"], childEnv())).missing;
-    const status: AiStatus = { default: DEFAULT_PROVIDER, providers: [await apiKeyStatus(installed)] };
+    // The person's own Claude: their plan, signed in through Claude Code
+    // itself, or their API key. No Codex until OpenAI's terms are checked.
+    const claude = await claudeStatus();
+    const status: AiStatus = { default: DEFAULT_PROVIDER, providers: [claude.status, await apiKeyStatus(claude.installed)] };
     cached = { at: Date.now(), status };
     return status;
   }

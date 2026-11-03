@@ -59,7 +59,7 @@ export function AiSection() {
       </h3>
       <DialNote>
         {IS_PRODUCT
-          ? "The studio uses the Claude you already pay for, through your own Anthropic API key, so there’s no extra AI plan to buy."
+          ? "The studio runs Claude Code on this Mac with your own Claude: your Claude plan, signed in through Claude Code, or your own Anthropic API key. There’s no extra AI plan to buy."
           : "The studio uses the AI you already pay for, so there’s no extra AI plan to buy. Pick one in each prompt box; Claude is the default."}
       </DialNote>
       {error ? <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
@@ -236,7 +236,7 @@ function ApiKey({
           <div className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] p-2">
             <p className="px-1 text-[11.5px] text-white/65 leading-relaxed">
               {IS_PRODUCT
-                ? "The studio forgets the key. Claude stops working here until you add one again."
+                ? "The studio forgets the key. Prompts sent to the API key stop working until you add one again."
                 : "The studio forgets the key. Prompts sent to the API key stop working until you add one again."}
             </p>
             <div className="flex gap-1.5">

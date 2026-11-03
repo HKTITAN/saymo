@@ -40,7 +40,7 @@ The Agent SDK overview (https://code.claude.com/docs/en/agent-sdk/overview) stil
 
 ## What changes in the product edition
 
-Step 3 of the plan made the product edition API key only: `claudeEnvFor()` in `src/lib/studio/providers.ts` hides the Mac's own Claude sign-in. The first condition says a product that runs Claude Code mustn't restrict its sign-in methods, so the product edition should offer both the customer's Claude plan and their API key, each signed in through Claude Code itself. The in-house edition already runs on the Mac's own Claude Code sign-in.
+**Done on 2026-11-03:** the product edition now offers both, the plan through Claude Code's own sign-in (`claudeEnvFor()` passes no key and leaves Claude Code's own settings alone for it) and the API key (in its own settings folder, `.studio/claude`). Before that, step 3 of the plan made the product edition API key only: `claudeEnvFor()` in `src/lib/studio/providers.ts` hides the Mac's own Claude sign-in. The first condition says a product that runs Claude Code mustn't restrict its sign-in methods, so the product edition should offer both the customer's Claude plan and their API key, each signed in through Claude Code itself. The in-house edition already runs on the Mac's own Claude Code sign-in.
 
 ## The owner's own use
 
