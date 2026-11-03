@@ -169,10 +169,23 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
     );
   };
 
+  // The settings open clear of the whole prompt box (8 px past its edge),
+  // not just the chevron, so they never sit over the box or its light.
+  const trigger = useRef<HTMLButtonElement>(null);
+  const clearOfBox = ({ side }: { side: string }) => {
+    const t = trigger.current;
+    const box = t?.closest("[data-prompt-box]");
+    if (!t || !box) return 8;
+    const a = t.getBoundingClientRect();
+    const b = box.getBoundingClientRect();
+    return (side === "bottom" ? b.bottom - a.bottom : side === "top" ? a.top - b.top : 0) + 8;
+  };
+
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Hint label="Voice settings">
         <Popover.Trigger
+          ref={trigger}
           className="inline-flex h-7 w-4 shrink-0 cursor-pointer items-center justify-center rounded-[6px] text-white/40 outline-none transition-colors hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-white/[0.08] data-popup-open:text-white [&_svg]:size-3"
           aria-label="Voice settings"
         >
@@ -180,7 +193,7 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
         </Popover.Trigger>
       </Hint>
       <Popover.Portal>
-        <Popover.Positioner side="top" align="start" sideOffset={8} collisionPadding={12} className="z-50">
+        <Popover.Positioner side="top" align="start" sideOffset={clearOfBox} collisionPadding={12} className="z-50">
           <Popover.Popup className={cn(SURFACE, POPUP, "flex w-[340px] flex-col gap-1.5 p-1.5")}>
             <Choice label="Language" options={LANGUAGES} value={settings.language} onChange={(language) => setDictationSettings({ language })} />
             <Choice

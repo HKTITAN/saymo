@@ -19,40 +19,44 @@ type Tone = "work" | "drop";
 
 // The library's own layers, recoloured: the stroke (::after), the soft
 // inner glow (::before) and the bloom. both pink, the studio's accent.
-const tint = (rgb: string, hot: string) => `
+const tint = (rgb: string, hot: string, deep: string) => `
 [data-beam="{id}"][data-active]::after,
 [data-beam="{id}"][data-fading]::after {
   background: conic-gradient(
     from var(--beam-angle-{id}),
-    transparent 0%, transparent 52%,
-    rgba(${rgb}, 0.18) 56%,
-    rgba(${rgb}, 0.6) 61%,
+    transparent 0%, transparent 38%,
+    rgba(${deep}, 0.12) 46%,
+    rgba(${deep}, 0.35) 54%,
+    rgba(${rgb}, 0.7) 61%,
     rgba(${hot}, 1) 66%,
-    rgba(${rgb}, 0.6) 71%,
-    rgba(${rgb}, 0.18) 76%,
-    transparent 80%, transparent 100%
+    rgba(${rgb}, 0.5) 70%,
+    transparent 76%, transparent 100%
   );
 }
 [data-beam="{id}"][data-active]::before,
 [data-beam="{id}"][data-fading]::before {
-  background: rgba(${rgb}, 0.06);
-  box-shadow: inset 0 0 6px 1px rgba(${rgb}, 0.45);
+  background: rgba(${rgb}, 0.045);
+  box-shadow: inset 0 0 10px 1px rgba(${rgb}, 0.28);
 }
 [data-beam="{id}"] [data-beam-bloom] {
   background: conic-gradient(
     from var(--beam-angle-{id}),
-    transparent 0%, transparent 60%,
-    rgba(${rgb}, 0.25) 66%,
-    rgba(${hot}, 0.9) 70%,
-    rgba(${rgb}, 0.25) 74%,
-    transparent 80%
+    transparent 0%, transparent 52%,
+    rgba(${deep}, 0.18) 58%,
+    rgba(${rgb}, 0.55) 64%,
+    rgba(${hot}, 0.7) 67%,
+    rgba(${rgb}, 0.2) 71%,
+    transparent 76%
   );
 }
 `;
 const PINK = "255, 105, 180";
-// Working: the library's own pink "candy" light, drifting a little in hue.
-// Drop: a steady pink, the studio's accent.
-const CSS: Record<Tone, string | undefined> = { work: undefined, drop: tint(PINK, "255, 170, 214") };
+// Pink all the way along, never white: a long tail that deepens to
+// magenta, the studio's pink in the middle and a lighter pink at the head.
+const CSS: Record<Tone, string> = {
+  work: tint(PINK, "255, 140, 200", "190, 40, 140"),
+  drop: tint(PINK, "255, 140, 200", "190, 40, 140"),
+};
 
 // The library's md preset keeps its stroke faint (it leans on a coloured
 // inner glow); on these dark greys that reads as nothing, so the stroke
@@ -95,11 +99,10 @@ export function EdgeBeam({ on, tone = "work" }: { on: boolean; tone?: Tone }) {
         size="md"
         theme="dark"
         colorVariant="candy"
-        staticColors={tone === "drop"}
-        hueRange={24}
-        glowSize={tone === "work" ? 1.3 : 1}
+        staticColors
+        glowSize={tone === "work" ? 1.4 : 1}
         strength={0.85}
-        duration={tone === "work" ? 3.6 : 2.6}
+        duration={tone === "work" ? 4.8 : 2.6}
         borderRadius={radius}
         css={CSS[tone]}
         style={{ position: "absolute", inset: 0, ...LAYERS[tone] }}
