@@ -8,8 +8,7 @@ import type { CloudService, Destination, DestinationsStatus } from "./connect-ty
 import { outDir, readFilm } from "./films";
 
 // Where finished films go, the easy way: the folder a cloud app on this Mac
-// already keeps in sync (Google Drive, Dropbox, OneDrive, Box, iCloud
-// Drive), or any folder picked in Finder. Picking one is the whole set-up:
+// already keeps in sync (Google Drive, Dropbox, OneDrive, iCloud Drive), or any folder picked in Finder. Picking one is the whole set-up:
 // no keys and no sign-in here, because the app on the Mac does the
 // uploading. After each final render the videos are copied to
 // <folder>/Motion Studio/<film title>/. The Google Drive connection in
@@ -27,7 +26,6 @@ const SERVICES: { service: Exclude<CloudService, "folder">; label: string; get: 
   { service: "google-drive", label: "Google Drive", get: "https://www.google.com/drive/download/" },
   { service: "dropbox", label: "Dropbox", get: "https://www.dropbox.com/install" },
   { service: "onedrive", label: "OneDrive", get: "https://www.microsoft.com/microsoft-365/onedrive/download" },
-  { service: "box", label: "Box", get: "https://www.box.com/resources/downloads" },
   { service: "icloud", label: "iCloud Drive", get: "https://support.apple.com/icloud" },
 ];
 
@@ -54,8 +52,6 @@ export async function findDestinations(): Promise<Destination[]> {
       found.push({ service: "dropbox", label: "Dropbox", account: name.slice(8).replace(/^\(|\)$/g, "") || null, path: full });
     } else if (name.startsWith("OneDrive-")) {
       found.push({ service: "onedrive", label: "OneDrive", account: name.slice(9) || null, path: full });
-    } else if (name.startsWith("Box-")) {
-      found.push({ service: "box", label: "Box", account: null, path: full });
     }
   }
   // Older Dropbox and Google Drive apps kept their folder in the home folder.

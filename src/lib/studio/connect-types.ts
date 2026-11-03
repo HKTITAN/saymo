@@ -43,7 +43,7 @@ export type FilmConnections = { drive: SaveState; github: SaveState };
 
 // Where finished films are copied on this Mac (destinations.ts): a folder a
 // cloud app keeps in sync, or any folder picked in Finder.
-export type CloudService = "google-drive" | "dropbox" | "onedrive" | "box" | "icloud" | "folder";
+export type CloudService = "google-drive" | "dropbox" | "onedrive" | "icloud" | "folder";
 export type Destination = { service: CloudService; label: string; account: string | null; path: string };
 export type DestinationsStatus = {
   found: Destination[]; // the cloud folders on this Mac
