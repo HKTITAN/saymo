@@ -34,6 +34,7 @@ import { KitMaker } from "./kit-maker";
 import { LibraryView } from "./library";
 import { cachedLibrary, filesFor } from "./library-api";
 import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, FolderChip, FolderMenu, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
+import { EmptyStages, FilmStage, Hero, type Section, SideNav, shapeOf, useHomeNext } from "./home-next";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { ReelFlow } from "./reel-flow";
 import { SlidesFlow } from "./slides-flow";
@@ -168,6 +169,9 @@ export function Dashboard({
   const zip = useRef<HTMLInputElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const now = useSyncExternalStore(everyMinute, thisMinute, () => 0);
+  // The next layout (home-next.tsx), tried with /studio?home=next while developing.
+  const next = useHomeNext();
+  const [kitsOpen, setKitsOpen] = useState(false);
   // Moves and renames are undone here; there's no Claude turn to undo.
   const history = useHistory({ undoClaude: async () => "Nothing to undo", claudeBusy: () => false });
 
@@ -351,8 +355,215 @@ export function Dashboard({
   const inFolder = (id: string) =>
     (films ?? []).filter((f) => f.folder === id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
+  // ─── The next layout (home-next.tsx), while it's tried beside this one ──
+  // Home lists every film, newest first; a folder in the sidebar narrows it.
+
+  const section: Section = kitsOpen ? "kits" : tab === "library" ? "library" : "home";
+  const goSection = (s: Section) => {
+    setKitsOpen(s === "kits");
+    if (s !== "kits") setTab(s === "library" ? "library" : "films");
+  };
+  const everyFilm =
+    films === null
+      ? null
+      : films
+          .filter((f) => (folder ? f.folder === folder.id : true) && (!q || f.title.toLowerCase().includes(q)))
+          .sort(sort === "name" ? (a, b) => a.title.localeCompare(b.title) : (a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const nextLayout = next ? (
+    <div className="absolute inset-0 flex bg-[#080808]">
+      <SideNav
+        section={section}
+        onSection={goSection}
+        films={films ? films.length : null}
+        library={libCount}
+        kits={kits ? kits.length : null}
+        folders={folders ?? []}
+        folderId={folder?.id ?? null}
+        folderCounts={counts}
+        filmDrag={FILM_DRAG}
+        dragging={dragging !== null}
+        naming={naming}
+        onNaming={setNaming}
+        onNewFolder={(name) => void newFolder(name)}
+        onFolder={goFolder}
+        onDropFilm={moveById}
+        onRenameFolder={renameFolder}
+        onDeleteFolder={deleteFolder}
+        deleteBody={folderDeleteBody}
+        query={query}
+        onQuery={setQuery}
+        searchRef={search}
+        onRules={() => setOverlay("rules")}
+      />
+      <div className="relative my-2 me-2 min-w-0 flex-1 overflow-hidden rounded-[18px] bg-[#0e0e0e] shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
+        <div className="absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {section === "home" ? (
+            <>
+              <Hero
+                folderName={folder?.name ?? null}
+                busy={busy}
+                error={error}
+                onStart={(prompt, w, h, files) => onStartFilm(prompt, w, h, folder?.id ?? null, files)}
+                onWay={(way) => setOverlay(way)}
+                onProblem={say}
+              />
+              <section aria-label={folder ? folder.name : "Films"} className="mx-auto flex max-w-[1180px] flex-col gap-4 px-8 pb-20">
+                <header className="flex h-8 items-center gap-2 px-1">
+                  <h2 className="truncate font-medium text-[13px] text-white/90">{q ? "Search results" : folder ? folder.name : "Recent"}</h2>
+                  {everyFilm ? <span className="font-mono text-[11.5px] text-white/35 tabular-nums">{everyFilm.length}</span> : null}
+                  <span className="ms-auto flex items-center gap-3">
+                    {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder in the sidebar</span> : null}
+                    {libDrag ? <span className="text-[11.5px] text-white/45">Drop it on a film to use it in that film’s chat</span> : null}
+                    <div role="radiogroup" aria-label="Sort films" className="flex h-7 items-center gap-0.5 rounded-[9px] bg-white/[0.05] ps-2.5 pe-0.5 text-[11.5px]">
+                      <span className="me-1 text-white/40">Sort</span>
+                      {(
+                        [
+                          ["edited", "Last edited"],
+                          ["name", "Name"],
+                        ] as const
+                      ).map(([k, label]) => (
+                        <button
+                          key={k}
+                          type="button"
+                          role="radio"
+                          aria-checked={sort === k}
+                          onClick={() => setSort(k)}
+                          className={cn(
+                            "h-6 cursor-pointer rounded-[7px] px-2 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                            sort === k ? "bg-white/[0.12] text-white" : "text-white/50 hover:text-white/80",
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </span>
+                </header>
+                {problem ? <p className="px-1 text-[12px] text-[#ff9592]">{problem}</p> : null}
+                <Skeleton data={everyFilm} sample={SAMPLE_FILMS} id="studio-films-next" label="Loading your films">
+                  {(list) =>
+                    list.length > 0 ? (
+                      <ul className="grid grid-cols-[repeat(auto-fill,minmax(244px,1fr))] gap-x-4 gap-y-6">
+                        {list.map((f) => (
+                          <FilmCard
+                            key={f.id}
+                            stage
+                            film={f}
+                            now={now}
+                            folders={folders ?? []}
+                            folderLabel={!folder && f.folder ? folderName(f.folder) : null}
+                            dragged={dragging === f.id}
+                            onDrag={(on) => setDragging(on ? f.id : null)}
+                            takes={libDrag !== null}
+                            onLibraryDrop={(id) => void takeFromLibrary(id, { film: f.id })}
+                            onOpen={() => onOpenFilm(f.id)}
+                            onRename={(title) => renameFilm(f, title)}
+                            onDuplicate={() => onDuplicateFilm(f.id)}
+                            onDelete={() => onDeleteFilm(f.id)}
+                            onMove={(to) => move(f, to)}
+                            onMoveNew={async (name) => {
+                              const made = await newFolder(name);
+                              if (made) move(f, made.id);
+                            }}
+                          />
+                        ))}
+                      </ul>
+                    ) : q ? (
+                      <Empty doodle={<ClapperDoodle className="h-[84px] w-[120px]" />} title={`No films match “${query.trim()}”`} note="Check the spelling, or search all your films.">
+                        <button type="button" onClick={() => setQuery("")} className={cn(PILL_BUTTON, "mt-2 bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
+                          Clear search
+                        </button>
+                      </Empty>
+                    ) : folder ? (
+                      <Empty
+                        doodle={<FolderDoodle className="h-[84px] w-[120px]" open={dragging !== null} />}
+                        title={`${folder.name} is empty`}
+                        note="Drag films onto the folder in the sidebar, or choose Move to folder in a film’s ••• menu."
+                      >
+                        <button type="button" onClick={() => goFolder(null)} className={cn(PILL_BUTTON, "mt-2 bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
+                          See all films
+                        </button>
+                      </Empty>
+                    ) : (
+                      <EmptyStages />
+                    )
+                  }
+                </Skeleton>
+              </section>
+            </>
+          ) : null}
+
+          <div className={cn("mx-auto flex max-w-[1180px] flex-col gap-4 px-8 pt-8 pb-20", section !== "library" && "hidden")}>
+            <LibraryView
+              active={section === "library"}
+              tabs={<h2 className="px-1 font-medium text-[15px] text-white/90">Library</h2>}
+              query={query}
+              sort={sort}
+              now={now}
+              history={history}
+              say={say}
+              onClearQuery={() => setQuery("")}
+              onDragItem={setLibDrag}
+              onOpenKit={onOpenKit}
+              onCount={setLibCount}
+            />
+          </div>
+
+          {section === "kits" ? (
+            <section aria-labelledby="kits-heading" className="mx-auto flex max-w-[1180px] flex-col gap-5 px-8 pt-8 pb-20">
+              <header className="flex flex-wrap items-end gap-2 px-1">
+                <div className="me-auto flex flex-col gap-1">
+                  <h2 id="kits-heading" className="font-medium text-[15px] text-white/90">
+                    Brand kits
+                  </h2>
+                  <p className="text-[12px] text-white/45">A kit holds a brand’s colours, fonts and logos, so every film made with it looks the part.</p>
+                </div>
+                <input
+                  ref={zip}
+                  type="file"
+                  accept=".zip,application/zip"
+                  className="hidden"
+                  tabIndex={-1}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onImportKit(file);
+                    e.target.value = "";
+                  }}
+                />
+                <button type="button" disabled={busy} onClick={() => zip.current?.click()} className={cn(PILL_BUTTON, "text-white/70 hover:bg-white/[0.07] hover:text-white")}>
+                  <UploadUpIcon aria-hidden="true" />
+                  Import a kit
+                </button>
+                <button type="button" disabled={busy} onClick={() => setOverlay("kit")} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
+                  <PlusIcon aria-hidden="true" />
+                  New kit
+                </button>
+              </header>
+              <Skeleton data={kits} sample={SAMPLE_KITS} id="studio-kits-next" label="Loading your brand kits">
+                {(list) =>
+                  list.length > 0 ? (
+                    <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
+                      {list.map((k) => (
+                        <li key={k.id}>
+                          <KitCard kit={k} onOpen={() => onOpenKit(k.id)} />
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <Empty doodle={<KitsDoodle className="h-[84px] w-[120px]" />} title="No brand kits yet" note="Make one from a brand’s guideline, links and files, or import one another studio exported." />
+                  )
+                }
+              </Skeleton>
+            </section>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
+      {nextLayout ?? (
       <div className="absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {/* The studio's name, finding a film, and their order. */}
         <header className="sticky top-0 z-20 bg-[#0b0b0b]/85 backdrop-blur-xl">
@@ -695,6 +906,7 @@ export function Dashboard({
           {error ? <p className="px-1 text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
         </div>
       </div>
+      )}
 
       {note ? (
         <p
@@ -891,6 +1103,7 @@ function KitCard({ kit, onOpen }: { kit: BrandSummary; onOpen: () => void }) {
 // moves or deletes it; deleting asks first.
 function FilmCard({
   film: f,
+  stage = false,
   now,
   folders,
   folderLabel,
@@ -906,6 +1119,7 @@ function FilmCard({
   onMoveNew,
 }: {
   film: FilmSummary;
+  stage?: boolean; // the next layout: the film on its stage (home-next.tsx)
   now: number;
   folders: Folder[];
   folderLabel: string | null; // the folder it's in, shown in search results
@@ -974,14 +1188,18 @@ function FilmCard({
           over ? "bg-white/[0.07] ring-1 ring-white/40" : takes && "bg-white/[0.03] outline-1 outline-dashed outline-white/20",
         )}
       >
-        <span className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" skullet-block="">
-          {f.poster ? (
-            // eslint-disable-next-line @next/next/no-img-element -- a local still of the film
-            <img src={f.poster} alt="" draggable={false} className="max-h-full max-w-full object-contain transition-transform duration-300 ease-out group-hover/card:scale-[1.02]" />
-          ) : (
-            <PosterLines width={f.width} height={f.height} />
-          )}
-        </span>
+        {stage ? (
+          <FilmStage film={f} />
+        ) : (
+          <span className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" skullet-block="">
+            {f.poster ? (
+              // eslint-disable-next-line @next/next/no-img-element -- a local still of the film
+              <img src={f.poster} alt="" draggable={false} className="max-h-full max-w-full object-contain transition-transform duration-300 ease-out group-hover/card:scale-[1.02]" />
+            ) : (
+              <PosterLines width={f.width} height={f.height} />
+            )}
+          </span>
+        )}
         <span className="flex flex-col gap-0.5 px-1 pb-0.5">
           <span className="flex items-baseline gap-2">
             <span className={cn("min-w-0 flex-1 truncate text-[12.5px] text-white/90", renaming && "invisible")}>{f.title}</span>
@@ -991,6 +1209,12 @@ function FilmCard({
           </span>
           <span className="truncate text-[11.5px] text-white/40">
             {f.kind === "video" ? "Video edit" : "Motion graphics"} · <span className="font-mono tabular-nums">{f.duration.toFixed(1)}</span>{"\u2009"}s
+            {stage ? (
+              <>
+                {" · "}
+                <span className="font-mono tabular-nums">{shapeOf(f)}</span>
+              </>
+            ) : null}
             {folderLabel ? ` · ${folderLabel}` : null}
           </span>
         </span>
