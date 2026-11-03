@@ -28,7 +28,7 @@ export function MicButton({ d, view }: { d: Dictation; view: DictationView }) {
   const blocked = view.elsewhere || view.phase === "writing";
   return (
     <span className="flex items-center">
-      <Hint label={view.elsewhere ? "Another prompt box is listening" : recording ? "Stop and write it down" : "Talk instead of typing"} keys={view.elsewhere ? undefined : TALK_KEYS}>
+      <Hint label={view.elsewhere ? "Listening elsewhere" : recording ? "Stop" : "Talk"} keys={view.elsewhere ? undefined : TALK_KEYS}>
         <button
           type="button"
           onClick={() => !blocked && d.toggle()}
@@ -324,12 +324,12 @@ export function RecordingBar({ d, view }: { d: Dictation; view: DictationView })
         {view.phase === "recording" ? "Recording" : ""}
       </span>
       <span className="ms-auto" />
-      <Hint label="Discard this recording" keys={["Esc"]}>
+      <Hint label="Discard" keys={["Esc"]}>
         <button type="button" onClick={() => d.cancel(true)} className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}>
           Cancel
         </button>
       </Hint>
-      <Hint label="Stop and write it down" keys={["↵"]}>
+      <Hint label="Stop" keys={["↵"]}>
         <button type="button" onClick={() => void d.stop()} className={cn(PILL_BUTTON, "h-7 bg-white px-2.5 text-[#141414] hover:bg-white/90")}>
           Done
         </button>

@@ -1058,7 +1058,7 @@ function KitChat({
       bodyClassName="flex flex-col"
       actions={
         messages.some((m) => m.role === "claude") ? (
-          <Hint label="Undo Claude’s last change" keys={["⌘", "Z"]}>
+          <Hint label="Undo Claude’s change" keys={["⌘", "Z"]}>
             <button
               type="button"
               disabled={turn.running}

@@ -191,7 +191,7 @@ export function RenderControl({
   );
 }
 
-// "Copy link to video": the best video from the latest render (4K, then
+// "Copy link": the best video from the latest render (4K, then
 // 1080p, then the draft, then any other size). Dimmed until there's one.
 const BEST = ["4k.mp4", "1080p.mp4", "draft.mp4"];
 function CopyVideoLink({ id, files }: { id: string | null; files: string[] }) {
@@ -209,14 +209,14 @@ function CopyVideoLink({ id, files }: { id: string | null; files: string[] }) {
       .then(() => setCopied(true))
       .catch(() => {});
   };
-  const label = copied ? "Copied" : video ? "Copy link to video" : "Render the film to get a link";
+  const label = copied ? "Copied" : video ? "Copy link" : "Render first";
   return (
     <Hint label={label}>
       <button
         type="button"
         onClick={() => void copy()}
         aria-disabled={!video}
-        aria-label={label}
+        aria-label={copied ? "Copied" : video ? "Copy link to video" : "Render the film to get a link"}
         className={cn(ICON_BUTTON, "size-8", !video && "cursor-default opacity-40 hover:bg-transparent")}
       >
         {copied ? <CheckTickCircleIcon aria-hidden="true" /> : <LinkChainHorizontalIcon aria-hidden="true" />}

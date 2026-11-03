@@ -70,7 +70,7 @@ export function MediaBin({
       actions={
         <>
           <VoiceoverButton id={id} onMade={() => void ed.refreshMedia()} />
-          <Hint label="Add footage, photos or sound">
+          <Hint label="Add media">
             <button type="button" className={ICON_BUTTON} onClick={() => picker.current?.click()} aria-label="Add files">
               <UploadUpIcon aria-hidden="true" />
             </button>
@@ -266,7 +266,7 @@ function MediaRow({
           <span className="flex items-center gap-1.5">
             <span className="truncate text-[12px] text-white/85">{media.name}</span>
             {media.transcript ? (
-              <Hint label="Has a transcript of what’s said">
+              <Hint label="Has a transcript">
                 <span className="size-1.5 shrink-0 rounded-full bg-white/70" aria-label="Has a transcript" />
               </Hint>
             ) : null}

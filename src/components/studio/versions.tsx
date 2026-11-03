@@ -79,7 +79,7 @@ export function VersionsButton({
         else setAsking(null);
       }}
     >
-      <Hint label="Go back to the film after any prompt">
+      <Hint label="Earlier versions">
         <Popover.Trigger
           className={cn(
             PILL_BUTTON,

@@ -231,7 +231,7 @@ export function KitMaker({
                     e.target.value = "";
                   }}
                 />
-                <Hint label="Add files: guidelines, screenshots, logos, fonts">
+                <Hint label="Add files">
                   <button type="button" className={ICON_BUTTON} onClick={() => picker.current?.click()} aria-label="Add files">
                     <PaperclipVerticalIcon aria-hidden="true" />
                   </button>

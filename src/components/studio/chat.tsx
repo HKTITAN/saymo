@@ -188,7 +188,7 @@ export function ChatPanel({
       actions={
         <>
           {onTakes ? (
-            <Hint label="Make 3 versions of what's in the box, or of the film as it is, then pick one">
+            <Hint label="Make 3 versions">
               <button
                 type="button"
                 onClick={tryThree}
@@ -212,7 +212,7 @@ export function ChatPanel({
             />
           ) : null}
           {claudeTurns > 0 ? (
-            <Hint label="Undo Claude’s last change. ⌘Z undoes your changes too, in order" keys={["⌘", "Z"]}>
+            <Hint label="Undo Claude’s change" keys={["⌘", "Z"]}>
               <button
                 type="button"
                 className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/60 hover:bg-white/[0.08] hover:text-white")}
@@ -291,7 +291,7 @@ export function ChatPanel({
           meta={<PlayheadChip clock={clock} />}
           tools={
             <>
-            <Hint label={pointing ? "Stop pointing" : "Point at the film"} keys={["P"]}>
+            <Hint label={pointing ? "Stop pointing" : "Point"} keys={["P"]}>
               <button
                 type="button"
                 onClick={onPoint}

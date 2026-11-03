@@ -386,7 +386,7 @@ function ScriptStep({
               Start over
             </button>
             {asked ? (
-              <Hint label="Claude writes it again from the same brief">
+              <Hint label="Write it again">
                 <button type="button" className={cn(ICON_BUTTON, "ms-1")} aria-label="Write it again" onClick={() => asked && void write(asked)}>
                   <RefreshIcon aria-hidden="true" />
                 </button>

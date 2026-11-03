@@ -310,7 +310,7 @@ export function PromptBox({
         {/* While Claude works, the arrow (which queues) shows once there's
             something to queue; until then Stop has the room. */}
         {!running || (queueing && (canSend || !onStop)) ? (
-          <Hint label={running ? "Add to the queue" : "Send"} keys={["↵"]}>
+          <Hint label={running ? "Queue" : "Send"} keys={["↵"]}>
             <button
               type="button"
               onClick={onSend}

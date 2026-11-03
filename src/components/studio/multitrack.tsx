@@ -579,7 +579,7 @@ export function Multitrack({
             Split
           </button>
         </Hint>
-        <Hint label="Undo the last change, yours or Claude’s" keys={["⌘", "Z"]}>
+        <Hint label="Undo" keys={["⌘", "Z"]}>
           <button
             type="button"
             onClick={onUndo}
@@ -653,7 +653,7 @@ export function Multitrack({
                 <Icon aria-hidden="true" className="size-3.5 shrink-0 text-white/40" />
                 <span className="me-auto truncate text-[11.5px] text-white/70">{track.name}</span>
                 {track.kind !== "graphics" ? (
-                  <Hint label={track.muted ? "Turn the sound on" : "Turn the sound off"}>
+                  <Hint label={track.muted ? "Unmute" : "Mute"}>
                     <button
                       type="button"
                       className={cn(ICON_BUTTON, "size-6 [&_svg]:size-3.5", track.muted && "text-white/25")}
@@ -670,7 +670,7 @@ export function Multitrack({
                   </Hint>
                 ) : null}
                 {track.kind !== "audio" ? (
-                  <Hint label={track.hidden ? "Show this track" : "Hide this track"}>
+                  <Hint label={track.hidden ? "Show track" : "Hide track"}>
                     <button
                       type="button"
                       className={cn(ICON_BUTTON, "size-6 [&_svg]:size-3.5", track.hidden && "text-white/25")}

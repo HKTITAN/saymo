@@ -187,7 +187,7 @@ export function Stage({
       {overlay ? (
         <button
           type="button"
-          aria-label="Point at the film"
+          aria-label="Point"
           className="absolute inset-0 cursor-crosshair"
           onClick={(e) => {
             const r = e.currentTarget.getBoundingClientRect();
