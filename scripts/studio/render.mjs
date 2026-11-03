@@ -64,13 +64,23 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const CARGO_TARGET = path.join(ROOT, "node_modules/.cache/studio-cargo");
 // Bumped when the way files are made changes, so older renders aren't
 // reused.
-const PIPELINE = "3"; // 3: every file has a data-rate ceiling phones can decode
+const PIPELINE = "4"; // 3: a data-rate ceiling phones can decode; 4: tagged sRGB, so it looks as previewed
 
 // Into video: BT.709, limited range, 4:2:0, tagged so the orange plays back
 // as the same orange everywhere (as scripts/export.mjs does).
+//
+// What you see is what you get: the frames are sRGB, as the studio's
+// preview is, so the file says so. Tagged with BT.709's own transfer curve,
+// macOS, iOS and Chrome colour-manage the video as camera footage and show
+// mid-tones lighter and orange more yellow than the preview (a 118 grey came
+// out 127); tagged sRGB (transfer 13) they show the preview's own colours,
+// within 1 to 3 levels. Primaries and matrix stay BT.709, which sRGB shares.
 const TO_VIDEO =
   "scale=out_color_matrix=bt709:out_range=tv,format=yuv420p," +
-  "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv";
+  "setparams=color_primaries=bt709:color_trc=iec61966-2-1:colorspace=bt709:range=tv";
+// The same in the file's own headers (the H.264 stream and the MP4 box).
+const SRGB_VUI = "colour_primaries=1:transfer_characteristics=13:matrix_coefficients=1";
+const SRGB_TAGS = ["-color_primaries", "bt709", "-color_trc", "iec61966-2-1", "-colorspace", "bt709", "-color_range", "tv"];
 
 const args = process.argv.slice(2);
 const draft = args.includes("--draft");
@@ -232,7 +242,7 @@ const ENGINES = {
       const file = path.join(work, "film.mp4");
       await run("ffmpeg", [
         "-y", "-loglevel", "error", "-i", raw, "-map", "0:v", "-c", "copy",
-        "-bsf:v", `h264_metadata=level=${levelFor(job.width, job.height, job.fps)}`,
+        "-bsf:v", `h264_metadata=level=${levelFor(job.width, job.height, job.fps)}:${SRGB_VUI}`, ...SRGB_TAGS,
         "-movflags", "+faststart", "-f", "mp4", file,
       ]);
       return { encoded: file };
@@ -384,6 +394,10 @@ const ceilingFor = (width, height, fps) => {
 const capped = (rate) => ["-maxrate", `${rate}M`, "-bufsize", `${Math.round(rate * 1.5)}M`];
 
 function encoderFor(m, file, job, width, height, tune = "animation") {
+  return [...encoderOnly(m, file, job, width, height, tune), ...SRGB_TAGS, "-bsf:v", `h264_metadata=${SRGB_VUI}`];
+}
+
+function encoderOnly(m, file, job, width, height, tune) {
   const level = levelFor(width, height, job.fps);
   const keyframes = ["-g", String(Math.round(job.fps * 2))];
   const ceiling = ceilingFor(width, height, job.fps);
@@ -765,7 +779,7 @@ async function addSound(film, job, files, wav, { replace = false } = {}) {
       ...(wav
         ? ["-i", wav, "-filter_complex", graph, "-map", "0:v", "-map", "[a]", "-c:a", "aac", "-b:a", "320k", "-ar", "48000"]
         : ["-map", "0:v"]),
-      "-c:v", "copy", "-t", length, "-movflags", "+faststart", "-f", "mp4", `${f.path}.part`,
+      "-c:v", "copy", ...SRGB_TAGS, "-t", length, "-movflags", "+faststart", "-f", "mp4", `${f.path}.part`,
     ]);
     await rename(`${f.path}.part`, f.path);
   }
