@@ -37,7 +37,7 @@ import { useAttachments } from "./use-attachments";
 // the gestures (dragging films onto folders, library items onto films, ⌘Z);
 // these are the parts it draws with.
 
-export type Section = "home" | "library" | "kits" | "settings";
+export type Section = "home" | "library" | "kits" | "rules" | "settings";
 export type Way = "video" | "script" | "reel" | "slides";
 type Size = (typeof SIZES)[number];
 
@@ -74,7 +74,6 @@ export function SideNav({
   query,
   onQuery,
   searchRef,
-  onRules,
 }: {
   section: Section;
   onSection: (s: Section) => void;
@@ -97,7 +96,6 @@ export function SideNav({
   query: string;
   onQuery: (q: string) => void;
   searchRef: React.RefObject<HTMLInputElement | null>;
-  onRules: () => void;
 }) {
   const [width, setWidth] = useSideWidth();
   return (
@@ -231,12 +229,13 @@ export function SideNav({
       </div>
 
       <ul className="flex flex-col gap-0.5">
-        <li>
-          <button type="button" onClick={onRules} className={ROW}>
-            <FileIcon aria-hidden="true" />
-            Rules
-          </button>
-        </li>
+        <NavRow
+          icon={<FileIcon aria-hidden="true" />}
+          label="Rules"
+          count={null}
+          on={section === "rules"}
+          onClick={() => onSection("rules")}
+        />
         <NavRow
           icon={<Settings01Icon aria-hidden="true" />}
           label="Settings"

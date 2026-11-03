@@ -16,7 +16,7 @@ import {
 } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
 import { SURFACE } from "@/components/tool/dial";
-import { RulesPanel } from "./rules-panel";
+import { RulesPage } from "./rules-panel";
 import { RenameField } from "@/components/tool/rename";
 import { Kbd } from "@/components/ui/kbd";
 import type { BrandSummary } from "@/lib/studio/brand";
@@ -49,7 +49,7 @@ import { LIBRARY_DRAG } from "@/lib/studio/references-shared";
 // dragged onto a film card waits in that film's chat; dragged onto "Make
 // motion graphics", in the new film's prompt. Last, the brand kits.
 
-type Overlay = null | "video" | "motion" | "kit" | "personal" | "script" | "reel" | "slides" | "rules";
+type Overlay = null | "video" | "motion" | "kit" | "personal" | "script" | "reel" | "slides";
 type Sort = "edited" | "name";
 type Tab = "films" | "library";
 const tabFromUrl = (): Tab => (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("library") ? "library" : "films");
@@ -167,7 +167,7 @@ export function Dashboard({
   const zip = useRef<HTMLInputElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const now = useSyncExternalStore(everyMinute, thisMinute, () => 0);
-  const [aside, setAside] = useState<null | "kits" | "settings">(null);
+  const [aside, setAside] = useState<null | "kits" | "rules" | "settings">(null);
   // Moves and renames are undone here; there's no Claude turn to undo.
   const history = useHistory({ undoClaude: async () => "Nothing to undo", claudeBusy: () => false });
 
@@ -346,7 +346,7 @@ export function Dashboard({
 
   const section: Section = aside ?? (tab === "library" ? "library" : "home");
   const goSection = (s: Section) => {
-    setAside(s === "kits" || s === "settings" ? s : null);
+    setAside(s === "kits" || s === "rules" || s === "settings" ? s : null);
     if (s === "home" || s === "library") setTab(s === "library" ? "library" : "films");
   };
   const everyFilm =
@@ -379,7 +379,6 @@ export function Dashboard({
         query={query}
         onQuery={setQuery}
         searchRef={search}
-        onRules={() => setOverlay("rules")}
       />
       <div className="relative my-2 me-2 min-w-0 flex-1 overflow-hidden rounded-[18px] bg-[#0e0e0e] shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
         <div className="absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -547,6 +546,7 @@ export function Dashboard({
             </section>
           ) : null}
 
+          {section === "rules" ? <RulesPage /> : null}
           {section === "settings" ? <SettingsPage /> : null}
         </div>
       </div>
@@ -588,9 +588,7 @@ export function Dashboard({
             window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
           }}
         >
-          {overlay === "rules" ? (
-            <RulesPanel onClose={() => setOverlay(null)} />
-          ) : overlay === "personal" ? (
+          {overlay === "personal" ? (
             <PersonalStyleMaker
               onDone={(kit) => {
                 setOverlay(null);

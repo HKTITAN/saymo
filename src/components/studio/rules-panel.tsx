@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DeleteDustbin01Icon, MultipleCrossCancelIcon, PlusIcon } from "@/components/icons";
+import { DeleteDustbin01Icon, PlusIcon } from "@/components/icons";
 import type { Rule, RuleScope } from "@/lib/studio/rules";
 import { cn } from "@/lib/utils";
 import { api, StudioError } from "./api";
-import { CARD, ICON_BUTTON, PILL_BUTTON } from "./panel";
+import { ICON_BUTTON, PILL_BUTTON } from "./panel";
 
 // The studio's standing rules: Claude follows them in every film unless a
 // prompt says otherwise, and the whole team shares them. Each rule is a
@@ -17,7 +17,7 @@ const SCOPES: { value: RuleScope; label: string }[] = [
   { value: "video", label: "Video edits" },
 ];
 
-export function RulesPanel({ onClose }: { onClose: () => void }) {
+export function RulesPage() {
   const [rules, setRules] = useState<Rule[] | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [removed, setRemoved] = useState<{ rule: Rule; at: number } | null>(null);
@@ -76,113 +76,102 @@ export function RulesPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    // The card fits the window: its title and "Add a rule" stay put, and
-    // only the rules scroll between them.
-    <div data-backdrop="" className="absolute inset-0 flex items-center justify-center p-4 sm:p-8">
-      <section aria-labelledby="rules-title" className={cn(CARD, "flex max-h-full w-full max-w-[600px] flex-col overflow-hidden")}>
-        <header className="flex shrink-0 items-start gap-3 px-5 pt-5 pb-3">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <h2 id="rules-title" className="font-medium text-[15px] text-white/90">
-              Studio rules
-            </h2>
-            <p className="text-[12.5px] text-white/50 leading-relaxed">
-              Claude follows these in every film unless your prompt says otherwise. Everyone on the team shares them.
-            </p>
-          </div>
-          <button type="button" className={cn(ICON_BUTTON, "-me-1.5 -mt-1")} onClick={onClose} aria-label="Close the rules">
-            <MultipleCrossCancelIcon aria-hidden="true" />
-          </button>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2 [mask-image:linear-gradient(to_bottom,transparent,black_12px,black_calc(100%-12px),transparent)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {rules === null ? (
-            <p className="px-2 py-3 text-[12.5px] text-white/45">
-              <span className="studio-shimmer">Loading the rules</span>
-            </p>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {rules.map((r, i) => (
-                <li
-                  key={r.id}
-                  className={cn(
-                    "group/rule flex flex-col rounded-[14px] bg-white/[0.035] py-3 ps-4 pe-2 transition-[opacity,background-color] hover:bg-white/[0.05]",
-                    !r.on && "opacity-50",
-                  )}
-                >
-                  <div className="flex min-w-0 flex-col gap-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        data-rule-title={r.id}
-                        value={r.title}
-                        onChange={(e) => change(r.id, { title: e.target.value })}
-                        placeholder="Name the rule"
-                        aria-label={`Rule ${i + 1} name`}
-                        className="-ms-1.5 h-7 min-w-0 flex-1 rounded-[7px] bg-transparent px-1.5 font-medium text-[13px] text-white/90 outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
-                      />
-                      <Slide
-                        label={`Rule ${i + 1} on or off`}
-                        value={r.on}
-                        options={[
-                          { value: false, label: "Off" },
-                          { value: true, label: "On" },
-                        ]}
-                        onChange={(on) => change(r.id, { on })}
-                        segment={34}
-                      />
-                      <button
-                        type="button"
-                        className={cn(
-                          ICON_BUTTON,
-                          "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5",
-                        )}
-                        onClick={() => remove(r)}
-                        aria-label={`Delete rule ${i + 1}`}
-                      >
-                        <DeleteDustbin01Icon aria-hidden="true" />
-                      </button>
-                    </div>
-                    <textarea
-                      value={r.body}
-                      onChange={(e) => change(r.id, { body: e.target.value })}
-                      placeholder="What Claude should always do"
-                      aria-label={`Rule ${i + 1}`}
-                      rows={2}
-                      className="-ms-1.5 me-1 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[12.5px] text-white/65 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30 hover:bg-white/[0.03] focus:bg-white/[0.05]"
-                    />
-                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      <span className="text-[11.5px] text-white/35">Applies to</span>
-                      <Slide
-                        label={`Rule ${i + 1} applies to`}
-                        value={r.scope}
-                        options={SCOPES}
-                        onChange={(scope) => change(r.id, { scope })}
-                        segment={104}
-                      />
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <footer className="flex shrink-0 items-center gap-3 border-white/[0.06] border-t px-4 py-3">
-          <button type="button" disabled={rules === null} onClick={add} className={cn(PILL_BUTTON, "text-white/75 hover:bg-white/[0.07] hover:text-white")}>
-            <PlusIcon aria-hidden="true" />
-            Add a rule
-          </button>
-          {removed ? (
-            <p className="text-[12px] text-white/50" role="status">
-              Rule deleted.{" "}
-              <button type="button" onClick={undoRemove} className="cursor-pointer text-white/85 underline-offset-2 hover:underline">
-                Undo
-              </button>
-            </p>
-          ) : null}
-          {problem ? <p className="text-[12px] text-[#ff9592]">{problem}</p> : null}
-        </footer>
-      </section>
-    </div>
+    // A page in the home's main panel, as Settings is: the rules, then a
+    // way to add one.
+    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[660px] flex-col gap-6 px-8 pt-10 pb-20">
+      <div className="flex flex-col gap-1.5 px-1">
+        <h1 id="rules-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
+          Rules
+        </h1>
+        <p className="text-[12.5px] text-white/50 leading-relaxed">
+          Claude follows these in every film unless your prompt says otherwise. Everyone on the team shares them.
+        </p>
+      </div>
+      {rules === null ? (
+        <p className="px-1 text-[12.5px]">
+          <span className="studio-shimmer">Loading the rules</span>
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {rules.map((r, i) => (
+            <li
+              key={r.id}
+              className={cn(
+                "group/rule flex flex-col rounded-[14px] bg-white/[0.035] py-3 ps-4 pe-2 transition-[opacity,background-color] hover:bg-white/[0.05]",
+                !r.on && "opacity-50",
+              )}
+            >
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    data-rule-title={r.id}
+                    value={r.title}
+                    onChange={(e) => change(r.id, { title: e.target.value })}
+                    placeholder="Name the rule"
+                    aria-label={`Rule ${i + 1} name`}
+                    className="-ms-1.5 h-7 min-w-0 flex-1 rounded-[7px] bg-transparent px-1.5 font-medium text-[13px] text-white/90 outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
+                  />
+                  <Slide
+                    label={`Rule ${i + 1} on or off`}
+                    value={r.on}
+                    options={[
+                      { value: false, label: "Off" },
+                      { value: true, label: "On" },
+                    ]}
+                    onChange={(on) => change(r.id, { on })}
+                    segment={34}
+                  />
+                  <button
+                    type="button"
+                    className={cn(
+                      ICON_BUTTON,
+                      "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5",
+                    )}
+                    onClick={() => remove(r)}
+                    aria-label={`Delete rule ${i + 1}`}
+                  >
+                    <DeleteDustbin01Icon aria-hidden="true" />
+                  </button>
+                </div>
+                <textarea
+                  value={r.body}
+                  onChange={(e) => change(r.id, { body: e.target.value })}
+                  placeholder="What Claude should always do"
+                  aria-label={`Rule ${i + 1}`}
+                  rows={2}
+                  className="-ms-1.5 me-1 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[12.5px] text-white/65 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30 hover:bg-white/[0.03] focus:bg-white/[0.05]"
+                />
+                <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <span className="text-[11.5px] text-white/35">Applies to</span>
+                  <Slide
+                    label={`Rule ${i + 1} applies to`}
+                    value={r.scope}
+                    options={SCOPES}
+                    onChange={(scope) => change(r.id, { scope })}
+                    segment={104}
+                  />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex items-center gap-3">
+        <button type="button" disabled={rules === null} onClick={add} className={cn(PILL_BUTTON, "text-white/75 hover:bg-white/[0.07] hover:text-white")}>
+          <PlusIcon aria-hidden="true" />
+          Add a rule
+        </button>
+        {removed ? (
+          <p className="text-[12px] text-white/50" role="status">
+            Rule deleted.{" "}
+            <button type="button" onClick={undoRemove} className="cursor-pointer text-white/85 underline-offset-2 hover:underline">
+              Undo
+            </button>
+          </p>
+        ) : null}
+        {problem ? <p className="text-[12px] text-[#ff9592]">{problem}</p> : null}
+      </div>
+    </section>
   );
 }
 
