@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { aiApi } from "./ai-api";
 import { stateWords } from "./ai-connections";
 import { ClaudeMark, CodexMark } from "./ai-marks";
+import { Foil } from "./foil";
 
 // "Bring your own AI", as a leather card sleeve: each AI the studio can use
 // is a black metal card tucked in it, fanned a little, the chosen one
@@ -48,14 +49,27 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
     };
   }, [choice.provider]);
 
+  // The light on the metal follows the pointer over the sleeve.
+  const [light, setLight] = useState<{ x: number; y: number } | null>(null);
   const chosen = CARDS[choice.provider];
   return (
-    <div role="radiogroup" aria-label="Prompts go to" className="relative mx-auto" style={{ width: W, height: AREA_H }}>
+    <div
+      role="radiogroup"
+      aria-label="Prompts go to"
+      className="relative mx-auto"
+      style={{ width: W, height: AREA_H }}
+      onPointerMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setLight({ x: ((e.clientX - r.left) / r.width) * 2 - 1, y: 1 - ((e.clientY - r.top) / r.height) * 2 });
+      }}
+      onPointerLeave={() => setLight(null)}
+    >
       {OFFERED_PROVIDERS.map((id) => (
         <Card
           key={id}
           id={id}
           up={id === choice.provider}
+          light={light}
           fan={FAN[OFFERED_PROVIDERS.filter((p) => p !== choice.provider).indexOf(id)] ?? FAN[0]}
           status={status?.providers.find((p) => p.id === id) ?? null}
           onPick={() => onPick(id)}
@@ -69,12 +83,14 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
 function Card({
   id,
   up,
+  light,
   fan,
   status,
   onPick,
 }: {
   id: ProviderId;
   up: boolean;
+  light: { x: number; y: number } | null;
   fan: { x: number; r: number };
   status: ProviderStatus | null;
   onPick: () => void;
@@ -101,7 +117,15 @@ function Card({
         transformOrigin: "50% 130%",
       }}
     >
-      <span className="absolute inset-0 rounded-[14px]" style={metal(look.metal)} />
+      <span className="absolute inset-0 overflow-hidden rounded-[14px]" style={metal(look.metal)}>
+        <Foil colors={look.metal} light={light} drift={up} />
+      </span>
+      {/* the pale edge and lit top lip, over the metal */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 rounded-[14px]"
+        style={{ boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.3), inset 0 1px 0 rgba(255,255,255,0.45)" }}
+      />
       <span className="relative flex items-start justify-between px-[18px] pt-[16px]">
         <span className="flex items-center gap-2 text-white/80" style={ETCHED}>
           {look.mark("size-[18px]")}
