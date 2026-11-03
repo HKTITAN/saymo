@@ -26,7 +26,7 @@ import { KitPage } from "./kit-page";
 import { MediaBin } from "./media-bin";
 import { Opening } from "./opening";
 import { clipNumber, defaults, Multitrack } from "./multitrack";
-import { CARD, PILL_BUTTON } from "./panel";
+import { CARD, PANEL_MOTION, PILL_BUTTON } from "./panel";
 import { RenderControl } from "./render";
 import { SoundGroup } from "./sound-group";
 import { type SoundLaneData, showLane, showStems, stemLanes } from "./sound-lane";
@@ -39,7 +39,8 @@ import { useEdit } from "./use-edit";
 import { useSound } from "./use-sound";
 import { DEFAULT_BRAND } from "@/lib/studio/brand";
 import { useSoundEdit } from "./use-sound-edit";
-import { TakesView, useTakes } from "./takes";
+import { useTakes } from "./takes";
+import { type Away, TakesAway } from "./takes-canvas";
 import { isMediaFile } from "./video-api";
 import { type Pinned, type SoundPin, soundChipLabel, tryAnotherPrompt } from "./words";
 
@@ -458,13 +459,33 @@ function FilmView({
   const history = useHistory({ undoClaude: chat.undo, claudeBusy: () => chat.turn.running });
 
   // Three versions of one prompt at once, only when asked ("Try 3", or a
-  // prompt asking for three). Picking one makes the film that version.
+  // prompt asking for three). The studio steps aside for them (`away`): a
+  // slot machine spins, then a canvas shows the three as they're made.
+  // Picking one makes the film that version and brings the studio back.
+  const [away, setAway] = useState<Away>(null);
+  const [awayPrompt, setAwayPrompt] = useState("");
+  const awayRef = useRef<Away>(null);
+  useEffect(() => {
+    awayRef.current = away;
+  });
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const leave = useCallback(() => {
+    setAway((a) => (a ? "leaving" : a));
+    clearTimeout(leaveTimer.current);
+    leaveTimer.current = setTimeout(() => setAway((a) => (a === "leaving" ? null : a)), 320);
+  }, []);
+  const goAway = useCallback((to: "slots" | "canvas") => {
+    clearTimeout(leaveTimer.current);
+    setAway(to);
+  }, []);
+  useEffect(() => () => clearTimeout(leaveTimer.current), []);
   const takes = useTakes(id, (picked) => {
     adopt(picked);
     reloadStage();
     void chat.reloadHistory();
     void onRefresh();
-  });
+    leave();
+  }, leave);
 
   // The film's sound design: played here in step with the clock.
   const sound = useSound({ id, film, clock, bridge, claudeRunning: chat.turn.running });
@@ -1012,6 +1033,8 @@ function FilmView({
   // Escape backs out.
   useEffect(() => {
     const keys = (e: KeyboardEvent) => {
+      // The three versions' full-screen view has the keys while it's open.
+      if (awayRef.current && awayRef.current !== "leaving") return;
       const which = undoKey(e);
       if (which) {
         // In a text field, the browser's own text undo stays in charge.
@@ -1127,6 +1150,8 @@ function FilmView({
   // Room the panels take; the film fits in the rest. Hidden panels give the
   // film the whole window.
   const tlH = Math.min(Math.max(180, timelineHeight ?? Math.min(300, winH * 0.32)), Math.round(winH * 0.62));
+  // The three versions' view hides the panels too, without moving the film.
+  const panelsHidden = hidden || (away !== null && away !== "leaving");
   const chatOpen = !hidden && !folded.chat;
   const mediaOpen = !hidden && !folded.media && isVideo;
   const inspectorOpen = !hidden && !folded.inspector;
@@ -1193,8 +1218,17 @@ function FilmView({
         onMessage={onStage}
       />
 
-      {/* Three versions side by side, over the film, while there are some. */}
-      {takes.takes ? <TakesView state={takes} film={film} box={insets} /> : null}
+      {/* Three versions, full screen: the slot machine, then the canvas. */}
+      {away ? (
+        <TakesAway
+          away={away}
+          prompt={awayPrompt}
+          state={takes}
+          film={film}
+          onCanvas={() => goAway("canvas")}
+          onBack={leave}
+        />
+      ) : null}
       {!takes.takes && takes.error ? (
         <div
           role="alert"
@@ -1296,7 +1330,7 @@ function FilmView({
         <FilmsMenu
           film={film}
           films={films}
-          hidden={hidden}
+          hidden={panelsHidden}
           onOpen={onOpen}
           onHome={onHome}
           onCreate={onCreate}
@@ -1312,7 +1346,7 @@ function FilmView({
             await onGone();
           }}
         />
-        <RenderControl id={id} hidden={hidden} onHide={() => setHidden(() => true)} sizes={!isVideo && film?.engine !== "rust"} />
+        <RenderControl id={id} hidden={panelsHidden} onHide={() => setHidden(() => true)} sizes={!isVideo && film?.engine !== "rust"} />
         <ChatPanel
           filmId={id}
           chat={chatView}
@@ -1320,7 +1354,20 @@ function FilmView({
           sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength, isVideo) } : null}
           soundLength={soundLength}
           video={isVideo}
-          onTakes={isVideo ? undefined : (prompt, context) => void takes.start(prompt, context, chat.provider)}
+          onTakes={
+            isVideo
+              ? undefined
+              : (prompt, context) => {
+                  clock.pause();
+                  setBubble(false);
+                  setPointing(false);
+                  setAwayPrompt(prompt);
+                  goAway("slots");
+                  void takes.start(prompt, context, chat.provider).then((ok) => {
+                    if (!ok) leave();
+                  });
+                }
+          }
           time={time}
           clock={clock}
           onClearPick={() => {
@@ -1331,7 +1378,7 @@ function FilmView({
           onPoint={togglePoint}
           folded={folded.chat}
           onFold={(f) => setFolded((s) => ({ ...s, chat: f }))}
-          hidden={hidden}
+          hidden={panelsHidden}
           inputRef={chatInput}
           style={isVideo ? { maxHeight: chatMax } : undefined}
         />
@@ -1343,7 +1390,7 @@ function FilmView({
             onAddGraphic={addGraphicAtPlayhead}
             folded={folded.media}
             onFold={(f) => setFolded((s) => ({ ...s, media: f }))}
-            hidden={hidden}
+            hidden={panelsHidden}
             className="bottom-4 left-4 w-[300px]"
             pillClassName="bottom-4 left-4"
             style={{ height: binH }}
@@ -1357,7 +1404,7 @@ function FilmView({
             filmHeight={film.height}
             folded={folded.inspector}
             onFold={(f) => setFolded((s) => ({ ...s, inspector: f }))}
-            hidden={hidden}
+            hidden={panelsHidden}
             style={{ height: column }}
           />
         ) : (
@@ -1372,7 +1419,7 @@ function FilmView({
             onDuration={setDuration}
             folded={folded.inspector}
             onFold={(f) => setFolded((s) => ({ ...s, inspector: f }))}
-            hidden={hidden}
+            hidden={panelsHidden}
             // The side columns run to the bottom; the timeline sits between them.
             style={{ height: column }}
             editLength={isVideo && ed.edit ? editEnd(ed.edit) : undefined}
@@ -1397,7 +1444,7 @@ function FilmView({
             clock={clock}
             ed={ed}
             marks={film.marks}
-            hidden={hidden}
+            hidden={panelsHidden}
             height={tlH}
             onHeight={setTimelineHeight}
             onUndo={() => void history.undo()}
@@ -1410,7 +1457,7 @@ function FilmView({
             clock={clock}
             fps={film.fps}
             marks={film.marks}
-            hidden={hidden}
+            hidden={panelsHidden}
             sound={soundLane}
             onMute={sound.setMuted}
             className="bottom-4 transition-[left,right,opacity,translate,scale,filter]"
@@ -1433,7 +1480,34 @@ function FilmView({
           </p>
         ) : null}
 
-        {hidden ? (
+        {/* Three versions on the way or waiting: back to their canvas. */}
+        {takes.takes && !away ? (
+          <button
+            type="button"
+            onClick={() => {
+              clock.pause();
+              setAwayPrompt(takes.takes?.prompt ?? "");
+              goAway("canvas");
+            }}
+            inert={hidden}
+            className={cn(
+              CARD,
+              PILL_BUTTON,
+              PANEL_MOTION,
+              "pointer-events-auto absolute top-4 left-1/2 h-11 -translate-x-1/2 rounded-[16px] ps-4 pe-3.5 text-white/85 hover:text-white",
+              hidden && "pointer-events-none -translate-y-1 opacity-0",
+            )}
+          >
+            {takes.takes.takes.some((t) => t.state === "working") ? (
+              <span className="studio-shimmer">Making 3 versions</span>
+            ) : (
+              <span>3 versions ready</span>
+            )}
+            <span className="font-normal text-white/45">See them</span>
+          </button>
+        ) : null}
+
+        {hidden && !away ? (
           <button
             type="button"
             onClick={() => setHidden(() => false)}
