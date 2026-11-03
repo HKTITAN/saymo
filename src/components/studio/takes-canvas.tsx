@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { TextMorph } from "torph/react";
 import { ArrowLeftIcon, MinusIcon, PlusIcon } from "@/components/icons";
 import { Kbd } from "@/components/ui/kbd";
 import type { Film } from "@/lib/studio/contract";
 import { TAKE_COUNT, TAKE_WAYS, type Take } from "@/lib/studio/takes-shared";
 import { cn } from "@/lib/utils";
 import { stageUrl } from "./api";
-import { takeFilm } from "./takes";
+import { MORE_LABEL, takeFilm } from "./takes";
 import { CARD, DiscardAsk, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { SlotMachine } from "./slot-machine";
 import type { TakesState } from "./takes";
@@ -16,7 +17,8 @@ import { useOutsideClose } from "./use-outside";
 // Three versions, full screen. The studio's panels step aside, a slot
 // machine spins while the versions start, then a free canvas holds one card
 // per version as it's made: drag to move around, pinch or ⌘ and scroll to
-// zoom, Fit to see all three. Clicking a finished card keeps that version
+// zoom, Fit to see them all. A dashed card after the last one asks for one
+// more version. Clicking a finished card keeps that version
 // (the takes' own pick, so the film becomes it in one undoable step) and
 // the studio comes back. Esc, or Back to the editor, returns without
 // picking; the versions carry on and the canvas is one click away.
@@ -89,7 +91,7 @@ export function TakesAway({
       {away === "slots" ? (
         <SlotMachine prompt={prompt} ready={Boolean(state.takes)} reduced={reduced} onDone={onCanvas} onBack={onBack} />
       ) : (
-        <TakesCanvas state={state} film={film} prompt={prompt} asking={asking} setAsking={setAsking} onBack={onBack} />
+        <TakesCanvas state={state} film={film} asking={asking} setAsking={setAsking} onBack={onBack} />
       )}
     </div>
   );
@@ -114,23 +116,25 @@ const ROOM = { top: 88, bottom: 72, side: 56 };
 function TakesCanvas({
   state,
   film,
-  prompt,
   asking,
   setAsking,
   onBack,
 }: {
   state: TakesState;
   film: Film;
-  prompt: string;
   asking: boolean;
   setAsking: (a: boolean) => void;
   onBack: () => void;
 }) {
   const { takes, busy, error } = state;
+  const list = takes?.takes ?? [];
+  const count = Math.max(TAKE_COUNT, list.length);
+  // Room for the dashed "one more" card after the last version.
+  const slots = count + (state.canMore ? 1 : 0);
   const wide = film.width >= film.height;
   const pw = wide ? LONG_SIDE : Math.round((LONG_SIDE * film.width) / film.height);
   const ph = wide ? Math.round((LONG_SIDE * film.height) / film.width) : LONG_SIDE;
-  const bw = pw * TAKE_COUNT + GAP * (TAKE_COUNT - 1);
+  const bw = pw * slots + GAP * (slots - 1);
   const bh = HEAD + ph + FOOT;
 
   const fitTo = useCallback(
@@ -174,6 +178,14 @@ function TakesCanvas({
       return { k, x: px - ((px - v.x) * k) / v.k, y: py - ((py - v.y) * k) / v.k };
     });
   }, []);
+
+  // One more card: glide to fit them all, so the new one is in view.
+  const lastSlots = useRef(slots);
+  useEffect(() => {
+    if (slots === lastSlots.current) return;
+    lastSlots.current = slots;
+    fit();
+  }, [slots, fit]);
 
   // A resized window refits, until you've moved the canvas yourself.
   useEffect(() => {
@@ -290,16 +302,18 @@ function TakesCanvas({
   const ask = useRef<HTMLDivElement>(null);
   const outside = useOutsideClose(ask, () => setAsking(false), { enabled: asking });
 
-  const list = takes?.takes ?? [];
   const working = list.filter((t) => t.state === "working").length;
   const done = list.filter((t) => t.state === "done").length;
-  const status = !takes
-    ? "Starting"
-    : working
-      ? `${done} of ${TAKE_COUNT} ready`
-      : done
-        ? "All done. Pick one to open it."
-        : "None of them finished";
+  // The count alone: how many are ready while they're made, then how many
+  // there are.
+  const status = !takes || working ? `${done} of ${count} ready` : done ? `${count} versions` : "None finished";
+
+  // How it works shows for the first few seconds, then fades away.
+  const [hint, setHint] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setHint(false), 5000);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div className="absolute inset-0 animate-in fade-in-0 duration-300">
@@ -329,7 +343,7 @@ function TakesCanvas({
           )}
           style={{ transform: `translate3d(${view.x}px, ${view.y}px, 0) scale(${view.k})`, width: bw, height: bh }}
         >
-          {Array.from({ length: TAKE_COUNT }, (_, i) => {
+          {Array.from({ length: count }, (_, i) => {
             const take = list.find((t) => t.n === i + 1);
             return (
               <TakeCard
@@ -340,7 +354,7 @@ function TakesCanvas({
                 left={i * (pw + GAP)}
                 w={pw}
                 h={ph}
-                delay={i * 80}
+                delay={i < TAKE_COUNT ? i * 80 : 0}
                 busy={busy}
                 opening={Boolean(take && opening === take.id)}
                 frameRef={(el) => {
@@ -350,6 +364,7 @@ function TakesCanvas({
               />
             );
           })}
+          {state.canMore ? <MoreCard left={count * (pw + GAP)} w={pw} h={ph} onMore={state.more} /> : null}
         </div>
       </div>
 
@@ -363,13 +378,10 @@ function TakesCanvas({
           </button>
         </div>
 
-        <div className={cn(CARD, "pointer-events-auto flex h-11 min-w-0 items-center gap-2.5 px-4")}>
-          <h2 className="shrink-0 font-medium text-[13px] text-white/90">3 versions</h2>
-          <span className="shrink-0 text-[12px] text-white/45 tabular-nums">
-            {working ? <span className="studio-shimmer">{status}</span> : status}
-          </span>
-          <span className="h-4 w-px shrink-0 bg-white/10" aria-hidden="true" />
-          <p className="min-w-0 truncate text-[12px] text-white/45">{takes?.prompt ?? prompt}</p>
+        <div className={cn(CARD, "pointer-events-auto flex h-11 shrink-0 items-center px-4")}>
+          <h2 aria-live="polite" className="font-medium text-[13px] tabular-nums">
+            <TextMorph className={cn("transition-colors duration-300", working ? "text-white/55" : "text-white/90")}>{status}</TextMorph>
+          </h2>
         </div>
 
         <span className="flex-1" />
@@ -387,7 +399,7 @@ function TakesCanvas({
               onClick={() => zoomBy(1 / view.k, undefined, true)}
               aria-label={`Zoom ${Math.round(view.k * 100)} percent. Set to 100 percent`}
             >
-              {Math.round(view.k * 100)}%
+              <TextMorph disabled={!glide}>{`${Math.round(view.k * 100)}%`}</TextMorph>
             </button>
           </Hint>
           <Hint label="Zoom in" keys={["+"]}>
@@ -395,7 +407,7 @@ function TakesCanvas({
               <PlusIcon aria-hidden="true" />
             </button>
           </Hint>
-          <Hint label="See all three" keys={["Shift", "1"]}>
+          <Hint label="See them all" keys={["Shift", "1"]}>
             <button type="button" className={cn(PILL_BUTTON, "px-2.5 text-white/70 hover:bg-white/[0.08] hover:text-white")} onClick={fit}>
               Fit
             </button>
@@ -415,7 +427,7 @@ function TakesCanvas({
       {asking ? (
         <div ref={ask} {...outside} data-canvas-ui className={cn(CARD, "absolute top-[68px] right-4 w-[460px] p-1.5")}>
           <DiscardAsk
-            what={working ? "all three versions (they stop being made)" : "all three versions"}
+            what={`${count === 3 ? "all three" : `all ${count}`} versions${working ? " (they stop being made)" : ""}`}
             onKeep={() => setAsking(false)}
             onDiscard={() => {
               setAsking(false);
@@ -436,9 +448,15 @@ function TakesCanvas({
         </p>
       ) : null}
 
-      {/* How it works, quietly, at the bottom. */}
-      <p className="pointer-events-none absolute inset-x-4 bottom-6 text-center text-[12px] text-white/35">
-        Drag to move around. Pinch, or hold <Kbd className="mx-0.5 align-[1px]">⌘</Kbd> and scroll, to zoom. Click a finished version to open it.
+      {/* How it works, quietly, for the first few seconds. */}
+      <p
+        aria-hidden={!hint}
+        className={cn(
+          "pointer-events-none absolute inset-x-4 bottom-6 text-center text-[12px] text-white/35 transition-opacity duration-700 ease-out",
+          !hint && "opacity-0",
+        )}
+      >
+        Drag to move, pinch to zoom, click one to open it.
       </p>
     </div>
   );
@@ -469,7 +487,7 @@ function TakeCard({
   frameRef: (el: HTMLIFrameElement | null) => void;
   onPick: () => void;
 }) {
-  const way = TAKE_WAYS[n - 1];
+  const label = TAKE_WAYS[n - 1]?.label ?? MORE_LABEL;
   const state = take?.state ?? "working";
   const ready = state === "done";
   const scale = w / film.width;
@@ -489,7 +507,7 @@ function TakeCard({
     >
       <p className="flex items-center gap-1.5 text-[13px]" style={{ height: HEAD - 8, marginBottom: 8 }}>
         <span className="font-medium text-white/90">Version {n}</span>
-        <span className="text-white/35">{way?.label}</span>
+        <span className="text-white/35">{label}</span>
         <span className="ms-auto text-[12px] text-white/40">
           {ready ? opening ? <span className="studio-shimmer">Opening</span> : "Ready" : null}
         </span>
@@ -531,7 +549,7 @@ function TakeCard({
             type="button"
             onClick={onPick}
             aria-disabled={busy}
-            aria-label={`Open version ${n}, ${way?.label}, in the editor`}
+            aria-label={`Open version ${n}, ${label}, in the editor`}
             className="absolute inset-0 cursor-pointer rounded-[14px] outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-inset aria-disabled:cursor-default"
           />
         ) : null}
@@ -540,6 +558,28 @@ function TakeCard({
       <p className="mt-3 line-clamp-2 px-0.5 text-[12.5px] text-white/50 leading-[18px]" style={{ minHeight: 36 }}>
         {state === "working" ? <span className="text-white/30">Claude is making this one.</span> : note}
       </p>
+    </div>
+  );
+}
+
+// After the last version: a dashed card that asks for one more. It slides
+// along as cards are added; on hover only its colour changes.
+function MoreCard({ left, w, h, onMore }: { left: number; w: number; h: number; onMore: () => void }) {
+  return (
+    <div
+      className="absolute top-0 transition-[left,opacity] duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] starting:opacity-0 motion-reduce:transition-opacity"
+      style={{ left, width: w, paddingTop: HEAD }}
+      data-canvas-ui
+    >
+      <button
+        type="button"
+        onClick={onMore}
+        className="flex w-full cursor-pointer flex-col items-center justify-center gap-2.5 rounded-[14px] border border-white/[0.14] border-dashed text-[15px] text-white/45 outline-none transition-colors duration-150 hover:border-white/35 hover:bg-white/[0.02] hover:text-white/85 focus-visible:ring-2 focus-visible:ring-white/70"
+        style={{ height: h }}
+      >
+        <PlusIcon aria-hidden="true" className="size-6" />
+        One more version
+      </button>
     </div>
   );
 }

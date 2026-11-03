@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProviderId } from "@/lib/studio/ai-types";
 import type { ChatContext, Film } from "@/lib/studio/contract";
-import type { Takes } from "@/lib/studio/takes-shared";
+import type { Take, Takes } from "@/lib/studio/takes-shared";
 import { api, StudioError } from "./api";
 
 // Three versions of one prompt, made at once (takes.ts on the server): how
@@ -18,6 +18,9 @@ import { api, StudioError } from "./api";
 export const TAKES_DEMO = true;
 const DEMO_STEPS = ["Reading the film", "Sketching the idea", "Moving things into place", "Checking the frames"];
 const DEMO_DONE_MS = [7000, 9500, 12000]; // after the slot machine's spin
+const DEMO_MORE_MS = 8000; // one more version, after asking for it
+// What a version past the first three is called on its card.
+export const MORE_LABEL = "Another idea";
 
 // A demo version's id is the film's id plus "~n"; its preview is the film.
 export const takeFilm = (takeId: string) => takeId.split("~")[0];
@@ -38,6 +41,16 @@ export function useTakes(id: string, onPicked: (film: Film) => void, onDemoPicke
     demoTimers.current = [];
   };
   useEffect(() => stopDemo, []);
+
+  // A demo version on timers: through the steps, then done.
+  const demoMake = useCallback((n: number, done: number) => {
+    const set = (take: Partial<Take>) =>
+      setTakes((s) => (s ? { ...s, takes: s.takes.map((t) => (t.n === n ? { ...t, ...take } : t)) } : s));
+    DEMO_STEPS.slice(1).forEach((step, i) => {
+      demoTimers.current.push(setTimeout(() => set({ step }), ((i + 1) * done) / DEMO_STEPS.length));
+    });
+    demoTimers.current.push(setTimeout(() => set({ state: "done", step: null }), done));
+  }, []);
 
   // How they're going: once on opening, then every 1.5 s while any is
   // still being made.
@@ -67,21 +80,13 @@ export function useTakes(id: string, onPicked: (film: Film) => void, onDemoPicke
       setTakes(null);
       if (TAKES_DEMO) {
         stopDemo();
-        const set = (n: number, take: Partial<Takes["takes"][number]>) =>
-          setTakes((s) => (s ? { ...s, takes: s.takes.map((t) => (t.n === n ? { ...t, ...take } : t)) } : s));
         setTakes({
           prompt,
           at: new Date().toISOString(),
           provider,
           takes: [1, 2, 3].map((n) => ({ id: `${id}~${n}`, n, state: "working", step: DEMO_STEPS[0], reply: "", error: null })),
         });
-        for (const n of [1, 2, 3]) {
-          const done = DEMO_DONE_MS[n - 1];
-          DEMO_STEPS.slice(1).forEach((step, i) => {
-            demoTimers.current.push(setTimeout(() => set(n, { step }), ((i + 1) * done) / DEMO_STEPS.length));
-          });
-          demoTimers.current.push(setTimeout(() => set(n, { state: "done", step: null }), done));
-        }
+        for (const n of [1, 2, 3]) demoMake(n, DEMO_DONE_MS[n - 1]);
         return true;
       }
       try {
@@ -92,7 +97,7 @@ export function useTakes(id: string, onPicked: (film: Film) => void, onDemoPicke
         return false;
       }
     },
-    [id],
+    [id, demoMake],
   );
 
   const pick = useCallback(
@@ -120,6 +125,23 @@ export function useTakes(id: string, onPicked: (film: Film) => void, onDemoPicke
     [id],
   );
 
+  // One more version of the same prompt, after the first three. Demo only
+  // for now: the server makes three at a time.
+  const canMore = TAKES_DEMO && takes !== null;
+  const latest = useRef(takes);
+  useEffect(() => {
+    latest.current = takes;
+  });
+  const more = useCallback(() => {
+    const s = latest.current;
+    if (!TAKES_DEMO || !s) return;
+    const n = Math.max(...s.takes.map((t) => t.n)) + 1;
+    const next = { ...s, takes: [...s.takes, { id: `${id}~${n}`, n, state: "working" as const, step: DEMO_STEPS[0], reply: "", error: null }] };
+    latest.current = next;
+    setTakes(next);
+    demoMake(n, DEMO_MORE_MS);
+  }, [id, demoMake]);
+
   const discard = useCallback(async () => {
     setTakes(null);
     setError(null);
@@ -127,7 +149,7 @@ export function useTakes(id: string, onPicked: (film: Film) => void, onDemoPicke
     await api.discardTakes(id).catch(() => {});
   }, [id]);
 
-  return { takes, error, busy, start, pick, discard, clearError: () => setError(null) };
+  return { takes, error, busy, start, pick, discard, more, canMore, clearError: () => setError(null) };
 }
 
 export type TakesState = ReturnType<typeof useTakes>;
