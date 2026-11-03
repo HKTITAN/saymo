@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { slotSounds } from "./slot-sounds";
 import { TextMorph } from "torph/react";
 import { Kbd } from "@/components/ui/kbd";
 import { TAKE_WAYS } from "@/lib/studio/takes-shared";
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 // in and lights up) and springs back, and that pull sets the three reels
 // spinning through cherries, bells and sevens while a playful line morphs
 // above. The reels settle left to right on 1, 2 and 3, one per version,
-// each with a small clunk. They only settle once the three versions have
+// each with a small clunk. Each moment has its sound (slot-sounds.ts). They only settle once the three versions have
 // really started (`ready`); then the hood's pink panel glows, the dashes
 // pop again, and the machine fades and hands over to the canvas
 // (`onDone`). With reduced motion nothing swings or spins: the reels stand
@@ -184,6 +185,7 @@ export function SlotMachine({
     let count = 0;
     let spinAt = 0;
     let stage = 0; // 1 pulled, 2 button in, 3 button out
+    let lastTick = 0;
     const clunk = () =>
       machine.current?.animate(
         [{ transform: "translateY(0)" }, { transform: "translateY(2px)" }, { transform: "translateY(0)" }],
@@ -201,10 +203,12 @@ export function SlotMachine({
       if (stage < 1 && t >= PULL_AT) {
         stage = 1;
         setPop(1);
+        slotSounds.pull();
       }
       if (stage < 2 && t >= PRESS_AT) {
         stage = 2;
         setPressed(true);
+        slotSounds.press();
       }
       if (stage < 3 && t >= PRESS_AT + PRESS_FOR) {
         stage = 3;
@@ -246,9 +250,16 @@ export function SlotMachine({
             count++;
             setSettled(count);
             clunk();
+            slotSounds.land(i);
           }
         }
         r.v = r.mode === "done" ? 0 : Math.abs(r.p - before) / Math.max(dt, 0.001);
+        // A tick each time a symbol passes the pay line (the first reel
+        // speaks for all three, so it stays a tick and not a buzz).
+        if (i === 0 && r.mode !== "done" && Math.floor(r.p) !== Math.floor(before) && now - lastTick > 45) {
+          lastTick = now;
+          slotSounds.tick(r.v);
+        }
         const strip = strips.current[i];
         if (strip) strip.style.transform = `translate3d(0, ${offset(r.p)}px, 0)`;
         // Blurred along the reel only, more the faster it goes.
@@ -278,6 +289,7 @@ export function SlotMachine({
   // to the canvas.
   useEffect(() => {
     if (settled < 3) return;
+    if (!reduced) slotSounds.jackpot();
     const again = setTimeout(() => setPop((p) => p + 1), 60);
     const out = setTimeout(() => setLeaving(true), reduced ? 1000 : 1150);
     const done = setTimeout(() => live.current.onDone(), reduced ? 1200 : 1430);
