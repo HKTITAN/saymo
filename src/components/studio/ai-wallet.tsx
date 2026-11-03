@@ -21,9 +21,15 @@ import { PILL_BUTTON } from "./panel";
 const W = 340; // the wallet
 const H = 236;
 const R = 34; // its corners
-const CARD_W = 296;
+// Concentric: the recess is 10 in from the wallet's edge, the card 8 in
+// from the recess on every side, and each corner's radius is the one
+// outside it less that gap (34, 24, 16, and 9 for the card's inner line).
+const RECESS = 10;
+const GAP = 8;
+const CARD_R = R - RECESS - GAP;
+const CARD_W = W - (RECESS + GAP) * 2;
 const CARD_H = Math.round(CARD_W / 1.586);
-const CARD_TOP = 18;
+const CARD_TOP = RECESS + GAP;
 const POCKET_TOP = 86; // the pocket's edge at the sides
 const POCKET_DIP = 112; // and in the middle
 
@@ -102,15 +108,15 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
         {/* the card, inside the wallet */}
         <div className="absolute overflow-hidden" style={{ left: 0, top: 0, width: W, height: H, borderRadius: R }}>
           <div
-            className="absolute rounded-[20px] shadow-[0_6px_14px_-4px_rgba(0,0,0,0.6),0_1px_2px_rgba(0,0,0,0.5)] transition-[top] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
-            style={{ width: CARD_W, height: CARD_H, left: (W - CARD_W) / 2, top: down ? H : CARD_TOP }}
+            className="absolute shadow-[0_6px_14px_-4px_rgba(0,0,0,0.6),0_1px_2px_rgba(0,0,0,0.5)] transition-[top] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+            style={{ width: CARD_W, height: CARD_H, left: (W - CARD_W) / 2, top: down ? H : CARD_TOP, borderRadius: CARD_R }}
           >
-            <span className="absolute inset-0 overflow-hidden rounded-[20px]" style={metal(look.metal)}>
+            <span className="absolute inset-0 overflow-hidden" style={{ ...metal(look.metal), borderRadius: CARD_R }}>
               <Foil colors={look.metal} light={null} drift={false} />
             </span>
             {/* the card's bezel: a hairline inset from its edge, and its pale rim */}
-            <span className="pointer-events-none absolute inset-[7px] rounded-[14px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" />
-            <span className="pointer-events-none absolute inset-0 rounded-[20px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" />
+            <span className="pointer-events-none absolute inset-[7px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" style={{ borderRadius: CARD_R - 7 }} />
+            <span className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" style={{ borderRadius: CARD_R }} />
             <span className="absolute inset-x-[20px] top-[18px] flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-white/95" style={ETCHED}>
                 {look.lockup}
@@ -247,7 +253,7 @@ function Leather({ id }: { id: string }) {
 // along its bottom, round a darker recess the card sits down in.
 function Back() {
   const id = useId().replace(/:/g, "");
-  const inset = 10;
+  const inset = RECESS;
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 overflow-visible" aria-hidden="true">
       <Leather id={id} />
