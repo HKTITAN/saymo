@@ -115,37 +115,58 @@ function Provider({
         aria-expanded={showSetup}
         aria-controls={setupId}
         onClick={() => setShowSetup((s) => !s)}
-        className="flex h-8 w-full cursor-pointer items-center gap-2 rounded-[9px] px-3 text-left text-[12px] text-white/60 outline-none transition-colors hover:bg-white/[0.06] hover:text-white/85 focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          "flex h-8 w-full cursor-pointer items-center gap-2 rounded-[9px] px-3 text-left text-[12px] outline-none transition-colors hover:bg-white/[0.06] hover:text-white/85 focus-visible:ring-2 focus-visible:ring-ring",
+          showSetup ? "text-white/85" : ready ? "text-white/45" : "text-white/65",
+        )}
       >
-        How to set up
-        <ChevronDownIcon aria-hidden="true" className={cn("ms-auto size-3.5 text-white/40 transition-transform duration-200", !showSetup && "-rotate-90")} />
+        {/* Set up already: the steps are only there to sign in again. */}
+        {ready ? "Sign in again" : "How to set up"}
+        <ChevronDownIcon aria-hidden="true" className={cn("ms-auto size-3.5 text-white/40 transition-transform duration-200 motion-reduce:transition-none", !showSetup && "-rotate-90")} />
       </button>
-      <div id={setupId} hidden={!showSetup} className="px-1 pb-1">
-        <Steps status={status} />
+      {/* Opens in place: the height grows from nothing as the steps fade in. */}
+      <div
+        id={setupId}
+        inert={!showSetup}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none",
+          showSetup ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <Steps status={status} />
+        </div>
       </div>
     </div>
   );
 }
 
+// The steps as a short numbered list, each command right under its step,
+// and one line on where to run them. No box of their own: they belong to
+// the AI's card.
 function Steps({ status }: { status: ProviderStatus }) {
-  const commands = status.setup.some((s) => s.command);
+  const commands = status.setup.filter((s) => s.command).length;
+  const numbered = status.setup.length > 1;
   return (
-    <div className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] px-3 py-2.5 text-[11.5px] text-white/60 leading-relaxed">
-      <ol className="flex list-decimal flex-col gap-1.5 ps-4">
-        {status.setup.map((step) => (
-          <li key={step.text}>
-            {step.text}
-            {step.command ? (
-              <div className="mt-1">
-                <Command command={step.command} />
-              </div>
+    <div className="flex flex-col gap-2.5 px-3 pt-1 pb-3">
+      <ol className="flex flex-col gap-3">
+        {status.setup.map((step, i) => (
+          <li key={step.text} className="flex gap-2.5">
+            {numbered ? (
+              <span aria-hidden="true" className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-[10px] text-white/60 tabular-nums">
+                {i + 1}
+              </span>
             ) : null}
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+              <span className="text-[11.5px] text-white/75 leading-snug">{step.text}</span>
+              {step.command ? <Command command={step.command} /> : null}
+            </div>
           </li>
         ))}
       </ol>
       {commands ? (
-        <p className="text-white/40">
-          Run these in Terminal, or in Claude Code by typing <span className="font-mono text-white/60">!</span> and a space before the command. Then press Check again.
+        <p className={cn("text-[11px] text-white/40 leading-relaxed", numbered && "ps-[26px]")}>
+          {commands > 1 ? "Run them in Terminal, then press Check again." : "Run it in Terminal, then press Check again."}
         </p>
       ) : null}
     </div>
@@ -165,7 +186,7 @@ function Command({ command }: { command: string }) {
         });
       }}
       aria-label={`Copy: ${command}`}
-      className="flex min-h-8 cursor-pointer items-center gap-2 rounded-[8px] bg-white/[0.06] px-2.5 py-1.5 text-left font-mono text-[11px] text-white/80 outline-none hover:bg-white/[0.09] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0"
+      className="flex min-h-7 w-fit max-w-full cursor-pointer items-center gap-2.5 rounded-[7px] bg-white/[0.06] ps-2.5 pe-2 py-1 text-left font-mono text-[11px] text-white/85 outline-none transition-colors hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-white/45"
     >
       <span className="min-w-0 flex-1 break-all">{command}</span>
       {copied ? <span className="font-sans text-white/50">Copied</span> : <CopyIcon aria-hidden="true" />}
@@ -266,7 +287,13 @@ function ApiKey({
           className="h-full min-w-0 flex-1 bg-transparent text-right font-mono text-white/90 outline-none placeholder:text-white/30"
         />
       </label>
-      <DialButton type="submit" loading={busy} disabled={!key.trim()} className="bg-white text-[#141414] hover:bg-white/90">
+      {/* White once there's a key to save; until then a quiet row, not a faded slab. */}
+      <DialButton
+        type="submit"
+        loading={busy}
+        disabled={!key.trim()}
+        className="bg-white text-[#141414] hover:bg-white/90 disabled:bg-white/[0.05] disabled:text-white/35 disabled:opacity-100"
+      >
         Save key
       </DialButton>
       <DialNote>
