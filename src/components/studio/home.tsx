@@ -702,6 +702,8 @@ export function Hero({
           onSend={send}
           attachments={attached}
           running={busy}
+          glow
+          held={over}
           maxRows={8}
           placeholder="A 6 second loop: lines rise like a staircase, then the wordmark appears"
           className="min-h-[124px] justify-between rounded-[20px] bg-[#171717] p-2.5 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)] has-[:focus-visible]:bg-[#1a1a1a]"

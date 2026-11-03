@@ -5,6 +5,7 @@ import { ArrowUpIcon, MultipleCrossCancelIcon, MusicBeamNoteIcon } from "@/compo
 import { cn } from "@/lib/utils";
 import { libraryApi } from "./library-api";
 import { AttachMenu } from "./library-picker";
+import { EdgeBeam } from "./edge-beam";
 import { DictationNotice, MicButton, RecordingBar } from "./mic-button";
 import { Hint } from "./panel";
 import { SaveToLibrary } from "./save-to-library";
@@ -19,6 +20,9 @@ import { useDictation } from "./use-dictation";
 // pasted screenshot. The mic writes down what you say
 // (use-dictation.ts): ⌘ ⇧ D or hold ⌥ Space; while it listens, Enter
 // stops and Esc discards it, and nothing is sent.
+// A light rides the box's edge (edge-beam.tsx): an orange one while files
+// are held over it (or `held`, something its parent takes, such as a
+// library item), and with `glow`, a calm grey one while Claude works.
 
 export function PromptBox({
   value,
@@ -38,6 +42,8 @@ export function PromptBox({
   maxRows = 6,
   className,
   attachments,
+  glow,
+  held,
 }: {
   value: string;
   onChange: (value: string) => void;
@@ -56,6 +62,8 @@ export function PromptBox({
   maxRows?: number;
   className?: string;
   attachments?: Attachments;
+  glow?: boolean; // the working light while `running`
+  held?: boolean; // something the parent takes is held over the box
 }) {
   const own = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? own;
@@ -122,7 +130,7 @@ export function PromptBox({
   return (
     <div
       className={cn(
-        "flex flex-col gap-1.5 rounded-[12px] bg-white/[0.06] p-1.5 transition-colors has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-white/15",
+        "relative flex flex-col gap-1.5 rounded-[12px] bg-white/[0.06] p-1.5 transition-colors has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-white/15",
         over && "bg-white/[0.09] ring-1 ring-white/30",
         className,
       )}
@@ -135,7 +143,13 @@ export function PromptBox({
             }
           : undefined
       }
-      onDragLeave={attachments ? () => setOver(false) : undefined}
+      onDragLeave={
+        attachments
+          ? (e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false);
+            }
+          : undefined
+      }
       onDrop={
         attachments
           ? (e) => {
@@ -310,6 +324,8 @@ export function PromptBox({
         ) : null}
       </div>
       )}
+      <EdgeBeam on={over || Boolean(held)} tone="drop" />
+      <EdgeBeam on={Boolean(glow && running) && !over && !held} />
     </div>
   );
 }

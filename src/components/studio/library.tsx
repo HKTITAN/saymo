@@ -34,6 +34,7 @@ import {
 } from "@/lib/studio/references-shared";
 import { cn } from "@/lib/utils";
 import { StudioError } from "./api";
+import { EdgeBeam } from "./edge-beam";
 import { ago, DANGER_ITEM, Empty, FolderCard, FolderChip, FolderMenu, ITEM, MENU_POPUP } from "./home-parts";
 import type { useHistory } from "./history";
 import { libraryApi } from "./library-api";
@@ -759,6 +760,7 @@ export function LibraryView({
           <p className={cn(CARD, "flex h-10 items-center rounded-full px-4 text-[12.5px] text-white/85")}>
             {folder ? `Drop to add to ${folder.name}` : "Drop to add to the library"}
           </p>
+          <EdgeBeam on tone="drop" />
         </div>
       ) : null}
 

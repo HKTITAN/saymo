@@ -35,6 +35,7 @@ import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, ITEM, MENU_P
 import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu } from "./home";
 import { SettingsPage } from "./settings-page";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
+import { EdgeBeam } from "./edge-beam";
 import { ReelFlow } from "./reel-flow";
 import { SlidesFlow } from "./slides-flow";
 import { handOff } from "./use-attachments";
@@ -785,7 +786,7 @@ function FilmCard({
         onClick={onOpen}
         aria-label={`Open ${f.title}`}
         className={cn(
-          "flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring",
+          "relative flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring",
           over ? "bg-white/[0.07] ring-1 ring-white/40" : takes && "bg-white/[0.03] outline-1 outline-dashed outline-white/20",
         )}
       >
@@ -801,6 +802,8 @@ function FilmCard({
             )}
           </span>
         )}
+        {/* A warm light rides the card's edge while a library item is held over it. */}
+        <EdgeBeam on={over} tone="drop" />
         {/* The name, then when it was last edited (and its folder); the
             preview shows its shape and its length. */}
         <span className="flex flex-col gap-0.5 px-0.5 pb-1">
