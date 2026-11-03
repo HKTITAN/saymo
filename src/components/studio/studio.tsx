@@ -37,6 +37,7 @@ import { attachFiles } from "./use-attachments";
 import { useChat } from "./use-chat";
 import { useEdit } from "./use-edit";
 import { useSound } from "./use-sound";
+import { DEFAULT_BRAND } from "@/lib/studio/brand";
 import { useSoundEdit } from "./use-sound-edit";
 import { TakesView, useTakes } from "./takes";
 import { isMediaFile } from "./video-api";
@@ -814,7 +815,7 @@ function FilmView({
     [id, onRefresh],
   );
   const setBrand = async (brand: string) => {
-    const was = film?.brand ?? "aerchain";
+    const was = film?.brand ?? DEFAULT_BRAND;
     if (was === brand || !film) return;
     const [from, to] = await Promise.all([brandApi.get(was).catch(() => null), brandApi.get(brand).catch(() => null)]);
     const before: Record<string, Param["value"]> = {};

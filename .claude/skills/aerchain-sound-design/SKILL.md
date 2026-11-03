@@ -130,6 +130,8 @@ References are guidance only. Never copy, sample, load or play the reference aud
 
 ## The Aerchain sonic language
 
+Written for Aerchain, and a good default for the `clean` kit too. Another kit's `rules.sound` wins where it differs.
+
 Clean, minimal, digital, warm underneath. Like the lines: flat, precise, nothing decorative.
 
 - **A low pulse** (sine sub, 40 to 70 Hz, short decay) as the floor. Slow: one or two beats a second at most.

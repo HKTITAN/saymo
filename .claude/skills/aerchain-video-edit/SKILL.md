@@ -7,7 +7,7 @@ description: Read first when the studio film is a VIDEO EDIT (film.json "kind": 
 
 The person dropped footage into the studio (an interview, a talk, event clips, a screen recording, photos, music) and asks you to make a video of it. They watch it play while you work. You never touch the footage; you change **edit.json**, the recipe the studio plays and renders.
 
-Read `src/lib/studio/edit.ts` once: it is the exact shape of edit.json. Also read **aerchain-film** for film.json, the Aerchain look and how to reply.
+Read `src/lib/studio/edit.ts` once: it is the exact shape of edit.json. Also read **aerchain-film** for film.json, the look for the film's kit and how to reply.
 
 ## The edit in one minute
 
@@ -93,7 +93,7 @@ If there's no transcript, say so. The person can press Transcribe in the studio.
 - A **title** card only if it helps. On social, the hook usually beats a title.
 - An **end card** of 2 to 3 s with the Aerchain wordmark, and a line or URL if asked.
 - A **logo bug** (small wordmark in a corner) only if asked.
-- Use the studio's graphics (studio/graphics/) by name with their values. If one you need doesn't exist, the checker lists what does. Write the film's own graphic as `graphics/<name>.jsx`: a React component that receives the item's `values` as props and animates from `useCurrentFrame()` (Remotion). Then use it by name. Keep it in the Aerchain look.
+- Use the studio's graphics (studio/graphics/) by name with their values. If one you need doesn't exist, the checker lists what does. Write the film's own graphic as `graphics/<name>.jsx`: a React component that receives the item's `values` as props and animates from `useCurrentFrame()` (Remotion). Then use it by name. Keep it in the film's kit (the Aerchain look only when the kit is `aerchain`).
 - Never cover a face with a graphic. Keep text inside a 5% safe margin, more for 9:16.
 
 ## Reframing (16:9 into 1:1, 4:5, 9:16)
@@ -155,7 +155,9 @@ Two kinds: a music FILE the person brought in (an `audio` track, below), or soun
 - Fade music in and out (`fadeIn` 0.5 s, `fadeOut` 1 to 2 s), and end it with the video.
 - Speech is king. If a clip's sound is too quiet next to the others, raise its `volume` (up to 1.5) rather than lowering the rest.
 
-## The Aerchain look for video
+## The look for video
+
+For the `clean` kit (the default) or any other kit, follow that kit and aerchain-film's "No brand kit: the clean look": flat colour, no line fields. For the `aerchain` kit:
 
 - Graphics and cards follow aerchain-film's look: flat colour fields of 12px-pitch lines, Bricolage Grotesque, orange `#F55A00` once at the point of action, stone `#E9E5DD` type on black.
 - Cuts are clean. Use no flashy transitions (no spins, wipes or glitches). A short fade between sections at most.

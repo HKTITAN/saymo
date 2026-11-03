@@ -5,11 +5,14 @@
 // Plain TypeScript with no `@/` imports: scripts/studio/render.mjs imports
 // it straight from Node.
 
-import { cp, mkdir, readdir, readFile, rename, rm, stat } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { BrandKit, BrandTokens } from "./brand";
 
-export const DEFAULT_BRAND = "aerchain";
+// A film with no kit of its own gets the clean look (studio/brands/clean):
+// black on white, Geist, one accent at most. Aerchain is a kit you pick.
+// Kept the same as brand.ts's (the renderer imports this file from Node).
+export const DEFAULT_BRAND = "clean";
 
 // Kit ids: the shipped ones ("aerchain") and the studio's own 8-character ones.
 export const isBrandId = (id: string) => /^[a-z0-9][a-z0-9-]{2,31}$/.test(id);
@@ -36,11 +39,31 @@ async function seed(root: string) {
   for (const id of await readdir(shippedDir(root)).catch(() => [])) {
     if (!isBrandId(id) || (await exists(brandDir(root, id)))) continue;
     if (!(await exists(path.join(shippedDir(root), id, "brand.json")))) continue;
+    if (id === DEFAULT_BRAND) await keepOldFilmsOnAerchain(root);
     await mkdir(brandsDir(root), { recursive: true });
     const aside = `${brandDir(root, id)}.seeding-${process.pid}-${Date.now().toString(36)}`;
     await cp(path.join(shippedDir(root), id), aside, { recursive: true });
     // Another process (a render) may have got there first; keep theirs.
     await rename(aside, brandDir(root, id)).catch(() => rm(aside, { recursive: true, force: true }));
+  }
+}
+
+// Films made before the clean default had no "brand" and were drawn with
+// Aerchain's kit. The first time the clean kit arrives on a Mac (seeded
+// once per install), each of them is marked "aerchain" so none changes look.
+async function keepOldFilmsOnAerchain(root: string) {
+  const films = path.join(root, "films");
+  for (const id of await readdir(films).catch(() => [] as string[])) {
+    if (!/^[a-z0-9]{8}$/.test(id)) continue;
+    const file = path.join(films, id, "film.json");
+    try {
+      const film = JSON.parse(await readFile(file, "utf8")) as { brand?: string; take?: unknown };
+      if (film.brand || film.take) continue;
+      await writeFile(`${file}.tmp`, `${JSON.stringify({ ...film, brand: "aerchain" }, null, 2)}\n`);
+      await rename(`${file}.tmp`, file);
+    } catch {
+      // Not a film (yet), or unreadable: leave it.
+    }
   }
 }
 
@@ -54,7 +77,7 @@ export async function readKit(root: string, id: string): Promise<BrandKit | null
   }
 }
 
-// The kit a film uses: its own, else Aerchain's.
+// The kit a film uses: its own, else the clean default.
 export async function kitForFilm(root: string, brand: string | undefined): Promise<BrandKit | null> {
   return (await readKit(root, brand && isBrandId(brand) ? brand : DEFAULT_BRAND)) ?? (await readKit(root, DEFAULT_BRAND));
 }

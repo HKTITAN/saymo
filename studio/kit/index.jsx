@@ -72,10 +72,27 @@ export const useBrand = currentBrand;
 export const brandUrl = (url) => (/^(https?:|data:|\/)/.test(url) ? url : staticFile(url));
 
 // A colour as a line field: the exact pair the brand gives, else the colour
-// with a step darker gap.
+// with a step darker gap. Lines are a kit's own texture (Aerchain's): a kit
+// without a texture, like the clean default, gets flat colour, the line and
+// its gap the same, so nothing reads as lines.
 export const fieldOf = (brand, hex) => {
-  const exact = brand.texture?.fields?.[String(hex).toUpperCase()];
+  if (!brand.texture) return { lit: hex, gap: hex };
+  const exact = brand.texture.fields?.[String(hex).toUpperCase()];
   return exact ?? { lit: hex, gap: darker(hex) };
+};
+
+// How much two colours stand apart (WCAG contrast ratio).
+const luminance = (hex) => {
+  const n = parseInt(String(hex).slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+export const contrast = (a, b) => {
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
 };
 export const field = (hex) => fieldOf(currentBrand(), hex);
 
@@ -86,7 +103,9 @@ export function paletteOf(brand) {
     stone: r.surface,
     ink: r.ink,
     muted: r.muted,
-    black: { lit: r.line, gap: r.background },
+    black: brand.texture ? { lit: r.line, gap: r.background } : { lit: r.background, gap: r.background },
+    // Type on the ground: whichever of ink and surface stands out more on it.
+    text: contrast(r.ink, r.background) >= contrast(r.surface, r.background) ? r.ink : r.surface,
     orange: accent,
     accent,
     stoneField: fieldOf(brand, r.surface),

@@ -13,6 +13,10 @@
 // studio/brands/aerchain/ the Aerchain kit as shipped (tracked in git); the
 //                         first visit copies it into brands/aerchain/.
 
+// The kit a film without its own gets (brand-tokens.ts says the same, for
+// the scripts that can't import this file).
+export const DEFAULT_BRAND = "clean";
+
 export type Hex = string; // "#F55A00"
 
 export type ColorRoles = {

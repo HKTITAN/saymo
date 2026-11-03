@@ -36,11 +36,12 @@ export default function Film({ figure = 40, unit = "%", label = "faster sourcing
   const palette = usePalette();
   const { pitch: PITCH, stroke: STROKE } = useTexture();
   const BLACK = palette.black;
-  const TEXT = palette.stone;
+  const TEXT = palette.text ?? palette.stone;
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const t = frame / fps;
-  const ACCENT = { lit: accent, gap: darker(accent) };
+  // Lines only for a kit with a line texture; otherwise flat colour.
+  const ACCENT = BLACK.lit !== BLACK.gap ? { lit: accent, gap: darker(accent) } : { lit: accent, gap: accent };
   const share = Math.min(100, Math.max(0, Number(figure) || 0)) / 100;
 
   // The bar fills the lower half of the frame; the words sit above it.
@@ -71,9 +72,11 @@ export default function Film({ figure = 40, unit = "%", label = "faster sourcing
   return (
     <AbsoluteFill style={{ backgroundColor: BLACK.gap }}>
       <svg data-part="lines" viewBox={`0 0 ${W} ${H}`} width={W} height={H} style={{ display: "block", position: "absolute" }}>
-        {Array.from({ length: rows }, (_, r) => (
-          <rect key={r} x={0} y={r * PITCH + (PITCH - STROKE) / 2} width={W} height={STROKE} fill={BLACK.lit} />
-        ))}
+        {BLACK.lit !== BLACK.gap
+          ? Array.from({ length: rows }, (_, r) => (
+              <rect key={r} x={0} y={r * PITCH + (PITCH - STROKE) / 2} width={W} height={STROKE} fill={BLACK.lit} />
+            ))
+          : null}
         {runs}
       </svg>
       <div style={{ position: "absolute", left: 72, top: 72, color: TEXT, fontFamily: FAMILY, opacity: out }}>

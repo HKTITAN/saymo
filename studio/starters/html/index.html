@@ -100,27 +100,44 @@
       // The film's brand kit (window.__brand): its ground, type and line
       // texture. Without one, Aerchain's.
       const BRAND = window.__brand;
-      const ROLES = Object.assign({ background: "#141414", surface: "#E9E5DD", line: "#1E1E1E" }, BRAND?.colors?.roles);
+      const ROLES = Object.assign({ background: "#141414", surface: "#E9E5DD", ink: "#141414", line: "#1E1E1E" }, BRAND?.colors?.roles);
       const DISPLAY = (BRAND?.fonts?.find((f) => f.role === "display") ?? BRAND?.fonts?.[0])?.family ?? "Bricolage Grotesque";
       document.body.style.background = ROLES.background;
+      // The headline in whichever of the kit's ink and surface stands out more
+      // on its ground: ink on a light kit, surface on a dark one.
+      const luminance = (hex) => {
+        const n = parseInt(String(hex).slice(1), 16);
+        const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => {
+          const s = v / 255;
+          return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+        });
+        return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+      };
+      const contrast = (a, b) => {
+        const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+        return (x + 0.05) / (y + 0.05);
+      };
       const headlineEl = document.getElementById("headline");
-      headlineEl.style.color = ROLES.surface;
+      headlineEl.style.color = contrast(ROLES.ink, ROLES.background) >= contrast(ROLES.surface, ROLES.background) ? ROLES.ink : ROLES.surface;
       headlineEl.style.fontFamily = `"${DISPLAY}", sans-serif`;
 
-      // The line texture: an 8px line on a 12px pitch for Aerchain, each
-      // colour a flat field with a slightly darker partner in the gaps.
-      const STROKE = BRAND?.texture?.stroke ?? 8;
+      // The line texture is a kit's own (Aerchain's: an 8px line on a 12px
+      // pitch, each colour a flat field with a slightly darker partner in the
+      // gaps). A kit without one, like the clean default, gets flat colour:
+      // the same staircase as solid shapes on a plain ground, no lines.
+      const LINES = !BRAND || Boolean(BRAND.texture);
+      const STROKE = LINES ? (BRAND?.texture?.stroke ?? 8) : 12;
       const PITCH = BRAND?.texture ? BRAND.texture.stroke + BRAND.texture.gap : 12;
       const BAND = 9; // lines per band; the staircase moves band by band
       const ROWS = Math.ceil(H / PITCH);
       const BANDS = Math.ceil(ROWS / BAND);
-      const BLACK = { lit: ROLES.line, gap: ROLES.background };
+      const BLACK = LINES ? { lit: ROLES.line, gap: ROLES.background } : { lit: ROLES.background, gap: ROLES.background };
       const darker = (hex, k = 0.895) => {
         const n = parseInt(hex.slice(1), 16);
         const c = [n >> 16, (n >> 8) & 255, n & 255].map((v) => Math.round(v * k));
         return `#${c.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
       };
-      const ACCENT = { lit: P.accent, gap: darker(P.accent) };
+      const ACCENT = LINES ? { lit: P.accent, gap: darker(P.accent) } : { lit: P.accent, gap: P.accent };
 
       // Times in seconds at speed 1; a faster speed only tightens them.
       const s = (t) => t / Math.max(0.25, Number(P.speed) || 1);

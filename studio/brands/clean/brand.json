@@ -1,0 +1,117 @@
+{
+  "id": "clean",
+  "name": "Clean",
+  "updatedAt": "2026-11-03T00:00:00.000Z",
+  "source": "The studio's own default: black on white, one type family, one accent at most",
+  "colors": {
+    "roles": {
+      "background": "#FFFFFF",
+      "surface": "#F4F4F4",
+      "ink": "#0A0A0A",
+      "muted": "#6E6E6E",
+      "accent": "#0A0A0A",
+      "onAccent": "#FFFFFF",
+      "line": "#EBEBEB"
+    },
+    "ramps": [
+      {
+        "name": "Grey",
+        "steps": [
+          {
+            "name": "Grey 1",
+            "hex": "#FAFAFA"
+          },
+          {
+            "name": "Grey 2",
+            "hex": "#F4F4F4"
+          },
+          {
+            "name": "Grey 3",
+            "hex": "#EBEBEB"
+          },
+          {
+            "name": "Grey 4",
+            "hex": "#E0E0E0"
+          },
+          {
+            "name": "Grey 5",
+            "hex": "#D2D2D2"
+          },
+          {
+            "name": "Grey 6",
+            "hex": "#BDBDBD"
+          },
+          {
+            "name": "Grey 7",
+            "hex": "#A3A3A3"
+          },
+          {
+            "name": "Grey 8",
+            "hex": "#8A8A8A"
+          },
+          {
+            "name": "Grey 9",
+            "hex": "#6E6E6E"
+          },
+          {
+            "name": "Grey 10",
+            "hex": "#525252"
+          },
+          {
+            "name": "Grey 11",
+            "hex": "#363636"
+          },
+          {
+            "name": "Grey 12",
+            "hex": "#1F1F1F"
+          },
+          {
+            "name": "Grey 13",
+            "hex": "#0A0A0A"
+          }
+        ]
+      }
+    ]
+  },
+  "fonts": [
+    {
+      "family": "Geist",
+      "role": "display",
+      "file": "fonts/Geist-Variable.ttf",
+      "weights": "100 900",
+      "axes": "wght 100-900",
+      "licence": "OFL"
+    },
+    {
+      "family": "Geist",
+      "role": "text",
+      "file": "fonts/Geist-Variable.ttf",
+      "weights": "100 900",
+      "axes": "wght 100-900",
+      "licence": "OFL"
+    }
+  ],
+  "logos": [],
+  "rules": {
+    "visual": [
+      "Black on white, with plenty of white space; let one thing lead each frame.",
+      "One type family, Geist: size and weight make the hierarchy, not colour.",
+      "Every word stands at least 4.5:1 against its ground.",
+      "One accent at most, once per frame, only where it matters; black is the default accent.",
+      "Flat colour: no gradients, glows or drop shadows unless the film asks for them."
+    ],
+    "motion": [
+      "Every move has a reason: ease out as things arrive, ease in as they leave, nothing bounces unless asked.",
+      "Titles are typed on or rise in, never faded in.",
+      "One idea per beat, held long enough to read twice."
+    ],
+    "sound": [
+      "Quiet and clean: soft clicks and ticks, a light bed under them, nothing that sounds like a logo."
+    ],
+    "words": [
+      "Short, plain sentences in sentence case.",
+      "No exclamation marks and no emoji."
+    ]
+  },
+  "notes": "# The clean look\n\nThis is the studio's default kit, for films that have no brand of their own. It is deliberately quiet, so the film's idea leads.\n\n## Design from the prompt\n\nThere is no house style to copy here. Read the request for its subject, its audience and the platform it's for (a LinkedIn post, a story, a launch video), and design for that. The kit only fixes the basics:\n\n- **Ground and ink:** white ground, near-black ink (#0A0A0A), greys from the Grey ramp for anything secondary.\n- **Type:** Geist for everything. Make hierarchy with size and weight. Tighten tracking as type gets bigger, and keep every word at 4.5:1 or more against what's behind it.\n- **Colour:** one accent at most. Black is the default accent; if the film needs colour, pick one that suits the subject and use it once per frame.\n- **Motion:** purposeful and calm. Titles type on or rise in; they never fade in.\n- **Sound:** light and clean, cut to the picture.\n\n## Craft\n\nFollow the film skill's \"No brand kit: the clean look\" section: it says which craft skills to load (stopmotion-video for type and cutting, stageshow for product UI, product-film and html-demo for product films, motion-design for timing).\n"
+}

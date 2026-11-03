@@ -9,7 +9,7 @@ The studio at `/studio` is Aerchain's own motion tool. The person you work with 
 
 The contract is `src/lib/studio/contract.ts` (read it if anything below is unclear). Everything a film needs lives in its own folder, `films/<id>/`. You may only write there.
 
-**Video films:** if film.json says `"kind": "video"` (there's an edit.json), the film is an edit of footage the person brought in. Load the **aerchain-video-edit** skill as well: you change the edit through edit.json, not by rewriting the component, and you look at the footage with the media tool. The film.json rules, the Aerchain look and "Before you finish" below still apply.
+**Video films:** if film.json says `"kind": "video"` (there's an edit.json), the film is an edit of footage the person brought in. Load the **aerchain-video-edit** skill as well: you change the edit through edit.json, not by rewriting the component, and you look at the footage with the media tool. The film.json rules, the look for the film's kit and "Before you finish" below still apply.
 
 ## film.json: keep it true
 
@@ -71,17 +71,28 @@ Only if asked, or if the film truly can't be done in its engine. Copy the right 
 
 ## The film's brand kit
 
-Every film follows a brand kit (film.json `brand`; none means `aerchain`). Your message names it and its path: `brands/<id>/brand.json`, with its fonts and logos beside it. Read it before designing: its `rules` (look, motion, sound, words) and `notes` are the brief, and its tokens are what you draw with. Don't hard-code colours, fonts or logos; take them from the kit, so the film changes with it:
+Every film follows a brand kit (film.json `brand`; none means `clean`, the studio's neutral default). Your message names it and its path: `brands/<id>/brand.json`, with its fonts and logos beside it. Read it before designing: its `rules` (look, motion, sound, words) and `notes` are the brief, and its tokens are what you draw with. Don't hard-code colours, fonts or logos; take them from the kit, so the film changes with it:
 
 - html: `window.__brand` (`colors.roles`, `colors.ramps`, `fonts` with `url`, `logos` with `url`, `texture`). The kit's fonts are already loaded as @font-face under their own family names.
 - react: `useBrand()`, `usePalette()` (`stone`, `ink`, `muted`, `black`, `accent` with `{ lit, gap }`), `useTexture()` (`{ pitch, stroke }`), `useBrandFont()` (loads the fonts, returns the display family) and `<BrandLogo height ground="light|dark" />`, all from `"studio-kit"`.
 - rust: `brand.json` beside Cargo.toml when the film is rendered.
 
-The Aerchain kit's values are the ones below. For another brand, its kit wins over this section wherever they differ.
+Which section applies depends on the kit: **"The Aerchain look"** only when the kit is `aerchain`, **"No brand kit: the clean look"** when it's `clean`, and for any other kit, that kit's own rules and notes (use the craft skills below for everything the kit doesn't say). Lines and line fields are Aerchain's texture: draw them only when the kit has a `texture`. A kit without one gets flat colour; the starters and the React kit already do this (`fieldOf` returns flat fields, `palette.text` is the readable type colour).
+
+## No brand kit: the clean look
+
+The `clean` kit is quiet on purpose: white ground, near-black ink, Geist for everything, one accent at most (black by default), no line texture. It fixes only the basics, so design each film from its prompt: the subject, the audience and the platform (a LinkedIn post, a story, a launch video), not from a house style. Keep the kit's type and contrast rules, and lean on the craft skills:
+
+- **stopmotion-video** (Kosta's, borrowed, MIT) for type and cutting: tracking tightens as type grows; every word stands at least 4.5:1 against its ground; titles are typed on, never faded in; its spacing curves; and whenever there's music, its cutting rules (pages on bar lines, clicks on kicks and snares, big changes on big kicks). Its low-frame-rate stop-motion look is a style for when it's asked for, not the default.
+- **stageshow** for any moment that shows an app or a product UI.
+- **product-film** for product and launch films, **html-demo** for an app walkthrough.
+- **motion-design** for timing and easing.
+
+Choose the accent from the subject if the film needs colour, and use it once per frame. Flat colour by default: no line fields, gradients, glows or drop shadows unless the prompt asks.
 
 ## The Aerchain look
 
-Unless asked otherwise, films look like Aerchain:
+Only when the film's kit is `aerchain` (film.json `brand: "aerchain"`):
 
 - Colours from `src/components/post/palette.ts`: black `#1E1E1E` with `#141414` lines, orange `#F55A00` with `#DB5000`, stone `#D3CCBF` with `#C2BAAC`, light stone `#E9E5DD` for type on black. Orange is the accent: use it once, at the point of action.
 - Grounds are flat colour (black `#141414`, stone `#E9E5DD`), never a full-frame scanline or line-field wallpaper. Lines appear only as a purposeful graphic. Lines are continuous flat strokes, one colour each, and move in one direction; colour arrives from the right.

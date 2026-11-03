@@ -137,7 +137,7 @@ function summary(f) {
     width: f.width,
     height: f.height,
     duration: f.duration,
-    brand: f.brand ?? "aerchain",
+    brand: f.brand ?? "clean",
     updatedAt: f.updatedAt,
     link: filmLink(f.id),
   };

@@ -1,3 +1,4 @@
+import { DEFAULT_BRAND } from "./brand-tokens";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { createReadStream, existsSync } from "node:fs";
@@ -247,7 +248,7 @@ async function writeFilm(dir: string, film: Film): Promise<string> {
   await mkdir(target, { recursive: true });
   await copySource(filmDir(film.id), target, film.kind === "video");
   if (film.kind === "video") await writeMediaManifest(film.id, target);
-  await copyBrand(dir, film.brand ?? "aerchain");
+  await copyBrand(dir, film.brand ?? DEFAULT_BRAND);
   await writeFile(path.join(target, "README.md"), await filmReadme(film));
   return want;
 }
@@ -366,7 +367,7 @@ async function filmReadme(film: Film) {
   const lines = [
     `# ${film.title}`,
     "",
-    `${KIND(film)}, ${film.width} x ${film.height}, ${length(film.duration)} at ${film.fps} fps. Brand: ${film.brand ?? "aerchain"}. Film id \`${film.id}\`.`,
+    `${KIND(film)}, ${film.width} x ${film.height}, ${length(film.duration)} at ${film.fps} fps. Brand: ${film.brand ?? DEFAULT_BRAND}. Film id \`${film.id}\`.`,
     "",
     "## Renders",
     "",
@@ -411,7 +412,7 @@ async function writeIndex(dir: string, fullName: string) {
     }
   }
   for (const { film, folder } of found) {
-    rows.push(`| [${film.title.replace(/\|/g, "/")}](${folder}) | ${KIND(film)} | ${film.brand ?? "aerchain"} | ${film.width} x ${film.height} | ${length(film.duration)} | ${film.updatedAt.slice(0, 10)} |`);
+    rows.push(`| [${film.title.replace(/\|/g, "/")}](${folder}) | ${KIND(film)} | ${film.brand ?? DEFAULT_BRAND} | ${film.width} x ${film.height} | ${length(film.duration)} | ${film.updatedAt.slice(0, 10)} |`);
   }
   const readme = [
     "# Aerchain motion library",

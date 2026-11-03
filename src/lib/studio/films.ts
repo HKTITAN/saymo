@@ -3,6 +3,7 @@ import { constants } from "node:fs";
 import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { tokenMatches } from "./api-token";
+import { kitForFilm } from "./brand-tokens";
 import type { Engine, Film, FilmEdit, FilmSummary, Folder, Version } from "./contract";
 
 // Copies are APFS clones where the disk allows: instant, and no extra space
@@ -121,6 +122,11 @@ export async function createFilm({
     updatedAt: now,
     session: undefined,
   };
+  // The starter's colours are Aerchain orange; a film starts on the default
+  // kit, so it takes that kit's accent instead.
+  const kit = await kitForFilm(ROOT, undefined);
+  const accent = kit?.colors.roles.accent;
+  if (accent) film.params = film.params.map((p) => (p.type === "color" && String(p.value).toUpperCase() === "#F55A00" ? { ...p, value: accent } : p));
   await writeFilm(film);
   return film;
 }
