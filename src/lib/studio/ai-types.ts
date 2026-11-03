@@ -58,7 +58,7 @@ export type Effort = (typeof EFFORTS)[number]["id"];
 export type AiChoice = { model: string; effort: string; provider: ProviderId };
 export const isModelId = (v: unknown): v is ModelId => MODELS.some((m) => m.id === v);
 export const isEffort = (v: unknown): v is Effort => EFFORTS.some((e) => e.id === v);
-const modelName = (id: string) => MODELS.find((m) => m.id === id)?.name ?? id;
+export const modelName = (id: string) => MODELS.find((m) => m.id === id)?.name ?? id;
 const effortName = (id: string) => EFFORTS.find((e) => e.id === id)?.name ?? id;
 // "Opus 5.5 · High", for the picker in prompt boxes.
 export const choiceShort = (c: AiChoice) => `${modelName(c.model)} · ${effortName(c.effort)}`;

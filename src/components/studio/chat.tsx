@@ -14,7 +14,7 @@ import { SentFiles } from "./sent-files";
 import { ClaudeAtWork } from "./mascot";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
-import { choiceShort } from "@/lib/studio/ai-types";
+import { modelName } from "@/lib/studio/ai-types";
 import { useAiChoice } from "./ai-api";
 import { ClaudeMark, CodexMark } from "./ai-marks";
 import { VersionsButton } from "./versions";
@@ -283,8 +283,9 @@ export function ChatPanel({
       </div>
       <div className="shrink-0 px-2 pb-2">
         <PromptHeader running={turn.running} steps={turn.steps} resumed={turn.resumed} clock={clock} three={three} />
-        {/* Opaque underneath, so the working card tucks behind the box. */}
-        <div className="relative z-10 rounded-[12px] bg-[#161616]">
+        {/* The box, on a lighter card with a faint slate rim, tucked into
+            the header: the light lower card of the stack. */}
+        <div className="relative z-10 rounded-[12px] bg-[#2a2b2e] shadow-[0_0_0_1px_rgba(170,200,230,0.16),0_-6px_16px_-8px_rgba(0,0,0,0.6)]">
         <PromptBox
           inputRef={inputRef}
           value={draft}
@@ -470,7 +471,7 @@ function PromptHeader({
           <>
             {codex ? <CodexMark className="size-3.5 shrink-0 text-white/80" /> : <ClaudeMark className="size-3.5 shrink-0 text-white/80" />}
             <span className="font-medium text-white/85">{codex ? "Codex" : "Claude"}</span>
-            {codex ? null : <span className="truncate text-white/45">{choiceShort(choice)}</span>}
+            {codex ? null : <span className="truncate text-white/45">{modelName(choice.model)}</span>}
           </>
         )}
       </p>
