@@ -125,7 +125,7 @@ function metal([base, sheen]: [string, string]): CSSProperties {
 
 // The sleeve: soft padded leather. A raised grain that catches the light,
 // a puffed edge (lit along the top, shaded underneath), a dark painted
-// edge, pink stitching with its holes, and the chosen AI's mark pressed
+// edge, tan stitching with its holes, and the chosen AI's mark pressed
 // deep into it with "Motion Studio" under it.
 function Sleeve({ mark }: { mark: (c: string) => ReactNode }) {
   const id = useId().replace(/:/g, "");
@@ -182,9 +182,9 @@ function Sleeve({ mark }: { mark: (c: string) => ReactNode }) {
         {/* the painted edge, and its lit lip */}
         <path d={edge} fill="none" stroke="#2b140c" strokeWidth="2" />
         <path d={edge} fill="none" stroke="rgba(255,206,178,0.28)" strokeWidth="1" transform="translate(0 1)" clipPath={`url(#${id}-clip)`} />
-        {/* stitching: the holes, then the pink thread */}
+        {/* stitching: the holes, then the tan thread */}
         <path d={stitch} fill="none" stroke="rgba(30,10,5,0.55)" strokeWidth="2.6" strokeDasharray="6 5" strokeLinecap="round" transform="translate(0 0.8)" />
-        <path d={stitch} fill="none" stroke="#ff8cc3" strokeWidth="1.7" strokeDasharray="6 5" strokeLinecap="round" />
+        <path d={stitch} fill="none" stroke="#c99a78" strokeWidth="1.7" strokeDasharray="6 5" strokeLinecap="round" />
       </svg>
       {/* the mark and the words, pressed in: shade above, light below */}
       <span
