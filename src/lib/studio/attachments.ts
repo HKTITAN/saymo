@@ -218,5 +218,8 @@ export function attachmentNote(root: string, all: Attachment[]) {
   const how = decks
     ? ` To use slides in the film, follow the "Slides to video" section of the aerchain-film skill; the slide pictures can be used straight from refs/ by their relative paths.`
     : "";
-  return `<attachments>\nThey attached these files to this message. Open each one with Read before you act on the request: images and PDFs read directly, Word files were turned into text.${how}\n${lines.join("\n")}\n</attachments>`;
+  const pictures = list.some((a) => a.kind === "image")
+    ? " The pictures are theirs: if they want one in the film (\"this image\", \"my poster\", \"the same as the image\", on a billboard or a screen), put the file itself in with the photo command, as your instructions' Pictures part says. Draw your own only when they ask for something like it."
+    : "";
+  return `<attachments>\nThey attached these files to this message. Open each one with Read before you act on the request: images and PDFs read directly, Word files were turned into text.${how}${pictures}\n${lines.join("\n")}\n</attachments>`;
 }

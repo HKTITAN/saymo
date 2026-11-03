@@ -455,6 +455,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Bash(${media} *)`,
     `Bash(${voiceTool(id)} *)`,
     `Bash(${listenCommand(id)} *)`, // hears this film's refs/ and stems only
+    `Bash(${photoTool(id)} *)`, // attached pictures into the film, and real photos from Openverse or Wikimedia Commons
     "Skill",
     "TodoWrite",
   ];
@@ -525,7 +526,14 @@ and fix what it reports. For a quick test video of a film that can't be checked 
   node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft
 The film's sound design is sound/score.js (music as a music bed, effects in Tone.js, as src/lib/studio/sound.ts describes). Load the aerchain-sound-design skill before writing or changing sound. To render the sound and hear what you made (loudness, and where each hit lands against the film's moments), run exactly:
   ${soundCommand(id)}
-No other shell commands are available, and there is no web access.${video}
+
+Pictures. When they attach a picture (a photo, a poster, a logo, a screenshot, a product shot) and ask for "this", "this image", "my poster", "the same as the image", or for it to be somewhere in the film (on a billboard, a screen, a wall, behind the type), use the file itself, never a drawn imitation of it. Copy it in with
+  ${photoTool(id)} use refs/<file> [name]
+and show it the way the tool says: crop, scale, place, mask, light and move it, but don't redraw, trace or recolour it. Draw your own version only when they ask for something "like" it, or for its style or mood. When a film needs a real place or thing (a realistic city, street, skyline, room or object) and no photo is attached, use a real photo rather than drawing one:
+  ${photoTool(id)} search "<words>" [--wide | --tall]
+  ${photoTool(id)} get <n> [name]
+Read the previews it lists before you choose. Keep real photos real: grade, crop, blur and light them to suit the film, and never turn them into a cartoon. If a photo's licence asks for credit, say so in your reply.
+No other shell commands are available, and the photo command is your only way to the web.${video}
 
 How to reply: work silently (write no text while you work), then end with at most two short sentences, under 35 words in all, saying what changed on screen in visual words. Plain text only: no lists, no headings, no bold, no code, no file names. Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
 }
@@ -539,7 +547,7 @@ const forCodex = (text: string) =>
 
 function codexInstructions(id: string, kind: Film["kind"]) {
   return forCodex(systemPrompt(id, kind)).replace(
-    "No other shell commands are available, and there is no web access.",
+    "No other shell commands are available, and the photo command is your only way to the web.",
     `Read files with plain commands (cat, sed, ls, rg) and change the film's files with apply_patch. Run no other programs than the ones above. The house rules are in ${path.join(ROOT, "CLAUDE.md")}. There is no web access, and the sandbox refuses writes outside the film's folder.`,
   );
 }
@@ -598,6 +606,8 @@ For a voiceover, write the words to voice/<name>.txt in the film, then run exact
   ${voiceTool(id)} <voice> <words-per-minute> voice/<name>.txt
 Voices: Rishi (Indian English, male, the default), Tara (Indian English, female), Aman (Indian English, male), Lekha (Hindi, female); pace 175 is normal. It lands in the film's media; place it on an audio track and transcribe it for captions.`;
 }
+
+const photoTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/photo.mjs")} ${id}`;
 
 const voiceTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/voice.mjs")} ${id}`;
 
@@ -824,6 +834,10 @@ function stepFor(name: string, input: Json, dir: string): string | null {
       if (command.includes("sound.mjs")) return "Listening to the sound";
       if (command.includes("listen.mjs")) return command.includes("--stem") ? "Listening to the sound" : "Listening to your reference";
       if (command.includes("media-tool")) return MEDIA_STEPS[command.split(/\s+/)[3] ?? ""] ?? "Looking at the footage";
+      if (command.includes("photo.mjs")) {
+        const what = command.split(/\s+/)[3] ?? "";
+        return what === "use" ? "Putting your picture in the film" : what === "search" ? "Looking for real photos" : "Getting the photo";
+      }
       return "Running a command";
     }
     default:
