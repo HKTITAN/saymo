@@ -30,30 +30,11 @@ import { Hint } from "./panel";
 import { PromptBox } from "./prompt-box";
 import { useAttachments } from "./use-attachments";
 
-// The home page's next layout, tried beside the current one before it
-// replaces it: a sidebar (Home, Library, Brand kits and the folders) and,
+// The studio's home page: a sidebar (Home, Library, Brand kits and the folders) and,
 // on Home, a prompt that starts a film straight away, with every film below
 // on its own stage at its real shape. dashboard.tsx keeps all the state and
 // the gestures (dragging films onto folders, library items onto films, ⌘Z);
 // these are the parts it draws with.
-
-// /studio?home=next shows it in this tab (and keeps it while the tab visits
-// films), /studio?home=old goes back. Only while developing.
-const HOME_KEY = "studio:home";
-export function useHomeNext() {
-  const [next] = useState(() => {
-    if (process.env.NODE_ENV === "production" || typeof window === "undefined") return false;
-    try {
-      const asked = new URLSearchParams(window.location.search).get("home");
-      if (asked === "next") window.sessionStorage.setItem(HOME_KEY, "next");
-      if (asked === "old") window.sessionStorage.removeItem(HOME_KEY);
-      return window.sessionStorage.getItem(HOME_KEY) === "next";
-    } catch {
-      return false;
-    }
-  });
-  return next;
-}
 
 export type Section = "home" | "library" | "kits" | "settings";
 export type Way = "video" | "script" | "reel" | "slides";

@@ -1,19 +1,16 @@
 "use client";
 
 import { Popover } from "@base-ui/react/popover";
-import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
-  ArrowLeftIcon,
   ChevronRightIcon,
   CopyIcon,
-  FileIcon,
   DeleteDustbin01Icon,
   FolderIcon,
   GridDashboard02Icon,
   MultipleCrossCancelIcon,
   PencilEditIcon,
   PlusIcon,
-  SearchIcon,
   ThreeDotsMenuHorizontalIcon,
   UploadUpIcon,
 } from "@/components/icons";
@@ -27,15 +24,15 @@ import type { FilmSummary, Folder } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { api } from "./api";
 import { Swatches } from "./brand-row";
-import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, VideoDoodle } from "./doodles";
+import { ClapperDoodle, FolderDoodle, KitsDoodle, PosterLines } from "./doodles";
 import { clearNewFilmLink, FirstFilm, readNewFilmLink } from "./first-film";
 import { undoKey, useHistory } from "./history";
 import { KitMaker } from "./kit-maker";
 import { NewKitMenu, PersonalStyleMaker } from "./personal-style";
 import { LibraryView } from "./library";
 import { cachedLibrary, filesFor } from "./library-api";
-import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, FolderChip, FolderMenu, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
-import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu, shapeOf, useHomeNext } from "./home-next";
+import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
+import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu, shapeOf } from "./home";
 import { SettingsPage } from "./settings-page";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { ReelFlow } from "./reel-flow";
@@ -165,14 +162,11 @@ export function Dashboard({
   const [sort, setSort] = useState<Sort>("edited");
   const [dragging, setDragging] = useState<string | null>(null);
   const [naming, setNaming] = useState(false);
-  const [renamingFolder, setRenamingFolder] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ text: string; key: number } | null>(null);
   const zip = useRef<HTMLInputElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const now = useSyncExternalStore(everyMinute, thisMinute, () => 0);
-  // The next layout (home-next.tsx), tried with /studio?home=next while developing.
-  const next = useHomeNext();
   const [aside, setAside] = useState<null | "kits" | "settings">(null);
   // Moves and renames are undone here; there's no Claude turn to undo.
   const history = useHistory({ undoClaude: async () => "Nothing to undo", claudeBusy: () => false });
@@ -191,7 +185,6 @@ export function Dashboard({
 
   const goFolder = (id: string | null) => {
     setFolderId(id);
-    setRenamingFolder(false);
     keepFolder(id);
   };
   const folder = (folderId && folders?.find((f) => f.id === folderId)) || null;
@@ -345,19 +338,10 @@ export function Dashboard({
     return m;
   }, [films]);
   const q = query.trim().toLowerCase();
-  const shown =
-    films === null
-      ? null
-      : films
-          .filter((f) => (folder ? f.folder === folder.id : q || !f.folder) && (!q || f.title.toLowerCase().includes(q)))
-          .sort(sort === "name" ? (a, b) => a.title.localeCompare(b.title) : (a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const inView = folder ? (counts.get(folder.id) ?? 0) : (films?.length ?? 0);
-  // At the top level, folders sit in the grid before the films not in one.
-  const folderCards = !folder && !q ? (folders ?? []) : [];
   const inFolder = (id: string) =>
     (films ?? []).filter((f) => f.folder === id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
-  // ─── The next layout (home-next.tsx), while it's tried beside this one ──
+  // ─── The home page (its parts are in home.tsx) ───────────────────────────
   // Home lists every film, newest first; a folder in the sidebar narrows it.
 
   const section: Section = aside ?? (tab === "library" ? "library" : "home");
@@ -371,7 +355,7 @@ export function Dashboard({
       : films
           .filter((f) => (folder ? f.folder === folder.id : true) && (!q || f.title.toLowerCase().includes(q)))
           .sort(sort === "name" ? (a, b) => a.title.localeCompare(b.title) : (a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const nextLayout = next ? (
+  const nextLayout = (
     <div className="absolute inset-0 flex bg-[#080808]">
       <SideNav
         section={section}
@@ -567,348 +551,11 @@ export function Dashboard({
         </div>
       </div>
     </div>
-  ) : null;
+  );
 
   return (
     <>
-      {nextLayout ?? (
-      <div className="absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {/* The studio's name, finding a film, and their order. */}
-        <header className="sticky top-0 z-20 bg-[#0b0b0b]/85 backdrop-blur-xl">
-          <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-2 px-6">
-            <div className="group/doodle me-auto flex items-center gap-2.5 px-1">
-              <StudioMark />
-              <h1 className="font-medium text-[13px] text-white/90">Motion studio</h1>
-            </div>
-            {/* biome-ignore lint/a11y/noLabelWithoutControl: the input is inside */}
-            <label className="flex h-8 w-[min(240px,32vw)] items-center gap-2 rounded-[10px] bg-white/[0.05] ps-2.5 pe-1.5 text-white/40 transition-colors focus-within:bg-white/[0.08] focus-within:ring-1 focus-within:ring-white/15 hover:bg-white/[0.07]">
-              <SearchIcon className="size-3.5 shrink-0" aria-hidden="true" />
-              <input
-                ref={search}
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Escape") return;
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setQuery("");
-                  e.currentTarget.blur();
-                }}
-                placeholder={tab === "library" ? "Search the library" : "Search films"}
-                aria-label={tab === "library" ? "Search the library" : "Search films"}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-white/90 outline-none placeholder:text-white/35"
-              />
-              {query ? (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => {
-                    setQuery("");
-                    search.current?.focus();
-                  }}
-                  className="inline-flex size-5 cursor-pointer items-center justify-center rounded-[6px] text-white/45 outline-none hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3"
-                >
-                  <MultipleCrossCancelIcon aria-hidden="true" />
-                </button>
-              ) : (
-                <Kbd>/</Kbd>
-              )}
-            </label>
-            <button type="button" onClick={() => setOverlay("rules")} className={cn(PILL_BUTTON, "h-8 text-white/65 hover:bg-white/[0.07] hover:text-white")}>
-              <FileIcon aria-hidden="true" />
-              Rules
-            </button>
-            <div role="radiogroup" aria-label="Sort films" className="flex h-8 items-center gap-0.5 rounded-[10px] bg-white/[0.05] ps-3 pe-1 text-[12px]">
-              <span className="me-1.5 text-white/40">Sort</span>
-              {(
-                [
-                  ["edited", "Last edited"],
-                  ["name", "Name"],
-                ] as const
-              ).map(([k, label]) => (
-                <button
-                  key={k}
-                  type="button"
-                  role="radio"
-                  aria-checked={sort === k}
-                  onClick={() => setSort(k)}
-                  className={cn(
-                    "h-6 cursor-pointer rounded-[7px] px-2 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                    sort === k ? "bg-white/[0.12] text-white" : "text-white/50 hover:text-white/80",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </header>
-
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-10 px-6 pt-3 pb-20">
-          {/* The ways to start. */}
-          <section aria-label="Start a film" className="grid gap-x-3 gap-y-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
-            <StartCard
-              doodle={<VideoDoodle className="absolute inset-0 h-full w-full" />}
-              title="Edit a video"
-              note="Cut your footage, photos and music into a film."
-              onClick={() => setOverlay("video")}
-            />
-            <StartCard
-              doodle={<MotionDoodle className="absolute inset-0 h-full w-full" />}
-              title="Make motion graphics"
-              note={libDrag ? "Drop it here to start a film with it." : "Describe a film in a sentence and Claude makes it."}
-              onClick={() => setOverlay("motion")}
-              onLibraryDrop={(id) => void takeFromLibrary(id, "new")}
-              waiting={libDrag !== null}
-            />
-            <StartCard
-              doodle={<ScriptDoodle className="absolute inset-0 h-full w-full" />}
-              title="Write a script"
-              note="Claude writes it as a storyboard, beat by beat."
-              onClick={() => setOverlay("script")}
-            />
-            <StartCard
-              doodle={<ReelDoodle className="absolute inset-0 h-full w-full" />}
-              title="Record a reel"
-              note="Read your script to camera; the prompter follows your voice."
-              onClick={() => setOverlay("reel")}
-            />
-            <StartCard
-              doodle={<SlidesDoodle className="absolute inset-0 h-full w-full" />}
-              title="Turn slides into a video"
-              note="Bring in a deck; Claude brings each slide to life."
-              onClick={() => setOverlay("slides")}
-            />
-          </section>
-
-          <LibraryView
-            active={tab === "library"}
-            tabs={<Tabs tab={tab} films={films?.length ?? null} library={libCount} onTab={setTab} />}
-            query={query}
-            sort={sort}
-            now={now}
-            history={history}
-            say={say}
-            onClearQuery={() => setQuery("")}
-            onDragItem={setLibDrag}
-            onOpenKit={onOpenKit}
-            onCount={setLibCount}
-          />
-
-          <section aria-label={folder ? folder.name : "Films"} className="flex flex-col gap-3" hidden={tab !== "films"}>
-            {/* Stays in reach while you scroll, so films can be dragged onto a folder from anywhere. */}
-            <div className="sticky top-16 z-10 -mx-3 flex flex-col gap-2.5 bg-[#0b0b0b]/85 px-3 pt-1 pb-2.5 backdrop-blur-xl">
-              <header className="flex h-8 items-center gap-1.5 px-1">
-                {folder ? (
-                  <>
-                    <Hint label="Films">
-                      <button type="button" aria-label="Back to all films" onClick={() => goFolder(null)} className={cn(ICON_BUTTON, "-ms-1.5")}>
-                        <ArrowLeftIcon aria-hidden="true" />
-                      </button>
-                    </Hint>
-                    {renamingFolder ? (
-                      <RenameField
-                        value={folder.name}
-                        className="h-7 w-[240px] text-[13px]"
-                        onDone={(name) => {
-                          setRenamingFolder(false);
-                          if (name) renameFolder(folder, name);
-                        }}
-                      />
-                    ) : (
-                      <h2 className="truncate font-medium text-[13px] text-white/90">{folder.name}</h2>
-                    )}
-                    <span className="ms-1 font-mono text-[11.5px] text-white/35 tabular-nums">{inView}</span>
-                    <FolderMenu
-                      folder={folder}
-                      deleteBody={folderDeleteBody(inView)}
-                      onRename={() => setRenamingFolder(true)}
-                      onDelete={() => deleteFolder(folder)}
-                    />
-                  </>
-                ) : (
-                  <Tabs tab={tab} films={films?.length ?? null} library={libCount} onTab={setTab} />
-                )}
-                <span className="ms-auto flex items-center gap-2">
-                  {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder</span> : null}
-                  {libDrag ? <span className="text-[11.5px] text-white/45">Drop it on a film to use it in that film’s chat</span> : null}
-                  {naming ? (
-                    <RenameField
-                      value=""
-                      placeholder="Launch films"
-                      className="h-8 w-[180px] rounded-[10px] px-2.5 text-[12px]"
-                      onDone={(name) => {
-                        setNaming(false);
-                        if (name) void newFolder(name);
-                      }}
-                    />
-                  ) : (
-                    <button type="button" onClick={() => setNaming(true)} className={cn(PILL_BUTTON, "text-white/70 hover:bg-white/[0.07] hover:text-white")}>
-                      <PlusIcon aria-hidden="true" />
-                      New folder
-                    </button>
-                  )}
-                </span>
-              </header>
-
-              <ul aria-label="Folders" className="flex flex-wrap items-center gap-1.5">
-                <li>
-                  <FolderChip
-                    label="Films"
-                    count={films ? films.length : null}
-                    current={!folder}
-                    dragType={FILM_DRAG}
-                    springType={LIBRARY_DRAG}
-                    onOpen={() => goFolder(null)}
-                    onDrop={(id) => moveById(id, null)}
-                  />
-                </li>
-                {(folders ?? []).map((f) => (
-                  <li key={f.id}>
-                    <FolderChip
-                      label={f.name}
-                      count={films ? (counts.get(f.id) ?? 0) : null}
-                      current={folder?.id === f.id}
-                      folder
-                      dragType={FILM_DRAG}
-                      springType={LIBRARY_DRAG}
-                      onOpen={() => goFolder(f.id)}
-                      onDrop={(id) => moveById(id, f.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-              {problem ? <p className="px-1 text-[12px] text-[#ff9592]">{problem}</p> : null}
-            </div>
-
-            <Skeleton data={shown} sample={SAMPLE_FILMS} id="studio-films" label="Loading your films">
-              {(list) =>
-                list.length > 0 || folderCards.length > 0 ? (
-                  <div className="flex flex-col gap-6">
-                    {folderCards.length ? (
-                      <ul aria-label="Folders" className="grid grid-cols-[repeat(auto-fill,minmax(128px,148px))] gap-x-3 gap-y-4">
-                    {folderCards.map((x) => (
-                      <FolderCard
-                        key={x.id}
-                        folder={x}
-                        pages={inFolder(x.id)}
-                        detail={folderDetail(inFolder(x.id), now)}
-                        deleteBody={folderDeleteBody(inFolder(x.id).length)}
-                        dragType={FILM_DRAG}
-                        springType={LIBRARY_DRAG}
-                        dragging={dragging !== null}
-                        onOpen={() => goFolder(x.id)}
-                        onDrop={(id) => moveById(id, x.id)}
-                        onRename={(name) => renameFolder(x, name)}
-                        onDelete={() => deleteFolder(x)}
-                      />
-                    ))}
-                      </ul>
-                    ) : null}
-                    {list.length ? (
-                      <ul className="grid grid-cols-[repeat(auto-fill,minmax(232px,1fr))] gap-x-3 gap-y-4">
-                    {list.map((f) => (
-                      <FilmCard
-                        key={f.id}
-                        film={f}
-                        now={now}
-                        folders={folders ?? []}
-                        folderLabel={!folder && f.folder ? folderName(f.folder) : null /* only while searching */}
-                        dragged={dragging === f.id}
-                        onDrag={(on) => setDragging(on ? f.id : null)}
-                        takes={libDrag !== null}
-                        onLibraryDrop={(id) => void takeFromLibrary(id, { film: f.id })}
-                        onOpen={() => onOpenFilm(f.id)}
-                        onRename={(title) => renameFilm(f, title)}
-                        onDuplicate={() => onDuplicateFilm(f.id)}
-                        onDelete={() => onDeleteFilm(f.id)}
-                        onMove={(to) => move(f, to)}
-                        onMoveNew={async (name) => {
-                          const made = await newFolder(name);
-                          if (made) move(f, made.id);
-                        }}
-                      />
-                    ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ) : q ? (
-                  <Empty doodle={<ClapperDoodle className="h-[84px] w-[120px]" />} title={`No films match “${query.trim()}”`} note="Check the spelling, or search all your films.">
-                    <button type="button" onClick={() => setQuery("")} className={cn(PILL_BUTTON, "mt-2 bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
-                      Clear search
-                    </button>
-                  </Empty>
-                ) : folder ? (
-                  <Empty
-                    doodle={<FolderDoodle className="h-[84px] w-[120px]" open={dragging !== null} />}
-                    title={`${folder.name} is empty`}
-                    note="Drag films onto the folder above, or choose Move to folder in a film’s ••• menu."
-                  >
-                    <button type="button" onClick={() => goFolder(null)} className={cn(PILL_BUTTON, "mt-2 bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
-                      See all films
-                    </button>
-                  </Empty>
-                ) : (
-                  <Empty
-                    doodle={<ClapperDoodle className="h-[84px] w-[120px]" />}
-                    title="No films yet"
-                    note="A film is an edit of your own footage, or motion graphics Claude makes from a sentence. Start one above."
-                  />
-                )
-              }
-            </Skeleton>
-          </section>
-
-          <section aria-labelledby="kits-heading" className="flex flex-col gap-3">
-            <header className="flex flex-wrap items-center gap-2 px-1">
-              <h2 id="kits-heading" className="me-auto font-medium text-[13px] text-white/90">
-                Brand kits
-              </h2>
-              <input
-                ref={zip}
-                type="file"
-                accept=".zip,application/zip"
-                className="hidden"
-                tabIndex={-1}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onImportKit(file);
-                  e.target.value = "";
-                }}
-              />
-              <button type="button" disabled={busy} onClick={() => zip.current?.click()} className={cn(PILL_BUTTON, "text-white/70 hover:bg-white/[0.07] hover:text-white")}>
-                <UploadUpIcon aria-hidden="true" />
-                Import a kit
-              </button>
-              <NewKitMenu busy={busy} onPick={(way) => setOverlay(way === "personal" ? "personal" : "kit")} />
-            </header>
-            <Skeleton data={kits} sample={SAMPLE_KITS} id="studio-kits" label="Loading your brand kits">
-              {(list) =>
-                list.length > 0 ? (
-                  <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
-                    {list.map((k) => (
-                      <li key={k.id}>
-                        <KitCard kit={k} onOpen={() => onOpenKit(k.id)} />
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <Empty
-                    doodle={<KitsDoodle className="h-[84px] w-[120px]" />}
-                    title="No brand kits yet"
-                    note="A kit holds a brand’s colours, fonts and logos, so every film made with it looks the part."
-                  >
-                    <NewKitMenu busy={busy} className="mt-2" onPick={(way) => setOverlay(way === "personal" ? "personal" : "kit")} />
-                  </Empty>
-                )
-              }
-            </Skeleton>
-          </section>
-          {error ? <p className="px-1 text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
-        </div>
-      </div>
-      )}
+      {nextLayout}
 
       {note ? (
         <p
@@ -1002,64 +649,6 @@ export function Dashboard({
   );
 }
 
-// One way to start a film: a tile the size of a film, its drawing on top
-// and what it is below.
-function StartCard({
-  doodle,
-  title,
-  note,
-  onClick,
-  onLibraryDrop,
-  waiting = false,
-}: {
-  doodle: ReactNode;
-  title: string;
-  note: string;
-  onClick: () => void;
-  onLibraryDrop?: (itemId: string) => void; // takes a library item dragged onto it
-  waiting?: boolean; // one is being dragged
-}) {
-  const [over, setOver] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      onDragOver={
-        onLibraryDrop
-          ? (e) => {
-              if (!e.dataTransfer.types.includes(LIBRARY_DRAG)) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "copy";
-              setOver(true);
-            }
-          : undefined
-      }
-      onDragLeave={onLibraryDrop ? (e) => !e.currentTarget.contains(e.relatedTarget as Node | null) && setOver(false) : undefined}
-      onDrop={
-        onLibraryDrop
-          ? (e) => {
-              const id = e.dataTransfer.getData(LIBRARY_DRAG);
-              setOver(false);
-              if (!id) return;
-              e.preventDefault();
-              onLibraryDrop(id);
-            }
-          : undefined
-      }
-      className={cn(
-        "group/doodle flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring",
-        over ? "bg-white/[0.07] ring-1 ring-white/40" : waiting && onLibraryDrop && "bg-white/[0.03] outline-1 outline-dashed outline-white/20",
-      )}
-    >
-      <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">{doodle}</span>
-      <span className="flex flex-col gap-0.5 px-1 pb-0.5">
-        <span className="text-[12.5px] text-white/90">{title}</span>
-        <span className="text-pretty text-[11.5px] text-white/40 leading-snug">{note}</span>
-      </span>
-    </button>
-  );
-}
-
 
 
 
@@ -1129,7 +718,7 @@ function FilmCard({
   onMoveNew,
 }: {
   film: FilmSummary;
-  stage?: boolean; // the next layout: the film on its stage (home-next.tsx)
+  stage?: boolean; // the film on its stage (home.tsx)
   now: number;
   folders: Folder[];
   folderLabel: string | null; // the folder it's in, shown in search results
@@ -1361,74 +950,5 @@ function FilmCard({
         </Popover.Portal>
       </Popover.Root>
     </li>
-  );
-}
-
-// Films | Library: the two lists on the home page, with a highlight that
-// slides to the open one. Hold a library item over Films to switch to it
-// and drop the item on a film; drop files on Library to add them.
-function Tabs({ tab, films, library, onTab }: { tab: Tab; films: number | null; library: number | null; onTab: (tab: Tab) => void }) {
-  const refs = useRef<Record<Tab, HTMLButtonElement | null>>({ films: null, library: null });
-  const [mark, setMark] = useState<{ x: number; w: number } | null>(null);
-  const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useLayoutEffect(() => {
-    const el = refs.current[tab];
-    if (el) setMark({ x: el.offsetLeft, w: el.offsetWidth });
-  }, [tab, films, library]);
-  const springTo = (next: Tab) => {
-    if (tab === next || hold.current) return;
-    hold.current = setTimeout(() => {
-      hold.current = null;
-      onTab(next);
-    }, 450);
-  };
-  const cancel = () => {
-    if (hold.current) clearTimeout(hold.current);
-    hold.current = null;
-  };
-  return (
-    <div role="tablist" aria-label="Films or library" className="relative -ms-1 flex h-8 items-center gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5">
-      {mark ? (
-        <span
-          aria-hidden="true"
-          className="absolute top-0.5 bottom-0.5 rounded-[8px] bg-white/[0.12] transition-[left,width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
-          style={{ left: mark.x, width: mark.w }}
-        />
-      ) : null}
-      {(
-        [
-          ["films", "Films", films],
-          ["library", "Library", library],
-        ] as const
-      ).map(([k, label, count]) => (
-        <button
-          key={k}
-          ref={(el) => {
-            refs.current[k] = el;
-          }}
-          type="button"
-          role="tab"
-          aria-selected={tab === k}
-          onClick={() => onTab(k)}
-          onDragOver={(e) => {
-            const wants = k === "films" ? e.dataTransfer.types.includes(LIBRARY_DRAG) : e.dataTransfer.types.includes("Files");
-            if (!wants) return;
-            e.preventDefault();
-            springTo(k);
-          }}
-          onDragLeave={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) cancel();
-          }}
-          onDrop={cancel}
-          className={cn(
-            "relative z-[1] flex h-7 cursor-pointer items-center gap-1.5 rounded-[8px] px-2.5 font-medium text-[12.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-            tab === k ? "text-white" : "text-white/50 hover:text-white/80",
-          )}
-        >
-          {label}
-          {count === null ? null : <span className="font-mono font-normal text-[11px] text-white/35 tabular-nums">{count}</span>}
-        </button>
-      ))}
-    </div>
   );
 }
