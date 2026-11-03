@@ -1170,7 +1170,8 @@ function FilmView({
   // Effects once the sound has stems, and Voiceover when there's a voice).
   const bottom = isVideo ? tlH + 28 : showStems(soundLane) ? 126 + 24 * (stemLanes(soundLane).length - 1) : showLane(soundLane) ? 126 : 96;
   const insets: Insets = hidden
-    ? { top: 0, right: 0, bottom: 0, left: 0 }
+    ? // Panels hidden: the film gets the window, with some air all round.
+      { top: 32, right: 32, bottom: 32, left: 32 }
     : {
         // Folded panels leave a pill under the top bar; keep the film below it.
         top: folded.chat || folded.inspector ? 116 : 72,
