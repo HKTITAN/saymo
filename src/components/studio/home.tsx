@@ -238,7 +238,7 @@ export function SideNav({
         <li>
           <button type="button" onClick={onRules} className={ROW}>
             <FileIcon aria-hidden="true" />
-            Rules for every film
+            Rules
           </button>
         </li>
       </ul>
