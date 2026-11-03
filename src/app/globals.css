@@ -570,106 +570,135 @@ main[data-arriving] .studio-panel {
   }
 }
 
-/* The "Try 3" slot machine (slot-machine.tsx). One accent, the studio's
-   pink: the lever's ball, the marquee lights and the jackpot marks. */
+/* The "Try 3" slot machine (slot-machine.tsx): soft, clay-like, mid
+   graphite, with one accent, the studio's pink, on the hood's half-disc,
+   the SPIN button, the lever's ball, the reel symbols and the pop. */
 .slot-machine {
-  --slot-accent: var(--color-studio, #ff4fa3);
-  --slot-accent-soft: var(--color-studio-soft, #ff9fcd);
+  --slot-pink: var(--color-studio, #ff4fa3);
+  --slot-pink-light: var(--color-studio-soft, #ff9fcd);
+  --slot-pink-dark: #e0388f;
+  --slot-pink-deep: #b81f6e;
 }
-/* A reel's drum: darker as it turns away, a soft light across the middle,
-   and the shadow the window's edge throws on it. */
+.slot-disc-text,
+.slot-button-text {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  fill: #fff;
+}
+.slot-disc-text {
+  font-size: 64px;
+  filter: drop-shadow(0 3px 0 rgb(150 18 88 / 0.45));
+}
+.slot-button-text {
+  font-size: 21px;
+  letter-spacing: 0.16em;
+  filter: drop-shadow(0 1.5px 0 rgb(150 18 88 / 0.5));
+}
+/* A reel's drum: nearly white, a touch greyer towards the bottom. */
 .slot-drum {
-  background:
-    linear-gradient(
-      to bottom,
-      rgb(255 255 255 / 0) 34%,
-      rgb(255 255 255 / 0.22) 42%,
-      rgb(255 255 255 / 0) 52%
-    ),
-    linear-gradient(
-      to bottom,
-      rgb(0 0 0 / 0.72) 0%,
-      rgb(0 0 0 / 0.2) 24%,
-      rgb(0 0 0 / 0) 40%,
-      rgb(0 0 0 / 0) 62%,
-      rgb(0 0 0 / 0.22) 78%,
-      rgb(0 0 0 / 0.75) 100%
-    );
-  box-shadow:
-    inset 6px 0 8px -4px rgb(0 0 0 / 0.45),
-    inset -6px 0 8px -4px rgb(0 0 0 / 0.45);
+  background: linear-gradient(to bottom, #f2f0f3 0%, #e8e5ea 55%, #d9d6dc 100%);
 }
-/* The glass over the reel window: one soft diagonal reflection. */
-.slot-glass {
+/* The window's deep inset: the drums turn away into shade at the top and
+   bottom, under a soft shadow from the bezel. */
+.slot-screen-shade {
   background: linear-gradient(
-    115deg,
-    rgb(255 255 255 / 0.12) 0%,
-    rgb(255 255 255 / 0.04) 28%,
-    rgb(255 255 255 / 0) 29%,
-    rgb(255 255 255 / 0) 100%
+    to bottom,
+    rgb(40 38 46 / 0.4) 0%,
+    rgb(40 38 46 / 0) 24%,
+    rgb(40 38 46 / 0) 76%,
+    rgb(40 38 46 / 0.35) 100%
   );
   box-shadow:
-    inset 0 8px 14px -6px rgb(0 0 0 / 0.7),
-    inset 0 -6px 12px -6px rgb(0 0 0 / 0.6);
+    inset 0 12px 16px -10px rgb(0 0 0 / 0.5),
+    inset 0 -8px 12px -8px rgb(0 0 0 / 0.25),
+    inset 0 0 0 1px rgb(0 0 0 / 0.2);
 }
-.slot-marquee {
-  color: #ececee;
-  text-shadow:
-    0 1px 0 rgb(0 0 0 / 0.9),
-    0 -1px 0 rgb(255 255 255 / 0.12);
-  transition:
-    color 300ms ease-out,
-    text-shadow 300ms ease-out;
+.slot-num {
+  color: var(--slot-pink);
+  background: linear-gradient(160deg, var(--slot-pink-light) 0%, var(--slot-pink) 45%, var(--slot-pink-dark) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 3px 0 var(--slot-pink-deep));
 }
-.slot-marquee.is-lit {
-  color: #fff;
-  text-shadow:
-    0 1px 0 rgb(0 0 0 / 0.9),
-    0 0 18px var(--slot-accent);
-}
-.slot-pointer {
-  fill: #7d7d83;
-  transition: fill 300ms ease-out;
-}
-.slot-pointer.is-lit {
-  fill: var(--slot-accent);
-}
-/* The marquee lights: softly on at rest, chasing round the arch while the
-   reels spin, flashing on the jackpot. Each falls off like a filament. */
-.slot-bulb {
-  opacity: 0.4;
+/* The hood's half-disc: brighter, with a glow, on the jackpot. The SPIN
+   button lights up once pulled. */
+.slot-disc-glow,
+.slot-disc-bright,
+.slot-button-glow,
+.slot-button-bright {
+  opacity: 0;
   transition: opacity 400ms ease-out;
 }
-.slot-machine[data-lights="jackpot"] .slot-bulb {
-  opacity: 1;
+.slot-machine[data-jackpot] .slot-disc-glow {
+  opacity: 0.8;
+}
+.slot-machine[data-jackpot] .slot-disc-bright {
+  opacity: 0.16;
+}
+.slot-machine[data-lit] .slot-button-glow {
+  opacity: 0.55;
+}
+.slot-machine[data-lit] .slot-button-bright {
+  opacity: 0.1;
+}
+/* The SPIN button presses in a few px, its shadow shrinking, then comes
+   back up. */
+.slot-button-face,
+.slot-button-shadow {
+  transition:
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.slot-machine[data-pressed] .slot-button-face {
+  transform: translateY(6px);
+}
+.slot-machine[data-pressed] .slot-button-shadow {
+  transform: scale(0.85, 0.5);
+  opacity: 0.12;
+}
+/* The pop by the lever's ball: three pink dashes drawn outwards, then
+   gone. With reduced motion they only fade. */
+.slot-burst path {
+  fill: none;
+  stroke: var(--slot-pink);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  opacity: 0;
+  animation: slot-pop-fade 700ms ease-out both;
 }
 @media (prefers-reduced-motion: no-preference) {
-  .slot-machine[data-lights="chase"] .slot-bulb {
-    animation: slot-chase 0.42s cubic-bezier(0.23, 1, 0.32, 1) infinite;
-    animation-delay: calc(var(--i) * 0.14s - 0.42s);
-  }
-  .slot-machine[data-lights="jackpot"] .slot-bulb {
-    animation: slot-flash 0.5s cubic-bezier(0.23, 1, 0.32, 1) infinite;
-    animation-delay: calc(var(--j) * -0.25s);
+  .slot-burst path {
+    animation: slot-pop 780ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
 }
-@keyframes slot-chase {
-  0%,
+@keyframes slot-pop {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  30%,
+  65% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -0.7;
+    opacity: 0;
+  }
+}
+@keyframes slot-pop-fade {
+  0% {
+    opacity: 0;
+  }
   30% {
     opacity: 1;
   }
-  48%,
   100% {
-    opacity: 0.1;
-  }
-}
-@keyframes slot-flash {
-  0%,
-  40% {
-    opacity: 1;
-  }
-  55%,
-  100% {
-    opacity: 0.12;
+    opacity: 0;
   }
 }
