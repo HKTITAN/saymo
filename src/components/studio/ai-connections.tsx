@@ -55,12 +55,12 @@ export function AiSection() {
     <section className="flex flex-col gap-1.5">
       <h3 className="flex items-center gap-2 px-1 font-medium text-[12px] text-white/85 [&_svg]:size-3.5 [&_svg]:text-white/55">
         <BotIcon aria-hidden="true" />
-        AI
+        Bring your own AI
       </h3>
       <DialNote>
         {IS_PRODUCT
-          ? "Claude makes your changes, paid for by your own Anthropic API key."
-          : "Which AI makes your changes. Pick one in each prompt box; Claude is the default."}
+          ? "The studio uses the Claude you already pay for, through your own Anthropic API key, so there’s no extra AI plan to buy."
+          : "The studio uses the AI you already pay for, so there’s no extra AI plan to buy. Pick one in each prompt box; Claude is the default."}
       </DialNote>
       {error ? <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
       {status ? (
