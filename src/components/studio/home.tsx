@@ -140,7 +140,8 @@ export function SideNav({
             <MultipleCrossCancelIcon aria-hidden="true" />
           </button>
         ) : (
-          <Kbd>/</Kbd>
+          // Down a pixel: more room above the key cap, less below, as it reads.
+          <Kbd className="translate-y-px">/</Kbd>
         )}
       </label>
 
