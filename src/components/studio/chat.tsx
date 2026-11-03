@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type RefObject, useCallback, useEffect, useId, useRef, useState } from "react";
+import { type RefObject, useCallback, useEffect, useId, useRef, useState } from "react";
 import { type Clock, formatTime, useClock } from "./clock";
 import { MultipleCrossCancelIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
@@ -13,9 +13,6 @@ import { SentFiles } from "./sent-files";
 import { ClaudeAtWork } from "./mascot";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
-import { modelName } from "@/lib/studio/ai-types";
-import { useAiChoice } from "./ai-api";
-import { ClaudeMark, CodexMark } from "./ai-marks";
 import { VersionsButton } from "./versions";
 import { chipLabel, type Pinned, type SoundPin, soundChipLabel } from "./words";
 
@@ -263,7 +260,7 @@ export function ChatPanel({
         {messages.map((m, i) => (
           <Message key={`${m.at}-${i}`} message={m} filmId={filmId} soundLength={soundLength} video={video} />
         ))}
-        {turn.running && turn.text ? <Live text={turn.text} /> : null}
+        {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
         {!turn.running && chat.carryOn ? <CarryOnNote carryOn={chat.carryOn} onCancel={() => void chat.cancelCarryOn()} /> : null}
         {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
         {chat.queue.length ? (
@@ -278,14 +275,6 @@ export function ChatPanel({
         {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">
-        <WorkingCard
-          running={turn.running}
-          steps={turn.steps}
-          resumed={turn.resumed}
-          last={messages.findLast((m) => m.role === "you" && !m.auto)?.text ?? null}
-        />
-        {/* Opaque underneath, so the working card tucks behind the box. */}
-        <div className="relative z-10 rounded-[12px] bg-[#161616]">
         <PromptBox
           inputRef={inputRef}
           value={draft}
@@ -319,7 +308,6 @@ export function ChatPanel({
             </>
           }
         />
-        </div>
       </div>
     </Panel>
   );
@@ -422,54 +410,26 @@ function WorkingMark() {
   );
 }
 
-// Claude's words as they come in, in the chat.
-function Live({ text }: { text: string }) {
-  return (
-    <div className="flex flex-col gap-1.5 pe-4" aria-live="polite">
-      <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
-        <Rich text={text} />
-      </p>
-    </div>
-  );
-}
-
-// A pink card behind the prompt box, the box over its foot, so the two read
-// as one stack: which AI is on it, then, while it works, what it's doing,
-// one line that shimmers and changes in place from step to step. Between
-// turns it shows your last request.
-const WORKING_CARD: CSSProperties = {
-  background: "linear-gradient(180deg, #2a1622 0%, #5c2a47 70%, #7a3a5f 100%)",
-  boxShadow: "inset 0 1px 0 rgba(255,190,225,0.16), inset 0 0 0 1px rgba(255,170,215,0.1)",
-};
-function WorkingCard({ running, steps, resumed, last }: { running: boolean; steps: string[]; resumed: boolean; last: string | null }) {
-  const choice = useAiChoice();
-  const codex = choice.provider === "codex";
+function Live({ text, steps, resumed }: { text: string; steps: string[]; resumed: boolean }) {
+  // One line that shimmers and changes in place as Claude moves from step
+  // to step, so the chat doesn't fill up with a list of steps.
   const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
   return (
-    <div className="-mb-3">
-      <div>
-        <div className="flex flex-col gap-2 rounded-t-[16px] px-3.5 pt-3 pb-[26px]" style={WORKING_CARD} aria-live="polite">
-          <p className="flex items-center justify-between gap-3 text-[12px]">
-            <span className="flex items-center gap-2 font-medium text-white/90">
-              {codex ? <CodexMark className="size-3.5 shrink-0" /> : <ClaudeMark className="size-3.5 shrink-0" />}
-              {codex ? "Codex" : "Claude"}
-            </span>
-            {codex ? null : <span className="truncate text-white/50">{modelName(choice.model)}</span>}
-          </p>
-          {running ? (
-            <p className="flex min-h-5 items-center gap-2 overflow-hidden text-[13px]">
-              <WorkingMark />
-              <span key={`${steps.length}-${step}`} className="studio-shimmer block truncate animate-in fade-in slide-in-from-bottom-1 duration-200">
-                {step}
-              </span>
-            </p>
-          ) : (
-            <p key="last" className="line-clamp-2 min-h-5 text-[13px] text-white/75 leading-snug animate-in fade-in duration-200">
-              {last ?? "Ready when you are."}
-            </p>
-          )}
-        </div>
-      </div>
+    <div className="flex flex-col gap-1.5 pe-4" aria-live="polite">
+      <p className="flex h-4 items-center gap-2 overflow-hidden text-[11.5px]">
+        <WorkingMark />
+        <span
+          key={`${steps.length}-${step}`}
+          className="studio-shimmer block animate-in fade-in slide-in-from-bottom-1 duration-200"
+        >
+          {step}
+        </span>
+      </p>
+      {text ? (
+        <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
+          <Rich text={text} />
+        </p>
+      ) : null}
     </div>
   );
 }
