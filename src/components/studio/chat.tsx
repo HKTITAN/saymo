@@ -280,10 +280,9 @@ export function ChatPanel({
         {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">
-        <PromptHeader running={turn.running} steps={turn.steps} resumed={turn.resumed} clock={clock} three={three} />
-        {/* The box, on a lighter card with a faint slate rim, tucked into
-            the header: the light lower card of the stack. */}
-        <div className="relative z-10 rounded-[12px] bg-[#2a2b2e] shadow-[0_0_0_1px_rgba(170,200,230,0.16),0_-6px_16px_-8px_rgba(0,0,0,0.6)]">
+        <WorkingCard on={turn.running} steps={turn.steps} resumed={turn.resumed} />
+        {/* Opaque underneath, so the working card tucks behind the box. */}
+        <div className="relative z-10 rounded-[12px] bg-[#161616]">
         <PromptBox
           inputRef={inputRef}
           value={draft}
@@ -297,6 +296,7 @@ export function ChatPanel({
           placeholder={three ? "Describe it, and Claude makes 3 versions" : "Make the title come in from the left"}
           chip={sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
           onClearChip={onClearPick}
+          meta={<PlayheadChip clock={clock} />}
           tools={
             <>
             <Hint label={pointing ? "Stop pointing" : "Point at the film"} keys={["P"]}>
@@ -430,50 +430,47 @@ function Live({ text }: { text: string }) {
   );
 }
 
-// The prompt box's header: a slate card the box tucks into, so the two
-// read as one stack. Left: which AI your prompts go to, with its model;
-// while Claude works, what it's doing instead, one shimmering line that
-// changes in place. Right: the moment the prompt is sent from (or, with
-// Try 3 on, that it makes three versions).
-const HEADER_CARD: CSSProperties = {
-  background: "linear-gradient(180deg, #1b1f24 0%, #2a3440 100%)",
-  boxShadow: "inset 0 1px 0 rgba(170,200,230,0.1), inset 0 0 0 1px rgba(170,200,230,0.06)",
+// While Claude works, a pink card rises from behind the prompt box: which
+// AI is on it, then what it's doing, one line that shimmers and changes in
+// place from step to step. The box sits in front, over the card's foot, so
+// the two read as one stack; it slides back down when the turn ends.
+const WORKING_CARD: CSSProperties = {
+  background: "linear-gradient(180deg, #2a1622 0%, #5c2a47 70%, #7a3a5f 100%)",
+  boxShadow: "inset 0 1px 0 rgba(255,190,225,0.16), inset 0 0 0 1px rgba(255,170,215,0.1)",
 };
-function PromptHeader({
-  running,
-  steps,
-  resumed,
-  clock,
-  three,
-}: {
-  running: boolean;
-  steps: string[];
-  resumed: boolean;
-  clock: Clock;
-  three: boolean;
-}) {
+function WorkingCard({ on, steps, resumed }: { on: boolean; steps: string[]; resumed: boolean }) {
   const choice = useAiChoice();
-  const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
   const codex = choice.provider === "codex";
+  const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
   return (
-    <div className="-mb-3 flex h-[46px] items-start justify-between gap-3 rounded-t-[14px] px-3 pt-[9px]" style={HEADER_CARD}>
-      <p className="flex h-5 min-w-0 items-center gap-2 text-[11.5px]" aria-live="polite">
-        {running ? (
-          <>
-            <WorkingMark />
-            <span key={`${steps.length}-${step}`} className="studio-shimmer block truncate animate-in fade-in slide-in-from-bottom-1 duration-200">
-              {step}
+    <div
+      aria-hidden={!on}
+      className={cn(
+        "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+        on ? "-mb-3 grid-rows-[1fr] opacity-100" : "mb-0 grid-rows-[0fr] opacity-0",
+      )}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div className="flex flex-col gap-2 rounded-t-[16px] px-3.5 pt-3 pb-[26px]" style={WORKING_CARD} aria-live="polite">
+          <p className="flex items-center justify-between gap-3 text-[12px]">
+            <span className="flex items-center gap-2 font-medium text-white/90">
+              {codex ? <CodexMark className="size-3.5 shrink-0" /> : <ClaudeMark className="size-3.5 shrink-0" />}
+              {codex ? "Codex" : "Claude"}
             </span>
-          </>
-        ) : (
-          <>
-            {codex ? <CodexMark className="size-3.5 shrink-0 text-white/80" /> : <ClaudeMark className="size-3.5 shrink-0 text-white/80" />}
-            <span className="font-medium text-white/85">{codex ? "Codex" : "Claude"}</span>
-            {codex ? null : <span className="truncate text-white/45">{modelName(choice.model)}</span>}
-          </>
-        )}
-      </p>
-      {three ? <span className="flex h-5 shrink-0 items-center text-[11.5px] text-white/70">3 versions</span> : <PlayheadChip clock={clock} />}
+            {codex ? null : <span className="truncate text-white/50">{modelName(choice.model)}</span>}
+          </p>
+          {on ? (
+            <p className="flex min-h-5 items-center gap-2 overflow-hidden text-[13px]">
+              <WorkingMark />
+              <span key={`${steps.length}-${step}`} className="studio-shimmer block truncate animate-in fade-in slide-in-from-bottom-1 duration-200">
+                {step}
+              </span>
+            </p>
+          ) : (
+            <p className="min-h-5" />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -484,7 +481,7 @@ function PromptHeader({
 function PlayheadChip({ clock }: { clock: Clock }) {
   const t = useClock(clock, (s) => Math.round(s.t * 100) / 100);
   return (
-    <span className="flex h-5 shrink-0 items-center gap-1.5 text-[11.5px] text-white/45">
+    <span className="flex h-6 items-center gap-1.5 self-start rounded-[7px] bg-white/[0.06] px-2 text-[11.5px] text-white/50">
       At
       <span className="text-white/75 tabular-nums">{formatTime(t)}</span>
     </span>
