@@ -455,7 +455,7 @@ export function RecordStep({
           {blocked ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
               <p className="text-pretty text-[13px] text-white/75 leading-relaxed">{blocked}</p>
-              <button type="button" className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")} onClick={() => setAttempt((a) => a + 1)}>
+              <button type="button" className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover")} onClick={() => setAttempt((a) => a + 1)}>
                 Try again
               </button>
             </div>
@@ -582,7 +582,7 @@ export function RecordStep({
             <span className="text-[12.5px] text-white/85">Discard this take?</span>
             <button
               type="button"
-              className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}
+              className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover")}
               onClick={() => {
                 if (recorder.current) recorder.current.onstop = null;
                 stop();

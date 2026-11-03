@@ -169,7 +169,7 @@ export function FirstFilm({
                 type="button"
                 disabled={busy}
                 onClick={() => picker.current?.click()}
-                className={cn(PILL_BUTTON, "mt-1 bg-white text-[#141414] hover:bg-white/90")}
+                className={cn(PILL_BUTTON, "mt-1 bg-studio text-[#1f0612] hover:bg-studio-hover")}
               >
                 <UploadUpIcon aria-hidden="true" />
                 Choose files

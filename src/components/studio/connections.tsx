@@ -266,7 +266,7 @@ export function GoogleSection({ status, onChange, onNote }: SectionProps) {
         </>
       ) : (
         <>
-          <DialButton className="bg-white text-[#141414] hover:bg-white/90" onClick={() => window.location.assign(connectApi.googleStartUrl())}>
+          <DialButton className="bg-studio text-[#1f0612] hover:bg-studio-hover" onClick={() => window.location.assign(connectApi.googleStartUrl())}>
             Connect Google Drive
           </DialButton>
           <DialNote>The studio only sees the folder it makes, Aerchain Studio. Nothing else in your Drive.</DialNote>
@@ -341,7 +341,7 @@ export function GithubSection({
             {copied ? <span className="text-white/55">Copied</span> : <span className="studio-shimmer">Waiting for you to enter it</span>}
           </p>
         </div>
-        <DialButton className="bg-white text-[#141414] hover:bg-white/90" onClick={() => window.open(pending.verificationUri, "_blank", "noreferrer")}>
+        <DialButton className="bg-studio text-[#1f0612] hover:bg-studio-hover" onClick={() => window.open(pending.verificationUri, "_blank", "noreferrer")}>
           Open github.com
         </DialButton>
         <DialButton onClick={() => void act(() => connectApi.cancelGithub(), "Unable to cancel. Try again.")}>Cancel</DialButton>
@@ -405,7 +405,7 @@ export function GithubSection({
           <DialButton
             loading={busy}
             disabled={!name.trim()}
-            className="bg-white text-[#141414] hover:bg-white/90"
+            className="bg-studio text-[#1f0612] hover:bg-studio-hover"
             onClick={() =>
               void act(() => connectApi.chooseRepo(pick, name.trim()), "Unable to use that repository. Try again.").then((ok) => ok && setChanging(false))
             }

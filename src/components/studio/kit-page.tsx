@@ -261,7 +261,7 @@ export function KitPage({
       <div className="absolute inset-0 flex items-center justify-center p-6">
         <div className={cn(CARD, "flex max-w-[360px] flex-col items-start gap-3 p-5")}>
           <p className="font-medium text-[14px] text-white/90">This kit no longer exists</p>
-          <button type="button" onClick={onHome} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
+          <button type="button" onClick={onHome} className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover")}>
             Back to the studio
           </button>
         </div>

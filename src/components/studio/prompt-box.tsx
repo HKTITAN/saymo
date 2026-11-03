@@ -130,7 +130,7 @@ export function PromptBox({
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-1.5 rounded-[12px] bg-white/[0.06] p-1.5 transition-colors has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-white/15",
+        "relative flex flex-col gap-1.5 rounded-[12px] bg-white/[0.06] p-1.5 transition-colors caret-studio has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-studio/45",
         over && "bg-white/[0.09] ring-1 ring-white/30",
         className,
       )}
@@ -316,7 +316,7 @@ export function PromptBox({
               onClick={onSend}
               disabled={!canSend}
               aria-label={running ? "Add to the queue" : "Send to Claude"}
-              className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[8px] bg-white text-[#141414] outline-none transition-[background-color,opacity] duration-150 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:bg-white/15 disabled:text-white/40 [&_svg]:size-4"
+              className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[8px] bg-studio text-[#1f0612] outline-none transition-[background-color,opacity] duration-150 hover:bg-studio-hover focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:bg-white/15 disabled:text-white/40 [&_svg]:size-4"
             >
               <ArrowUpIcon aria-hidden="true" />
             </button>

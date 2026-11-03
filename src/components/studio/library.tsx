@@ -746,7 +746,7 @@ export function LibraryView({
               title="Your library is empty"
               note="Keep pictures, clips, GIFs, sounds, PDFs, notes and links here, then add them to any prompt. Drop files on this page, paste a picture or a link, or add files."
             >
-              <button type="button" onClick={() => picker.current?.click()} className={cn(PILL_BUTTON, "mt-2 bg-white text-[#141414] hover:bg-white/90")}>
+              <button type="button" onClick={() => picker.current?.click()} className={cn(PILL_BUTTON, "mt-2 bg-studio text-[#1f0612] hover:bg-studio-hover")}>
                 <UploadUpIcon aria-hidden="true" />
                 Add files
               </button>
@@ -820,7 +820,7 @@ function AddMenu({ onPick, onLink, onNote }: { onPick: () => void; onLink: (url:
         } else close();
       }}
     >
-      <Popover.Trigger className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
+      <Popover.Trigger className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover")}>
         <PlusIcon aria-hidden="true" />
         Add
       </Popover.Trigger>
@@ -898,7 +898,7 @@ function AddMenu({ onPick, onLink, onNote }: { onPick: () => void; onLink: (url:
                       type="button"
                       disabled={!text.trim() || linkBad || busy}
                       onClick={() => void save()}
-                      className={cn(PILL_BUTTON, "h-7 px-2.5 bg-white text-[#141414] hover:bg-white/90")}
+                      className={cn(PILL_BUTTON, "h-7 px-2.5 bg-studio text-[#1f0612] hover:bg-studio-hover")}
                     >
                       {busy ? <span className="studio-shimmer">Saving</span> : view === "link" ? "Save link" : "Save note"}
                     </button>

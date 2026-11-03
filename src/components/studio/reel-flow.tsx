@@ -50,7 +50,7 @@ type Step = "script" | "record" | "footage" | "making";
 const POPUP =
   "origin-(--transform-origin) outline-none transition-[scale,opacity] duration-150 ease-out data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-starting-style:scale-[0.97] data-starting-style:opacity-0";
 
-const PRIMARY = cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90");
+const PRIMARY = cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover");
 const SECONDARY = cn(PILL_BUTTON, "bg-white/[0.08] text-white/85 hover:bg-white/[0.12]");
 const TEXT_BUTTON =
   "cursor-pointer rounded-[6px] text-[12px] text-white/45 underline decoration-white/20 underline-offset-4 outline-none transition-colors hover:text-white/75 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";

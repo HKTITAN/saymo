@@ -292,7 +292,7 @@ function ApiKey({
         type="submit"
         loading={busy}
         disabled={!key.trim()}
-        className="bg-white text-[#141414] hover:bg-white/90 disabled:bg-white/[0.05] disabled:text-white/35 disabled:opacity-100"
+        className="bg-studio text-[#1f0612] hover:bg-studio-hover disabled:bg-white/[0.05] disabled:text-white/35 disabled:opacity-100"
       >
         Save key
       </DialButton>

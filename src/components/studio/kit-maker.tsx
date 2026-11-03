@@ -257,7 +257,7 @@ export function KitMaker({
                     disabled={!canSend}
                     onClick={start}
                     aria-label="Make the kit"
-                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-white text-[#141414] outline-none transition-opacity hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-30 [&_svg]:size-4"
+                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-studio text-[#1f0612] outline-none transition-colors hover:bg-studio-hover focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-30 [&_svg]:size-4"
                   >
                     <ArrowUpIcon aria-hidden="true" />
                   </button>
@@ -525,7 +525,7 @@ function Building({
             Back to what I wrote
           </button>
           {kitId ? (
-            <button type="button" onClick={() => onDone(kitId, "")} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
+            <button type="button" onClick={() => onDone(kitId, "")} className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover")}>
               Open the kit
             </button>
           ) : null}

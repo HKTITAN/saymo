@@ -41,7 +41,7 @@ export function NewKitMenu({ busy, onPick, className }: { busy?: boolean; onPick
   };
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger disabled={busy} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90 data-popup-open:bg-white/85", className)}>
+      <Popover.Trigger disabled={busy} className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover data-popup-open:bg-white/85", className)}>
         <PlusIcon aria-hidden="true" />
         New kit
         <ChevronDownIcon aria-hidden="true" className="-me-1 opacity-50" />
@@ -442,7 +442,7 @@ export function PersonalStyleMaker({ onDone, onClose }: { onDone: (kit: BrandKit
               type="button"
               disabled={!canSave}
               onClick={() => void save()}
-              className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90 disabled:bg-white/80")}
+              className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover disabled:bg-studio/60")}
             >
               {saving ? <span className="studio-shimmer">Saving</span> : "Save style"}
             </button>

@@ -139,13 +139,13 @@ export function RenderControl({
           className={cn(
             PILL_BUTTON,
             "relative overflow-hidden",
-            working ? "cursor-default bg-white/[0.08] text-white/85" : "bg-white text-[#141414] hover:bg-white/90",
+            working ? "cursor-default bg-white/[0.08] text-white/85" : "bg-studio text-[#1f0612] hover:bg-studio-hover",
           )}
         >
           {working ? (
             <>
               <span
-                className="absolute inset-y-0 left-0 bg-white/[0.12] transition-[width] duration-500 ease-out"
+                className="absolute inset-y-0 left-0 bg-studio/30 transition-[width] duration-500 ease-out"
                 style={{ width: `${Math.round(progress * 100)}%` }}
                 aria-hidden="true"
               />

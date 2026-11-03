@@ -187,7 +187,7 @@ function Row({
               onClick={onGo}
               disabled={disabled}
               autoFocus
-              className={cn(SMALL_BUTTON, "flex-1 bg-white text-[#141414] hover:bg-white/90")}
+              className={cn(SMALL_BUTTON, "flex-1 bg-studio text-[#1f0612] hover:bg-studio-hover")}
             >
               {going ? <Spinner className="size-3" /> : null}
               Go back
