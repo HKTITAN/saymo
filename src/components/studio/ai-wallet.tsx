@@ -60,24 +60,33 @@ function CodexLockup() {
 const hand = Caveat({ subsets: ["latin"], weight: ["600"], display: "swap" });
 
 // "Bring your own AI", written by hand to the left of the wallet, with a
-// doodled arrow curling round to the card.
+// doodled arrow looping round to the card, in the note's neutral white.
 function Note() {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute top-[6px] right-[calc(100%+10px)] flex w-[132px] flex-col items-end">
-      <p className={cn(hand.className, "-rotate-6 text-right text-[22px] text-white/80 leading-[0.95]")}>
+    <div aria-hidden="true" className="pointer-events-none absolute top-[10px] right-[calc(100%+28px)] flex w-[100px] flex-col items-end">
+      <p className={cn(hand.className, "-rotate-6 text-right text-[20px] text-white/40 leading-[0.95]")}>
         Bring your
         <br />
         own AI
       </p>
-      <svg width="96" height="64" viewBox="0 0 96 64" fill="none" className="-mt-1 me-[-8px] text-studio-soft">
+      {/* drawn by hand: a wobbly line with a loop in it, thicker where the
+          pen pressed, and a two-stroke head */}
+      <svg width="72" height="53" viewBox="0 0 104 76" fill="none" className="-mt-0.5 me-[-6px] text-white/30">
         <path
-          d="M6 6 C 10 30, 30 48, 58 46 C 70 45, 80 40, 88 32"
+          d="M10 4.5 C 8.6 13, 11.8 22.4, 18.2 29.6 C 23.5 35.4, 32.6 37.8, 37.4 33.1 C 41.6 28.9, 38.2 22.1, 32.9 23.6 C 27.4 25.2, 28.4 33.6, 33.8 39.8 C 41.3 48.3, 55.2 53.6, 68.1 52.4 C 76.4 51.6, 83.6 48.2, 90.2 42.7"
           stroke="currentColor"
-          strokeWidth="2.2"
+          strokeWidth="2.4"
           strokeLinecap="round"
           strokeLinejoin="round"
+          style={{ filter: "url(#hand-wobble)" }}
         />
-        <path d="M78 30 L 89 31 L 86 42" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M79.6 40.1 C 83.4 41, 87.2 42.1, 91.1 42.4 C 89.6 46.1, 88.7 49.8, 88.4 53.6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+        <defs>
+          <filter id="hand-wobble" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="11" result="n" />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" />
+          </filter>
+        </defs>
       </svg>
     </div>
   );
