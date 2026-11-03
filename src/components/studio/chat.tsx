@@ -14,6 +14,9 @@ import { SentFiles } from "./sent-files";
 import { ClaudeAtWork } from "./mascot";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
+import { choiceShort } from "@/lib/studio/ai-types";
+import { useAiChoice } from "./ai-api";
+import { ClaudeMark, CodexMark } from "./ai-marks";
 import { VersionsButton } from "./versions";
 import { chipLabel, type Pinned, type SoundPin, soundChipLabel } from "./words";
 
@@ -279,7 +282,7 @@ export function ChatPanel({
         {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">
-        <WorkingCard on={turn.running} steps={turn.steps} resumed={turn.resumed} />
+        <PromptHeader running={turn.running} steps={turn.steps} resumed={turn.resumed} clock={clock} three={three} />
         {/* Opaque underneath, so the working card tucks behind the box. */}
         <div className="relative z-10 rounded-[12px] bg-[#161616]">
         <PromptBox
@@ -295,7 +298,6 @@ export function ChatPanel({
           placeholder={three ? "Describe it, and Claude makes 3 versions" : "Make the title come in from the left"}
           chip={sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
           onClearChip={onClearPick}
-          meta={<PlayheadChip clock={clock} />}
           tools={
             <>
             <Hint label={pointing ? "Stop pointing" : "Point at the film"} keys={["P"]}>
@@ -429,36 +431,50 @@ function Live({ text }: { text: string }) {
   );
 }
 
-// While Claude works, a slate card rises from behind the prompt box with
-// what it's doing: one line that shimmers and changes in place from step
-// to step. The box sits in front, over the card's foot, so the two read as
-// one stack. It slides back down when the turn ends.
-const WORKING_CARD: CSSProperties = {
+// The prompt box's header: a slate card the box tucks into, so the two
+// read as one stack. Left: which AI your prompts go to, with its model;
+// while Claude works, what it's doing instead, one shimmering line that
+// changes in place. Right: the moment the prompt is sent from (or, with
+// Try 3 on, that it makes three versions).
+const HEADER_CARD: CSSProperties = {
   background: "linear-gradient(180deg, #1b1f24 0%, #2a3440 100%)",
   boxShadow: "inset 0 1px 0 rgba(170,200,230,0.1), inset 0 0 0 1px rgba(170,200,230,0.06)",
 };
-function WorkingCard({ on, steps, resumed }: { on: boolean; steps: string[]; resumed: boolean }) {
+function PromptHeader({
+  running,
+  steps,
+  resumed,
+  clock,
+  three,
+}: {
+  running: boolean;
+  steps: string[];
+  resumed: boolean;
+  clock: Clock;
+  three: boolean;
+}) {
+  const choice = useAiChoice();
   const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
+  const codex = choice.provider === "codex";
   return (
-    <div
-      aria-hidden={!on}
-      className={cn(
-        "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-        on ? "-mb-3 grid-rows-[1fr] opacity-100" : "mb-0 grid-rows-[0fr] opacity-0",
-      )}
-    >
-      <div className="min-h-0 overflow-hidden">
-        <div className="rounded-t-[14px] px-3 pt-2.5 pb-[22px]" style={WORKING_CARD} aria-live="polite">
-          {on ? (
-            <p className="flex h-4 items-center gap-2 overflow-hidden text-[11.5px]">
-              <WorkingMark />
-              <span key={`${steps.length}-${step}`} className="studio-shimmer block animate-in fade-in slide-in-from-bottom-1 duration-200">
-                {step}
-              </span>
-            </p>
-          ) : null}
-        </div>
-      </div>
+    <div className="-mb-3 flex h-[46px] items-start justify-between gap-3 rounded-t-[14px] px-3 pt-[9px]" style={HEADER_CARD}>
+      <p className="flex h-5 min-w-0 items-center gap-2 text-[11.5px]" aria-live="polite">
+        {running ? (
+          <>
+            <WorkingMark />
+            <span key={`${steps.length}-${step}`} className="studio-shimmer block truncate animate-in fade-in slide-in-from-bottom-1 duration-200">
+              {step}
+            </span>
+          </>
+        ) : (
+          <>
+            {codex ? <CodexMark className="size-3.5 shrink-0 text-white/80" /> : <ClaudeMark className="size-3.5 shrink-0 text-white/80" />}
+            <span className="font-medium text-white/85">{codex ? "Codex" : "Claude"}</span>
+            {codex ? null : <span className="truncate text-white/45">{choiceShort(choice)}</span>}
+          </>
+        )}
+      </p>
+      {three ? <span className="flex h-5 shrink-0 items-center text-[11.5px] text-white/70">3 versions</span> : <PlayheadChip clock={clock} />}
     </div>
   );
 }
@@ -469,7 +485,7 @@ function WorkingCard({ on, steps, resumed }: { on: boolean; steps: string[]; res
 function PlayheadChip({ clock }: { clock: Clock }) {
   const t = useClock(clock, (s) => Math.round(s.t * 100) / 100);
   return (
-    <span className="flex h-6 items-center gap-1.5 self-start rounded-[7px] bg-white/[0.06] px-2 text-[11.5px] text-white/50">
+    <span className="flex h-5 shrink-0 items-center gap-1.5 text-[11.5px] text-white/45">
       At
       <span className="text-white/75 tabular-nums">{formatTime(t)}</span>
     </span>
