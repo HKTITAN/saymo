@@ -21,11 +21,13 @@ const CARD_H = Math.round(CARD_W / 1.586);
 const DOWN = 42; // a card's top while tucked in
 const UP = 6; // the chosen card's top
 
-type Look = { name: string; via: string; mark: (c: string) => ReactNode; metal: [string, string] };
+type Look = { name: string; via: string; mark: (c: string) => ReactNode; metal: Foil };
+// A foil: its deep corner, its middle, its light corner.
+type Foil = [string, string, string];
 const CARDS: Record<ProviderId, Look> = {
-  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, metal: ["#121214", "#2a2a2e"] },
-  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, metal: ["#1d1f23", "#3b3e44"] },
-  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, metal: ["#34363b", "#5b5f66"] },
+  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, metal: ["#c2410f", "#ec6a2c", "#ffb27a"] },
+  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, metal: ["#2f37d8", "#6670f0", "#c3b8f5"] },
+  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, metal: ["#7a2e12", "#b8532a", "#e79a6e"] },
 };
 // The two cards not chosen fan out behind it, one to each side.
 const FAN = [
@@ -101,98 +103,91 @@ function Card({
     >
       <span className="absolute inset-0 rounded-[14px]" style={metal(look.metal)} />
       <span className="relative flex items-start justify-between px-[18px] pt-[16px]">
-        <span className="flex items-center gap-2 text-white">
+        <span className="flex items-center gap-2 text-white/80" style={ETCHED}>
           {look.mark("size-[18px]")}
           <span className="font-semibold text-[15px] tracking-[-0.01em]">{look.name}</span>
         </span>
-        <span className="pt-0.5 text-[9.5px] text-white/50 uppercase tracking-[0.18em]">{look.via}</span>
+        <span className="pt-0.5 text-[9.5px] text-white/60 uppercase tracking-[0.18em]" style={ETCHED}>{look.via}</span>
       </span>
     </button>
   );
 }
 
 // Black metal: a soft sheen across, a fine grain, a hairline bevel.
-function metal([base, sheen]: [string, string]): CSSProperties {
+// Etched into the foil: the cut is shaded along its top edge and catches
+// the light along its bottom edge (filter, so the logo's shape gets it too).
+const ETCHED: CSSProperties = {
+  filter: "drop-shadow(0 -1px 0 rgba(0,0,0,0.35)) drop-shadow(0 1px 0 rgba(255,255,255,0.4))",
+  mixBlendMode: "luminosity",
+};
+
+// Coloured foil: deep in one corner, light in the other, a soft band of
+// light across, a fine embossed texture and a pale hairline edge. The
+// texture is SVG noise, lit, laid over the colour.
+const FOIL_TEXTURE = `url("data:image/svg+xml;utf8,${encodeURIComponent(
+  "<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' seed='3'/><feDiffuseLighting lighting-color='#fff' surfaceScale='1.4'><feDistantLight azimuth='225' elevation='60'/></feDiffuseLighting></filter><rect width='100%' height='100%' filter='url(#f)' opacity='0.16'/></svg>",
+)}")`;
+function metal([deep, mid, light]: Foil): CSSProperties {
   return {
     background: [
-      "repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, rgba(0,0,0,0.03) 1px 2px)",
-      `linear-gradient(120deg, ${base} 0%, ${base} 30%, ${sheen} 52%, ${base} 74%, ${base} 100%)`,
+      FOIL_TEXTURE,
+      "linear-gradient(100deg, rgba(255,255,255,0) 18%, rgba(255,255,255,0.22) 30%, rgba(255,255,255,0) 44%)",
+      `radial-gradient(120% 140% at 100% 0%, ${light} 0%, rgba(255,255,255,0) 60%)`,
+      `linear-gradient(200deg, ${mid} 0%, ${mid} 40%, ${deep} 100%)`,
     ].join(","),
+    backgroundBlendMode: "overlay, normal, normal, normal",
     boxShadow:
-      "inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.06), 0 -2px 10px rgba(0,0,0,0.35)",
+      "inset 0 0 0 1px rgba(255,255,255,0.28), inset 0 1px 0 rgba(255,255,255,0.35), 0 -2px 10px rgba(0,0,0,0.35)",
   };
 }
 
-// The sleeve: soft padded leather. A raised grain that catches the light,
-// a puffed edge (lit along the top, shaded underneath), a dark painted
-// edge, tan stitching with its holes, and the chosen AI's mark pressed
-// deep into it with "Motion Studio" under it.
+// The sleeve: brown leather with a curved dip in its top edge, a stitched
+// line inside its edge, fine grain, a lit top lip, and the chosen AI's
+// mark pressed into it.
 function Sleeve({ mark }: { mark: (c: string) => ReactNode }) {
   const id = useId().replace(/:/g, "");
   const h = SLEEVE_H;
-  const r = 26;
-  const shape = (i: number) => {
-    const L = i, T = i, R = W - i, B = h - i, rr = Math.max(4, r - i);
-    const dip = 25 + i * 0.4;
-    const a = W * 0.295 + i * 0.2, b = W * 0.375 + i * 0.3, c = W * 0.395 + i * 0.3;
-    return `M${L} ${T + rr} Q${L} ${T} ${L + rr} ${T} L${a} ${T} C${b} ${T} ${c} ${dip} ${W / 2} ${dip} C${W - c} ${dip} ${W - b} ${T} ${W - a} ${T} L${R - rr} ${T} Q${R} ${T} ${R} ${T + rr} L${R} ${B - rr} Q${R} ${B} ${R - rr} ${B} L${L + rr} ${B} Q${L} ${B} ${L} ${B - rr} Z`;
-  };
-  const edge = shape(0);
-  const stitch = shape(10);
+  const a = W * 0.295, b = W * 0.375, c = W * 0.395;
+  const edge = `M0 24 Q0 0 24 0 L${a} 0 C${b} 0 ${c} 25 ${W / 2} 25 C${W - c} 25 ${W - b} 0 ${W - a} 0 L${W - 24} 0 Q${W} 0 ${W} 24 L${W} ${h - 24} Q${W} ${h} ${W - 24} ${h} L24 ${h} Q0 ${h} 0 ${h - 24} Z`;
+  const stitch = `M11 29 Q11 11 29 11 L${a - 2} 11 C${b - 3} 11 ${c - 3} 36 ${W / 2} 36 C${W - c + 3} 36 ${W - b + 3} 11 ${W - a + 2} 11 L${W - 29} 11 Q${W - 11} 11 ${W - 11} 29 L${W - 11} ${h - 29} Q${W - 11} ${h - 11} ${W - 29} ${h - 11} L29 ${h - 11} Q11 ${h - 11} 11 ${h - 29} Z`;
   return (
     <div className="pointer-events-none absolute bottom-0 left-0 z-20" style={{ width: W, height: h }}>
       <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} className="absolute inset-0 overflow-visible" aria-hidden="true">
         <defs>
-          <linearGradient id={`${id}-leather`} x1="0" y1="0" x2="0.3" y2="1">
-            <stop offset="0" stopColor="#8a5236" />
-            <stop offset="0.5" stopColor="#6a3a25" />
-            <stop offset="1" stopColor="#47251a" />
+          <linearGradient id={`${id}-leather`} x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0" stopColor="#6b3d2a" />
+            <stop offset="0.45" stopColor="#58301f" />
+            <stop offset="1" stopColor="#3f2116" />
           </linearGradient>
-          <clipPath id={`${id}-clip`}>
-            <path d={edge} />
-          </clipPath>
-          {/* raised grain: noise turned into a lit surface, laid over the leather */}
+          <radialGradient id={`${id}-light`} cx="0.3" cy="0.15" r="0.9">
+            <stop offset="0" stopColor="#ffd9c0" stopOpacity="0.12" />
+            <stop offset="1" stopColor="#ffd9c0" stopOpacity="0" />
+          </radialGradient>
           <filter id={`${id}-grain`} x="0" y="0" width="100%" height="100%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" seed="4" result="noise" />
-            <feDiffuseLighting in="noise" surfaceScale="1.6" lightingColor="#ffffff" result="lit">
-              <feDistantLight azimuth="235" elevation="58" />
-            </feDiffuseLighting>
-            <feComposite in="lit" in2="SourceGraphic" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n" />
+            <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.22 0" />
+            <feComposite in2="SourceGraphic" operator="in" />
           </filter>
-          <filter id={`${id}-soft`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="7" />
-          </filter>
-          <filter id={`${id}-lift`} x="-15%" y="-40%" width="130%" height="180%">
-            <feDropShadow dx="0" dy="-5" stdDeviation="7" floodColor="#000" floodOpacity="0.5" />
-            <feDropShadow dx="0" dy="16" stdDeviation="16" floodColor="#000" floodOpacity="0.6" />
-            <feDropShadow dx="0" dy="3" stdDeviation="2" floodColor="#000" floodOpacity="0.5" />
+          <filter id={`${id}-lift`} x="-10%" y="-30%" width="120%" height="160%">
+            <feDropShadow dx="0" dy="-4" stdDeviation="6" floodColor="#000" floodOpacity="0.45" />
+            <feDropShadow dx="0" dy="14" stdDeviation="14" floodColor="#000" floodOpacity="0.55" />
           </filter>
         </defs>
         <g filter={`url(#${id}-lift)`}>
           <path d={edge} fill={`url(#${id}-leather)`} />
         </g>
-        <g clipPath={`url(#${id}-clip)`}>
-          {/* the grain, multiplied into the leather */}
-          <path d={edge} fill={`url(#${id}-leather)`} filter={`url(#${id}-grain)`} style={{ mixBlendMode: "multiply" }} opacity="0.55" />
-          {/* puffed: a soft light along the top, a soft shade along the bottom and sides */}
-          <path d={edge} fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="22" filter={`url(#${id}-soft)`} transform="translate(0 6)" />
-          <path d={edge} fill="none" stroke="rgba(255,214,186,0.35)" strokeWidth="10" filter={`url(#${id}-soft)`} transform="translate(0 4)" />
-          <ellipse cx={W * 0.32} cy={h * 0.28} rx={W * 0.42} ry={h * 0.42} fill="rgba(255,222,200,0.1)" filter={`url(#${id}-soft)`} />
-        </g>
-        {/* the painted edge, and its lit lip */}
-        <path d={edge} fill="none" stroke="#2b140c" strokeWidth="2" />
-        <path d={edge} fill="none" stroke="rgba(255,206,178,0.28)" strokeWidth="1" transform="translate(0 1)" clipPath={`url(#${id}-clip)`} />
-        {/* stitching: the holes, then the tan thread */}
-        <path d={stitch} fill="none" stroke="rgba(30,10,5,0.55)" strokeWidth="2.6" strokeDasharray="6 5" strokeLinecap="round" transform="translate(0 0.8)" />
-        <path d={stitch} fill="none" stroke="#c99a78" strokeWidth="1.7" strokeDasharray="6 5" strokeLinecap="round" />
+        <path d={edge} fill={`url(#${id}-light)`} />
+        <path d={edge} fill="#000" filter={`url(#${id}-grain)`} />
+        {/* the lit lip along the top edge, and its shade just below */}
+        <path d={edge} fill="none" stroke="rgba(255,214,190,0.22)" strokeWidth="1.2" />
+        <path d={stitch} fill="none" stroke="rgba(255,214,190,0.26)" strokeWidth="1.2" strokeDasharray="5 4" strokeLinecap="round" />
       </svg>
-      {/* the mark and the words, pressed in: shade above, light below */}
+      {/* the mark, pressed into the leather: dark inside, a light lip below */}
       <span
-        className="absolute left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-[#3d1d11]"
-        style={{ top: h / 2 - 10, filter: "drop-shadow(0 1px 0 rgba(255,210,180,0.24)) drop-shadow(0 -1px 0 rgba(0,0,0,0.5))" }}
+        className="absolute left-1/2 -translate-x-1/2 text-[#3a1d12]"
+        style={{ top: h / 2 + 2, filter: "drop-shadow(0 1px 0 rgba(255,205,175,0.2)) drop-shadow(0 -1px 0 rgba(0,0,0,0.45))" }}
       >
         {mark("size-8")}
-        <span className="font-semibold text-[9px] uppercase tracking-[0.32em]">Motion Studio</span>
       </span>
     </div>
   );
