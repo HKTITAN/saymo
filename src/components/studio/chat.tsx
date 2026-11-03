@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties, type ReactNode, type RefObject, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type RefObject, useCallback, useEffect, useId, useRef, useState } from "react";
 import { type Clock, formatTime, useClock } from "./clock";
 import { MultipleCrossCancelIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
@@ -70,7 +70,6 @@ export function ChatPanel({
   const list = useRef<HTMLDivElement>(null);
   const { messages, turn } = chat;
   const claudeTurns = messages.filter((m) => m.role === "claude").length;
-  const turns = useMemo(() => toTurns(messages), [messages]);
 
   // The chat opens at your most recent prompt, and goes back to it when you
   // send one: the prompt sits at the top with Claude's reply growing under
@@ -236,7 +235,8 @@ export function ChatPanel({
           // The chat so far is on its way: two messages' worth of shapes.
           <Skeleton loading label="Loading the chat">
             <div className="flex flex-col gap-3 pt-1">
-              <Turn turn={{ prompt: SAMPLE[0], replies: [SAMPLE[1]] }} latest filmId={filmId} />
+              <Message message={SAMPLE[0]} filmId={filmId} />
+              <Message message={SAMPLE[1]} filmId={filmId} />
             </div>
           </Skeleton>
         ) : messages.length === 0 && !turn.running ? (
@@ -261,21 +261,10 @@ export function ChatPanel({
             </div>
           </div>
         ) : null}
-        {turns.map((t, i) => {
-          const latest = i === turns.length - 1;
-          return (
-            <Turn
-              key={`${(t.prompt ?? t.replies[0])?.at}-${i}`}
-              turn={t}
-              latest={latest}
-              live={latest && turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
-              filmId={filmId}
-              soundLength={soundLength}
-              video={video}
-            />
-          );
-        })}
-        {turn.running && !turns.length ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
+        {messages.map((m, i) => (
+          <Message key={`${m.at}-${i}`} message={m} filmId={filmId} soundLength={soundLength} video={video} />
+        ))}
+        {turn.running && turn.text ? <Live text={turn.text} /> : null}
         {!turn.running && chat.carryOn ? <CarryOnNote carryOn={chat.carryOn} onCancel={() => void chat.cancelCarryOn()} /> : null}
         {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
         {chat.queue.length ? (
@@ -290,6 +279,9 @@ export function ChatPanel({
         {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">
+        <WorkingCard on={turn.running} steps={turn.steps} resumed={turn.resumed} />
+        {/* Opaque underneath, so the working card tucks behind the box. */}
+        <div className="relative z-10 rounded-[12px] bg-[#161616]">
         <PromptBox
           inputRef={inputRef}
           value={draft}
@@ -323,6 +315,7 @@ export function ChatPanel({
             </>
           }
         />
+        </div>
       </div>
     </Panel>
   );
@@ -351,128 +344,42 @@ function CarryOnNote({ carryOn, onCancel }: { carryOn: { reason: "time" | "limit
   );
 }
 
-// The chat as turns: each prompt of yours with what Claude said back, and
-// any "carried on by itself" notes, until your next prompt.
-type TurnData = { prompt: ChatMessage | null; replies: ChatMessage[] };
-function toTurns(messages: ChatMessage[]): TurnData[] {
-  const turns: TurnData[] = [];
-  for (const m of messages) {
-    if (m.role === "you" && !m.auto) turns.push({ prompt: m, replies: [] });
-    else if (turns.length) turns[turns.length - 1].replies.push(m);
-    else turns.push({ prompt: null, replies: [m] });
+function Message({ message, filmId, soundLength, video }: { message: ChatMessage; filmId: string; soundLength?: number; video?: boolean }) {
+  if (message.role === "you" && message.auto) {
+    return <p className="text-center text-[11.5px] text-white/35">The studio carried on by itself</p>;
   }
-  return turns;
-}
-
-// Your prompt on a softly tinted card, lighter towards its foot, and
-// Claude's reply on a card tucked into it, so a question and its answer
-// read as one thing. Only the latest turn shows in full; older ones fold
-// to a line of each, and open when clicked.
-const PROMPT_CARD: CSSProperties = {
-  background: "linear-gradient(180deg, #1b1f24 0%, #2a3440 100%)",
-  boxShadow: "inset 0 0 0 1px rgba(170,200,230,0.08)",
-};
-const REPLY_CARD: CSSProperties = {
-  background: "#242426",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.07), inset 0 0 0 1px rgba(255,255,255,0.04), 0 -8px 18px -10px rgba(0,0,0,0.7)",
-};
-
-function Turn({
-  turn,
-  latest,
-  live,
-  filmId,
-  soundLength,
-  video,
-}: {
-  turn: TurnData;
-  latest: boolean;
-  live?: ReactNode;
-  filmId: string;
-  soundLength?: number;
-  video?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const full = latest || open;
-  const prompt = turn.prompt;
-  const replies = turn.replies.filter((m) => m.role !== "claude" || m.text);
-  const answered = replies.length > 0 || Boolean(live);
-
-  const body = (
-    <>
-      {prompt ? (
-        <div className={cn("flex flex-col gap-1.5 rounded-[14px] px-3 pt-2.5", answered ? "pb-6" : "pb-2.5")} style={PROMPT_CARD}>
-          {full ? <PromptContext message={prompt} soundLength={soundLength} video={video} /> : null}
-          <p className={cn("text-[12.5px] text-white/90 leading-relaxed", full ? "whitespace-pre-wrap" : "line-clamp-1")}>{prompt.text}</p>
-          {full ? <SentFiles files={prompt.context?.attachments ?? []} urlOf={(path) => `/studio/stage/${filmId}/${path}`} /> : null}
-        </div>
-      ) : null}
-      {answered ? (
-        <div className={cn("relative flex flex-col gap-2 rounded-[14px] px-3 py-2.5", prompt && "-mt-3.5")} style={REPLY_CARD}>
-          {replies.map((m, i) =>
-            m.role === "you" ? (
-              full ? (
-                <p key={`${m.at}-${i}`} className="text-[11.5px] text-white/35">
-                  The studio carried on by itself
-                </p>
-              ) : null
-            ) : (
-              <p
-                key={`${m.at}-${i}`}
-                className={cn("text-[12.5px] text-white/80 leading-relaxed", full ? "whitespace-pre-wrap" : "line-clamp-2")}
-              >
-                <Rich text={m.text} />
-              </p>
-            ),
-          )}
-          {live}
-          {open && !latest ? (
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="cursor-pointer self-end rounded-[5px] px-1 text-[11px] text-white/45 outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              Fold
-            </button>
-          ) : null}
-        </div>
-      ) : null}
-    </>
-  );
-
-  if (full) {
+  if (message.role === "you") {
     return (
-      <div data-chat-role={prompt ? "you" : undefined} className="flex flex-col">
-        {body}
+      <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">
+        {message.context?.sound ? (
+          <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
+            {soundChipLabel(message.context.sound, soundLength, video)}
+          </span>
+        ) : message.context?.pick ? (
+          <span className="rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
+            {chipLabel(message.context.pick, message.context.t)}
+          </span>
+        ) : message.context ? (
+          <span className="rounded-[6px] bg-white/[0.06] px-1.5 py-0.5 text-[11px] text-white/45 tabular-nums">
+            At {formatTime(message.context.t)}
+          </span>
+        ) : null}
+        <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed">
+          {message.text}
+        </p>
+        <SentFiles files={message.context?.attachments ?? []} urlOf={(path) => `/studio/stage/${filmId}/${path}`} />
       </div>
     );
   }
   return (
-    <button
-      type="button"
-      data-chat-role={prompt ? "you" : undefined}
-      aria-expanded={false}
-      onClick={() => setOpen(true)}
-      className="flex cursor-pointer flex-col rounded-[14px] text-left opacity-75 outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      {body}
-    </button>
+    <div className="flex flex-col gap-1.5 pe-4">
+      {message.text ? (
+        <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
+          <Rich text={message.text} />
+        </p>
+      ) : null}
+    </div>
   );
-}
-
-// What a prompt was sent with: the part of the film you pointed at, the
-// stretch of sound, or the moment.
-function PromptContext({ message, soundLength, video }: { message: ChatMessage; soundLength?: number; video?: boolean }) {
-  const c = message.context;
-  if (!c) return null;
-  if (c.sound || c.pick) {
-    return (
-      <span className="self-start rounded-[6px] bg-[#F55A00]/12 px-1.5 py-0.5 text-[11px] text-[#ff9a5c]/90">
-        {c.sound ? soundChipLabel(c.sound, soundLength, video) : c.pick ? chipLabel(c.pick, c.t) : null}
-      </span>
-    );
-  }
-  return <span className="self-start text-[11px] text-white/40 tabular-nums">At {formatTime(c.t)}</span>;
 }
 
 // Aerchain's ai mark while Claude works: the dot hops and a light sweep
@@ -511,26 +418,47 @@ function WorkingMark() {
   );
 }
 
-function Live({ text, steps, resumed }: { text: string; steps: string[]; resumed: boolean }) {
-  // One line that shimmers and changes in place as Claude moves from step
-  // to step, so the chat doesn't fill up with a list of steps.
-  const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
+// Claude's words as they come in, in the chat.
+function Live({ text }: { text: string }) {
   return (
     <div className="flex flex-col gap-1.5 pe-4" aria-live="polite">
-      <p className="flex h-4 items-center gap-2 overflow-hidden text-[11.5px]">
-        <WorkingMark />
-        <span
-          key={`${steps.length}-${step}`}
-          className="studio-shimmer block animate-in fade-in slide-in-from-bottom-1 duration-200"
-        >
-          {step}
-        </span>
+      <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
+        <Rich text={text} />
       </p>
-      {text ? (
-        <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">
-          <Rich text={text} />
-        </p>
-      ) : null}
+    </div>
+  );
+}
+
+// While Claude works, a slate card rises from behind the prompt box with
+// what it's doing: one line that shimmers and changes in place from step
+// to step. The box sits in front, over the card's foot, so the two read as
+// one stack. It slides back down when the turn ends.
+const WORKING_CARD: CSSProperties = {
+  background: "linear-gradient(180deg, #1b1f24 0%, #2a3440 100%)",
+  boxShadow: "inset 0 1px 0 rgba(170,200,230,0.1), inset 0 0 0 1px rgba(170,200,230,0.06)",
+};
+function WorkingCard({ on, steps, resumed }: { on: boolean; steps: string[]; resumed: boolean }) {
+  const step = steps.at(-1) ?? (resumed ? "Still working on your last request" : "Reading the film");
+  return (
+    <div
+      aria-hidden={!on}
+      className={cn(
+        "grid transition-[grid-template-rows,opacity,margin] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+        on ? "-mb-3 grid-rows-[1fr] opacity-100" : "mb-0 grid-rows-[0fr] opacity-0",
+      )}
+    >
+      <div className="min-h-0 overflow-hidden">
+        <div className="rounded-t-[14px] px-3 pt-2.5 pb-[22px]" style={WORKING_CARD} aria-live="polite">
+          {on ? (
+            <p className="flex h-4 items-center gap-2 overflow-hidden text-[11.5px]">
+              <WorkingMark />
+              <span key={`${steps.length}-${step}`} className="studio-shimmer block animate-in fade-in slide-in-from-bottom-1 duration-200">
+                {step}
+              </span>
+            </p>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
