@@ -40,3 +40,14 @@ export type SaveState =
   | { state: "failed"; message: string; at: string };
 
 export type FilmConnections = { drive: SaveState; github: SaveState };
+
+// Where finished films are copied on this Mac (destinations.ts): a folder a
+// cloud app keeps in sync, or any folder picked in Finder.
+export type CloudService = "google-drive" | "dropbox" | "onedrive" | "box" | "icloud" | "folder";
+export type Destination = { service: CloudService; label: string; account: string | null; path: string };
+export type DestinationsStatus = {
+  found: Destination[]; // the cloud folders on this Mac
+  missing: { service: CloudService; label: string; get: string }[]; // apps not here yet, with where to get them
+  current: (Destination & { gone: boolean }) | null; // where films go now; gone: the folder isn't there any more
+  folderName: string; // the folder made inside it
+};

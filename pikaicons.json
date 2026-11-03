@@ -184,6 +184,10 @@
       "name": "search-default",
       "variant": "stroke"
     },
+    "settings-01": {
+      "name": "settings-01",
+      "variant": "stroke"
+    },
     "speaker-on": {
       "name": "speaker-on",
       "variant": "stroke"

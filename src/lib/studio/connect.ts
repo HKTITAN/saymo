@@ -1,6 +1,7 @@
 import { ConnectError } from "./connect-store";
 import type { ConnectionsStatus, FilmConnections } from "./connect-types";
 import type { RenderQuality, RenderStatus } from "./contract";
+import { copyToDestination } from "./destinations";
 import { filmDriveState, saveToDrive } from "./drive-sync";
 import { readFilm } from "./films";
 import { cancelGithubSignIn, deviceFlowAvailable, ghAvailable, githubPending, githubState } from "./github";
@@ -18,7 +19,10 @@ export async function afterRender(id: string, quality: RenderQuality, files: str
   const film = await readFilm(id);
   if (!film) return;
   // Every size counts as finished work, as a final does.
-  if ((quality !== "draft" || (await autoSaveDrafts())) && (await driveConnected())) saveToDrive(id, files);
+  const finished = quality !== "draft" || (await autoSaveDrafts());
+  if (finished && (await driveConnected())) saveToDrive(id, files);
+  // And into the folder picked in Settings, for the cloud app on this Mac to upload.
+  if (finished) void copyToDestination(id, files).catch((e) => console.error("Copying the render to its folder stopped:", e instanceof Error ? e.message : e));
   if (quality === "final") {
     const gh = await githubState().catch(() => null);
     if (gh?.connected && gh.repo) saveToGithub(id, renderMessage(film, quality, files));

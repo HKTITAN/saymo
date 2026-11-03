@@ -20,7 +20,7 @@ const POPUP =
   "origin-(--transform-origin) outline-none transition-[scale,opacity] duration-150 ease-out data-ending-style:scale-[0.97] data-ending-style:opacity-0 data-starting-style:scale-[0.97] data-starting-style:opacity-0";
 const LINK =
   "inline-flex items-center gap-1 rounded-[5px] text-white/75 underline-offset-2 outline-none hover:text-white hover:underline focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3";
-const DEFAULT_REPO = "aerchain-motion-library";
+export const DEFAULT_REPO = "aerchain-motion-library";
 
 const message = (e: unknown, fallback: string) => (e instanceof StudioError ? e.message : fallback);
 
@@ -163,7 +163,7 @@ type SectionProps = {
 
 // ─── Google Drive ─────────────────────────────────────────────────────────
 
-function GoogleSection({ status, onChange, onNote }: SectionProps) {
+export function GoogleSection({ status, onChange, onNote }: SectionProps) {
   const { google } = status;
   const active = google.accounts.find((a) => a.active) ?? null;
   const [copied, setCopied] = useState(false);
@@ -278,7 +278,7 @@ function GoogleSection({ status, onChange, onNote }: SectionProps) {
 
 // ─── GitHub ───────────────────────────────────────────────────────────────
 
-function GithubSection({
+export function GithubSection({
   status,
   onChange,
   onNote,

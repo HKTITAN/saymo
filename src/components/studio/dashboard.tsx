@@ -34,7 +34,8 @@ import { KitMaker } from "./kit-maker";
 import { LibraryView } from "./library";
 import { cachedLibrary, filesFor } from "./library-api";
 import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, FolderChip, FolderMenu, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
-import { EmptyStages, FilmStage, Hero, type Section, SideNav, shapeOf, useHomeNext } from "./home-next";
+import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu, shapeOf, useHomeNext } from "./home-next";
+import { SettingsPage } from "./settings-page";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { ReelFlow } from "./reel-flow";
 import { SlidesFlow } from "./slides-flow";
@@ -171,7 +172,7 @@ export function Dashboard({
   const now = useSyncExternalStore(everyMinute, thisMinute, () => 0);
   // The next layout (home-next.tsx), tried with /studio?home=next while developing.
   const next = useHomeNext();
-  const [kitsOpen, setKitsOpen] = useState(false);
+  const [aside, setAside] = useState<null | "kits" | "settings">(null);
   // Moves and renames are undone here; there's no Claude turn to undo.
   const history = useHistory({ undoClaude: async () => "Nothing to undo", claudeBusy: () => false });
 
@@ -358,10 +359,10 @@ export function Dashboard({
   // ─── The next layout (home-next.tsx), while it's tried beside this one ──
   // Home lists every film, newest first; a folder in the sidebar narrows it.
 
-  const section: Section = kitsOpen ? "kits" : tab === "library" ? "library" : "home";
+  const section: Section = aside ?? (tab === "library" ? "library" : "home");
   const goSection = (s: Section) => {
-    setKitsOpen(s === "kits");
-    if (s !== "kits") setTab(s === "library" ? "library" : "films");
+    setAside(s === "kits" || s === "settings" ? s : null);
+    if (s === "home" || s === "library") setTab(s === "library" ? "library" : "films");
   };
   const everyFilm =
     films === null
@@ -407,36 +408,43 @@ export function Dashboard({
                 onWay={(way) => setOverlay(way)}
                 onProblem={say}
               />
+              {/* The folders, as on the old home: drop a film on one to file it. */}
+              {!folder && !q && folders?.length ? (
+                <section aria-labelledby="home-folders" className="mx-auto flex max-w-[1180px] flex-col gap-3 px-8 pb-8">
+                  <header className="flex h-8 items-center gap-2 px-1">
+                    <h2 id="home-folders" className="font-medium text-[13px] text-white/90">
+                      Folders
+                    </h2>
+                    <span className="text-[12px] text-white/35 tabular-nums">{folders.length}</span>
+                  </header>
+                  <ul aria-label="Folders" className="grid grid-cols-[repeat(auto-fill,minmax(128px,148px))] gap-x-3 gap-y-4">
+                    {folders.map((x) => (
+                      <FolderCard
+                        key={x.id}
+                        folder={x}
+                        pages={inFolder(x.id)}
+                        detail={folderDetail(inFolder(x.id), now)}
+                        deleteBody={folderDeleteBody(inFolder(x.id).length)}
+                        dragType={FILM_DRAG}
+                        springType={LIBRARY_DRAG}
+                        dragging={dragging !== null}
+                        onOpen={() => goFolder(x.id)}
+                        onDrop={(id) => moveById(id, x.id)}
+                        onRename={(name) => renameFolder(x, name)}
+                        onDelete={() => deleteFolder(x)}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
               <section aria-label={folder ? folder.name : "Films"} className="mx-auto flex max-w-[1180px] flex-col gap-4 px-8 pb-20">
                 <header className="flex h-8 items-center gap-2 px-1">
                   <h2 className="truncate font-medium text-[13px] text-white/90">{q ? "Search results" : folder ? folder.name : "Recent"}</h2>
-                  {everyFilm ? <span className="font-mono text-[11.5px] text-white/35 tabular-nums">{everyFilm.length}</span> : null}
+                  {everyFilm ? <span className="text-[12px] text-white/35 tabular-nums">{everyFilm.length}</span> : null}
                   <span className="ms-auto flex items-center gap-3">
-                    {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder in the sidebar</span> : null}
+                    {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder</span> : null}
                     {libDrag ? <span className="text-[11.5px] text-white/45">Drop it on a film to use it in that film’s chat</span> : null}
-                    <div role="radiogroup" aria-label="Sort films" className="flex h-7 items-center gap-0.5 rounded-[9px] bg-white/[0.05] ps-2.5 pe-0.5 text-[11.5px]">
-                      <span className="me-1 text-white/40">Sort</span>
-                      {(
-                        [
-                          ["edited", "Last edited"],
-                          ["name", "Name"],
-                        ] as const
-                      ).map(([k, label]) => (
-                        <button
-                          key={k}
-                          type="button"
-                          role="radio"
-                          aria-checked={sort === k}
-                          onClick={() => setSort(k)}
-                          className={cn(
-                            "h-6 cursor-pointer rounded-[7px] px-2 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                            sort === k ? "bg-white/[0.12] text-white" : "text-white/50 hover:text-white/80",
-                          )}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
+                    <SortMenu sort={sort} onSort={setSort} />
                   </span>
                 </header>
                 {problem ? <p className="px-1 text-[12px] text-[#ff9592]">{problem}</p> : null}
@@ -556,6 +564,8 @@ export function Dashboard({
               </Skeleton>
             </section>
           ) : null}
+
+          {section === "settings" ? <SettingsPage /> : null}
         </div>
       </div>
     </div>
@@ -1037,7 +1047,7 @@ function StartCard({
           : undefined
       }
       className={cn(
-        "group/doodle flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color,scale] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]",
+        "group/doodle flex w-full cursor-pointer flex-col gap-2.5 rounded-[14px] p-1.5 text-left outline-none transition-[background-color] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring",
         over ? "bg-white/[0.07] ring-1 ring-white/40" : waiting && onLibraryDrop && "bg-white/[0.03] outline-1 outline-dashed outline-white/20",
       )}
     >
@@ -1208,11 +1218,11 @@ function FilmCard({
             </span>
           </span>
           <span className="truncate text-[11.5px] text-white/40">
-            {f.kind === "video" ? "Video edit" : "Motion graphics"} · <span className="font-mono tabular-nums">{f.duration.toFixed(1)}</span>{"\u2009"}s
+            {f.kind === "video" ? "Video edit" : "Motion graphics"} · <span className={cn("tabular-nums", !stage && "font-mono")}>{f.duration.toFixed(1)}</span>{"\u2009"}s
             {stage ? (
               <>
                 {" · "}
-                <span className="font-mono tabular-nums">{shapeOf(f)}</span>
+                <span className="tabular-nums">{shapeOf(f)}</span>
               </>
             ) : null}
             {folderLabel ? ` · ${folderLabel}` : null}

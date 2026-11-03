@@ -1,8 +1,10 @@
 "use client";
 
+import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useState } from "react";
 import {
   BookmarkIcon,
+  ChevronDownIcon,
   FileIcon,
   FolderIcon,
   HomeIcon,
@@ -12,15 +14,17 @@ import {
   PlayCircleIcon,
   PlusIcon,
   SearchIcon,
+  Settings01Icon,
   VideoCallIcon,
 } from "@/components/icons";
+import { SURFACE } from "@/components/tool/dial";
 import { RenameField } from "@/components/tool/rename";
 import { Kbd } from "@/components/ui/kbd";
 import { type FilmSummary, type Folder, SIZES } from "@/lib/studio/contract";
 import { LIBRARY_DRAG } from "@/lib/studio/references-shared";
 import { cn } from "@/lib/utils";
 import { StudioMark } from "./doodles";
-import { FolderMenu, useSpringOpen } from "./home-parts";
+import { FolderMenu, ITEM, MENU_POPUP, useSpringOpen } from "./home-parts";
 import { cachedLibrary, filesFor } from "./library-api";
 import { Hint } from "./panel";
 import { PromptBox } from "./prompt-box";
@@ -51,14 +55,18 @@ export function useHomeNext() {
   return next;
 }
 
-export type Section = "home" | "library" | "kits";
+export type Section = "home" | "library" | "kits" | "settings";
 export type Way = "video" | "script" | "reel" | "slides";
 type Size = (typeof SIZES)[number];
 
 const ROW =
   "flex h-8 w-full cursor-pointer items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[12.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.05] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-white/40";
 const ROW_ON = "bg-white/[0.08] text-white hover:bg-white/[0.08] [&>svg]:text-white/80";
-const COUNT = "ms-auto shrink-0 font-mono text-[11px] text-white/30 tabular-nums";
+const COUNT = "ms-auto shrink-0 text-[11.5px] text-white/30 tabular-nums";
+// A folder being named: the same row, its name typed in place, as in Finder.
+const NAMING_ROW =
+  "flex h-8 w-full items-center gap-2.5 rounded-[9px] bg-white/[0.07] px-2.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)] [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-white/70";
+const NAMING_FIELD = "h-6 flex-1 rounded-none bg-transparent px-0 text-[12.5px] ring-0 focus:ring-0";
 
 // ─── The sidebar ─────────────────────────────────────────────────────────
 
@@ -109,8 +117,10 @@ export function SideNav({
   searchRef: React.RefObject<HTMLInputElement | null>;
   onRules: () => void;
 }) {
+  const [width, setWidth] = useSideWidth();
   return (
-    <nav aria-label="Studio" className="flex w-[232px] shrink-0 flex-col gap-4 px-3 pt-3 pb-3 max-[980px]:w-[200px]">
+    <nav aria-label="Studio" className="relative flex shrink-0 flex-col gap-4 px-3 pt-3 pb-3" style={{ width }}>
+      <WidthHandle width={width} onWidth={setWidth} />
       <div className="group/doodle flex h-9 items-center gap-2.5 px-2">
         <StudioMark />
         <span className="font-medium text-[13px] text-white/90">Motion Studio</span>
@@ -218,11 +228,12 @@ export function SideNav({
             />
           ))}
           {naming ? (
-            <li>
+            <li className={NAMING_ROW}>
+              <FolderIcon aria-hidden="true" />
               <RenameField
                 value=""
-                placeholder="Launch films"
-                className="h-8 w-full rounded-[9px] px-2.5 text-[12.5px]"
+                placeholder="New folder"
+                className={NAMING_FIELD}
                 onDone={(name) => {
                   onNaming(false);
                   if (name) onNewFolder(name);
@@ -235,11 +246,87 @@ export function SideNav({
         </ul>
       </div>
 
-      <button type="button" onClick={onRules} className={ROW}>
-        <FileIcon aria-hidden="true" />
-        Rules for every film
-      </button>
+      <ul className="flex flex-col gap-0.5">
+        <NavRow
+          icon={<Settings01Icon aria-hidden="true" />}
+          label="Settings"
+          count={null}
+          on={section === "settings"}
+          onClick={() => onSection("settings")}
+        />
+        <li>
+          <button type="button" onClick={onRules} className={ROW}>
+            <FileIcon aria-hidden="true" />
+            Rules for every film
+          </button>
+        </li>
+      </ul>
     </nav>
+  );
+}
+
+// The sidebar's width: dragged at its edge, kept on this Mac.
+const SIDE_KEY = "studio:sidebar-width";
+const SIDE = { min: 184, start: 232, max: 400 };
+const clampSide = (w: number) => Math.round(Math.min(SIDE.max, Math.max(SIDE.min, w)));
+
+function useSideWidth() {
+  const [width, setWidth] = useState(() => {
+    try {
+      const kept = Number(window.localStorage.getItem(SIDE_KEY));
+      return kept ? clampSide(kept) : SIDE.start;
+    } catch {
+      return SIDE.start;
+    }
+  });
+  const set = (w: number) => {
+    const next = clampSide(w);
+    setWidth(next);
+    try {
+      window.localStorage.setItem(SIDE_KEY, String(next));
+    } catch {}
+  };
+  return [width, set] as const;
+}
+
+// The edge between the sidebar and the page: drag it, use ← and →, or
+// double-click it to go back to the first width. A bar shows on hover.
+function WidthHandle({ width, onWidth }: { width: number; onWidth: (w: number) => void }) {
+  const [drag, setDrag] = useState<{ x: number; w: number } | null>(null);
+  return (
+    // biome-ignore lint/a11y/useSemanticElements: a draggable splitter, which <hr> can't be
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Sidebar width"
+      aria-valuemin={SIDE.min}
+      aria-valuemax={SIDE.max}
+      aria-valuenow={width}
+      tabIndex={0}
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        setDrag({ x: e.clientX, w: width });
+      }}
+      onPointerMove={(e) => {
+        if (drag) onWidth(drag.w + e.clientX - drag.x);
+      }}
+      onPointerUp={() => setDrag(null)}
+      onPointerCancel={() => setDrag(null)}
+      onDoubleClick={() => onWidth(SIDE.start)}
+      onKeyDown={(e) => {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault();
+        onWidth(width + (e.key === "ArrowRight" ? 16 : -16));
+      }}
+      className="group/edge absolute inset-y-0 -right-1 z-10 flex w-2 cursor-col-resize touch-none justify-center outline-none"
+    >
+      <span
+        className={cn(
+          "my-auto h-10 w-[3px] rounded-full bg-white/25 opacity-0 transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
+          drag && "opacity-100",
+        )}
+      />
+    </div>
   );
 }
 
@@ -352,14 +439,17 @@ function FolderRow({
       }}
     >
       {renaming ? (
-        <RenameField
-          value={folder.name}
-          className="h-8 w-full rounded-[9px] px-2.5 text-[12.5px]"
-          onDone={(name) => {
-            setRenaming(false);
-            if (name) onRename(name);
-          }}
-        />
+        <div className={NAMING_ROW}>
+          <FolderIcon aria-hidden="true" />
+          <RenameField
+            value={folder.name}
+            className={NAMING_FIELD}
+            onDone={(name) => {
+              setRenaming(false);
+              if (name) onRename(name);
+            }}
+          />
+        </div>
       ) : (
         <>
           <button
@@ -482,7 +572,7 @@ export function Hero({
             type="button"
             disabled={busy}
             onClick={() => onWay(w.way)}
-            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.05] px-3 text-[12px] text-white/70 outline-none transition-[background-color,color,scale] duration-150 hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97] disabled:opacity-45 [&_svg]:size-3.5 [&_svg]:text-white/50"
+            className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full bg-white/[0.05] px-3 text-[12px] text-white/70 outline-none transition-[background-color,color] duration-150 hover:bg-white/[0.09] hover:text-white focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-45 [&_svg]:size-3.5 [&_svg]:text-white/50"
           >
             {w.icon}
             {w.label}
@@ -518,21 +608,77 @@ function SizePicker({ size, onSize }: { size: Size; onSize: (s: Size) => void })
               aria-label={s.label}
               onClick={() => onSize(s)}
               className={cn(
-                "flex h-6 cursor-pointer items-center gap-1.5 rounded-[7px] px-2 text-[11px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                "flex h-6 cursor-pointer items-center gap-1.5 rounded-[7px] px-2 text-[11.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 on ? "bg-white/[0.12] text-white" : "text-white/45 hover:text-white/80",
               )}
             >
-              <span
-                aria-hidden="true"
-                className="rounded-[1.5px] shadow-[inset_0_0_0_1.25px_currentColor] transition-[width,height] duration-200"
-                style={{ width: Math.round((s.width / long) * 12), height: Math.round((s.height / long) * 12) }}
-              />
-              <span className="font-mono tabular-nums">{s.label.split(" ")[1]}</span>
+              {/* Every shape gets the same 12 px box, so the words start in line. */}
+              <span aria-hidden="true" className="flex size-3 shrink-0 items-center justify-center">
+                <span
+                  className="rounded-[1.5px] shadow-[inset_0_0_0_1.25px_currentColor]"
+                  style={{ width: Math.round((s.width / long) * 12), height: Math.round((s.height / long) * 12) }}
+                />
+              </span>
+              <span className="leading-none tabular-nums">{s.label.split(" ")[1]}</span>
             </button>
           </Hint>
         );
       })}
     </div>
+  );
+}
+
+// ─── The order of the films ─────────────────────────────────────────────
+
+// The order shown as words with a chevron, which opens a short menu, the
+// way a file browser shows it.
+const ORDERS = [
+  ["edited", "Last edited"],
+  ["name", "Name"],
+] as const;
+type Order = (typeof ORDERS)[number][0];
+
+export function SortMenu({ sort, onSort }: { sort: Order; onSort: (s: Order) => void }) {
+  const [open, setOpen] = useState(false);
+  const label = ORDERS.find(([k]) => k === sort)?.[1] ?? "Last edited";
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger
+        aria-label={`Sort films, now by ${label.toLowerCase()}`}
+        className="inline-flex h-7 cursor-pointer items-center gap-1 rounded-[8px] ps-2 pe-1.5 text-[12px] text-white/55 outline-none transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-white/[0.06] data-popup-open:text-white [&_svg]:size-3.5 [&_svg]:text-white/40"
+      >
+        {label}
+        <ChevronDownIcon aria-hidden="true" />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner side="bottom" align="end" sideOffset={6} collisionPadding={12} className="z-50">
+          <Popover.Popup className={cn(SURFACE, MENU_POPUP, "flex w-[168px] flex-col")}>
+            <p className="ps-6 pe-2 pt-1 pb-1 text-[11px] text-white/35">Sort by</p>
+            {/* As in a Mac menu: rows light only under the pointer, and a dot marks the order in use. */}
+            {ORDERS.map(([k, text]) => (
+              <button
+                key={k}
+                type="button"
+                role="menuitemradio"
+                aria-checked={sort === k}
+                className={cn(
+                  ITEM,
+                  "min-h-8 gap-2 ps-2.5",
+                  "before:size-1.5 before:shrink-0 before:rounded-full before:content-['']",
+                  sort === k ? "text-white before:bg-white/85" : "text-white/65 before:bg-transparent",
+                )}
+                onClick={() => {
+                  onSort(k);
+                  setOpen(false);
+                }}
+              >
+                <span className="flex-1 text-left">{text}</span>
+              </button>
+            ))}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 

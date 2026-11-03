@@ -1,4 +1,4 @@
-import type { ConnectionsStatus, FilmConnections, GithubRepo } from "@/lib/studio/connect-types";
+import type { ConnectionsStatus, DestinationsStatus, FilmConnections, GithubRepo } from "@/lib/studio/connect-types";
 import { STUDIO_HEADERS } from "@/lib/studio/contract";
 import { StudioError } from "./api";
 
@@ -34,6 +34,11 @@ export const connectApi = {
   cancelGithub: () => call<void>("/api/studio/connect/github/start", { method: "DELETE" }),
   chooseRepo: (owner: string, name: string) => call<GithubRepo>("/api/studio/connect/github/repo", json("PUT", { owner, name })),
   disconnectGithub: () => call<void>("/api/studio/connect/github", { method: "DELETE" }),
+  // Where finished films are copied on this Mac (destinations.ts).
+  destinations: () => call<DestinationsStatus>("/api/studio/connect/destination"),
+  pickDestination: (path: string) => call<DestinationsStatus>("/api/studio/connect/destination", json("PUT", { path })),
+  chooseFolder: () => call<DestinationsStatus>("/api/studio/connect/destination", { method: "POST" }),
+  stopDestination: () => call<DestinationsStatus>("/api/studio/connect/destination", { method: "DELETE" }),
   film: (id: string) => call<FilmConnections>(`/api/studio/films/${id}/connect`),
   saveFilm: (id: string, to: "drive" | "github") => call<FilmConnections>(`/api/studio/films/${id}/connect`, json("POST", { to })),
 };
