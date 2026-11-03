@@ -64,7 +64,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const CARGO_TARGET = path.join(ROOT, "node_modules/.cache/studio-cargo");
 // Bumped when the way files are made changes, so older renders aren't
 // reused.
-const PIPELINE = "2";
+const PIPELINE = "3"; // 3: every file has a data-rate ceiling phones can decode
 
 // Into video: BT.709, limited range, 4:2:0, tagged so the orange plays back
 // as the same orange everywhere (as scripts/export.mjs does).
@@ -371,18 +371,33 @@ const levelFor = (width, height, fps) => (width * height * fps > 1920 * 1080 * 6
 //     (flat colour and sharp edges), the best quality for its size.
 //   draft: the hardware encoder at a generous bit rate where there is
 //     one, otherwise x264 veryfast at CRF 18.
+// The most data a second of video may carry, in Mb/s. Phones decode in
+// hardware, sized for what the file's H.264 level promises; a stream that
+// goes past it (a 4K render of a busy film reached 671 Mb/s at level 5.2,
+// whose limit is 300) breaks up on a phone while a laptop plays it fine.
+// About 0.55 bits a pixel, and at most 50 Mb/s up to 1080p (level 4.2) or
+// 120 Mb/s at 4K (level 5.2), which phones play comfortably.
+const ceilingFor = (width, height, fps) => {
+  const level = levelFor(width, height, fps);
+  return Math.max(6, Math.min(level === "5.2" ? 120 : 50, Math.round((width * height * fps * 0.55) / 1e6)));
+};
+const capped = (rate) => ["-maxrate", `${rate}M`, "-bufsize", `${Math.round(rate * 1.5)}M`];
+
 function encoderFor(m, file, job, width, height, tune = "animation") {
   const level = levelFor(width, height, job.fps);
   const keyframes = ["-g", String(Math.round(job.fps * 2))];
+  const ceiling = ceilingFor(width, height, job.fps);
   if (draft && m.draftVideoToolbox) {
     const rate = Math.max(4, Math.round((width * height * job.fps * 0.08) / 1e6));
-    return ["-c:v", "h264_videotoolbox", "-b:v", `${rate}M`, "-profile:v", "high", "-level:v", level, ...keyframes];
+    return ["-c:v", "h264_videotoolbox", "-b:v", `${Math.min(rate, ceiling)}M`, ...capped(ceiling), "-profile:v", "high", "-level:v", level, ...keyframes];
   }
-  if (draft) return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-tune", tune, "-level:v", level];
+  if (draft) return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", ...capped(ceiling), "-tune", tune, "-level:v", level];
   if (file.big && job.scale === 2 && m.finalVideoToolbox) {
-    return ["-c:v", "h264_videotoolbox", "-q:v", "90", "-profile:v", "high", "-level:v", level, ...keyframes];
+    // Apple's encoder aims a little under its target, so the target is the
+    // ceiling itself (a busy 4K film comes out near 85 Mb/s).
+    return ["-c:v", "h264_videotoolbox", "-b:v", `${ceiling}M`, ...capped(ceiling), "-profile:v", "high", "-level:v", level, ...keyframes];
   }
-  return ["-c:v", "libx264", "-preset", "slow", "-crf", "14", "-tune", tune, "-level:v", level];
+  return ["-c:v", "libx264", "-preset", "slow", "-crf", "14", ...capped(ceiling), "-tune", tune, "-level:v", level];
 }
 
 // Turns the engine's lossless frames into the job's files in one pass.
