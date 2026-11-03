@@ -357,53 +357,83 @@ function useSideWidth() {
 }
 
 // The edge between the sidebar and the page: drag it to resize, click it to
-// fold the sidebar away (or Enter), or use ← and →. A thin line shows the
-// edge on hover.
+// fold the sidebar away (or Enter), or use ← and →. A short bar shows on
+// hover, and beside the pointer a small hint: Drag to resize, Click to
+// collapse.
 function WidthHandle({ width, onWidth, onCollapse }: { width: number; onWidth: (w: number) => void; onCollapse: () => void }) {
   const [drag, setDrag] = useState<{ x: number; w: number; moved: boolean } | null>(null);
+  // Where the pointer is along the edge, while it rests there (after a beat).
+  const [hint, setHint] = useState<number | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clear = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setHint(null);
+  };
   return (
-    <Hint label="Drag to resize, click to fold away">
-      {/* biome-ignore lint/a11y/useSemanticElements: a draggable splitter, which <hr> can't be */}
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Sidebar width"
-        aria-valuemin={SIDE.min}
-        aria-valuemax={SIDE.max}
-        aria-valuenow={width}
-        tabIndex={0}
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          setDrag({ x: e.clientX, w: width, moved: false });
-        }}
-        onPointerMove={(e) => {
-          if (!drag) return;
-          if (!drag.moved && Math.abs(e.clientX - drag.x) < 3) return;
-          if (!drag.moved) setDrag({ ...drag, moved: true });
-          onWidth(drag.w + e.clientX - drag.x);
-        }}
-        onPointerUp={() => {
-          // A click, not a drag: fold the sidebar away.
-          if (drag && !drag.moved) onCollapse();
-          setDrag(null);
-        }}
-        onPointerCancel={() => setDrag(null)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") onCollapse();
-          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-          e.preventDefault();
-          onWidth(width + (e.key === "ArrowRight" ? 16 : -16));
-        }}
-        className="group/edge absolute inset-y-2 -right-1 z-10 flex w-2 cursor-col-resize touch-none justify-center outline-none"
-      >
+    // biome-ignore lint/a11y/useSemanticElements: a draggable splitter, which <hr> can't be
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Sidebar width. Drag to resize, click to collapse"
+      aria-valuemin={SIDE.min}
+      aria-valuemax={SIDE.max}
+      aria-valuenow={width}
+      tabIndex={0}
+      onPointerEnter={(e) => {
+        const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => setHint(y), 450);
+      }}
+      onPointerLeave={clear}
+      onPointerDown={(e) => {
+        clear();
+        e.currentTarget.setPointerCapture(e.pointerId);
+        setDrag({ x: e.clientX, w: width, moved: false });
+      }}
+      onPointerMove={(e) => {
+        if (!drag) {
+          if (hint !== null) setHint(e.clientY - e.currentTarget.getBoundingClientRect().top);
+          return;
+        }
+        if (!drag.moved && Math.abs(e.clientX - drag.x) < 3) return;
+        if (!drag.moved) setDrag({ ...drag, moved: true });
+        onWidth(drag.w + e.clientX - drag.x);
+      }}
+      onPointerUp={() => {
+        // A click, not a drag: fold the sidebar away.
+        if (drag && !drag.moved) onCollapse();
+        setDrag(null);
+      }}
+      onPointerCancel={() => setDrag(null)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onCollapse();
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        e.preventDefault();
+        onWidth(width + (e.key === "ArrowRight" ? 16 : -16));
+      }}
+      className="group/edge absolute inset-y-0 -right-1 z-10 flex w-2 cursor-col-resize touch-none justify-center outline-none"
+    >
+      <span
+        className={cn(
+          "my-auto h-10 w-[3px] rounded-full bg-white/25 opacity-0 transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
+          drag && "opacity-100",
+        )}
+      />
+      {hint !== null && !drag ? (
         <span
-          className={cn(
-            "h-full w-px bg-white/30 opacity-0 transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
-            drag?.moved && "opacity-100",
-          )}
-        />
-      </div>
-    </Hint>
+          aria-hidden="true"
+          className="pointer-events-none absolute left-4 z-20 flex -translate-y-1/2 flex-col gap-0.5 whitespace-nowrap rounded-[9px] bg-popover px-2.5 py-1.5 text-[11.5px] leading-4 shadow-lg shadow-black/40 ring-1 ring-white/10 animate-in fade-in-0 duration-150"
+          style={{ top: hint }}
+        >
+          <span>
+            <span className="text-white/90">Drag</span> <span className="text-white/45">to resize</span>
+          </span>
+          <span>
+            <span className="text-white/90">Click</span> <span className="text-white/45">to collapse</span>
+          </span>
+        </span>
+      ) : null}
+    </div>
   );
 }
 
