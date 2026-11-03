@@ -21,8 +21,10 @@ export const ICON_BUTTON =
 export const PILL_BUTTON =
   "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-[10px] px-3 font-medium text-[12px] outline-none transition-[background-color,color] duration-150 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-45 [&_svg]:size-3.5";
 
-// The motion every panel shares as it folds, hides and returns.
-export const PANEL_MOTION = "transition-[opacity,translate,scale,filter] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]";
+// The motion every panel shares as it folds, hides and returns, and as it
+// comes into place when a page opens (`studio-panel`, page-turn.ts).
+export const PANEL_MOTION =
+  "studio-panel transition-[opacity,translate,scale,filter] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]";
 
 // A hint on hover, with the key that does the same thing.
 export function Hint({ label, keys, children }: { label: string; keys?: string[]; children: React.ReactElement }) {

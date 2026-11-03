@@ -41,7 +41,6 @@ export function StemLane({
   height,
   editor,
   dim,
-  label,
   snaps,
   playhead,
   above,
@@ -56,7 +55,6 @@ export function StemLane({
   height: number;
   editor: SoundEditor;
   dim?: boolean;
-  label?: boolean; // its name, inside the lane
   snaps: () => number[]; // film times a pick snaps to
   playhead?: number; // 0..1, drawn on the lane
   above?: "lane" | "card"; // the panel sits over the lane, or over the card it's in
@@ -140,12 +138,6 @@ export function StemLane({
             </div>
           );
         })}
-      {label ? (
-        <span className="pointer-events-none absolute top-1/2 left-1 -translate-y-1/2 rounded-[4px] bg-[#1b1b1b]/90 px-1 text-[10.5px] text-white/50 leading-[15px]">
-          {stemLabel(stem, video)}
-          {empty ? <span className="text-white/25">, none</span> : null}
-        </span>
-      ) : null}
       {pick ? (
         <div
           ref={picked}

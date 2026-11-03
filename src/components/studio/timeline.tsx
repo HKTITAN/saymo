@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { type Clock, formatTime, useClock } from "./clock";
 import { CARD, Hint, ICON_BUTTON, PANEL_MOTION } from "./panel";
 import { MotionSoundLane, type SoundLaneData, showLane, showStems, stemLanes } from "./sound-lane";
-import { StemLane } from "./sound-stems";
+import { StemLane, stemLabel } from "./sound-stems";
 
 // The timeline along the bottom: play and pause, the film's named moments,
 // and a track to scrub, with the sound design's waveforms under it once the
@@ -110,10 +110,26 @@ export function Timeline({
           {playing ? <PauseCircleIcon aria-hidden="true" /> : <PlayCircleIcon aria-hidden="true" />}
         </button>
       </Hint>
-      <p className="w-[124px] shrink-0 text-[11.5px] tabular-nums">
-        <span className="text-white/90">{formatTime(t)}</span>
-        <span className="text-white/35"> / {formatTime(duration)}</span>
-      </p>
+      {/* The time, with the sound lanes' names under it, each beside its
+          lane, so the names never cover the start of a waveform. */}
+      <div className={cn("flex w-[124px] shrink-0 flex-col gap-1", lane && "self-start")}>
+        <p className="h-10 text-[11.5px] leading-10 tabular-nums">
+          <span className="text-white/90">{formatTime(t)}</span>
+          <span className="text-white/35"> / {formatTime(duration)}</span>
+        </p>
+        {showStems(sound)
+          ? stemLanes(sound).map((stem) => (
+              <p
+                key={stem}
+                aria-hidden="true"
+                className={cn("flex h-5 items-center truncate text-[10.5px] text-white/50", (!sound.on || sound.muted) && "opacity-60")}
+              >
+                {stemLabel(stem)}
+                {sound.present && !sound.present.includes(stem) ? <span className="text-white/25">, none</span> : null}
+              </p>
+            ))
+          : null}
+      </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
       <div
         ref={track}
@@ -167,7 +183,6 @@ export function Timeline({
               height={20}
               editor={sound.editor}
               dim={!sound.on || sound.muted}
-              label
               snaps={() => [clock.get().t, ...marks.map((m) => m.t)]}
               playhead={share}
               above="card"

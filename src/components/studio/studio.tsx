@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { EyeOnIcon, RefreshIcon, UploadUpIcon } from "@/components/icons";
 import { Kbd } from "@/components/ui/kbd";
-import { Spinner } from "@/components/ui/spinner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { BrandSummary } from "@/lib/studio/brand";
 import type { Attachment, Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/contract";
@@ -26,6 +25,7 @@ import { KitPage } from "./kit-page";
 import { MediaBin } from "./media-bin";
 import { Opening } from "./opening";
 import { clipNumber, defaults, Multitrack } from "./multitrack";
+import { turnPage } from "./page-turn";
 import { CARD, PANEL_MOTION, PILL_BUTTON } from "./panel";
 import { RenderControl } from "./render";
 import { SoundGroup } from "./sound-group";
@@ -65,18 +65,24 @@ const subscribe = (cb: () => void) => {
 const currentFilm = () => new URLSearchParams(window.location.search).get("film") ?? "";
 const currentKit = () => new URLSearchParams(window.location.search).get("brand") ?? "";
 
+// To another page of the studio: the one you're on fades out, then the
+// next comes in (page-turn.ts). The same page again just updates.
+function navigate(url: string, replace: boolean) {
+  const go = () => {
+    if (replace) window.history.replaceState(null, "", url);
+    else window.history.pushState(null, "", url);
+    window.dispatchEvent(new Event(NAVIGATE));
+  };
+  if (url === window.location.pathname + window.location.search) go();
+  else turnPage(go);
+}
+
 function openKit(id: string | null, replace = false) {
-  const url = id ? `/studio?brand=${id}` : "/studio";
-  if (replace) window.history.replaceState(null, "", url);
-  else window.history.pushState(null, "", url);
-  window.dispatchEvent(new Event(NAVIGATE));
+  navigate(id ? `/studio?brand=${id}` : "/studio", replace);
 }
 
 function openFilm(id: string | null, replace = false) {
-  const url = id ? `/studio?film=${id}` : "/studio";
-  if (replace) window.history.replaceState(null, "", url);
-  else window.history.pushState(null, "", url);
-  window.dispatchEvent(new Event(NAVIGATE));
+  navigate(id ? `/studio?film=${id}` : "/studio", replace);
 }
 
 // A title from the first words of a prompt: "A 6 second loop: orange…"
@@ -1261,7 +1267,7 @@ function FilmView({
             className={cn(CARD, "absolute flex h-8 -translate-x-1/2 items-center gap-2 rounded-full px-3 text-[12px] text-white/70")}
             style={{ left: fit.x + fit.width / 2, top: fit.y + fit.height / 2 - 16 }}
           >
-            <Spinner className="size-3" /> Loading the film
+            <span className="studio-shimmer">Loading the film</span>
           </span>
         ) : null}
         {status.state === "error" ? (

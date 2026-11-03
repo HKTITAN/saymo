@@ -4,7 +4,6 @@ import { type CSSProperties, type RefObject, useCallback, useEffect, useId, useR
 import { type Clock, formatTime, useClock } from "./clock";
 import { MultipleCrossCancelIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import type { ChatContext, ChatMessage } from "@/lib/studio/contract";
 import { asksForThree } from "@/lib/studio/takes-shared";
 import { cn } from "@/lib/utils";
@@ -225,8 +224,7 @@ export function ChatPanel({
                 onClick={undo}
                 disabled={turn.running || chat.undoing || chat.restoring}
               >
-                {chat.undoing ? <Spinner className="size-3" /> : null}
-                Undo
+                {chat.undoing ? <span className="studio-shimmer">Undoing</span> : "Undo"}
               </button>
             </Hint>
           ) : null}
