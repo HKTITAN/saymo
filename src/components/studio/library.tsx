@@ -976,10 +976,9 @@ export function RefPreview({ entry: e, hovered, large = false }: { entry: RefEnt
         alt=""
         draggable={false}
         className={cn(
-          "max-h-full max-w-full object-contain transition-transform duration-300 ease-out",
+          "max-h-full max-w-full object-contain",
           e.brand && e.kind === "image" && !e.thumbUrl.includes("?as=") && "max-h-[46%] max-w-[70%]",
           e.kind === "pdf" && "max-h-[88%] rounded-[3px] shadow-[0_2px_10px_rgba(0,0,0,0.5)]",
-          !large && "group-hover/card:scale-[1.02]",
         )}
       />
     );
