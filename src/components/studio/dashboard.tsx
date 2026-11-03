@@ -799,22 +799,25 @@ function FilmCard({
             )}
           </span>
         )}
-        <span className="flex flex-col gap-0.5 px-1 pb-0.5">
-          <span className="flex items-baseline gap-2">
-            <span className={cn("min-w-0 flex-1 truncate text-[12.5px] text-white/90", renaming && "invisible")}>{f.title}</span>
-            <span className="shrink-0 text-[11px] text-white/35" suppressHydrationWarning>
-              {now ? ago(f.updatedAt, now) : ""}
-            </span>
-          </span>
-          <span className="truncate text-[11.5px] text-white/40">
-            {f.kind === "video" ? "Video edit" : "Motion graphics"} · <span className={cn("tabular-nums", !stage && "font-mono")}>{f.duration.toFixed(1)}</span>{"\u2009"}s
-            {stage ? (
-              <>
-                {" · "}
-                <span className="tabular-nums">{shapeOf(f)}</span>
-              </>
-            ) : null}
-            {folderLabel ? ` · ${folderLabel}` : null}
+        {/* The name, then one quiet line: its shape, its length, when it was
+            last edited (and its kind only when it's a video edit). */}
+        <span className="flex flex-col gap-1 px-1.5 pb-1">
+          <span className={cn("truncate font-medium text-[13px] text-white/90 leading-[18px]", renaming && "invisible")}>{f.title}</span>
+          <span className="flex min-w-0 items-center gap-1.5 text-[11.5px] text-white/40 tabular-nums leading-4">
+            {[
+              f.kind === "video" ? "Video edit" : null,
+              shapeOf(f),
+              `${Number.isInteger(f.duration) ? f.duration : f.duration.toFixed(1)}\u2009s`,
+              now ? ago(f.updatedAt, now) : null,
+              folderLabel,
+            ]
+              .filter(Boolean)
+              .map((bit, i) => (
+                <span key={i} className={cn("flex items-center gap-1.5", i > 1 ? "min-w-0 truncate" : "shrink-0")} suppressHydrationWarning>
+                  {i > 0 ? <span aria-hidden="true" className="size-[3px] shrink-0 rounded-full bg-white/25" /> : null}
+                  <span className="truncate">{bit}</span>
+                </span>
+              ))}
           </span>
         </span>
       </button>
@@ -823,7 +826,7 @@ function FilmCard({
         // Over the card's own name, so typing doesn't open the film.
         <RenameField
           value={f.title}
-          className="absolute right-2 bottom-[28px] left-2 h-6 text-[12.5px]"
+          className="absolute right-2 bottom-[27px] left-2 h-6 text-[13px]"
           onDone={(next) => {
             setRenaming(false);
             if (next) onRename(next);
