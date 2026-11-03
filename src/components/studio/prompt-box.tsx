@@ -130,7 +130,7 @@ export function PromptBox({
   return (
     <div
       className={cn(
-        "relative flex flex-col gap-1.5 rounded-[12px] bg-white/[0.06] p-1.5 transition-colors caret-studio has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-studio/45",
+        "relative flex flex-col gap-1.5 rounded-[12px] bg-white/[0.06] p-1.5 transition-colors has-[:focus-visible]:bg-white/[0.08] has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-white/15",
         over && "bg-white/[0.09] ring-1 ring-white/30",
         className,
       )}
@@ -229,7 +229,7 @@ export function PromptBox({
               type="button"
               onClick={onClearChip}
               aria-label="Stop pointing at this"
-              className="inline-flex size-4 cursor-pointer items-center justify-center rounded-[4px] text-studio-soft/70 outline-none hover:bg-studio/20 hover:text-[#ffb27f] focus-visible:ring-1 focus-visible:ring-studio [&_svg]:size-3"
+              className="inline-flex size-4 cursor-pointer items-center justify-center rounded-[4px] text-studio-soft/70 outline-none hover:bg-studio/20 hover:text-[#ffb27f] focus-visible:ring-1 focus-visible:ring-ring [&_svg]:size-3"
             >
               <MultipleCrossCancelIcon aria-hidden="true" />
             </button>
