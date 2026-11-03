@@ -10,6 +10,7 @@ import { StudioError } from "./api";
 import { connectApi } from "./connect-api";
 import { DEFAULT_REPO, GithubSection } from "./connections";
 import { ITEM, MENU_POPUP } from "./home-parts";
+import { CloudMark } from "./cloud-marks";
 import { ModelChoice } from "./model-choice";
 
 // Settings, on the home page, in two cards:
@@ -116,10 +117,9 @@ function FilmsGoTo({
             <Popover.Popup className={cn(SURFACE, MENU_POPUP, "min-w-[220px]")}>
               {dest.found.map((d) => (
                 <button key={d.path} type="button" className={ITEM} onClick={() => void act(() => connectApi.pickDestination(d.path))}>
-                  <span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-3.5">
-                    {current?.path === d.path ? <CheckTickCircleIcon /> : null}
-                  </span>
+                  {d.service === "folder" ? <FolderIcon aria-hidden="true" /> : <CloudMark service={d.service} />}
                   {d.label}
+                  {current?.path === d.path ? <CheckTickCircleIcon aria-label="Chosen" className="ms-auto text-white/70" /> : null}
                 </button>
               ))}
               <button type="button" className={ITEM} onClick={() => void act(connectApi.chooseFolder)}>
@@ -134,8 +134,9 @@ function FilmsGoTo({
               ) : null}
               {dest.missing.map((m) => (
                 <a key={m.service} href={m.get} target="_blank" rel="noreferrer" className={cn(ITEM, "text-white/45")} onClick={() => setOpen(false)}>
-                  <ExternalLinkSquareIcon aria-hidden="true" />
+                  <CloudMark service={m.service} />
                   Get {m.label}
+                  <ExternalLinkSquareIcon aria-hidden="true" className="ms-auto" />
                 </a>
               ))}
             </Popover.Popup>
