@@ -378,11 +378,10 @@ function TakesCanvas({
           </button>
         </div>
 
-        <div className={cn(CARD, "pointer-events-auto flex h-11 shrink-0 items-center px-4")}>
-          <h2 aria-live="polite" className="font-medium text-[13px] tabular-nums">
-            <TextMorph className={cn("transition-colors duration-300", working ? "text-white/55" : "text-white/90")}>{status}</TextMorph>
-          </h2>
-        </div>
+        {/* The count isn't shown (the cards say it); screen readers still hear it. */}
+        <h2 aria-live="polite" className="sr-only">
+          {status}
+        </h2>
 
         <span className="flex-1" />
 
