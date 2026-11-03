@@ -34,13 +34,13 @@ const CARD_TOP = RECESS + GAP;
 const POCKET_TOP = 86; // the pocket's edge at the sides
 const POCKET_DIP = 112; // and in the middle
 
-type Look = { name: string; via: string; mark: (c: string) => ReactNode; lockup: ReactNode; metal: FoilColors };
+type Look = { name: string; via: string; mark: (c: string) => ReactNode; lockup: ReactNode; metal: FoilColors; ink: string };
 // A foil: its deep corner, its middle, its light corner.
 type FoilColors = [string, string, string];
 const CARDS: Record<ProviderId, Look> = {
-  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, lockup: <ClaudeLockup className="h-[18px] w-auto" />, metal: ["#c2410f", "#ec6a2c", "#ffb27a"] },
-  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, lockup: <CodexLockup />, metal: ["#2f37d8", "#6670f0", "#c3b8f5"] },
-  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, lockup: <ClaudeLockup className="h-[18px] w-auto" />, metal: ["#7a2e12", "#b8532a", "#e79a6e"] },
+  claude: { name: "Claude", via: "Claude plan", mark: (c) => <ClaudeMark className={c} />, lockup: <ClaudeLockup className="h-[18px] w-auto" />, metal: ["#c2410f", "#ec6a2c", "#ffb27a"], ink: "#8a2c06" },
+  codex: { name: "Codex", via: "ChatGPT plan", mark: (c) => <CodexMark className={c} />, lockup: <CodexLockup />, metal: ["#2f37d8", "#6670f0", "#c3b8f5"], ink: "#252a9c" },
+  "api-key": { name: "Claude", via: "API key", mark: (c) => <ClaudeMark className={c} />, lockup: <ClaudeLockup className="h-[18px] w-auto" />, metal: ["#7a2e12", "#b8532a", "#e79a6e"], ink: "#4f1c09" },
 };
 
 // Codex has no published lockup, so its mark and wordmark are set
@@ -157,13 +157,10 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
             <span className="pointer-events-none absolute inset-[7px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" style={{ borderRadius: CARD_R - 7 }} />
             <span className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" style={{ borderRadius: CARD_R }} />
             <span className="absolute inset-x-[20px] top-[18px] flex items-center justify-between gap-3">
-              <span className="flex items-center gap-2 text-white/95" style={ETCHED}>
+              <span className="flex items-center gap-2" style={stamped(look.ink)}>
                 {look.lockup}
               </span>
-              <span
-                className="truncate font-semibold text-[9.5px] text-white uppercase tracking-[0.18em]"
-                style={{ filter: `${ETCHED.filter} drop-shadow(0 0 3px rgba(0,0,0,0.35))` }}
-              >
+              <span className="truncate font-semibold text-[9.5px] uppercase tracking-[0.18em]" style={stamped(look.ink)}>
                 {plans[shown] ?? look.via}
               </span>
             </span>
@@ -214,9 +211,15 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
 // Etched into the foil: the cut is shaded along its top edge and catches
 // the light along its bottom edge (filter, so the logo's shape gets it too).
 // The text keeps one steady colour whatever the light does on the metal.
-const ETCHED: CSSProperties = {
-  filter: "drop-shadow(0 -1px 0 rgba(0,0,0,0.4)) drop-shadow(0 1px 0 rgba(255,255,255,0.35)) drop-shadow(0 0 6px rgba(0,0,0,0.18))",
-};
+// Stamped into the metal: the logo and words in a deep tone of the card's
+// own foil, the cut shaded along its top and catching the light along its
+// bottom, so they sit in the card rather than on it.
+const stamped = (ink: string): CSSProperties => ({
+  color: ink,
+  opacity: 0.85,
+  filter: "drop-shadow(0 1px 0 rgba(255,255,255,0.45)) drop-shadow(0 -0.5px 0 rgba(0,0,0,0.35))",
+});
+
 
 // Coloured foil: deep in one corner, light in the other, a soft band of
 // light across, a fine embossed texture and a pale hairline edge. The
