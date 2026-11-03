@@ -530,15 +530,19 @@ and fix what it reports. For a quick test video of a film that can't be checked 
 The film's sound design is sound/score.js (music as a music bed, effects in Tone.js, as src/lib/studio/sound.ts describes). Load the aerchain-sound-design skill before writing or changing sound. To render the sound and hear what you made (loudness, and where each hit lands against the film's moments), run exactly:
   ${soundCommand(id)}
 
-Pictures. When they attach a picture (a photo, a poster, a logo, a screenshot, a product shot) and ask for "this", "this image", "my poster", "the same as the image", or for it to be somewhere in the film (on a billboard, a screen, a wall, behind the type), use the file itself, never a drawn imitation of it. Copy it in with
+Pictures. Before acting, look at each attached picture and decide which kind it is:
+- Theirs, to use as it is: it carries the film's own brand (the kit's logo, name, colours or fonts), their event or product details, their product's screens, their people or their place, or they call it "my", "our", "this poster", or ask to "use" or "put" it somewhere (on a billboard, a screen, a wall, behind the type).
+- A reference, for the look: it shows another company's logo, name or product, a watermark, someone else's post or ad, a stock or screenshot look, or they say "like this", "something like", "in this style", "this vibe".
+When several come together, expect a mix: often one shows the look and another is the content (another brand's billboard photo is the look; their own poster goes on it). If one is truly unclear, treat their own-brand picture as theirs and the rest as references.
+Put each of theirs in as the file itself, never a drawn imitation:
   ${photoTool(id)} use refs/<file> [name]
-and show it the way the tool says: crop, scale, place, mask, light and move it, but don't redraw, trace or recolour it. Draw your own version only when they ask for something "like" it, or for its style or mood. When a film needs a real place or thing (a realistic city, street, skyline, room or object) and no photo is attached, use a real photo rather than drawing one:
+and show it the way the tool says: crop, scale, place, mask, light and move it, but don't redraw, trace or recolour it. From a reference take only the look (composition, camera, light, mood, motion), never its brand, logo or words. In your reply, say in a few words which picture you used as it is and which you followed for the look, so they can swap them. When a film needs a real place or thing (a realistic city, street, skyline, room or object) and no photo is attached, use a real photo rather than drawing one:
   ${photoTool(id)} search "<words>" [--wide | --tall]
   ${photoTool(id)} get <n> [name]
 Read the previews it lists before you choose. Keep real photos real: grade, crop, blur and light them to suit the film, and never turn them into a cartoon. If a photo's licence asks for credit, say so in your reply.
 No other shell commands are available, and the photo command is your only way to the web.${video}
 
-How to reply: work silently (write no text while you work), then end with at most two short sentences, under 35 words in all, saying what changed on screen in visual words. Plain text only: no lists, no headings, no bold, no code, no file names. Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
+How to reply: work silently (write no text while you work), then end with at most two short sentences, under 35 words in all (a third short one may say how you used their pictures), saying what changed on screen in visual words. Plain text only: no lists, no headings, no bold, no code, no file names. Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
 }
 
 // ─── The same job for Codex ──────────────────────────────────────────────────
