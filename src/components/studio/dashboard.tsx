@@ -156,7 +156,7 @@ export function Dashboard({
   const [folderId, setFolderId] = useState<string | null>(readFolder);
   const [query, setQuery] = useState("");
   const [tab, setTabState] = useState<Tab>(tabFromUrl);
-  const [libCount, setLibCount] = useState<number | null>(null);
+  const [, setLibCount] = useState<number | null>(null);
   // A library item being dragged, so film cards and "Make motion graphics" take it.
   const [libDrag, setLibDrag] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>("edited");
@@ -360,9 +360,6 @@ export function Dashboard({
       <SideNav
         section={section}
         onSection={goSection}
-        films={films ? films.length : null}
-        library={libCount}
-        kits={kits ? kits.length : null}
         folders={folders ?? []}
         folderId={folder?.id ?? null}
         folderCounts={counts}

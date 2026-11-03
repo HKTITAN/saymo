@@ -45,7 +45,6 @@ type Size = (typeof SIZES)[number];
 const ROW =
   "flex h-8 w-full cursor-pointer items-center gap-2.5 rounded-[9px] px-2.5 text-left text-[12.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.05] hover:text-white/90 focus-visible:ring-2 focus-visible:ring-ring [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-white/40";
 const ROW_ON = "bg-white/[0.08] text-white hover:bg-white/[0.08] [&>svg]:text-white/80";
-const COUNT = "ms-auto shrink-0 text-[11.5px] text-white/30 tabular-nums";
 // A folder being named: the same row, its name typed in place, as in Finder.
 const NAMING_ROW =
   "flex h-8 w-full items-center gap-2.5 rounded-[9px] bg-white/[0.07] px-2.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)] [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-white/70";
@@ -56,9 +55,6 @@ const NAMING_FIELD = "h-6 flex-1 rounded-none bg-transparent px-0 text-[12.5px] 
 export function SideNav({
   section,
   onSection,
-  films,
-  library,
-  kits,
   folders,
   folderId,
   folderCounts,
@@ -80,9 +76,6 @@ export function SideNav({
 }: {
   section: Section;
   onSection: (s: Section) => void;
-  films: number | null;
-  library: number | null;
-  kits: number | null;
   folders: Folder[];
   folderId: string | null;
   folderCounts: Map<string, number>;
@@ -106,31 +99,58 @@ export function SideNav({
   const [collapsed, setCollapsed] = useKept("studio:sidebar-collapsed", false);
   const [foldersOpen, setFoldersOpen] = useKept("studio:group-folders", true);
   const [recentOpen, setRecentOpen] = useKept("studio:group-recent", true);
-  // Folded away: a slim rail with the button that brings it back.
-  if (collapsed) {
-    return (
-      <nav aria-label="Studio" className="flex w-12 shrink-0 flex-col items-center pt-3">
-        <Hint label="Show the sidebar">
-          <button type="button" aria-label="Show the sidebar" onClick={() => setCollapsed(false)} className={SIDE_BUTTON}>
-            <SidebarMenuIcon aria-hidden="true" />
-          </button>
-        </Hint>
-      </nav>
-    );
-  }
+  // Folding glides: the width eases between the sidebar's and a slim rail's
+  // (only while folding, so dragging the edge stays direct), the rows fade,
+  // and the toggle keeps its place at the header's right, ending in the rail.
+  const [gliding, setGliding] = useState(false);
+  const fold = (next: boolean) => {
+    setGliding(true);
+    setCollapsed(next);
+    setTimeout(() => setGliding(false), 340);
+  };
   return (
-    <nav aria-label="Studio" className="relative flex shrink-0 flex-col gap-4 px-3 pt-3 pb-3" style={{ width }}>
-      <WidthHandle width={width} onWidth={setWidth} onCollapse={() => setCollapsed(true)} />
-      <div className="group/doodle flex h-9 items-center gap-2.5 ps-2 pe-0.5">
-        <StudioMark />
-        <span className="me-auto font-medium text-[13px] text-white/90">Motion Studio</span>
-        <Hint label="Hide the sidebar">
-          <button type="button" aria-label="Hide the sidebar" onClick={() => setCollapsed(true)} className={SIDE_BUTTON}>
-            <SidebarMenuIcon aria-hidden="true" />
-          </button>
-        </Hint>
+    <nav
+      aria-label="Studio"
+      className={cn(
+        "relative flex shrink-0",
+        gliding && "transition-[width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+      )}
+      style={{ width: collapsed ? RAIL : width }}
+    >
+      {/* The edge handle sits outside the clipped layer, so its grip and hint
+          can reach over the page. */}
+      {collapsed ? null : <WidthHandle width={width} onWidth={setWidth} onCollapse={() => fold(true)} />}
+      <div className={cn("flex min-w-0 flex-1 flex-col gap-4 overflow-hidden pt-3 pb-3", collapsed ? "px-0" : "px-3")}>
+      {/* No gap once folded, so the toggle sits in the middle of the rail. */}
+      <div className={cn("group/doodle flex h-9 shrink-0 items-center", collapsed ? "gap-0" : "gap-2.5")}>
+        <span
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden ps-2 transition-opacity duration-200",
+            collapsed && "pointer-events-none opacity-0",
+          )}
+          aria-hidden={collapsed}
+        >
+          <StudioMark />
+          <span className="truncate whitespace-nowrap font-medium text-[13px] text-white/90">Motion Studio</span>
+        </span>
+        {/* Out of sight once folded (the twin in the page's corner takes over). */}
+        {collapsed && !gliding ? null : <SideToggle open={!collapsed} onToggle={() => fold(!collapsed)} />}
       </div>
+      {/* Folded: the page takes the width, and the toggle waits in its
+          top-left corner on a soft square, as it does in the reference. */}
+      {collapsed ? (
+        <div className="fixed top-[18px] left-[18px] z-30 animate-in fade-in-0 zoom-in-95 duration-200">
+          <SideToggle open={false} onToggle={() => fold(false)} square />
+        </div>
+      ) : null}
 
+      {/* The rest keeps the sidebar's width while it folds, so nothing
+          rewraps; it fades and the rail clips it. */}
+      <div
+        inert={collapsed}
+        className={cn("flex min-h-0 flex-1 flex-col gap-4 transition-opacity duration-200", collapsed && "opacity-0")}
+        style={{ width: width - 24 }}
+      >
       {/* biome-ignore lint/a11y/noLabelWithoutControl: the input is inside */}
       {/* The key cap's right edge lines up with the counts in the rows below. */}
       <label className="flex h-8 items-center gap-2 rounded-[10px] bg-white/[0.05] ps-2.5 pe-2.5 text-white/40 transition-colors focus-within:bg-white/[0.08] focus-within:ring-1 focus-within:ring-white/15 hover:bg-white/[0.07]">
@@ -173,7 +193,6 @@ export function SideNav({
         <NavRow
           icon={<HomeIcon aria-hidden="true" />}
           label="Home"
-          count={films}
           on={section === "home" && !folderId}
           onClick={() => {
             onSection("home");
@@ -186,7 +205,6 @@ export function SideNav({
         <NavRow
           icon={<BookmarkIcon aria-hidden="true" />}
           label="Library"
-          count={library}
           on={section === "library"}
           onClick={() => onSection("library")}
           // Files held here open the library, to drop them in.
@@ -195,7 +213,6 @@ export function SideNav({
         <NavRow
           icon={<LayerThreeIcon aria-hidden="true" />}
           label="Brand kits"
-          count={kits}
           on={section === "kits"}
           onClick={() => onSection("kits")}
         />
@@ -223,7 +240,6 @@ export function SideNav({
             <FolderRow
               key={f.id}
               folder={f}
-              count={folderCounts.get(f.id) ?? 0}
               current={section === "home" && folderId === f.id}
               filmDrag={filmDrag}
               dragging={dragging}
@@ -278,19 +294,40 @@ export function SideNav({
         <NavRow
           icon={<FileIcon aria-hidden="true" />}
           label="Rules"
-          count={null}
           on={section === "rules"}
           onClick={() => onSection("rules")}
         />
         <NavRow
           icon={<Settings01Icon aria-hidden="true" />}
           label="Settings"
-          count={null}
           on={section === "settings"}
           onClick={() => onSection("settings")}
         />
       </ul>
+      </div>
+      </div>
     </nav>
+  );
+}
+
+const RAIL = 8; // the folded sidebar: just the page's margin (its toggle sits in the page's corner)
+
+// The sidebar's toggle: the panel icon, the same in both states (the
+// sidebar's slide is the motion).
+function SideToggle({ open, onToggle, square = false }: { open: boolean; onToggle: () => void; square?: boolean }) {
+  const label = open ? "Hide the sidebar" : "Show the sidebar";
+  return (
+    <Hint label={label}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={open}
+        onClick={onToggle}
+        className={cn(SIDE_BUTTON, square && "size-8 rounded-[9px] bg-white/[0.06] text-white/60 hover:bg-white/[0.1]")}
+      >
+        <SidebarMenuIcon aria-hidden="true" />
+      </button>
+    </Hint>
   );
 }
 
@@ -413,12 +450,19 @@ function WidthHandle({ width, onWidth, onCollapse }: { width: number; onWidth: (
       }}
       className="group/edge absolute inset-y-0 -right-1 z-10 flex w-2 cursor-col-resize touch-none justify-center outline-none"
     >
+      {/* A small grip: a rounded bar with a column of dots, as on the
+          sidebar icon's pane. */}
       <span
+        aria-hidden="true"
         className={cn(
-          "my-auto h-10 w-[3px] rounded-full bg-white/25 opacity-0 transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
+          "my-auto flex h-7 w-[7px] flex-col items-center justify-center gap-[3px] rounded-full bg-[#2a2a2a] opacity-0 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
           drag && "opacity-100",
         )}
-      />
+      >
+        <span className="size-[2px] rounded-full bg-white/60" />
+        <span className="size-[2px] rounded-full bg-white/60" />
+        <span className="size-[2px] rounded-full bg-white/60" />
+      </span>
       {hint !== null && !drag ? (
         <span
           aria-hidden="true"
@@ -440,7 +484,6 @@ function WidthHandle({ width, onWidth, onCollapse }: { width: number; onWidth: (
 function NavRow({
   icon,
   label,
-  count,
   on,
   onClick,
   drop,
@@ -448,7 +491,6 @@ function NavRow({
 }: {
   icon: ReactNode;
   label: string;
-  count: number | null;
   on: boolean;
   onClick: () => void;
   drop?: { type: string; onDrop: (id: string) => void };
@@ -486,7 +528,6 @@ function NavRow({
       <button type="button" aria-current={on ? "page" : undefined} onClick={onClick} className={cn(ROW, on && ROW_ON, over && "bg-white/[0.1] ring-1 ring-white/30")}>
         {icon}
         <span className="min-w-0 flex-1 truncate">{label}</span>
-        {count === null ? null : <span className={COUNT}>{count}</span>}
       </button>
     </li>
   );
@@ -494,7 +535,6 @@ function NavRow({
 
 function FolderRow({
   folder,
-  count,
   current,
   filmDrag,
   dragging,
@@ -505,7 +545,6 @@ function FolderRow({
   onDelete,
 }: {
   folder: Folder;
-  count: number;
   current: boolean;
   filmDrag: string;
   dragging: boolean;
@@ -572,7 +611,6 @@ function FolderRow({
           >
             <FolderIcon aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate">{folder.name}</span>
-            <span className={cn(COUNT, "group-hover/folder:opacity-0 group-focus-within/folder:opacity-0")}>{count}</span>
           </button>
           <span className="absolute top-1/2 right-0.5 -translate-y-1/2 opacity-0 transition-opacity focus-within:opacity-100 group-hover/folder:opacity-100 has-[[data-popup-open]]:opacity-100">
             <FolderMenu folder={folder} deleteBody={deleteBody} onRename={() => setRenaming(true)} onDelete={onDelete} />
