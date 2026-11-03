@@ -72,6 +72,10 @@
       "name": "copy-default",
       "variant": "stroke"
     },
+    "credit-card": {
+      "name": "credit-card",
+      "variant": "stroke"
+    },
     "delete-dustbin-01": {
       "name": "delete-dustbin-01",
       "variant": "stroke"
