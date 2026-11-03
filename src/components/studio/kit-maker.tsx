@@ -257,7 +257,7 @@ export function KitMaker({
                     disabled={!canSend}
                     onClick={start}
                     aria-label="Make the kit"
-                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-white text-[#141414] outline-none transition-[opacity,scale] hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring active:scale-95 disabled:cursor-default disabled:opacity-30 [&_svg]:size-4"
+                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-white text-[#141414] outline-none transition-opacity hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-30 [&_svg]:size-4"
                   >
                     <ArrowUpIcon aria-hidden="true" />
                   </button>

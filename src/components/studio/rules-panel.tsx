@@ -222,7 +222,7 @@ function Slide<T extends string | boolean>({
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "relative cursor-pointer rounded-[7px] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97]",
+            "relative cursor-pointer rounded-[7px] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
             o.value === value ? "text-white" : "text-white/45 hover:text-white/75",
           )}
         >

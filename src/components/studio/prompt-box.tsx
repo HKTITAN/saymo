@@ -302,7 +302,7 @@ export function PromptBox({
               onClick={onSend}
               disabled={!canSend}
               aria-label={running ? "Add to the queue" : "Send to Claude"}
-              className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[8px] bg-white text-[#141414] outline-none transition-[background-color,opacity,scale] duration-150 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.94] disabled:cursor-default disabled:bg-white/15 disabled:text-white/40 [&_svg]:size-4"
+              className="inline-flex size-7 cursor-pointer items-center justify-center rounded-[8px] bg-white text-[#141414] outline-none transition-[background-color,opacity] duration-150 hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:bg-white/15 disabled:text-white/40 [&_svg]:size-4"
             >
               <ArrowUpIcon aria-hidden="true" />
             </button>

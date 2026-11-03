@@ -523,7 +523,7 @@ export function RecordStep({
                 disabled={!stream}
                 onClick={() => (phase === "live" ? startCountdown() : phase === "countdown" ? cancelCountdown() : stop())}
                 aria-label={phase === "recording" ? "Stop recording" : phase === "countdown" ? "Cancel the countdown" : "Start recording"}
-                className="group/rec flex size-14 cursor-pointer items-center justify-center rounded-full shadow-[inset_0_0_0_3px_rgba(255,255,255,0.85)] outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring active:scale-95 disabled:cursor-default disabled:opacity-40"
+                className="group/rec flex size-14 cursor-pointer items-center justify-center rounded-full shadow-[inset_0_0_0_3px_rgba(255,255,255,0.85)] outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
               >
                 <span
                   aria-hidden="true"

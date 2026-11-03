@@ -19,7 +19,7 @@ export const ICON_BUTTON =
 
 // A pill-shaped button with words, for actions in the panels' corners.
 export const PILL_BUTTON =
-  "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-[10px] px-3 font-medium text-[12px] outline-none transition-[background-color,color,scale] duration-150 focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97] disabled:cursor-default disabled:opacity-45 [&_svg]:size-3.5";
+  "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-[10px] px-3 font-medium text-[12px] outline-none transition-[background-color,color] duration-150 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-45 [&_svg]:size-3.5";
 
 // The motion every panel shares as it folds, hides and returns.
 export const PANEL_MOTION = "transition-[opacity,translate,scale,filter] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]";
