@@ -31,6 +31,7 @@ import { ClapperDoodle, FolderDoodle, KitsDoodle, MotionDoodle, PosterLines, Ree
 import { clearNewFilmLink, FirstFilm, readNewFilmLink } from "./first-film";
 import { undoKey, useHistory } from "./history";
 import { KitMaker } from "./kit-maker";
+import { NewKitMenu, PersonalStyleMaker } from "./personal-style";
 import { LibraryView } from "./library";
 import { cachedLibrary, filesFor } from "./library-api";
 import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, FolderChip, FolderMenu, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
@@ -51,7 +52,7 @@ import { LIBRARY_DRAG } from "@/lib/studio/references-shared";
 // dragged onto a film card waits in that film's chat; dragged onto "Make
 // motion graphics", in the new film's prompt. Last, the brand kits.
 
-type Overlay = null | "video" | "motion" | "kit" | "script" | "reel" | "slides" | "rules";
+type Overlay = null | "video" | "motion" | "kit" | "personal" | "script" | "reel" | "slides" | "rules";
 type Sort = "edited" | "name";
 type Tab = "films" | "library";
 const tabFromUrl = (): Tab => (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("library") ? "library" : "films");
@@ -311,7 +312,7 @@ export function Dashboard({
   // ─── Keys: ⌘Z undoes, / finds a film, Esc closes the new-film card ──────
 
   useEffect(() => {
-    if (overlay === "kit" || overlay === "script" || overlay === "reel" || overlay === "slides") return; // these cards handle their own keys
+    if (overlay === "kit" || overlay === "personal" || overlay === "script" || overlay === "reel" || overlay === "slides") return; // these cards handle their own keys
     const onKey = (e: KeyboardEvent) => {
       if (overlay) {
         if (e.key !== "Escape" || e.defaultPrevented) return;
@@ -542,10 +543,7 @@ export function Dashboard({
                   <UploadUpIcon aria-hidden="true" />
                   Import a kit
                 </button>
-                <button type="button" disabled={busy} onClick={() => setOverlay("kit")} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
-                  <PlusIcon aria-hidden="true" />
-                  New kit
-                </button>
+                <NewKitMenu busy={busy} onPick={(way) => setOverlay(way === "personal" ? "personal" : "kit")} />
               </header>
               <Skeleton data={kits} sample={SAMPLE_KITS} id="studio-kits-next" label="Loading your brand kits">
                 {(list) =>
@@ -558,7 +556,7 @@ export function Dashboard({
                       ))}
                     </ul>
                   ) : (
-                    <Empty doodle={<KitsDoodle className="h-[84px] w-[120px]" />} title="No brand kits yet" note="Make one from a brand’s guideline, links and files, or import one another studio exported." />
+                    <Empty doodle={<KitsDoodle className="h-[84px] w-[120px]" />} title="No brand kits yet" note="Make one from your own style or a brand’s guideline, or import one another studio exported." />
                   )
                 }
               </Skeleton>
@@ -883,10 +881,7 @@ export function Dashboard({
                 <UploadUpIcon aria-hidden="true" />
                 Import a kit
               </button>
-              <button type="button" disabled={busy} onClick={() => setOverlay("kit")} className={cn(PILL_BUTTON, "bg-white text-[#141414] hover:bg-white/90")}>
-                <PlusIcon aria-hidden="true" />
-                New kit
-              </button>
+              <NewKitMenu busy={busy} onPick={(way) => setOverlay(way === "personal" ? "personal" : "kit")} />
             </header>
             <Skeleton data={kits} sample={SAMPLE_KITS} id="studio-kits" label="Loading your brand kits">
               {(list) =>
@@ -904,10 +899,7 @@ export function Dashboard({
                     title="No brand kits yet"
                     note="A kit holds a brand’s colours, fonts and logos, so every film made with it looks the part."
                   >
-                    <button type="button" disabled={busy} onClick={() => setOverlay("kit")} className={cn(PILL_BUTTON, "mt-2 bg-white text-[#141414] hover:bg-white/90")}>
-                      <PlusIcon aria-hidden="true" />
-                      New kit
-                    </button>
+                    <NewKitMenu busy={busy} className="mt-2" onPick={(way) => setOverlay(way === "personal" ? "personal" : "kit")} />
                   </Empty>
                 )
               }
@@ -951,6 +943,14 @@ export function Dashboard({
         >
           {overlay === "rules" ? (
             <RulesPanel onClose={() => setOverlay(null)} />
+          ) : overlay === "personal" ? (
+            <PersonalStyleMaker
+              onDone={(kit) => {
+                setOverlay(null);
+                onKitMade(kit.id, "");
+              }}
+              onClose={() => setOverlay(null)}
+            />
           ) : overlay === "kit" ? (
             <KitMaker
               onDone={(kitId, reply) => {
