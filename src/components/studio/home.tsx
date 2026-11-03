@@ -1,7 +1,7 @@
 "use client";
 
 import { Popover } from "@base-ui/react/popover";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import {
   BookmarkIcon,
   ChevronDownIcon,
@@ -108,7 +108,8 @@ export function SideNav({
       </div>
 
       {/* biome-ignore lint/a11y/noLabelWithoutControl: the input is inside */}
-      <label className="flex h-8 items-center gap-2 rounded-[10px] bg-white/[0.05] ps-2.5 pe-1.5 text-white/40 transition-colors focus-within:bg-white/[0.08] focus-within:ring-1 focus-within:ring-white/15 hover:bg-white/[0.07]">
+      {/* The key cap's right edge lines up with the counts in the rows below. */}
+      <label className="flex h-8 items-center gap-2 rounded-[10px] bg-white/[0.05] ps-2.5 pe-2.5 text-white/40 transition-colors focus-within:bg-white/[0.08] focus-within:ring-1 focus-within:ring-white/15 hover:bg-white/[0.07]">
         <SearchIcon className="size-3.5 shrink-0" aria-hidden="true" />
         <input
           ref={searchRef}
@@ -573,24 +574,48 @@ export function Hero({
   );
 }
 
-// The four film sizes, each drawn in its own shape.
+// The four film sizes, each drawn in its own shape. One highlight slides
+// (and stretches) to the picked size, as the studio's other switches do.
 function SizePicker({ size, onSize }: { size: Size; onSize: (s: Size) => void }) {
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
+  const [mark, setMark] = useState<{ left: number; width: number } | null>(null);
+  const at = Math.max(0, SIZES.findIndex((s) => s.label === size.label));
+  useLayoutEffect(() => {
+    const place = () => {
+      const b = buttons.current[at];
+      if (b) setMark({ left: b.offsetLeft, width: b.offsetWidth });
+    };
+    place();
+    // The words' widths settle once the font has loaded.
+    void document.fonts?.ready.then(place);
+  }, [at]);
   return (
-    <div role="radiogroup" aria-label="Size" className="flex h-7 items-center gap-0.5 rounded-[9px] bg-white/[0.05] p-0.5">
-      {SIZES.map((s) => {
+    <div role="radiogroup" aria-label="Size" className="relative flex h-7 items-center gap-0.5 rounded-[9px] bg-white/[0.05] p-0.5">
+      {mark ? (
+        <span
+          aria-hidden="true"
+          className="absolute top-0.5 bottom-0.5 left-0 rounded-[7px] bg-white/[0.12] shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+          style={{ width: mark.width, transform: `translateX(${mark.left}px)` }}
+        />
+      ) : null}
+      {SIZES.map((s, i) => {
         const on = s.label === size.label;
         const long = Math.max(s.width, s.height);
         return (
           <Hint key={s.label} label={s.label}>
             <button
+              ref={(el) => {
+                buttons.current[i] = el;
+              }}
               type="button"
               role="radio"
               aria-checked={on}
               aria-label={s.label}
               onClick={() => onSize(s)}
               className={cn(
-                "flex h-6 cursor-pointer items-center gap-1.5 rounded-[7px] px-2 text-[11.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                on ? "bg-white/[0.12] text-white" : "text-white/45 hover:text-white/80",
+                "relative flex h-6 cursor-pointer items-center gap-1.5 rounded-[7px] px-2 text-[11.5px] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
+                on ? "text-white" : "text-white/45 hover:text-white/80",
+                on && !mark && "bg-white/[0.12]",
               )}
             >
               {/* Every shape gets the same 12 px box, so the words start in line. */}
