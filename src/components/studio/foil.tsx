@@ -168,7 +168,8 @@ export function Foil({
       const moved = Math.abs(goal.x - cur.x) + Math.abs(goal.y - cur.y) > 0.0005;
       cur = { x: cur.x + (goal.x - cur.x) * 0.12, y: cur.y + (goal.y - cur.y) * 0.12 };
       if (moved) draw.current?.(cur);
-      if (!still) raf = requestAnimationFrame(tick);
+      // Keep going only while there's something to follow or drift.
+      if (!still && (moved || drift || target.current)) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);

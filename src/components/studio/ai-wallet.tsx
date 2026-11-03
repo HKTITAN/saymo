@@ -57,8 +57,6 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
     return () => clearTimeout(swap);
   }, [choice.provider, shown]);
 
-  // The light on the metal follows the pointer over the wallet.
-  const [light, setLight] = useState<{ x: number; y: number } | null>(null);
   const [open, setOpen] = useState(false);
   // Each AI's plan by name when the studio knows it ("Team plan").
   const [plans, setPlans] = useState<Partial<Record<ProviderId, string>>>({});
@@ -87,11 +85,6 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
         aria-label={`${current.name} card, ${current.via}`}
         className="relative"
         style={{ width: W, height: H }}
-        onPointerMove={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          setLight({ x: ((e.clientX - r.left) / r.width) * 2 - 1, y: 1 - ((e.clientY - r.top) / r.height) * 2 });
-        }}
-        onPointerLeave={() => setLight(null)}
       >
         <Back />
         {/* the card, inside the wallet */}
@@ -101,7 +94,7 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
             style={{ width: CARD_W, height: CARD_H, left: (W - CARD_W) / 2, top: down ? H : CARD_TOP }}
           >
             <span className="absolute inset-0 overflow-hidden rounded-[20px]" style={metal(look.metal)}>
-              <Foil colors={look.metal} light={light} drift />
+              <Foil colors={look.metal} light={null} drift={false} />
             </span>
             {/* the card's bezel: a hairline inset from its edge, and its pale rim */}
             <span className="pointer-events-none absolute inset-[7px] rounded-[14px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" />
