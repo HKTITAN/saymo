@@ -283,9 +283,9 @@
   }
 }
 
-/* Iridescent edge (the chat's "Try 3"): a soft run of pastel colour on
-   one corner of a dark pill, with a faint glow bleeding inwards. Still
-   when off; when on, it's brighter and drifts slowly round the edge.
+/* Iridescent edge (the chat's "Try 3"): a soft run of pastel colour
+   drifting round a dark pill's edge, with a faint glow bleeding inwards.
+   When on, it's brighter and goes round a little faster.
    Markup: the button gets .studio-iris, with two empty spans inside,
    .studio-iris-glow > .studio-iris-ring and a crisp .studio-iris-ring. */
 @property --iris-a {
@@ -298,6 +298,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  animation: studio-iris 7s linear infinite;
 }
 .studio-iris-ring {
   position: absolute;
@@ -342,7 +343,7 @@
   opacity: 1;
 }
 .studio-iris[aria-pressed="true"] {
-  animation: studio-iris 5s linear infinite;
+  animation-duration: 4s;
 }
 .studio-iris[aria-pressed="true"] > .studio-iris-ring {
   opacity: 0.95;
@@ -359,6 +360,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .studio-iris,
   .studio-iris[aria-pressed="true"] {
     animation: none;
   }
