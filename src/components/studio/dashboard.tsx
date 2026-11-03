@@ -379,6 +379,8 @@ export function Dashboard({
         query={query}
         onQuery={setQuery}
         searchRef={search}
+        recent={(films ?? []).slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 4)}
+        onOpenFilm={onOpenFilm}
       />
       <div className="relative my-2 me-2 min-w-0 flex-1 overflow-hidden rounded-[18px] bg-[#0e0e0e] shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
         <div className="absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -485,10 +487,15 @@ export function Dashboard({
             </>
           ) : null}
 
-          <div className={cn("mx-auto flex max-w-[1180px] flex-col gap-4 px-8 pt-8 pb-20", section !== "library" && "hidden")}>
+          <div className={cn("mx-auto flex max-w-[1180px] flex-col gap-4 px-8 pt-10 pb-20", section !== "library" && "hidden")}>
             <LibraryView
               active={section === "library"}
-              tabs={<h2 className="px-1 font-medium text-[15px] text-white/90">Library</h2>}
+              tabs={
+                <div className="flex flex-col gap-1.5 px-1 pb-3">
+                  <h1 className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">Library</h1>
+                  <p className="text-[12.5px] text-white/50">Pictures, clips, sounds, notes and links, ready to add to any prompt.</p>
+                </div>
+              }
               query={query}
               sort={sort}
               now={now}
@@ -502,13 +509,13 @@ export function Dashboard({
           </div>
 
           {section === "kits" ? (
-            <section aria-labelledby="kits-heading" className="mx-auto flex max-w-[1180px] flex-col gap-5 px-8 pt-8 pb-20">
+            <section aria-labelledby="kits-heading" className="mx-auto flex max-w-[1180px] flex-col gap-5 px-8 pt-10 pb-20">
               <header className="flex flex-wrap items-end gap-2 px-1">
-                <div className="me-auto flex flex-col gap-1">
-                  <h2 id="kits-heading" className="font-medium text-[15px] text-white/90">
+                <div className="me-auto flex flex-col gap-1.5">
+                  <h1 id="kits-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
                     Brand kits
-                  </h2>
-                  <p className="text-[12px] text-white/45">A kit holds a brand’s colours, fonts and logos, so every film made with it looks the part.</p>
+                  </h1>
+                  <p className="text-[12.5px] text-white/50">A kit holds a brand’s colours, fonts and logos, so every film made with it looks the part.</p>
                 </div>
                 <input
                   ref={zip}

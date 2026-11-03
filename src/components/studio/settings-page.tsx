@@ -47,9 +47,12 @@ export function SettingsPage() {
 
   return (
     <section aria-labelledby="settings-heading" className="mx-auto flex w-full max-w-[660px] flex-col gap-6 px-8 pt-10 pb-20">
-      <h1 id="settings-heading" className="px-1 font-medium text-[20px] text-white/95 tracking-[-0.01em]">
-        Settings
-      </h1>
+      <div className="flex flex-col gap-1.5 px-1">
+        <h1 id="settings-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
+          Settings
+        </h1>
+        <p className="text-[12.5px] text-white/50">Which AI makes your films, and where finished films go.</p>
+      </div>
       {note ? (
         <p className={cn("rounded-[10px] px-3 py-2 text-[12px] leading-relaxed", note.bad ? "bg-[#ff9592]/10 text-[#ff9592]" : "bg-white/[0.06] text-white/75")}>
           {note.text}

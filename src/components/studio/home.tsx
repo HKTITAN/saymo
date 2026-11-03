@@ -15,6 +15,7 @@ import {
   PlayCircleIcon,
   PlusIcon,
   SearchIcon,
+  SidebarMenuIcon,
   Settings01Icon,
   VideoCallIcon,
 } from "@/components/icons";
@@ -74,6 +75,8 @@ export function SideNav({
   query,
   onQuery,
   searchRef,
+  recent,
+  onOpenFilm,
 }: {
   section: Section;
   onSection: (s: Section) => void;
@@ -96,14 +99,36 @@ export function SideNav({
   query: string;
   onQuery: (q: string) => void;
   searchRef: React.RefObject<HTMLInputElement | null>;
+  recent: Pick<FilmSummary, "id" | "title">[]; // the films last worked on, newest first
+  onOpenFilm: (id: string) => void;
 }) {
   const [width, setWidth] = useSideWidth();
+  const [collapsed, setCollapsed] = useKept("studio:sidebar-collapsed", false);
+  const [foldersOpen, setFoldersOpen] = useKept("studio:group-folders", true);
+  const [recentOpen, setRecentOpen] = useKept("studio:group-recent", true);
+  // Folded away: a slim rail with the button that brings it back.
+  if (collapsed) {
+    return (
+      <nav aria-label="Studio" className="flex w-12 shrink-0 flex-col items-center pt-3">
+        <Hint label="Show the sidebar">
+          <button type="button" aria-label="Show the sidebar" onClick={() => setCollapsed(false)} className={SIDE_BUTTON}>
+            <SidebarMenuIcon aria-hidden="true" />
+          </button>
+        </Hint>
+      </nav>
+    );
+  }
   return (
     <nav aria-label="Studio" className="relative flex shrink-0 flex-col gap-4 px-3 pt-3 pb-3" style={{ width }}>
-      <WidthHandle width={width} onWidth={setWidth} />
-      <div className="group/doodle flex h-9 items-center gap-2.5 px-2">
+      <WidthHandle width={width} onWidth={setWidth} onCollapse={() => setCollapsed(true)} />
+      <div className="group/doodle flex h-9 items-center gap-2.5 ps-2 pe-0.5">
         <StudioMark />
-        <span className="font-medium text-[13px] text-white/90">Motion Studio</span>
+        <span className="me-auto font-medium text-[13px] text-white/90">Motion Studio</span>
+        <Hint label="Hide the sidebar">
+          <button type="button" aria-label="Hide the sidebar" onClick={() => setCollapsed(true)} className={SIDE_BUTTON}>
+            <SidebarMenuIcon aria-hidden="true" />
+          </button>
+        </Hint>
       </div>
 
       {/* biome-ignore lint/a11y/noLabelWithoutControl: the input is inside */}
@@ -176,21 +201,24 @@ export function SideNav({
         />
       </ul>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-1">
-        <div className="flex h-7 items-center ps-2.5 pe-1">
-          <span className="me-auto text-[11.5px] text-white/35">Folders</span>
+      <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex h-7 shrink-0 items-center ps-1 pe-1">
+          <GroupToggle label="Folders" open={foldersOpen} onToggle={() => setFoldersOpen(!foldersOpen)} />
           <Hint label="New folder">
             <button
               type="button"
               aria-label="New folder"
-              onClick={() => onNaming(true)}
+              onClick={() => {
+                setFoldersOpen(true);
+                onNaming(true);
+              }}
               className="inline-flex size-6 cursor-pointer items-center justify-center rounded-[7px] text-white/40 outline-none transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5"
             >
               <PlusIcon aria-hidden="true" />
             </button>
           </Hint>
         </div>
-        <ul aria-label="Folders" className="-mx-1 flex min-h-0 flex-col gap-0.5 overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ul aria-label="Folders" className={cn("flex flex-col gap-0.5", !foldersOpen && "hidden")}>
           {folders.map((f) => (
             <FolderRow
               key={f.id}
@@ -226,6 +254,24 @@ export function SideNav({
             <li className="px-2.5 py-1 text-[11.5px] text-white/30 leading-snug">Drag films onto a folder to file them.</li>
           ) : null}
         </ul>
+
+        {recent.length ? (
+          <>
+            <div className="mt-2 flex h-7 shrink-0 items-center ps-1 pe-1">
+              <GroupToggle label="Recent" open={recentOpen} onToggle={() => setRecentOpen(!recentOpen)} />
+            </div>
+            <ul aria-label="Recent films" className={cn("flex flex-col gap-0.5", !recentOpen && "hidden")}>
+              {recent.map((f) => (
+                <li key={f.id}>
+                  <button type="button" onClick={() => onOpenFilm(f.id)} className={ROW} title={f.title}>
+                    <PlayCircleIcon aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate">{f.title}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
       </div>
 
       <ul className="flex flex-col gap-0.5">
@@ -246,6 +292,44 @@ export function SideNav({
       </ul>
     </nav>
   );
+}
+
+const SIDE_BUTTON =
+  "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-white/45 outline-none transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-4";
+
+// A group's name in the sidebar ("Folders", "Recent"), with a small arrow:
+// click to fold the group away or open it again.
+function GroupToggle({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      onClick={onToggle}
+      className="me-auto inline-flex h-6 cursor-pointer items-center gap-1 rounded-[6px] px-1.5 text-[11.5px] text-white/35 outline-none transition-colors hover:text-white/70 focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      {label}
+      <ChevronDownIcon aria-hidden="true" className={cn("size-3 transition-transform duration-200 motion-reduce:transition-none", !open && "-rotate-90")} />
+    </button>
+  );
+}
+
+// A small choice kept on this Mac (a folded group, the folded sidebar).
+function useKept(key: string, start: boolean) {
+  const [value, setValue] = useState(() => {
+    try {
+      const kept = window.localStorage.getItem(key);
+      return kept === null ? start : kept === "1";
+    } catch {
+      return start;
+    }
+  });
+  const set = (next: boolean) => {
+    setValue(next);
+    try {
+      window.localStorage.setItem(key, next ? "1" : "0");
+    } catch {}
+  };
+  return [value, set] as const;
 }
 
 // The sidebar's width: dragged at its edge, kept on this Mac.
@@ -272,44 +356,54 @@ function useSideWidth() {
   return [width, set] as const;
 }
 
-// The edge between the sidebar and the page: drag it, use ← and →, or
-// double-click it to go back to the first width. A bar shows on hover.
-function WidthHandle({ width, onWidth }: { width: number; onWidth: (w: number) => void }) {
-  const [drag, setDrag] = useState<{ x: number; w: number } | null>(null);
+// The edge between the sidebar and the page: drag it to resize, click it to
+// fold the sidebar away (or Enter), or use ← and →. A thin line shows the
+// edge on hover.
+function WidthHandle({ width, onWidth, onCollapse }: { width: number; onWidth: (w: number) => void; onCollapse: () => void }) {
+  const [drag, setDrag] = useState<{ x: number; w: number; moved: boolean } | null>(null);
   return (
-    // biome-ignore lint/a11y/useSemanticElements: a draggable splitter, which <hr> can't be
-    <div
-      role="separator"
-      aria-orientation="vertical"
-      aria-label="Sidebar width"
-      aria-valuemin={SIDE.min}
-      aria-valuemax={SIDE.max}
-      aria-valuenow={width}
-      tabIndex={0}
-      onPointerDown={(e) => {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        setDrag({ x: e.clientX, w: width });
-      }}
-      onPointerMove={(e) => {
-        if (drag) onWidth(drag.w + e.clientX - drag.x);
-      }}
-      onPointerUp={() => setDrag(null)}
-      onPointerCancel={() => setDrag(null)}
-      onDoubleClick={() => onWidth(SIDE.start)}
-      onKeyDown={(e) => {
-        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-        e.preventDefault();
-        onWidth(width + (e.key === "ArrowRight" ? 16 : -16));
-      }}
-      className="group/edge absolute inset-y-0 -right-1 z-10 flex w-2 cursor-col-resize touch-none justify-center outline-none"
-    >
-      <span
-        className={cn(
-          "my-auto h-10 w-[3px] rounded-full bg-white/25 opacity-0 transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
-          drag && "opacity-100",
-        )}
-      />
-    </div>
+    <Hint label="Drag to resize, click to fold away">
+      {/* biome-ignore lint/a11y/useSemanticElements: a draggable splitter, which <hr> can't be */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Sidebar width"
+        aria-valuemin={SIDE.min}
+        aria-valuemax={SIDE.max}
+        aria-valuenow={width}
+        tabIndex={0}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          setDrag({ x: e.clientX, w: width, moved: false });
+        }}
+        onPointerMove={(e) => {
+          if (!drag) return;
+          if (!drag.moved && Math.abs(e.clientX - drag.x) < 3) return;
+          if (!drag.moved) setDrag({ ...drag, moved: true });
+          onWidth(drag.w + e.clientX - drag.x);
+        }}
+        onPointerUp={() => {
+          // A click, not a drag: fold the sidebar away.
+          if (drag && !drag.moved) onCollapse();
+          setDrag(null);
+        }}
+        onPointerCancel={() => setDrag(null)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onCollapse();
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          e.preventDefault();
+          onWidth(width + (e.key === "ArrowRight" ? 16 : -16));
+        }}
+        className="group/edge absolute inset-y-2 -right-1 z-10 flex w-2 cursor-col-resize touch-none justify-center outline-none"
+      >
+        <span
+          className={cn(
+            "h-full w-px bg-white/30 opacity-0 transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
+            drag?.moved && "opacity-100",
+          )}
+        />
+      </div>
+    </Hint>
   );
 }
 

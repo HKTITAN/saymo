@@ -192,6 +192,10 @@
       "name": "settings-01",
       "variant": "stroke"
     },
+    "sidebar-menu": {
+      "name": "sidebar-menu",
+      "variant": "stroke"
+    },
     "speaker-on": {
       "name": "speaker-on",
       "variant": "stroke"
