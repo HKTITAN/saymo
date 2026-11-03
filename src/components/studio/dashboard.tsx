@@ -793,7 +793,7 @@ function FilmCard({
           <span className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" skullet-block="">
             {f.poster ? (
               // eslint-disable-next-line @next/next/no-img-element -- a local still of the film
-              <img src={f.poster} alt="" draggable={false} className="max-h-full max-w-full object-contain transition-transform duration-300 ease-out group-hover/card:scale-[1.02]" />
+              <img src={f.poster} alt="" draggable={false} className="max-h-full max-w-full object-contain" />
             ) : (
               <PosterLines width={f.width} height={f.height} />
             )}

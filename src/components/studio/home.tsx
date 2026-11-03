@@ -682,7 +682,7 @@ export function FilmStage({ film }: { film: FilmSummary }) {
       skullet-block=""
     >
       <span
-        className="relative overflow-hidden rounded-[6px] bg-[#1d1d1d] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.85),0_2px_8px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:-translate-y-[3px] group-hover/card:scale-[1.02] motion-reduce:transition-none"
+        className="relative overflow-hidden rounded-[6px] bg-[#1d1d1d] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.85),0_2px_8px_rgba(0,0,0,0.45)]"
         style={{ width: `${width}%`, height: `${height}%` }}
       >
         {film.poster ? (
