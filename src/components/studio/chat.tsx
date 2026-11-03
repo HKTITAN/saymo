@@ -230,7 +230,7 @@ export function ChatPanel({
         </>
       }
     >
-      <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3">
+      <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overflow-x-hidden overscroll-x-none px-4 pb-3 [overflow-wrap:anywhere]">
         {!chat.loaded ? (
           // The chat so far is on its way: two messages' worth of shapes.
           <Skeleton loading label="Loading the chat">
