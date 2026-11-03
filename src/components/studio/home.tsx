@@ -120,9 +120,10 @@ export function SideNav({
       {/* The edge handle sits outside the clipped layer, so its grip and hint
           can reach over the page. */}
       {collapsed ? null : <WidthHandle width={width} onWidth={setWidth} onCollapse={() => fold(true)} />}
-      <div className={cn("flex min-w-0 flex-1 flex-col gap-4 overflow-hidden pt-3 pb-3", collapsed ? "px-0" : "px-3")}>
-      {/* No gap once folded, so the toggle sits in the middle of the rail. */}
-      <div className={cn("group/doodle flex h-9 shrink-0 items-center", collapsed ? "gap-0" : "gap-2.5")}>
+      {/* Its padding and spacing never change, so nothing inside jumps as it
+          folds: only the width moves, and this layer clips the rest. */}
+      <div className="flex min-w-0 flex-1 flex-col gap-4 overflow-hidden px-3 pt-3 pb-3">
+      <div className="group/doodle flex h-9 shrink-0 items-center gap-2.5" style={{ width: width - 24 }}>
         <span
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden ps-2 transition-opacity duration-200",
