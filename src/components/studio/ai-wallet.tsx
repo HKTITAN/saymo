@@ -1,6 +1,7 @@
 "use client";
 
 import { Popover } from "@base-ui/react/popover";
+import { Caveat } from "next/font/google";
 import { type CSSProperties, type ReactNode, useEffect, useId, useState } from "react";
 import { CheckTickCircleIcon, CreditCardIcon } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
@@ -54,6 +55,34 @@ function CodexLockup() {
   );
 }
 
+// The handwritten note beside the wallet (a one-off, decorative: the
+// interface itself stays in the system font).
+const hand = Caveat({ subsets: ["latin"], weight: ["600"], display: "swap" });
+
+// "Bring your own AI", written by hand to the left of the wallet, with a
+// doodled arrow curling round to the card.
+function Note() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute top-[6px] right-[calc(100%+10px)] flex w-[132px] flex-col items-end">
+      <p className={cn(hand.className, "-rotate-6 text-right text-[22px] text-white/80 leading-[0.95]")}>
+        Bring your
+        <br />
+        own AI
+      </p>
+      <svg width="96" height="64" viewBox="0 0 96 64" fill="none" className="-mt-1 me-[-8px] text-studio-soft">
+        <path
+          d="M6 6 C 10 30, 30 48, 58 46 C 70 45, 80 40, 88 32"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path d="M78 30 L 89 31 L 86 42" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
 export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provider: ProviderId) => void }) {
   // The card in the wallet; on a change it goes down into the pocket, then
   // the new one comes up.
@@ -104,6 +133,7 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
         className="relative"
         style={{ width: W, height: H }}
       >
+        <Note />
         <Back />
         {/* the card, inside the wallet */}
         <div className="absolute overflow-hidden" style={{ left: 0, top: 0, width: W, height: H, borderRadius: R }}>
