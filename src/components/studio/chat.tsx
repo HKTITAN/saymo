@@ -139,17 +139,23 @@ export function ChatPanel({
 
   const files = useAttachments(`/api/studio/films/${filmId}/attachments`, { audio: true });
 
-  // "Try 3": the next prompt makes three versions at once, to pick from.
-  // Also when a prompt asks for three versions itself.
-  const [three, setThree] = useState(false);
+  // "Try 3": three versions at once, to pick from, straight away: of what's
+  // typed in the box, or of the film as it is when the box is empty. Also
+  // when a sent prompt asks for three versions itself.
+  const tryThree = () => {
+    if (!onTakes || turn.running) return;
+    const words = draft.trim() || "Three versions of this film";
+    setDraft("");
+    onTakes(words, { t: pinned?.t ?? time(), pick: null });
+    onClearPick();
+  };
   const send = async () => {
     const attached = await files.flush();
     const words = draft.trim() || (attached.length ? "Have a look at what I attached." : "");
     if (!words) return;
     setDraft("");
     files.clear();
-    if (onTakes && !turn.running && (three || asksForThree(words))) {
-      setThree(false);
+    if (onTakes && !turn.running && asksForThree(words)) {
       onTakes(words, { t: pinned?.t ?? time(), pick: null, ...(attached.length ? { attachments: attached } : {}) });
       onClearPick();
       return;
@@ -185,20 +191,12 @@ export function ChatPanel({
       actions={
         <>
           {onTakes ? (
-            <Hint label="Make 3 versions of your next prompt, then pick one">
+            <Hint label="Make 3 versions of what's in the box, or of the film as it is, then pick one">
               <button
                 type="button"
-                aria-pressed={three}
-                onClick={() => {
-                  setThree((on) => !on);
-                  inputRef.current?.focus();
-                }}
+                onClick={tryThree}
                 disabled={turn.running}
-                className={cn(
-                  PILL_BUTTON,
-                  "studio-iris h-7 px-2.5",
-                  three ? "bg-white/[0.1] text-white" : "bg-white/[0.05] text-white/70 hover:bg-white/[0.08] hover:text-white",
-                )}
+                className={cn(PILL_BUTTON, "studio-iris h-7 bg-white/[0.05] px-2.5 text-white/75 hover:bg-white/[0.08] hover:text-white")}
               >
                 <span aria-hidden="true" className="studio-iris-glow">
                   <span className="studio-iris-ring" />
@@ -293,7 +291,7 @@ export function ChatPanel({
           running={turn.running}
           glow
           queueing
-          placeholder={three ? "Describe it, and Claude makes 3 versions" : "Make the title come in from the left"}
+          placeholder="Make the title come in from the left"
           chip={sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
           onClearChip={onClearPick}
           meta={<PlayheadChip clock={clock} />}
