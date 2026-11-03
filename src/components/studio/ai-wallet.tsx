@@ -6,6 +6,7 @@ import { CheckTickCircleIcon, CreditCardIcon } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
 import { type AiChoice, OFFERED_PROVIDERS, type ProviderId } from "@/lib/studio/ai-types";
 import { cn } from "@/lib/utils";
+import { aiApi } from "./ai-api";
 import { ClaudeMark, CodexMark } from "./ai-marks";
 import { Foil } from "./foil";
 import { ITEM, MENU_POPUP } from "./home-parts";
@@ -59,6 +60,23 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
   // The light on the metal follows the pointer over the wallet.
   const [light, setLight] = useState<{ x: number; y: number } | null>(null);
   const [open, setOpen] = useState(false);
+  // Each AI's plan by name when the studio knows it ("Team plan").
+  const [plans, setPlans] = useState<Partial<Record<ProviderId, string>>>({});
+  useEffect(() => {
+    let live = true;
+    void aiApi
+      .status()
+      .then((s) => {
+        if (!live) return;
+        const named: Partial<Record<ProviderId, string>> = {};
+        for (const p of s.providers) if (p.plan) named[p.id] = p.plan;
+        setPlans(named);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [choice.provider]);
   const look = CARDS[shown];
   const current = CARDS[choice.provider];
 
@@ -88,9 +106,17 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
             {/* the card's bezel: a hairline inset from its edge, and its pale rim */}
             <span className="pointer-events-none absolute inset-[7px] rounded-[14px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18),0_0_0_1px_rgba(0,0,0,0.12)]" />
             <span className="pointer-events-none absolute inset-0 rounded-[20px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.3),inset_0_1px_0_rgba(255,255,255,0.45)]" />
-            <span className="absolute inset-x-0 top-[17px] flex items-center justify-center gap-2 text-white/95" style={ETCHED}>
-              {look.mark("size-4")}
-              <span className="font-bold text-[13px] uppercase tracking-[0.2em]">{look.name}</span>
+            <span className="absolute inset-x-[20px] top-[18px] flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-white/95" style={ETCHED}>
+                {look.mark("size-4")}
+                <span className="font-bold text-[13px] uppercase tracking-[0.2em]">{look.name}</span>
+              </span>
+              <span
+                className="truncate font-semibold text-[9.5px] text-white uppercase tracking-[0.18em]"
+                style={{ filter: `${ETCHED.filter} drop-shadow(0 0 3px rgba(0,0,0,0.35))` }}
+              >
+                {plans[shown] ?? look.via}
+              </span>
             </span>
           </div>
         </div>
@@ -192,6 +218,9 @@ function Leather({ id }: { id: string }) {
       <filter id={`${id}-cast`} x="-10%" y="-30%" width="120%" height="160%">
         <feDropShadow dx="0" dy="-3" stdDeviation="4" floodColor="#000" floodOpacity="0.45" />
       </filter>
+      <filter id={`${id}-soft`} x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="6" />
+      </filter>
       <filter id={`${id}-drop`} x="-10%" y="-10%" width="120%" height="140%">
         <feDropShadow dx="0" dy="14" stdDeviation="14" floodColor="#000" floodOpacity="0.55" />
       </filter>
@@ -236,8 +265,8 @@ function Pocket({ mark }: { mark: (c: string) => ReactNode }) {
           <path d={edge} fill="#000" filter={`url(#${id}-grain)`} />
           {/* the lip: lit along the edge, shaded just under it */}
           <path d={edge} fill="none" stroke="rgba(255,214,186,0.36)" strokeWidth="2.2" />
-          <path d={edge} fill="none" stroke="rgba(255,220,196,0.07)" strokeWidth="18" transform="translate(0 6)" />
-          <path d={edge} fill="none" stroke="rgba(0,0,0,0.18)" strokeWidth="12" transform="translate(0 14)" />
+          <path d={edge} fill="none" stroke="rgba(255,220,196,0.1)" strokeWidth="14" transform="translate(0 5)" filter={`url(#${id}-soft)`} />
+          <path d={edge} fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="14" transform="translate(0 16)" filter={`url(#${id}-soft)`} />
           <rect x={0} y={H - 30} width={W} height={30} fill={`url(#${id}-lip)`} />
         </g>
         <Stitches path={stitch} thread="#9b6447" shine={0.22} />
