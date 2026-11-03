@@ -194,10 +194,14 @@ export function ChatPanel({
                 disabled={turn.running}
                 className={cn(
                   PILL_BUTTON,
-                  "h-7 px-2.5",
-                  three ? "bg-white/[0.14] text-white hover:bg-white/[0.18]" : "text-white/60 hover:bg-white/[0.08] hover:text-white",
+                  "studio-iris h-7 px-2.5",
+                  three ? "bg-white/[0.1] text-white" : "bg-white/[0.05] text-white/70 hover:bg-white/[0.08] hover:text-white",
                 )}
               >
+                <span aria-hidden="true" className="studio-iris-glow">
+                  <span className="studio-iris-ring" />
+                </span>
+                <span aria-hidden="true" className="studio-iris-ring" />
                 Try 3
               </button>
             </Hint>
@@ -283,6 +287,7 @@ export function ChatPanel({
           attachments={files}
           onStop={chat.stop}
           running={turn.running}
+          glow
           queueing
           placeholder={three ? "Describe it, and Claude makes 3 versions" : "Make the title come in from the left"}
           chip={sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
