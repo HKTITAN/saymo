@@ -86,12 +86,12 @@ if (film.engine === "html") {
   }
   const bin = path.join(ROOT, "studio/hyperframes/node_modules/.bin/hyperframes");
   if (!existsSync(bin)) fail("The film checker isn't installed: run `npm ci` in studio/hyperframes.");
-  process.exit(
-    await run(bin, ["check", dir, "--max-issues=30"], {
-      // CI=1: no warm checker left running in the background afterwards.
-      env: { ...process.env, HYPERFRAMES_NO_TELEMETRY: "1", CI: "1" },
-    }),
-  );
+  const code = await run(bin, ["check", dir, "--max-issues=30"], {
+    // CI=1: no warm checker left running in the background afterwards.
+    env: { ...process.env, HYPERFRAMES_NO_TELEMETRY: "1", CI: "1" },
+  });
+  if (code !== 0) process.exit(code);
+  process.exit(await checkLayers());
 }
 
 if (film.engine === "react") {
@@ -137,6 +137,92 @@ if (film.engine === "rust") {
 }
 
 fail(`Unknown engine "${film.engine}" in film.json.`);
+
+// ─── HTML films: graphics memory ────────────────────────────────────────────
+//
+// Everything turned in 3D (a matrix3d transform) gets its own layer on the
+// graphics card, at its full size. Too many big ones at the same moment and
+// the card runs out of memory: the film goes blank and the whole studio
+// window flickers (the SpendOS funnel had 30 full-frame planes at once).
+// So: step through the film and add up, at each moment, the area of every
+// visible 3D layer, in frames. Above the budget, say when and where.
+
+async function checkLayers() {
+  const LAYER_BUDGET = 16; // full frames of 3D layers at one moment
+  let chromium;
+  try {
+    ({ chromium } = await import(path.join(ROOT, "node_modules/playwright/index.mjs")));
+  } catch {
+    console.log("Skipped the graphics memory check (Playwright isn't installed).");
+    return 0;
+  }
+  const browser = await chromium.launch({ channel: "chrome" }).catch(() => chromium.launch());
+  try {
+    const page = await browser.newPage({ viewport: { width: film.width, height: film.height } });
+    await page.goto(`file://${path.join(dir, "index.html")}`, { waitUntil: "load", timeout: 60_000 });
+    const ready = await page
+      .waitForFunction(() => Boolean(window.__timelines?.main), null, { timeout: 20_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!ready) {
+      console.log("Skipped the graphics memory check (no main timeline to step through).");
+      return 0;
+    }
+    const duration = await page.evaluate(() => window.__timelines.main.duration());
+    const frame = film.width * film.height;
+    const heavy = [];
+    for (let t = 0; t <= duration; t += 0.25) {
+      const at = await page.evaluate((t) => {
+        window.__timelines.main.seek(t, false);
+        const shown = (el) => {
+          for (let e = el; e; e = e.parentElement) {
+            const s = getComputedStyle(e);
+            if (s.display === "none" || s.visibility === "hidden" || Number(s.opacity) === 0) return false;
+          }
+          return true;
+        };
+        let area = 0;
+        const where = new Map();
+        for (const el of document.querySelectorAll("body *")) {
+          if (!getComputedStyle(el).transform.startsWith("matrix3d") || !shown(el)) continue;
+          let w = el.offsetWidth || el.getBoundingClientRect().width;
+          let h = el.offsetHeight || el.getBoundingClientRect().height;
+          if (el instanceof SVGGraphicsElement) {
+            const box = el.getBBox();
+            w = Math.max(w, box.width);
+            h = Math.max(h, box.height);
+          }
+          area += w * h;
+          const owner = el.closest("[id]")?.id ?? el.tagName.toLowerCase();
+          where.set(owner, (where.get(owner) ?? 0) + 1);
+        }
+        return { area, where: [...where].sort((a, b) => b[1] - a[1]).slice(0, 3) };
+      }, t);
+      const frames = at.area / frame;
+      if (frames > LAYER_BUDGET) heavy.push({ t, frames, where: at.where });
+    }
+    if (!heavy.length) {
+      console.log("Graphics memory: fine, no moment has too many big 3D layers.");
+      return 0;
+    }
+    const worst = heavy.reduce((a, b) => (b.frames > a.frames ? b : a));
+    const span = `${heavy[0].t.toFixed(2)} s to ${heavy.at(-1).t.toFixed(2)} s`;
+    console.error(
+      [
+        `Too much in 3D at once, from ${span}: up to ${worst.frames.toFixed(0)} full frames of 3D layers (the budget is ${LAYER_BUDGET}).`,
+        `Mostly in: ${worst.where.map(([id, n]) => `#${id} (${n} layer${n > 1 ? "s" : ""})`).join(", ")}.`,
+        "Each element turned in 3D is held on the graphics card at its full size, and this many makes the studio flicker and the film go blank.",
+        "Fix: make each 3D element's box only as big as what it draws (an SVG's width, height and viewBox around its own shape, not the whole frame), use fewer 3D planes, or flatten the parts that don't need depth.",
+      ].join("\n"),
+    );
+    return 1;
+  } catch (error) {
+    console.log(`Skipped the graphics memory check (${String(error).split("\n")[0]}).`);
+    return 0;
+  } finally {
+    await browser.close();
+  }
+}
 
 // ─── Video films: the edit ──────────────────────────────────────────────────
 //
