@@ -26,20 +26,20 @@ async function whyNoMic(error: unknown): Promise<string> {
   if (name === "NotAllowedError" || name === "SecurityError") {
     // Chrome says "Permission denied by system" when macOS is the one saying no.
     if (/system/i.test(message)) {
-      return "macOS isn't letting Chrome use the mic. Open System Settings, go to Privacy & Security, then Microphone, turn on Chrome, then reopen Chrome.";
+      return "Mac blocks the mic. Turn on Chrome in System Settings, Privacy & Security, Microphone.";
     }
-    return "Chrome is blocking the mic for the studio. Click the icon to the left of the address bar, turn on Microphone, then try again.";
+    return "Mic blocked. Allow it from the icon left of the address bar.";
   }
   if (name === "NotFoundError" || name === "OverconstrainedError") {
-    return "No mic was found. Plug one in, or choose one in System Settings, under Sound, then Input.";
+    return "No mic found. Plug one in and try again.";
   }
   if (name === "NotSupportedError") {
-    return "This browser can't ask for the mic here. Open the studio in Chrome at localhost or 127.0.0.1.";
+    return "The mic only works in Chrome on localhost.";
   }
   if (name === "NotReadableError" || name === "AbortError") {
-    return "The mic couldn't start. Another app may be using it. Close that app, or choose another input in System Settings under Sound, then try again.";
+    return "Mic busy in another app. Close it and try again.";
   }
-  return "The mic couldn't start. Try again.";
+  return "Unable to start the mic. Try again.";
 }
 
 // The worklet, written out here so it needs no file of its own: it passes

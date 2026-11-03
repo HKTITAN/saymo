@@ -311,9 +311,9 @@ export function RecordingBar({ d, view }: { d: Dictation; view: DictationView })
     <div className="flex h-7 items-center gap-2 ps-1.5">
       <span className="size-1.5 shrink-0 rounded-full bg-studio motion-safe:animate-pulse" aria-hidden="true" />
       {view.phase === "starting" ? (
-        <span className="text-[12px] text-white/50">Starting the mic</span>
+        <span className="studio-shimmer whitespace-nowrap text-[12px]">Starting</span>
       ) : view.plain ? (
-        <span className="text-[12px] text-white/50">Recording</span>
+        <span className="whitespace-nowrap text-[12px] text-white/50">Recording</span>
       ) : (
         <Meter d={d} />
       )}
