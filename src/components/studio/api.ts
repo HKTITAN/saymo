@@ -105,8 +105,15 @@ export const api = {
   removeFolder: (fid: string) => call<void>(`/api/studio/folders/${fid}`, { method: "DELETE" }),
 };
 
-export const outUrl = (id: string, file: string, download = false) =>
-  `${film(id)}/out/${encodeURIComponent(file)}${download ? "?download=1" : ""}`;
+// `version` (the render's time) makes each render's address its own, so a
+// browser can never hand back an earlier copy.
+export const outUrl = (id: string, file: string, download = false, version?: string) => {
+  const q = new URLSearchParams();
+  if (download) q.set("download", "1");
+  if (version) q.set("v", version);
+  const qs = q.toString();
+  return `${film(id)}/out/${encodeURIComponent(file)}${qs ? `?${qs}` : ""}`;
+};
 
 export const stageUrl = (id: string) => `/studio/stage/${id}`;
 

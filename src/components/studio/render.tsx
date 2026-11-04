@@ -116,7 +116,7 @@ export function RenderControl({
                 {status.files.map((f) => (
                   <a
                     key={f}
-                    href={id ? outUrl(id, f, true) : undefined}
+                    href={id ? outUrl(id, f, true, status.at) : undefined}
                     download
                     className="flex min-h-9 items-center gap-2.5 rounded-[9px] px-2.5 text-[12.5px] text-white/80 outline-none transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:bg-white/[0.07] [&>svg]:size-4 [&>svg]:text-white/50"
                   >
