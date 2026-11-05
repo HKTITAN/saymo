@@ -95,8 +95,10 @@ function ClipBody({ clip, file, muted, soundOnly, length }) {
     file.kind === "image" ? (
       <Img src={file.src} style={{ ...framing(file, clip, bw, bh), objectFit: "cover", opacity }} />
     ) : (
+      // A cutout shows the person alone, the see-through rest letting what's beneath show.
       <OffthreadVideo
-        src={file.src}
+        src={clip.cutout && file.cutout ? file.cutout : file.src}
+        transparent={Boolean(clip.cutout && file.cutout)}
         {...trim}
         playbackRate={speed}
         volume={volume}

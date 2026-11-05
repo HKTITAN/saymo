@@ -11,6 +11,7 @@ import { Hint, PILL_BUTTON, Panel } from "./panel";
 import { PromptBox } from "./prompt-box";
 import { SentFiles } from "./sent-files";
 import { ClaudeAtWork } from "./mascot";
+import { EffectsMenu } from "./effects";
 import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
 import { VersionsButton } from "./versions";
@@ -34,6 +35,7 @@ export function ChatPanel({
   sound,
   soundLength,
   video = false,
+  effects = false,
   onTakes,
   time,
   clock,
@@ -52,6 +54,7 @@ export function ChatPanel({
   sound?: { pin: SoundPin; label: string } | null; // part of the sound, picked on the timeline
   soundLength?: number; // how long the sound is, so a whole lane reads "whole film"
   video?: boolean; // a video film: Claude's music reads "Score"
+  effects?: boolean; // an HTML film: the Effects menu sits beside Point
   onTakes?: (prompt: string, context: ChatContext) => void; // three versions of this prompt at once
   time: () => number;
   clock: Clock;
@@ -193,12 +196,8 @@ export function ChatPanel({
                 type="button"
                 onClick={tryThree}
                 disabled={turn.running}
-                className={cn(PILL_BUTTON, "studio-iris h-7 bg-white/[0.05] px-2.5 text-white/75 hover:bg-white/[0.08] hover:text-white")}
+                className="studio-candy inline-flex h-[30px] cursor-pointer items-center px-3 text-[12.5px] outline-none"
               >
-                <span aria-hidden="true" className="studio-iris-glow">
-                  <span className="studio-iris-ring" />
-                </span>
-                <span aria-hidden="true" className="studio-iris-ring" />
                 Try 3
               </button>
             </Hint>
@@ -305,6 +304,14 @@ export function ChatPanel({
                 Point
               </button>
             </Hint>
+            {effects ? (
+              <EffectsMenu
+                onPick={(text) => {
+                  setDraft(text);
+                  inputRef.current?.focus();
+                }}
+              />
+            ) : null}
             </>
           }
         />

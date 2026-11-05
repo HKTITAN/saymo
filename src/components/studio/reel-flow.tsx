@@ -21,6 +21,8 @@ import {
   LENGTHS,
   looksLikeScript,
   motionPrompt,
+  REEL_LAYOUTS,
+  type ReelLayout,
   readSeconds,
   type Script,
   tidy,
@@ -552,8 +554,38 @@ function BeatView({
             className="min-w-0 flex-1 text-pretty text-[12px] text-white/50 leading-snug"
           />
         </div>
+        <LayoutChoice n={n} value={beat.layout ?? "split"} locked={locked} onChange={(layout) => onChange?.({ ...beat, layout })} />
       </div>
       {actions}
+    </div>
+  );
+}
+
+// How the beat fills the frame (script.ts ReelLayout): a small row of quiet
+// pills, the chosen one lit; read-only once the take is recorded.
+function LayoutChoice({ n, value, locked, onChange }: { n: number; value: ReelLayout; locked: boolean; onChange: (v: ReelLayout) => void }) {
+  return (
+    <div className="flex items-center gap-2 pt-0.5">
+      <span className="shrink-0 text-[11px] text-white/30">Layout</span>
+      <div className="flex gap-0.5 rounded-[9px] bg-white/[0.04] p-0.5" role="radiogroup" aria-label={`Beat ${n}, layout`}>
+        {REEL_LAYOUTS.map(([k, text]) => (
+          <button
+            key={k}
+            type="button"
+            role="radio"
+            aria-checked={value === k}
+            disabled={locked && value !== k}
+            onClick={() => !locked && onChange(k)}
+            className={cn(
+              "h-6 rounded-[7px] px-2 text-[11.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+              value === k ? "bg-white/[0.12] text-white/90" : "text-white/40 hover:text-white/75",
+              locked ? "cursor-default disabled:opacity-40" : "cursor-pointer",
+            )}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

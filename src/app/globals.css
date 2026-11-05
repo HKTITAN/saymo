@@ -288,6 +288,64 @@
   }
 }
 
+/* Candy (the chat's "Try 3"): a raised, glossy violet squircle, like a
+   sticker of a coin: a lighter rim, a face lit from above, a gloss over its
+   top half and a soft violet shadow under it. Pressing darkens it a touch;
+   it never shrinks. */
+.studio-candy {
+  position: relative;
+  isolation: isolate;
+  border-radius: 11px;
+  corner-shape: squircle;
+  color: #1b0629;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.3);
+  background:
+    radial-gradient(120% 95% at 28% 0%, #f2b8ff 0%, transparent 60%),
+    linear-gradient(180deg, #d27aff 0%, #ae4cf0 55%, #872ccc 100%);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(244 190 255 / 0.4),
+    inset 0 -2px 3px rgb(70 0 110 / 0.35),
+    0 0 0 1px rgb(58 0 92 / 0.6),
+    0 4px 10px -3px rgb(150 40 210 / 0.6),
+    0 1px 2px rgb(0 0 0 / 0.45);
+  transition:
+    filter 150ms ease,
+    box-shadow 150ms ease;
+}
+.studio-candy::before {
+  content: "";
+  position: absolute;
+  inset: 2px 4px auto;
+  height: 46%;
+  z-index: -1;
+  border-radius: 8px 8px 12px 12px;
+  corner-shape: squircle;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.04));
+  pointer-events: none;
+}
+.studio-candy:hover {
+  filter: brightness(1.07) saturate(1.05);
+}
+.studio-candy:active {
+  filter: brightness(0.9);
+  box-shadow:
+    inset 0 0 0 1.5px rgb(244 190 255 / 0.3),
+    inset 0 2px 4px rgb(58 0 92 / 0.45),
+    0 0 0 1px rgb(58 0 92 / 0.65),
+    0 2px 5px -2px rgb(150 40 210 / 0.5);
+}
+.studio-candy:focus-visible {
+  outline: 2px solid rgb(226 160 255 / 0.9);
+  outline-offset: 2px;
+}
+.studio-candy:disabled {
+  filter: saturate(0.35) brightness(0.75);
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* Iridescent edge (the chat's "Try 3"): a soft run of pastel colour
    drifting round a dark pill's edge, with a faint glow bleeding inwards.
    When on, it's brighter and goes round a little faster.

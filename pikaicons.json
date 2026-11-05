@@ -4,6 +4,10 @@
   "importAlias": "@/components/icons",
   "variant": "stroke",
   "icons": {
+    "3d-object-cube": {
+      "name": "3d-object-cube",
+      "variant": "stroke"
+    },
     "alert-circle": {
       "name": "alert-circle",
       "variant": "stroke"

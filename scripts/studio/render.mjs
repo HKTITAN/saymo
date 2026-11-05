@@ -587,7 +587,7 @@ async function renderFilm(id, size = null) {
       const info = JSON.parse(await readFile(path.join(dir, "media", mid, "media.json"), "utf8").catch(() => "null"));
       if (!info || info.status !== "ready") continue;
       const file = info.kind === "image" ? info.proxy : info.original;
-      media[mid] = { file, kind: info.kind, width: info.width, height: info.height, name: info.name };
+      media[mid] = { file, cutout: info.cutout ?? null, kind: info.kind, width: info.width, height: info.height, name: info.name };
     }
     job.duration = Math.max(1 / film.fps, editEnd(edit));
     job.footage = true;
@@ -658,8 +658,8 @@ async function renderFilm(id, size = null) {
     server = await serveMedia(path.join(dir, "media"));
     const served = {};
     for (const [mid, info] of Object.entries(media)) {
-      const { file, ...rest } = info;
-      served[mid] = { src: `${server.url}/${mid}/${encodeURIComponent(file)}`, ...rest };
+      const { file, cutout, ...rest } = info;
+      served[mid] = { src: `${server.url}/${mid}/${encodeURIComponent(file)}`, cutout: cutout ? `${server.url}/${mid}/${encodeURIComponent(cutout)}` : null, ...rest };
     }
     job.params = { ...job.params, edit, media: served };
   }

@@ -38,6 +38,7 @@ Your system prompt gives the exact command (`node …/media-tool.mjs <film-id> �
 | `scenes <media> [0..1]` | camera cuts or big changes in the footage |
 | `frames <media> <t> …` | up to 12 small stills; **Read** the files it names to see them |
 | `faces <media> [every-s]` | where the main face sits over time (0..1 of the source), for reframing |
+| `cutout <media>` | the person cut out of their background (`cutout.webm`, see-through, sound kept), for clips set `"cutout": true`; waits until it's made, a minute or two for a long take |
 
 Look before you cut. Read the transcript for talking footage. Check a few frames to see the shots. For a 9:16 reframe, check where the face is.
 
@@ -145,6 +146,19 @@ The studio's "Record a reel" makes a 9:16 film (1080x1920) from a take read off 
    - Look at `frames` from a draft at a few beats if you can. The face must sit fully in the top half, and nothing in the bottom half may cross the seam.
 
 With several videos and no script, find the ideas yourself from the transcript: one beat per thought, 3 to 8 s each. Say in your reply how many beats you made and anything you couldn't match to the script.
+
+### Reel layouts, one per beat
+
+A beat in the script can carry a `layout`; without one it's a split. Cut from one layout to the next on the beat's first word. Give `graphics/beat.jsx` a `layout` param (`"split"`, `"popout"`, `"graphic"`) and draw in the matching place.
+
+- **split**: as above, the speaker on the top half and the beat's graphic below.
+- **popout**: the beat's graphic on a card, with the speaker cut out of their background standing in front of it.
+  1. Run `cutout <media>` on the take first. If it fails, use split for those beats and say why.
+  2. The card is drawn by the beat's graphic: a rounded rectangle in the brand's surface colour filling the lower part of the frame (x from 4% to 96% of the width, y from 34% to 97% of the height, corners about 4.5% of the width), with the beat's visual inside it. Keep the card's top band (y 34% to 54%) quiet, because the captions sit there. Above the card is the edit's `background`, the brand's ground.
+  3. For that beat, the take's clip moves to a video track above the graphics track (add one named "Front" if there isn't one), with `"cutout": true` and `"box": { "x": 0, "y": 0.02, "w": 1, "h": 0.6 }`. Frame it with `faces` so the face sits about a quarter of the way down the frame and the shoulders cross the card's top edge. Only one clip of the take plays at a time (the cutout carries the voice), so take that stretch off the main track.
+  4. Check a draft frame there: the head clears the card's top edge, and no fringe of the old background shows round the hair. If it does, keep the speaker a little smaller.
+- **graphic**: the graphic fills the frame. That stretch of the take moves to an audio track, so the voice carries on under it.
+- **you**: the take fills the frame (no box), for a beat that's all about the person, like the hook or the sign-off.
 
 ## Music and sound
 

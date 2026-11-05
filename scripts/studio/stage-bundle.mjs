@@ -148,7 +148,8 @@ function Stage() {
   // Files the edit uses that the stage doesn't have yet (still coming in):
   // look again until they're ready.
   useEffect(() => {
-    const wanted = (edit?.tracks ?? []).flatMap((t) => t.items).filter((i) => i.type === "clip" && !media[i.media]);
+    // Clips whose file isn't here yet, or whose cutout is still being made.
+    const wanted = (edit?.tracks ?? []).flatMap((t) => t.items).filter((i) => i.type === "clip" && (!media[i.media] || (i.cutout && !media[i.media].cutout)));
     if (!wanted.length) return;
     const timer = setInterval(async () => {
       const res = await fetch("/api/studio/films/" + ID + "/media", { cache: "no-store" }).catch(() => null);
@@ -156,7 +157,8 @@ function Stage() {
       const next = {};
       for (const m of await res.json()) {
         if (m.status !== "ready" || !m.proxy) continue;
-        next[m.id] = { src: "/api/studio/films/" + ID + "/media/" + m.id + "/" + m.proxy, kind: m.kind, width: m.width, height: m.height, name: m.name };
+        const at = "/api/studio/films/" + ID + "/media/" + m.id + "/";
+        next[m.id] = { src: at + m.proxy, cutout: m.cutout ? at + m.cutout : null, kind: m.kind, width: m.width, height: m.height, name: m.name };
       }
       setMedia((old) => (same(old, next) ? old : next));
     }, 1500);

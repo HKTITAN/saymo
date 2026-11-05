@@ -1361,6 +1361,7 @@ function FilmView({
           sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength, isVideo) } : null}
           soundLength={soundLength}
           video={isVideo}
+          effects={!isVideo && film?.engine === "html"}
           onTakes={
             isVideo
               ? undefined

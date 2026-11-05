@@ -32,6 +32,7 @@ import { NewKitMenu, PersonalStyleMaker } from "./personal-style";
 import { LibraryView } from "./library";
 import { cachedLibrary, filesFor } from "./library-api";
 import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
+import { EffectsPage } from "./effects";
 import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu } from "./home";
 import { SettingsPage } from "./settings-page";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
@@ -54,14 +55,20 @@ type Overlay = null | "video" | "motion" | "kit" | "personal" | "script" | "reel
 type Sort = "edited" | "name";
 type Tab = "films" | "library";
 const tabFromUrl = (): Tab => (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("library") ? "library" : "films");
-// Brand kits, Rules and Settings, kept in the address too (/studio?settings),
-// so a reload or a link lands on the same page.
-type Aside = null | "kits" | "rules" | "settings";
-const ASIDES = ["kits", "rules", "settings"] as const;
+// Brand kits, Effects, Rules and Settings, kept in the address too
+// (/studio?settings), so a reload or a link lands on the same page.
+type Aside = null | "kits" | "effects" | "rules" | "settings";
+const ASIDES = ["kits", "effects", "rules", "settings"] as const;
 const asideFromUrl = (): Aside => {
   if (typeof window === "undefined") return null;
   const q = new URLSearchParams(window.location.search);
   return ASIDES.find((a) => q.has(a)) ?? null;
+};
+
+const wayFromUrl = (): Overlay => {
+  if (typeof window === "undefined") return null;
+  const q = new URLSearchParams(window.location.search);
+  return (["reel", "script", "slides"] as const).find((w) => q.has(w)) ?? null;
 };
 
 // What a dragged film carries, so only films can be dropped on folders.
@@ -154,9 +161,10 @@ export function Dashboard({
   onKitMade: (kitId: string, reply: string) => void;
   onKitHidden: (kitId: string | null) => void;
 }) {
-  // A ?new=<prompt> link opens the new film card with it filled in (first-film.tsx).
+  // A ?new=<prompt> link opens the new film card with it filled in (first-film.tsx);
+  // ?reel, ?script or ?slides opens that way in.
   const [link, setLink] = useState(readNewFilmLink);
-  const [overlay, setOverlay] = useState<Overlay>(link ? "motion" : null);
+  const [overlay, setOverlay] = useState<Overlay>(() => (link ? "motion" : wayFromUrl()));
   useEffect(() => {
     if (link) clearNewFilmLink();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the link fills the card once, not every time it opens
@@ -178,6 +186,8 @@ export function Dashboard({
   const search = useRef<HTMLInputElement>(null);
   const now = useSyncExternalStore(everyMinute, thisMinute, () => 0);
   const [aside, setAsideState] = useState<Aside>(asideFromUrl);
+  // A prompt for Home's box, from an effect picked on the Effects page; its key starts the box afresh.
+  const [seed, setSeed] = useState<{ text: string; key: number } | null>(null);
   const setAside = useCallback((next: Aside) => {
     setAsideState(next);
     if (!next) return;
@@ -365,7 +375,7 @@ export function Dashboard({
 
   const section: Section = aside ?? (tab === "library" ? "library" : "home");
   const goSection = (s: Section) => {
-    setAside(s === "kits" || s === "rules" || s === "settings" ? s : null);
+    setAside(s === "kits" || s === "effects" || s === "rules" || s === "settings" ? s : null);
     if (s === "home" || s === "library") setTab(s === "library" ? "library" : "films");
   };
   const everyFilm =
@@ -403,6 +413,8 @@ export function Dashboard({
           {section === "home" ? (
             <>
               <Hero
+                key={seed?.key ?? 0}
+                initial={seed?.text}
                 folderName={folder?.name ?? null}
                 busy={busy}
                 error={error}
@@ -569,6 +581,14 @@ export function Dashboard({
             </section>
           ) : null}
 
+          {section === "effects" ? (
+            <EffectsPage
+              onUse={(text) => {
+                setSeed({ text, key: Date.now() });
+                goSection("home");
+              }}
+            />
+          ) : null}
           {section === "rules" ? <RulesPage /> : null}
           {section === "settings" ? <SettingsPage /> : null}
         </div>

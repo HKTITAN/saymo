@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
-import { createWriteStream } from "node:fs";
-import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { createWriteStream, existsSync, statSync } from "node:fs";
+import { mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -50,6 +51,7 @@ const g = globalThis as {
   __mediaLocks?: Map<string, Promise<unknown>>;
   __mediaJobs?: { queue: Job[]; running: Set<string> };
   __transcribing?: { queue: Job[]; running: string | null };
+  __cutting?: { queue: Job[]; running: string | null };
 };
 const locks = (g.__mediaLocks ??= new Map());
 function update(id: string, mid: string, change: (m: Media) => Partial<Media>) {
@@ -81,6 +83,10 @@ export async function listMedia(id: string): Promise<Media[]> {
     if (m.transcribing && transcribing.running !== key && !transcribing.queue.some((j) => `${j.id}/${j.mid}` === key)) {
       transcribing.queue.push({ id, mid: m.id });
       nextTranscription();
+    }
+    if (m.cutting && cutting.running !== key && !cutting.queue.some((j) => `${j.id}/${j.mid}` === key)) {
+      cutting.queue.push({ id, mid: m.id });
+      nextCutout();
     }
   }
   const at = async (m: Media) => (await stat(mediaDir(id, m.id)).catch(() => null))?.birthtimeMs ?? 0;
@@ -119,6 +125,7 @@ export async function importMedia(id: string, name: string, body: ReadableStream
     thumbEvery: null,
     peaks: null,
     transcript: null,
+    cutout: null,
     width: null,
     height: null,
     duration: null,
@@ -431,4 +438,80 @@ function nextTranscription() {
     });
     child.on("error", () => void finish({ error: "The studio couldn't start listening. Try again in a moment." }));
   });
+}
+
+// ─── Cutting the person out ───────────────────────────────────────────────────
+
+// For layouts where someone stands in front of the graphics (the reel's
+// pop-out): macOS's own person finder (scripts/vision.swift, the face
+// finder's binary, compiled once) draws a mask of them in every frame of
+// the preview copy, following them from frame to frame so the edge holds;
+// ffmpeg folds the masks in as transparency and writes cutout.webm, VP9
+// with the sound kept, which the browser plays see-through. Nothing leaves
+// the Mac. One at a time across the studio: it uses the whole machine.
+const cutting = (g.__cutting ??= { queue: [], running: null });
+
+export async function startCutout(id: string, mid: string): Promise<Media | null | "not ready" | "not video"> {
+  const media = await readMedia(id, mid);
+  if (!media) return null;
+  if (media.kind !== "video") return "not video";
+  if (media.status !== "ready" || !media.proxy) return "not ready";
+  if (media.cutting || media.cutout) return media;
+  const next = await update(id, mid, () => ({ cutting: true, step: "Waiting to cut you out", error: undefined }));
+  cutting.queue.push({ id, mid });
+  nextCutout();
+  return next;
+}
+
+function nextCutout() {
+  if (cutting.running || !cutting.queue.length) return;
+  const { id, mid } = cutting.queue.shift()!;
+  cutting.running = `${id}/${mid}`;
+  const finish = (change: Partial<Media>) =>
+    update(id, mid, () => ({ cutting: false, step: undefined, ...change })).finally(() => {
+      cutting.running = null;
+      nextCutout();
+    });
+  cutOut(id, mid).then(
+    () => finish({ cutout: "cutout.webm" }),
+    (error) => {
+      console.error(`[studio cutout] ${id}/${mid}:`, error);
+      return finish({ error: "The studio couldn't cut the person out of this clip. Try a clip where they're closer to the camera." });
+    },
+  );
+}
+
+async function visionBinary() {
+  const source = path.join(ROOT, "scripts/vision.swift");
+  const binary = path.join(ROOT, "node_modules/.cache/speaker-post/vision");
+  if (existsSync(binary) && statSync(binary).mtimeMs >= statSync(source).mtimeMs) return binary;
+  await mkdir(path.dirname(binary), { recursive: true });
+  await run("swiftc", ["-O", source, "-o", binary]);
+  return binary;
+}
+
+async function cutOut(id: string, mid: string) {
+  const media = await readMedia(id, mid);
+  if (!media?.proxy) throw new Error("no preview copy");
+  const dir = mediaDir(id, mid);
+  const proxy = path.join(dir, media.proxy);
+  const masks = await mkdtemp(path.join(tmpdir(), "studio-cutout-"));
+  try {
+    await update(id, mid, () => ({ step: "Finding you in each frame" }));
+    const frames = Number((await run(await visionBinary(), ["matte", proxy, masks])).trim());
+    if (!frames) throw new Error("no frames");
+    // The masks come one per frame of the preview copy, which runs at a steady rate (see prepare).
+    const fps = Math.min(media.fps ?? 30, 60);
+    await update(id, mid, () => ({ step: "Making the cutout" }));
+    await run("ffmpeg", [
+      "-y", "-loglevel", "error", "-i", proxy, "-framerate", String(fps), "-i", path.join(masks, "m%05d.png"),
+      "-filter_complex", "[1:v]format=gray[a];[0:v][a]alphamerge,format=yuva420p[v]",
+      "-map", "[v]", ...(media.hasAudio ? ["-map", "0:a:0", "-c:a", "libopus", "-b:a", "128k"] : []),
+      "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", "32", "-row-mt", "1", "-deadline", "good", "-cpu-used", "5",
+      "-shortest", "-f", "webm", path.join(dir, "cutout.webm.part"),
+    ]);
+    await rename(path.join(dir, "cutout.webm.part"), path.join(dir, "cutout.webm"));
+  } finally {
+    await rm(masks, { recursive: true, force: true });
+  }
 }

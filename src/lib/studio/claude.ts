@@ -459,6 +459,7 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Bash(${voiceTool(id)} *)`,
     `Bash(${listenCommand(id)} *)`, // hears this film's refs/ and stems only
     `Bash(${photoTool(id)} *)`, // attached pictures into the film, and real photos from Openverse or Wikimedia Commons
+    `Bash(${lookTool(id)} *)`, // the blank-page skill's references: are.na and Sketchfab, saved inside this film
     "Skill",
     "TodoWrite",
   ];
@@ -540,7 +541,10 @@ and show it the way the tool says: crop, scale, place, mask, light and move it, 
   ${photoTool(id)} search "<words>" [--wide | --tall]
   ${photoTool(id)} get <n> [name]
 Read the previews it lists before you choose. Keep real photos real: grade, crop, blur and light them to suit the film, and never turn them into a cartoon. If a photo's licence asks for credit, say so in your reply.
-No other shell commands are available, and the photo command is your only way to the web.${video}
+When a new film starts from a one-line prompt, or they ask to expand one, load the blank-page skill and find the film's look and moves first, with:
+  ${lookTool(id)} <command> …
+(its "In Motion Studio" section lists the commands and where things land).
+No other shell commands are available; the photo and look commands are your only ways to the web.${video}
 
 How to reply: work silently (write no text while you work), then end with at most two short sentences, under 35 words in all (a third short one may say how you used their pictures), saying what changed on screen in visual words. Plain text only: no lists, no headings, no bold, no code, no file names. Never use em dashes. Don't name the engines or libraries (HyperFrames, Remotion, fframes, GSAP) unless asked. If a request is unclear, make your best guess, say what you assumed, and offer one alternative.`;
 }
@@ -553,9 +557,17 @@ const forCodex = (text: string) =>
   text.replace(/\b[Ll]oad the ([a-z0-9-]+) skill/g, (_, name: string) => `Read ${path.join(ROOT, ".claude/skills", name, "SKILL.md")}`);
 
 function codexInstructions(id: string, kind: Film["kind"]) {
-  return forCodex(systemPrompt(id, kind)).replace(
-    "No other shell commands are available, and the photo command is your only way to the web.",
-    `Read files with plain commands (cat, sed, ls, rg) and change the film's files with apply_patch. Run no other programs than the ones above. The house rules are in ${path.join(ROOT, "CLAUDE.md")}. There is no web access, and the sandbox refuses writes outside the film's folder.`,
+  return (
+    forCodex(systemPrompt(id, kind))
+      // Codex has no web, so blank-page's reference search can't run: the brief is written from the skill alone.
+      .replace(
+        /When a new film starts from a one-line prompt[\s\S]*?where things land\)\.\n/,
+        `When a new film starts from a one-line prompt, or they ask to expand one, read ${path.join(ROOT, ".claude/skills/blank-page/SKILL.md")} and write the brief its way before building, without its reference search: there's no web here, so choose the look and the moves yourself, and say in your reply that no references were searched.\n`,
+      )
+      .replace(
+        "No other shell commands are available; the photo and look commands are your only ways to the web.",
+        `Read files with plain commands (cat, sed, ls, rg) and change the film's files with apply_patch. Run no other programs than the ones above. The house rules are in ${path.join(ROOT, "CLAUDE.md")}. There is no web access, and the sandbox refuses writes outside the film's folder.`,
+      )
   );
 }
 
@@ -608,6 +620,7 @@ You can't open the footage files. To hear, see and measure them, run one of thes
   ${tool} scenes <media> [sensitivity]
   ${tool} frames <media> <t> [t ...]   (then Read the stills it names)
   ${tool} faces <media> [every-seconds]
+  ${tool} cutout <media>   (the person cut out of their background, for clips set "cutout": true; waits until it's made)
 
 For a voiceover, write the words to voice/<name>.txt in the film, then run exactly:
   ${voiceTool(id)} <voice> <words-per-minute> voice/<name>.txt
@@ -615,6 +628,8 @@ Voices: Rishi (Indian English, male, the default), Tara (Indian English, female)
 }
 
 const photoTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/photo.mjs")} ${id}`;
+// The blank-page skill's reference search (are.na, Sketchfab), scoped to the film.
+const lookTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/look.mjs")} ${id}`;
 
 const voiceTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/voice.mjs")} ${id}`;
 
@@ -811,6 +826,7 @@ const MEDIA_STEPS: Record<string, string> = {
   scenes: "Finding the cuts",
   frames: "Watching the footage",
   faces: "Finding the speaker",
+  cutout: "Cutting the speaker out",
 };
 
 function stepFor(name: string, input: Json, dir: string): string | null {

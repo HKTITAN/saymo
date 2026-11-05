@@ -6,7 +6,18 @@
 // POST /api/studio/script  { idea, seconds, keep }  streams ScriptEvents
 // (text/event-stream, one JSON event per `data:` line).
 
-export type Beat = { line: string; visual: string };
+// How a beat of a reel fills the frame: the split (you on the top half,
+// the beat's graphic below), the pop-out (the graphic on a card filling the
+// lower part, you cut out of your background in front of it, your head over
+// the card's top edge), the graphic alone while you talk, or you alone.
+export type ReelLayout = "split" | "popout" | "graphic" | "you";
+export const REEL_LAYOUTS: readonly (readonly [ReelLayout, string])[] = [
+  ["split", "Split"],
+  ["popout", "Pop-out"],
+  ["graphic", "Graphic"],
+  ["you", "You"],
+];
+export type Beat = { line: string; visual: string; layout?: ReelLayout };
 export type Script = { title: string; beats: Beat[] };
 
 export type ScriptRequest = {
@@ -33,10 +44,13 @@ export function cleanScript(raw: unknown): Script | null {
   if (!Array.isArray(r.beats)) return null;
   const beats = r.beats
     .map((b) => {
-      const x = (b ?? {}) as { line?: unknown; visual?: unknown };
+      const x = (b ?? {}) as { line?: unknown; visual?: unknown; layout?: unknown };
+      // A layout other than the usual split is kept; anything unknown is dropped.
+      const layout = REEL_LAYOUTS.find(([k]) => k === x.layout)?.[0];
       return {
         line: typeof x.line === "string" ? tidy(x.line).slice(0, 600) : "",
         visual: typeof x.visual === "string" ? tidy(x.visual).slice(0, 300) : "",
+        ...(layout && layout !== "split" ? { layout } : {}),
       };
     })
     .filter((b) => b.line)
@@ -75,8 +89,15 @@ export function reelPrompt(script: Script | null, takes: number) {
   if (!script) {
     return `Make this a half-and-half reel: ${who} on the top half, filling it, and motion graphics on the bottom half that show what's being said, one per idea, timed to the words. Add captions.`;
   }
-  const beats = script.beats.map((b, i) => `${i + 1}. "${b.line}" Visual: ${b.visual || "your call"}`).join("\n");
-  return `Make this a half-and-half reel: ${who} on the top half, filling it, and a motion graphic for each beat of my script on the bottom half, timed to when I say that line. Add captions. The script is attached; here are the beats:\n${beats}`.slice(0, 7800);
+  const layouts = script.beats.map((b) => b.layout ?? "split");
+  if (layouts.every((l) => l === "split")) {
+    const beats = script.beats.map((b, i) => `${i + 1}. "${b.line}" Visual: ${b.visual || "your call"}`).join("\n");
+    return `Make this a half-and-half reel: ${who} on the top half, filling it, and a motion graphic for each beat of my script on the bottom half, timed to when I say that line. Add captions. The script is attached; here are the beats:\n${beats}`.slice(0, 7800);
+  }
+  const named: Record<ReelLayout, string> = { split: "split", popout: "pop-out", graphic: "graphic only", you: "speaker only" };
+  const beats = script.beats.map((b, i) => `${i + 1}. "${b.line}" Visual: ${b.visual || "your call"}. Layout: ${named[layouts[i]]}`).join("\n");
+  const cut = layouts.includes("popout") ? " Make the cutout first, with the media tool's cutout command." : "";
+  return `Make this a reel with its own layout for each beat (see Reel layouts in the video edit skill): split is ${who} on the top half and the beat's graphic below; pop-out is the graphic on a card filling the lower part, with ${who} cut out of the background in front of it, head over the card's top edge; graphic only fills the frame with the graphic while ${who} keep talking; speaker only is ${who} filling the frame.${cut} Time each beat to when I say its line, cut between layouts on the beat, and add captions. The script is attached; here are the beats:\n${beats}`.slice(0, 7800);
 }
 
 // The first prompt of a motion graphics film made from a script.

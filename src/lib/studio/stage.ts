@@ -69,10 +69,11 @@ async function videoGlobals(film: Film) {
 
 // Where the stage finds each ready file: its preview copy.
 export async function previewMedia(id: string) {
-  const out: Record<string, { src: string; kind: string; width: number | null; height: number | null; name: string }> = {};
+  const out: Record<string, { src: string; cutout: string | null; kind: string; width: number | null; height: number | null; name: string }> = {};
   for (const m of await listMedia(id)) {
     if (m.status !== "ready" || !m.proxy) continue;
-    out[m.id] = { src: `/api/studio/films/${id}/media/${m.id}/${m.proxy}`, kind: m.kind, width: m.width, height: m.height, name: m.name };
+    const at = `/api/studio/films/${id}/media/${m.id}/`;
+    out[m.id] = { src: at + m.proxy, cutout: m.cutout ? at + m.cutout : null, kind: m.kind, width: m.width, height: m.height, name: m.name };
   }
   return out;
 }

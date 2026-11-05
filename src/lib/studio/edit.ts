@@ -35,6 +35,11 @@ export type Media = {
   step?: string; // plain English while importing: "Making a smooth preview copy"
   error?: string;
   transcribing?: boolean;
+  // The person in a video cut out of their background, for layouts where
+  // they stand in front of the graphics: "cutout.webm", see-through VP9
+  // with the sound kept. null until asked for (see startCutout in media.ts).
+  cutout?: string | null;
+  cutting?: boolean; // being made now; `step` says how far
 };
 
 // A spoken word with its time in the SOURCE file.
@@ -66,6 +71,10 @@ export type Clip = {
   // and nothing of it shows outside: a speaker on the top half of a
   // half-and-half reel is { x: 0, y: 0, w: 1, h: 0.5 }.
   box?: Box;
+  // Show the media's cutout (the person without their background) instead
+  // of the whole picture, so what's beneath shows round them: the reel's
+  // pop-out, a speaker in front of the graphics.
+  cutout?: boolean;
 };
 
 export type Box = { x: number; y: number; w: number; h: number };

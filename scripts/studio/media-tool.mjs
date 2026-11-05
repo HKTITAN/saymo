@@ -9,6 +9,8 @@
 //   node … <id> scenes <media> [sensitivity 0..1]
 //   node … <id> frames <media> <t> [t …]    small JPEGs to Read, in films/.work/<id>/frames/
 //   node … <id> faces <media> [every-seconds] where the main face sits over time
+//   node … <id> cutout <media>             the person cut out of their background,
+//                                          for clips with "cutout": true (waits until made)
 //
 // It only ever looks at the film it is run from: the id must be that
 // folder's, and media ids are checked against films/<id>/media/. Every
@@ -21,6 +23,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { readToken, STUDIO_URL } from "./client.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const exec = promisify(execFile);
@@ -279,6 +282,38 @@ const ffmpegLog = (args) =>
     proc.on("close", () => resolve(log));
   });
 
+// The person cut out of a video's background (cutout.webm), made by the
+// studio itself (media.ts startCutout), for clips set "cutout": true: the
+// reel's pop-out, a speaker standing in front of the graphics. Waits until
+// it's made, saying how far along it is.
+async function cutout(mid) {
+  const m = media(mid);
+  if (m.kind !== "video") fail("Only a video can be cut out.");
+  const made = () => readJson(path.join(m.folder, "media.json")) ?? {};
+  if (made().cutout && existsSync(path.join(m.folder, made().cutout))) {
+    return console.log(`"${m.meta.name ?? mid}" is already cut out. Set "cutout": true on its clips to show the person alone.`);
+  }
+  let token;
+  try {
+    token = await readToken({ create: false });
+  } catch {
+    token = null;
+  }
+  const res = await fetch(`${STUDIO_URL}/api/studio/films/${id}/media/${mid}/cutout`, { method: "POST", headers: token ? { authorization: `Bearer ${token}` } : {} }).catch(() => null);
+  if (!res) fail("The studio isn't answering, so the cutout can't start. Try again in a moment.");
+  if (!res.ok) fail((await res.json().catch(() => null))?.error ?? "The studio couldn't start the cutout.");
+  let said = "";
+  const until = Date.now() + 20 * 60_000;
+  while (Date.now() < until) {
+    const now = made();
+    if (now.cutout && !now.cutting) return console.log(`Cut out: "${now.name ?? mid}". Set "cutout": true on its clips; what's beneath them shows round the person.`);
+    if (!now.cutting && now.error) fail(now.error);
+    if (now.step && now.step !== said) console.log((said = now.step));
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  fail("The cutout is taking a long time. It carries on in the studio; run this again later to see if it's done.");
+}
+
 // ─── Run ────────────────────────────────────────────────────────────────────
 
 const commands = {
@@ -288,6 +323,7 @@ const commands = {
   scenes: () => scenes(rest[0], rest[1]),
   frames: () => frames(rest[0], rest.slice(1)),
   faces: () => faces(rest[0], rest[1]),
+  cutout: () => cutout(rest[0]),
 };
 if (!commands[command]) fail(`Commands: ${Object.keys(commands).join(", ")}.`);
 await commands[command]();

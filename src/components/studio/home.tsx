@@ -16,6 +16,7 @@ import {
   SearchIcon,
   SidebarMenuIcon,
   Settings01Icon,
+  ThreeDObjectCubeIcon,
 } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
 import { RenameField } from "@/components/tool/rename";
@@ -36,7 +37,7 @@ import { useAttachments } from "./use-attachments";
 // the gestures (dragging films onto folders, library items onto films, ⌘Z);
 // these are the parts it draws with.
 
-export type Section = "home" | "library" | "kits" | "rules" | "settings";
+export type Section = "home" | "library" | "kits" | "effects" | "rules" | "settings";
 export type Way = "video" | "script" | "reel" | "slides";
 type Size = (typeof SIZES)[number];
 
@@ -214,6 +215,12 @@ export function SideNav({
           label="Brand kits"
           on={section === "kits"}
           onClick={() => onSection("kits")}
+        />
+        <NavRow
+          icon={<ThreeDObjectCubeIcon aria-hidden="true" />}
+          label="Effects"
+          on={section === "effects"}
+          onClick={() => onSection("effects")}
         />
       </ul>
 
@@ -633,6 +640,7 @@ const WAYS: { way: Way; label: string; note: string; art: ReactNode }[] = [
 
 export function Hero({
   folderName,
+  initial,
   busy,
   error,
   onStart,
@@ -640,13 +648,14 @@ export function Hero({
   onProblem,
 }: {
   folderName: string | null; // the open folder, where the film is filed
+  initial?: string; // a prompt to start from, such as an effect's
   busy: boolean;
   error: string | null;
   onStart: (prompt: string | null, width: number, height: number, files?: File[]) => void;
   onWay: (way: Way) => void;
   onProblem: (text: string) => void;
 }) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initial ?? "");
   const [size, setSize] = useState<Size>(SIZES[0]);
   // Files picked before the film exists; they go in once it does.
   const attached = useAttachments(null);
@@ -704,6 +713,7 @@ export function Hero({
           running={busy}
           glow
           held={over}
+          autoFocus={Boolean(initial)}
           maxRows={8}
           placeholder="A 6 second loop: lines rise like a staircase, then the wordmark appears"
           className="min-h-[124px] justify-between rounded-[20px] bg-[#171717] p-2.5 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)] has-[:focus-visible]:bg-[#1a1a1a]"

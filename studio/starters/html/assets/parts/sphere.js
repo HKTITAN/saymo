@@ -212,6 +212,9 @@
     // The layers: lines under everything, then the cards (stacked by depth
     // each frame), with the centre card at the sphere's middle depth.
     if (getComputedStyle(container).position === "static") container.style.position = "relative";
+    // Its own layer: cards stack by depth inside it, and nothing outside it
+    // (a cursor above the sphere, say) ends up beneath a card.
+    container.style.isolation = "isolate";
     const NS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("width", String(w));
