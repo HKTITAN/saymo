@@ -35,6 +35,7 @@ import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
 import { PromptBox } from "./prompt-box";
 import { keepDraft, makeReel, type Progress, readDraft, writeScript } from "./reel-api";
 import { RecordStep } from "./record-step";
+import { SlideMark, useSlide } from "./slide-mark";
 import { ACCEPTS, isMediaFile } from "./video-api";
 
 // Write a script, and Record a reel, from the studio's home page. One
@@ -60,12 +61,14 @@ const TEXT_BUTTON =
 export function ReelFlow({
   start,
   folder,
+  idea,
   onClose,
   onStartMotion,
   onOpenFilm,
 }: {
   start: "script" | "reel";
   folder: string | null;
+  idea?: string; // a topic to start from (an idea from the Ideas page)
   onClose: () => void;
   onStartMotion: (prompt: string, width: number, height: number) => void;
   onOpenFilm: (id: string, prompt: string, attach: File[]) => void;
@@ -173,6 +176,7 @@ export function ReelFlow({
       ) : (
         <ScriptStep
           start={start}
+          initialIdea={idea}
           script={script}
           setScript={setScript}
           onRecord={() => setStep("record")}
@@ -188,6 +192,7 @@ export function ReelFlow({
 
 function ScriptStep({
   start,
+  initialIdea,
   script,
   setScript,
   onRecord,
@@ -195,15 +200,19 @@ function ScriptStep({
   onMotion,
 }: {
   start: "script" | "reel";
+  initialIdea?: string;
   script: Script | null;
   setScript: (s: Script | null) => void;
   onRecord: () => void;
   onFootage: () => void;
   onMotion: (width: number, height: number) => void;
 }) {
-  const [idea, setIdea] = useState("");
+  const [idea, setIdea] = useState(initialIdea ?? "");
   const [seconds, setSeconds] = useState<number>(30);
   const [keep, setKeep] = useState(false);
+  // The layout every beat starts with (a beat can change its own after).
+  const [layout, setLayout] = useState<ReelLayout>("split");
+  const laidOut = (beats: Beat[]) => (layout === "split" ? beats : beats.map((b) => (b.layout ? b : { ...b, layout })));
   const [keepTouched, setKeepTouched] = useState(false);
   const [writing, setWriting] = useState(false);
   const [status, setStatus] = useState("");
@@ -229,10 +238,10 @@ function ScriptStep({
         request,
         (event) => {
           if (event.kind === "step") setStatus(event.label);
-          else if (event.kind === "draft") setScript(event.beats.length ? { title: event.title || "Untitled reel", beats: event.beats } : null);
+          else if (event.kind === "draft") setScript(event.beats.length ? { title: event.title || "Untitled reel", beats: laidOut(event.beats) } : null);
           else if (event.kind === "done") {
             done = true;
-            setScript(event.script);
+            setScript(event.script ? { ...event.script, beats: laidOut(event.script.beats) } : event.script);
           } else if (event.kind === "error") setError(event.message);
         },
         controller.signal,
@@ -258,7 +267,8 @@ function ScriptStep({
   // Before there's a script: what it's about.
   if (!script && !writing) {
     return (
-      <section aria-labelledby="script-title" className={cn(CARD, "flex w-full max-w-[600px] flex-col gap-4 p-5")}>
+      <div className="flex w-full max-w-[600px] flex-col gap-3">
+      <section aria-labelledby="script-title" className={cn(CARD, "flex w-full flex-col gap-4 p-5")}>
         <div className="flex flex-col gap-1.5">
           <h1 id="script-title" className="font-medium text-[15px] text-white/95">
             {heading}
@@ -299,23 +309,25 @@ function ScriptStep({
               onChange={(v) => setSeconds(Number(v))}
             />
           )}
+          <Segmented
+            label="Layout"
+            value={layout}
+            options={[
+              ["split", "Split"],
+              ["popout", "Pop-out"],
+            ]}
+            onChange={(v) => setLayout(v === "popout" ? "popout" : "split")}
+          />
         </div>
         {error ? <p className="text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
-        {saved || start === "reel" ? (
-          <div className="flex flex-wrap gap-x-4 gap-y-2">
-            {saved ? (
-              <button type="button" className={TEXT_BUTTON} onClick={() => setScript(saved)}>
-                Open your last storyboard ({saved.beats.length} beats)
-              </button>
-            ) : null}
-            {start === "reel" ? (
-              <button type="button" className={TEXT_BUTTON} onClick={onFootage}>
-                Use videos I already have
-              </button>
-            ) : null}
-          </div>
+        {start === "reel" ? (
+          <button type="button" className={cn(TEXT_BUTTON, "self-start")} onClick={onFootage}>
+            Use videos I already have
+          </button>
         ) : null}
       </section>
+      {saved ? <LastStoryboard script={saved} onOpen={() => setScript(saved)} /> : null}
+      </div>
     );
   }
 
@@ -650,7 +662,39 @@ function Editable({
   );
 }
 
-// A choice of a few, as a DialKit-style row of quiet pills.
+// The storyboard made last time, as its own small card under the start
+// card: its title, a little grid with a tile per beat, and Open.
+function LastStoryboard({ script, onOpen }: { script: Script; onOpen: () => void }) {
+  const count = script.beats.length;
+  return (
+    <section
+      aria-label="Your last storyboard"
+      className={cn(
+        CARD,
+        "flex items-center gap-3 p-2.5 ps-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-2 motion-safe:delay-75 motion-safe:duration-300 motion-safe:fill-mode-backwards",
+      )}
+    >
+      <span aria-hidden="true" className="grid size-10 shrink-0 grid-cols-4 content-center gap-[3px] rounded-[10px] bg-white/[0.06] p-[7px]">
+        {Array.from({ length: Math.min(count, 8) }, (_, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: the tiles stand for beats by their place
+          <span key={i} className={cn("h-[7px] rounded-[2px]", i === 0 ? "bg-white/60" : "bg-white/25")} />
+        ))}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate text-[12.5px] text-white/90">{script.title || "Untitled reel"}</span>
+        <span className="text-[11.5px] text-white/45">
+          Your last storyboard, <span className="tabular-nums">{count}</span> {count === 1 ? "beat" : "beats"}
+        </span>
+      </span>
+      <button type="button" className={SECONDARY} onClick={onOpen}>
+        Open
+      </button>
+    </section>
+  );
+}
+
+// A choice of a few, as a DialKit-style row of quiet pills; the highlight
+// slides to the new pick.
 function Segmented({
   label,
   value,
@@ -662,20 +706,23 @@ function Segmented({
   options: readonly (readonly [string, ReactNode])[];
   onChange: (v: string) => void;
 }) {
+  const slide = useSlide(Math.max(0, options.findIndex(([k]) => k === value)));
   return (
     <div className="flex items-center gap-2">
       <span className="text-[12px] text-white/45">{label}</span>
-      <div className="flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="radiogroup" aria-label={label}>
-        {options.map(([k, text]) => (
+      <div className="relative flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="radiogroup" aria-label={label}>
+        <SlideMark mark={slide.mark} className="rounded-[8px] bg-white/[0.13]" />
+        {options.map(([k, text], i) => (
           <button
             key={k}
+            ref={slide.ref(i)}
             type="button"
             role="radio"
             aria-checked={value === k}
             onClick={() => onChange(k)}
             className={cn(
-              "h-7 cursor-pointer rounded-[8px] px-2.5 text-[12px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-              value === k ? "bg-white/[0.13] text-white" : "text-white/50 hover:text-white/80",
+              "relative h-7 cursor-pointer rounded-[8px] px-2.5 text-[12px] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
+              value === k ? cn("text-white", !slide.mark && "bg-white/[0.13]") : "text-white/50 hover:text-white/80",
             )}
           >
             {text}

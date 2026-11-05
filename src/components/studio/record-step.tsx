@@ -31,7 +31,7 @@ import { installSpeech, type Listener, listen, type SpeechSupport, speechSupport
 // Space starts (after 3, 2, 1) and stops; Esc closes, asking once before a
 // take is thrown away.
 
-type Phase = "live" | "countdown" | "recording" | "review";
+type Phase = "live" | "countdown" | "recording" | "paused" | "review";
 type Device = { id: string; label: string };
 type Take = { file: File; url: string; seconds: number };
 
@@ -236,11 +236,16 @@ export function RecordStep({
   const recorder = useRef<MediaRecorder | null>(null);
   const countdown = useRef<ReturnType<typeof setInterval> | null>(null);
   const started = useRef(0);
+  // Time spent paused, left out of the take's clock; and what a countdown leads to.
+  const pausedFor = useRef(0);
+  const pausedAt = useRef(0);
+  const after = useRef<"begin" | "resume">("begin");
+  const [resuming, setResuming] = useState(false); // the countdown leads back into a paused take
 
   useEffect(
     () => () => {
       if (countdown.current) clearInterval(countdown.current);
-      if (recorder.current?.state === "recording") {
+      if (recorder.current && recorder.current.state !== "inactive") {
         recorder.current.onstop = null;
         recorder.current.stop();
       }
@@ -251,7 +256,7 @@ export function RecordStep({
 
   useEffect(() => {
     if (phase !== "recording") return;
-    const t = setInterval(() => setElapsed((Date.now() - started.current) / 1000), 250);
+    const t = setInterval(() => setElapsed((Date.now() - started.current - pausedFor.current) / 1000), 250);
     return () => clearInterval(t);
   }, [phase]);
 
@@ -278,21 +283,25 @@ export function RecordStep({
       const ext = blobType.includes("mp4") ? "mp4" : "webm";
       const stamp = new Date().toISOString().slice(0, 16).replace("T", " ").replace(":", ".");
       const file = new File([blob], `Take ${stamp}.${ext}`, { type: blob.type });
-      setTake({ file, url: URL.createObjectURL(blob), seconds: (Date.now() - started.current) / 1000 });
+      setTake({ file, url: URL.createObjectURL(blob), seconds: (Date.now() - started.current - pausedFor.current) / 1000 });
       setPhase("review");
     };
     recorder.current = rec;
     setPos(0);
     setRecordError(null);
     started.current = Date.now();
+    pausedFor.current = 0;
     setElapsed(0);
     rec.start(1000);
     setPhase("recording");
     startListening();
   };
 
+  // 3, 2, 1, then the take starts, or carries on after a pause.
   const startCountdown = () => {
-    if (!stream || phase !== "live") return;
+    if (!stream || (phase !== "live" && phase !== "paused")) return;
+    after.current = phase === "paused" ? "resume" : "begin";
+    setResuming(phase === "paused");
     setCount(3);
     setPhase("countdown");
     let n = 3;
@@ -302,18 +311,37 @@ export function RecordStep({
       else {
         if (countdown.current) clearInterval(countdown.current);
         countdown.current = null;
-        begin();
+        if (after.current === "resume") carryOn();
+        else begin();
       }
     }, 1000);
   };
   const cancelCountdown = () => {
     if (countdown.current) clearInterval(countdown.current);
     countdown.current = null;
-    setPhase("live");
+    setPhase(after.current === "resume" ? "paused" : "live");
+  };
+  // A pause holds the take where it is, prompter and clock included.
+  const pause = () => {
+    if (recorder.current?.state !== "recording") return;
+    recorder.current.pause();
+    stopListening();
+    pausedAt.current = Date.now();
+    setPhase("paused");
+  };
+  const carryOn = () => {
+    if (recorder.current?.state !== "paused") return;
+    pausedFor.current += Date.now() - pausedAt.current;
+    recorder.current.resume();
+    setPhase("recording");
+    startListening();
   };
   const stop = () => {
     stopListening();
-    if (recorder.current?.state === "recording") recorder.current.stop();
+    const rec = recorder.current;
+    if (!rec || rec.state === "inactive") return;
+    if (rec.state === "paused") pausedFor.current += Date.now() - pausedAt.current;
+    rec.stop();
   };
   const retake = () => {
     setTake(null);
@@ -358,10 +386,10 @@ export function RecordStep({
         if (e.defaultPrevented) return;
         e.preventDefault();
         if (phase === "countdown") return cancelCountdown();
-        if (phase === "recording" || phase === "review") {
+        if (phase === "recording" || phase === "paused" || phase === "review") {
           // Asked once; a second Esc throws the take away.
           if (asking) {
-            if (phase === "recording" && recorder.current) recorder.current.onstop = null;
+            if ((phase === "recording" || phase === "paused") && recorder.current) recorder.current.onstop = null;
             stop();
             onClose();
           } else setAsking(true);
@@ -375,8 +403,12 @@ export function RecordStep({
         e.preventDefault();
         if (phase === "live") startCountdown();
         else if (phase === "countdown") cancelCountdown();
-        else if (phase === "recording") stop();
+        else if (phase === "recording" || phase === "paused") stop();
         else if (phase === "review") toggleTake();
+      } else if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        if (phase === "recording") pause();
+        else if (phase === "paused") startCountdown();
       } else if ((e.key === "ArrowDown" || e.key === "ArrowRight") && phase !== "review") {
         e.preventDefault();
         jump(1);
@@ -409,7 +441,7 @@ export function RecordStep({
     <div className="absolute inset-0 bg-[#0b0b0b]">
       {/* Top corners: back to the script, and close. */}
       <div className="absolute top-4 left-4 z-10">
-        <button type="button" onClick={onBack} disabled={phase === "recording"} className={cn(CARD, PILL_BUTTON, "h-11 rounded-[14px] px-4 text-white/80 hover:text-white")}>
+        <button type="button" onClick={onBack} disabled={phase === "recording" || phase === "paused"} className={cn(CARD, PILL_BUTTON, "h-11 rounded-[14px] px-4 text-white/80 hover:text-white")}>
           <ArrowLeftIcon aria-hidden="true" />
           Back to the script
         </button>
@@ -477,9 +509,10 @@ export function RecordStep({
             </div>
           ) : null}
 
-          {phase === "recording" ? (
+          {phase === "recording" || phase === "paused" ? (
             <div className="absolute right-3 bottom-3 flex h-7 items-center gap-2 rounded-full bg-black/55 px-3 text-[12px] backdrop-blur-md">
-              <span className="size-2 animate-pulse rounded-full bg-[#ff5f57]" aria-hidden="true" />
+              <span className={cn("size-2 rounded-full", phase === "paused" ? "bg-[#febc2e]" : "animate-pulse bg-[#ff5f57]")} aria-hidden="true" />
+              {phase === "paused" ? <span className="text-white/70">Paused</span> : null}
               <span className="text-white/90 tabular-nums">{clock(elapsed)}</span>
             </div>
           ) : null}
@@ -522,20 +555,36 @@ export function RecordStep({
                 type="button"
                 disabled={!stream}
                 onClick={() => (phase === "live" ? startCountdown() : phase === "countdown" ? cancelCountdown() : stop())}
-                aria-label={phase === "recording" ? "Stop recording" : phase === "countdown" ? "Cancel the countdown" : "Start recording"}
+                aria-label={phase === "recording" || phase === "paused" ? "Stop recording" : phase === "countdown" ? "Cancel the countdown" : "Start recording"}
                 className="group/rec flex size-14 cursor-pointer items-center justify-center rounded-full shadow-[inset_0_0_0_3px_rgba(255,255,255,0.85)] outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
               >
                 <span
                   aria-hidden="true"
                   className={cn(
                     "bg-[#ff5f57] transition-[width,height,border-radius] duration-200 ease-out",
-                    phase === "recording" ? "size-5 rounded-[5px]" : "size-10 rounded-full group-hover/rec:size-9",
+                    phase === "recording" || phase === "paused" || (phase === "countdown" && resuming) ? "size-5 rounded-[5px]" : "size-10 rounded-full group-hover/rec:size-9",
                   )}
                 />
               </button>
+              {phase === "recording" || phase === "paused" ? (
+                <button
+                  type="button"
+                  onClick={phase === "recording" ? pause : startCountdown}
+                  aria-label={phase === "recording" ? "Pause recording" : "Resume recording"}
+                  className="flex size-11 cursor-pointer items-center justify-center rounded-full bg-white/[0.08] text-white/85 outline-none transition-colors hover:bg-white/[0.13] hover:text-white focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-6"
+                >
+                  {phase === "recording" ? <PauseCircleIcon aria-hidden="true" /> : <PlayCircleIcon aria-hidden="true" />}
+                </button>
+              ) : null}
               <span className="flex items-center gap-1.5 text-[12px] text-white/45">
                 <Kbd>Space</Kbd>
-                {phase === "recording" ? "stops" : phase === "countdown" ? "cancels" : "starts recording"}
+                {phase === "recording" || phase === "paused" ? "stops" : phase === "countdown" ? "cancels" : "starts recording"}
+                {phase === "recording" || phase === "paused" ? (
+                  <>
+                    <Kbd className="ms-2">P</Kbd>
+                    {phase === "recording" ? "pauses" : "picks up after 3, 2, 1"}
+                  </>
+                ) : null}
               </span>
             </>
           )}
@@ -546,8 +595,8 @@ export function RecordStep({
       {/* Settings, floating at the side. */}
       <aside aria-label="Prompter settings" className={cn(CARD, "absolute top-20 right-4 hidden w-[264px] flex-col gap-3 p-3 lg:flex")}>
         <DialGroup title="Camera and sound">
-          <DeviceRow label="Camera" icon={<VideoCallIcon aria-hidden="true" />} devices={cameras} value={currentCamera ?? null} disabled={phase === "recording"} onChange={(camera) => setPrefs({ camera })} />
-          <DeviceRow label="Microphone" icon={<MicOnIcon aria-hidden="true" />} devices={mics} value={currentMic ?? null} disabled={phase === "recording"} onChange={(mic) => setPrefs({ mic })} />
+          <DeviceRow label="Camera" icon={<VideoCallIcon aria-hidden="true" />} devices={cameras} value={currentCamera ?? null} disabled={phase === "recording" || phase === "paused"} onChange={(camera) => setPrefs({ camera })} />
+          <DeviceRow label="Microphone" icon={<MicOnIcon aria-hidden="true" />} devices={mics} value={currentMic ?? null} disabled={phase === "recording" || phase === "paused"} onChange={(mic) => setPrefs({ mic })} />
           <div className="h-1 overflow-hidden rounded-full bg-white/[0.06]" aria-hidden="true">
             <span ref={meter} className="block h-full origin-left scale-x-0 bg-white/50 transition-transform duration-75" />
           </div>

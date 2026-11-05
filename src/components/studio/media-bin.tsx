@@ -1,15 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { DeleteDustbin01Icon, LayerThreeIcon, MusicBeamNoteIcon, UploadUpIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
 import type { GraphicInfo, Media } from "@/lib/studio/edit";
 import { cn } from "@/lib/utils";
 import { StudioError } from "./api";
-import { formatTime } from "./clock";
 import { libraryApi } from "./library-api";
 import { Hint, ICON_BUTTON, PILL_BUTTON, Panel } from "./panel";
 import { SaveToLibrary } from "./save-to-library";
+import { SlideMark, useSlide } from "./slide-mark";
 import type { EditState } from "./use-edit";
 import { ACCEPTS, mediaUrl, videoApi } from "./video-api";
 import { VoiceoverButton } from "./voiceover";
@@ -43,6 +43,7 @@ export function MediaBin({
   style?: React.CSSProperties;
 }) {
   const [tab, setTab] = useState<"footage" | "graphics">("footage");
+  const tabs = useSlide(tab === "footage" ? 0 : 1);
   const [error, setError] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
   const used = new Set(ed.edit?.tracks.flatMap((t) => t.items.map((i) => (i.type === "clip" ? i.media : ""))) ?? []);
@@ -93,17 +94,19 @@ export function MediaBin({
         }}
       />
 
-      <div className="mx-3 mb-2 flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="tablist" aria-label="Footage or graphics">
-        {(["footage", "graphics"] as const).map((k) => (
+      <div className="relative mx-3 mb-2 flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="tablist" aria-label="Footage or graphics">
+        <SlideMark mark={tabs.mark} className="rounded-[8px] bg-white/[0.13]" />
+        {(["footage", "graphics"] as const).map((k, i) => (
           <button
             key={k}
+            ref={tabs.ref(i)}
             type="button"
             role="tab"
             aria-selected={tab === k}
             onClick={() => setTab(k)}
             className={cn(
-              "h-7 flex-1 cursor-pointer rounded-[8px] text-[12px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-              tab === k ? "bg-white/[0.13] text-white" : "text-white/50 hover:text-white/80",
+              "relative h-7 flex-1 cursor-pointer rounded-[8px] text-[12px] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
+              tab === k ? cn("text-white", !tabs.mark && "bg-white/[0.13]") : "text-white/50 hover:text-white/80",
             )}
           >
             {k === "footage" ? "Footage" : "Graphics"}
@@ -219,6 +222,34 @@ export function MediaBin({
   );
 }
 
+// The row's picture, in px (w-16 h-10).
+const THUMB_W = 64;
+const THUMB_H = 40;
+
+// "0:53" or "12:07": whole seconds are enough here (the timeline shows hundredths).
+const length = (t: number) => {
+  const s = Math.max(1, Math.round(t));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
+// "Take 2026-11-05 20.33" and ".mp4", so the extension can sit quieter.
+const splitName = (name: string) => {
+  const dot = name.lastIndexOf(".");
+  return dot > 0 && name.length - dot <= 6 ? { stem: name.slice(0, dot), ext: name.slice(dot) } : { stem: name, ext: "" };
+};
+
+// Where the picture sits in the timeline strip (media.ts thumbStrip: a frame
+// every `thumbEvery` seconds): 2/5 of the way in rather than the first
+// frame, since a recording often opens on black. Tall frames show a run of
+// them side by side, as many as fit.
+function stripOffset(media: Media, aspect: number) {
+  const frame = THUMB_H * aspect;
+  const frames = media.duration && media.thumbEvery ? Math.max(1, Math.ceil(media.duration / media.thumbEvery)) : 1;
+  const at = Math.floor(frames * 0.4);
+  if (frame >= THUMB_W) return -(Math.min(frames - 1, at) * frame) - (frame - THUMB_W) / 2;
+  return -(Math.max(0, Math.min(at, frames - Math.ceil(THUMB_W / frame))) * frame);
+}
+
 function MediaRow({
   id,
   media,
@@ -235,6 +266,26 @@ function MediaRow({
   const ready = media.status === "ready";
   const thumb = media.thumbs ? mediaUrl(id, media.id, media.thumbs) : null;
   const aspect = media.width && media.height ? media.width / media.height : 16 / 9;
+  const { stem, ext } = splitName(media.name);
+  // What's worth knowing at a glance, quietest last.
+  const facts: ReactNode[] = [];
+  if (used) {
+    facts.push(
+      <span key="used" className="flex shrink-0 items-center gap-1 text-white/60">
+        <span aria-hidden="true" className="size-1.5 rounded-full bg-[#5fd59c]" />
+        In the film
+      </span>,
+    );
+  }
+  if (media.transcript) facts.push(<span key="words" className="shrink-0">Transcript</span>);
+  if (media.kind === "image") facts.push(<span key="kind">Photo</span>);
+  else if (!used && media.width && media.height) {
+    facts.push(
+      <span key="size" className="truncate tabular-nums">
+        {media.width} × {media.height}
+      </span>,
+    );
+  } else if (media.kind === "audio" && !facts.length) facts.push(<span key="kind">Sound</span>);
   return (
     <div className="group relative">
       <button
@@ -247,29 +298,32 @@ function MediaRow({
         }}
         onDoubleClick={() => ready && onAdd()}
         className={cn(
-          "flex min-h-12 w-full items-center gap-2.5 rounded-[10px] px-2 py-1.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+          "flex min-h-12 w-full items-center gap-2.5 rounded-[10px] px-1.5 py-1 text-left outline-none transition-colors focus-visible:bg-white/[0.07] focus-visible:ring-1 focus-visible:ring-white/15 focus-visible:ring-inset",
           ready ? "cursor-grab hover:bg-white/[0.06] active:cursor-grabbing" : "cursor-default",
         )}
         aria-label={ready ? `${media.name}. Double-click to add it at the playhead` : media.name}
       >
-        <span className="relative flex h-9 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-white/[0.07] text-white/45">
-          {thumb && media.kind !== "audio" ? (
+        <span className="relative flex h-10 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[7px] bg-white/[0.07] text-white/45">
+          {thumb && media.kind === "image" ? (
+            <span className="absolute inset-0 bg-center bg-cover" style={{ backgroundImage: `url(${thumb})` }} />
+          ) : thumb && media.kind === "video" ? (
             <span
-              className="absolute inset-0 bg-cover bg-left bg-no-repeat"
-              style={{ backgroundImage: `url(${thumb})`, backgroundSize: `auto 100%`, aspectRatio: aspect }}
+              className="absolute inset-0 bg-no-repeat"
+              style={{ backgroundImage: `url(${thumb})`, backgroundSize: "auto 100%", backgroundPosition: `${stripOffset(media, aspect)}px 0` }}
             />
           ) : media.kind === "audio" ? (
             <MusicBeamNoteIcon aria-hidden="true" className="size-4" />
           ) : null}
+          {media.kind !== "image" && media.duration ? (
+            <span className="absolute right-1 bottom-1 rounded-[4px] bg-black/70 px-[3px] text-[9.5px] text-white/90 leading-[13px] tabular-nums">
+              {length(media.duration)}
+            </span>
+          ) : null}
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate text-[12px] text-white/85">{media.name}</span>
-            {media.transcript ? (
-              <Hint label="Has a transcript">
-                <span className="size-1.5 shrink-0 rounded-full bg-white/70" aria-label="Has a transcript" />
-              </Hint>
-            ) : null}
+          <span className="flex min-w-0 items-baseline">
+            <span className="truncate text-[12px] text-white/85">{stem}</span>
+            {ext ? <span className="shrink-0 text-[12px] text-white/30">{ext}</span> : null}
           </span>
           {media.status === "importing" ? (
             // One line that changes in place as the import moves on.
@@ -280,25 +334,34 @@ function MediaRow({
             <span className="truncate text-[11.5px] text-[#ff9592]">{media.error ?? "Unable to read this file"}</span>
           ) : media.transcribing ? (
             <span className="studio-shimmer truncate text-[11.5px] text-white/50">Writing down what’s said</span>
-          ) : (
-            <span className="text-[11px] text-white/40 tabular-nums">
-              {media.kind === "image" ? "Photo" : media.duration ? formatTime(media.duration) : ""}
-              {used ? <span className="ms-1.5 font-sans text-white/30">In the film</span> : null}
+          ) : facts.length ? (
+            <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-white/40">
+              {facts.flatMap((fact, i) =>
+                i
+                  ? [
+                      <span key={`dot${String(i)}`} aria-hidden="true" className="text-white/20">
+                        ·
+                      </span>,
+                      fact,
+                    ]
+                  : [fact],
+              )}
             </span>
-          )}
+          ) : null}
         </span>
       </button>
       {media.status !== "importing" ? (
-        <span className="absolute end-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-[8px] bg-[#1c1c1c]/90 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+        // Save and remove, on hover: a small toolbar floating over the row's end.
+        <span className="absolute end-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-[9px] bg-[#262626] p-0.5 opacity-0 shadow-[0_4px_12px_rgba(0,0,0,0.45)] transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">
           {ready ? (
             <SaveToLibrary
-              className="size-7 rounded-[8px] [&_svg]:size-4"
+              className="size-7 rounded-[7px] [&_svg]:size-4"
               save={() => libraryApi.fromFilm({ film: id, media: media.id })}
             />
           ) : null}
           {!used ? (
             <Hint label={`Remove ${media.name}`}>
-              <button type="button" onClick={onRemove} aria-label={`Remove ${media.name}`} className={ICON_BUTTON}>
+              <button type="button" onClick={onRemove} aria-label={`Remove ${media.name}`} className={cn(ICON_BUTTON, "size-7 rounded-[7px]")}>
                 <DeleteDustbin01Icon aria-hidden="true" />
               </button>
             </Hint>

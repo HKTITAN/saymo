@@ -36,6 +36,10 @@
       "name": "bot",
       "variant": "stroke"
     },
+    "bulb-on": {
+      "name": "bulb-on",
+      "variant": "stroke"
+    },
     "calendar-default": {
       "name": "calendar-default",
       "variant": "stroke"
@@ -120,6 +124,10 @@
       "name": "grid-dashboard-02",
       "variant": "stroke"
     },
+    "grid-dashboard-02-solid": {
+      "name": "grid-dashboard-02",
+      "variant": "solid"
+    },
     "home-default": {
       "name": "home-default",
       "variant": "stroke"
@@ -171,6 +179,10 @@
     "pencil-edit": {
       "name": "pencil-edit",
       "variant": "stroke"
+    },
+    "phone-solid": {
+      "name": "phone",
+      "variant": "solid"
     },
     "photo-image-default": {
       "name": "photo-image-default",
@@ -227,6 +239,10 @@
     "video-call-default": {
       "name": "video-call-default",
       "variant": "stroke"
+    },
+    "video-call-default-solid": {
+      "name": "video-call-default",
+      "variant": "solid"
     }
   }
 }

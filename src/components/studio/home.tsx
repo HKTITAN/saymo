@@ -15,8 +15,8 @@ import {
   PlusIcon,
   SearchIcon,
   SidebarMenuIcon,
-  Settings01Icon,
   ThreeDObjectCubeIcon,
+  BulbOnIcon,
 } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
 import { RenameField } from "@/components/tool/rename";
@@ -26,6 +26,7 @@ import { LIBRARY_DRAG } from "@/lib/studio/references-shared";
 import { cn } from "@/lib/utils";
 import { ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, VideoDoodle } from "./doodles";
 import { FolderMenu, ITEM, MENU_POPUP, useSpringOpen } from "./home-parts";
+import { AccountRow } from "./account-panel";
 import { cachedLibrary, filesFor } from "./library-api";
 import { Hint } from "./panel";
 import { PromptBox } from "./prompt-box";
@@ -37,7 +38,7 @@ import { useAttachments } from "./use-attachments";
 // the gestures (dragging films onto folders, library items onto films, ⌘Z);
 // these are the parts it draws with.
 
-export type Section = "home" | "library" | "kits" | "effects" | "rules" | "settings";
+export type Section = "home" | "library" | "kits" | "effects" | "ideas" | "rules" | "settings";
 export type Way = "video" | "script" | "reel" | "slides";
 type Size = (typeof SIZES)[number];
 
@@ -222,6 +223,8 @@ export function SideNav({
           on={section === "effects"}
           onClick={() => onSection("effects")}
         />
+        <NavRow icon={<BulbOnIcon aria-hidden="true" />} label="Ideas" on={section === "ideas"} onClick={() => onSection("ideas")} />
+        <NavRow icon={<FileIcon aria-hidden="true" />} label="Rules" on={section === "rules"} onClick={() => onSection("rules")} />
       </ul>
 
       <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -296,20 +299,8 @@ export function SideNav({
         ) : null}
       </div>
 
-      <ul className="flex flex-col gap-0.5">
-        <NavRow
-          icon={<FileIcon aria-hidden="true" />}
-          label="Rules"
-          on={section === "rules"}
-          onClick={() => onSection("rules")}
-        />
-        <NavRow
-          icon={<Settings01Icon aria-hidden="true" />}
-          label="Settings"
-          on={section === "settings"}
-          onClick={() => onSection("settings")}
-        />
-      </ul>
+      {/* Settings opens from here, the one way in. */}
+      <AccountRow on={section === "settings"} onSettings={() => onSection("settings")} />
       </div>
       </div>
     </nav>

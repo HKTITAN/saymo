@@ -33,6 +33,7 @@ import { LibraryView } from "./library";
 import { cachedLibrary, filesFor } from "./library-api";
 import { ago, Confirm, DANGER_ITEM, Empty, everyMinute, FolderCard, ITEM, MENU_POPUP, thisMinute } from "./home-parts";
 import { EffectsPage } from "./effects";
+import { IdeasPage } from "./ideas-page";
 import { EmptyStages, FilmStage, Hero, type Section, SideNav, SortMenu } from "./home";
 import { SettingsPage } from "./settings-page";
 import { CARD, Hint, ICON_BUTTON, PILL_BUTTON } from "./panel";
@@ -57,8 +58,8 @@ type Tab = "films" | "library";
 const tabFromUrl = (): Tab => (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("library") ? "library" : "films");
 // Brand kits, Effects, Rules and Settings, kept in the address too
 // (/studio?settings), so a reload or a link lands on the same page.
-type Aside = null | "kits" | "effects" | "rules" | "settings";
-const ASIDES = ["kits", "effects", "rules", "settings"] as const;
+type Aside = null | "kits" | "effects" | "ideas" | "rules" | "settings";
+const ASIDES = ["kits", "effects", "ideas", "rules", "settings"] as const;
 const asideFromUrl = (): Aside => {
   if (typeof window === "undefined") return null;
   const q = new URLSearchParams(window.location.search);
@@ -186,8 +187,10 @@ export function Dashboard({
   const search = useRef<HTMLInputElement>(null);
   const now = useSyncExternalStore(everyMinute, thisMinute, () => 0);
   const [aside, setAsideState] = useState<Aside>(asideFromUrl);
-  // A prompt for Home's box, from an effect picked on the Effects page; its key starts the box afresh.
+  // A prompt for Home's box, from an effect or an idea picked; its key starts the box afresh.
   const [seed, setSeed] = useState<{ text: string; key: number } | null>(null);
+  // A reel idea from the Ideas page, as the reel card's topic.
+  const [reelIdea, setReelIdea] = useState<string | null>(null);
   const setAside = useCallback((next: Aside) => {
     setAsideState(next);
     if (!next) return;
@@ -375,7 +378,7 @@ export function Dashboard({
 
   const section: Section = aside ?? (tab === "library" ? "library" : "home");
   const goSection = (s: Section) => {
-    setAside(s === "kits" || s === "effects" || s === "rules" || s === "settings" ? s : null);
+    setAside(s === "kits" || s === "effects" || s === "ideas" || s === "rules" || s === "settings" ? s : null);
     if (s === "home" || s === "library") setTab(s === "library" ? "library" : "films");
   };
   const everyFilm =
@@ -589,6 +592,19 @@ export function Dashboard({
               }}
             />
           ) : null}
+          {section === "ideas" ? (
+            <IdeasPage
+              onMake={(idea) => {
+                if (idea.kind === "reel") {
+                  setReelIdea(idea.text);
+                  setOverlay("reel");
+                  return;
+                }
+                setSeed({ text: idea.kind === "demo" ? `A product demo: ${idea.text}` : `A video: ${idea.text}`, key: Date.now() });
+                goSection("home");
+              }}
+            />
+          ) : null}
           {section === "rules" ? <RulesPage /> : null}
           {section === "settings" ? <SettingsPage /> : null}
         </div>
@@ -661,7 +677,11 @@ export function Dashboard({
             <ReelFlow
               start={overlay}
               folder={startIn?.id ?? null}
-              onClose={() => setOverlay(null)}
+              idea={overlay === "reel" ? (reelIdea ?? undefined) : undefined}
+              onClose={() => {
+                setOverlay(null);
+                setReelIdea(null);
+              }}
               onStartMotion={(prompt, w, h) => onStartFilm(prompt, w, h, startIn?.id ?? null)}
               onOpenFilm={onOpenNewFilm}
             />

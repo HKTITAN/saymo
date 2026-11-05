@@ -6,6 +6,7 @@ import { SIZES } from "@/lib/studio/contract";
 import { cn } from "@/lib/utils";
 import { CARD, PILL_BUTTON } from "./panel";
 import { PromptBox } from "./prompt-box";
+import { Glide, SlideMark, useSlide } from "./slide-mark";
 import { useAttachments } from "./use-attachments";
 import { ACCEPTS, isMediaFile } from "./video-api";
 
@@ -60,6 +61,9 @@ export function FirstFilm({
   const [size, setSize] = useState<(typeof SIZES)[number]>(link?.size ?? SIZES[0]);
   const [over, setOver] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
+  // Each switch's highlight slides to the new pick.
+  const how = useSlide(kind === "video" ? 0 : 1);
+  const sized = useSlide(Math.max(0, SIZES.findIndex((s) => s.label === size.label)));
 
   const take = (list: FileList | null) => {
     const files = [...(list ?? [])].filter(isMediaFile);
@@ -79,41 +83,46 @@ export function FirstFilm({
           </p>
         </div>
 
-        <div className="flex gap-1 rounded-[12px] bg-white/[0.04] p-1" role="tablist" aria-label="How to start">
+        <div className="relative flex gap-1 rounded-[12px] bg-white/[0.04] p-1" role="tablist" aria-label="How to start">
+          <SlideMark mark={how.mark} className="rounded-[9px] bg-white/[0.11]" />
           {(
             [
               ["video", "Edit a video", "Footage, photos and music"],
               ["motion", "Make motion graphics", "Described in words"],
             ] as const
-          ).map(([k, label, note]) => (
+          ).map(([k, label, note], i) => (
             <button
               key={k}
+              ref={how.ref(i)}
               type="button"
               role="tab"
               aria-selected={kind === k}
               onClick={() => setKind(k)}
               className={cn(
-                "flex flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-[9px] px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                kind === k ? "bg-white/[0.11]" : "hover:bg-white/[0.05]",
+                "relative flex flex-1 cursor-pointer flex-col items-start gap-0.5 rounded-[9px] px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                kind === k ? !how.mark && "bg-white/[0.11]" : "hover:bg-white/[0.05]",
               )}
             >
-              <span className={cn("font-medium text-[12.5px]", kind === k ? "text-white" : "text-white/65")}>{label}</span>
+              <span className={cn("font-medium text-[12.5px] transition-colors duration-200", kind === k ? "text-white" : "text-white/65")}>{label}</span>
               <span className="text-[11.5px] text-white/40">{note}</span>
             </button>
           ))}
         </div>
 
-        <div className="flex gap-1" role="radiogroup" aria-label="Size">
-          {SIZES.map((s) => (
+        <div className="relative flex gap-1" role="radiogroup" aria-label="Size">
+          {/* Over each tile's own faint fill, so the picked one reads as before. */}
+          <SlideMark mark={sized.mark} className="rounded-[10px] bg-white/[0.085]" />
+          {SIZES.map((s, i) => (
             <button
               key={s.label}
+              ref={sized.ref(i)}
               type="button"
               role="radio"
               aria-checked={size.label === s.label}
               onClick={() => setSize(s)}
               className={cn(
-                "flex h-14 flex-1 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[10px] text-[11.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                size.label === s.label ? "bg-white/[0.12] text-white" : "bg-white/[0.04] text-white/50 hover:bg-white/[0.07] hover:text-white/80",
+                "relative flex h-14 flex-1 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[10px] bg-white/[0.04] text-[11.5px] outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
+                size.label === s.label ? cn("text-white", !sized.mark && "bg-white/[0.12]") : "text-white/50 hover:bg-white/[0.07] hover:text-white/80",
               )}
             >
               <span
@@ -129,6 +138,9 @@ export function FirstFilm({
           ))}
         </div>
 
+        {/* What each way needs: it fades in, and the card's height eases to fit. */}
+        <Glide at={kind}>
+        <div key={kind} className="flex flex-col gap-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300">
         {kind === "video" ? (
           <>
             <input
@@ -206,6 +218,8 @@ export function FirstFilm({
             </button>
           </>
         )}
+        </div>
+        </Glide>
         {error ? <p className="text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
       </section>
     </div>
