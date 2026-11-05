@@ -40,10 +40,12 @@ export type Media = {
   // with the sound kept. null until asked for (see startCutout in media.ts).
   cutout?: string | null;
   cutting?: boolean; // being made now; `step` says how far
+  cutoutCrisp?: boolean; // made with the crisp edge; an older, softer cutout is made again when next asked for
 };
 
 // A spoken word with its time in the SOURCE file.
-export type Word = { text: string; start: number; end: number; confidence?: number };
+// `hit`: a key word, shown in colour by the serif captions.
+export type Word = { text: string; start: number; end: number; confidence?: number; hit?: boolean };
 
 // ─── The edit ───────────────────────────────────────────────────────────────
 
@@ -73,8 +75,17 @@ export type Clip = {
   box?: Box;
   // Show the media's cutout (the person without their background) instead
   // of the whole picture, so what's beneath shows round them: the reel's
-  // pop-out, a speaker in front of the graphics.
+  // pop-out, where the speaker's head rises into the graphic.
   cutout?: boolean;
+  // The part of the frame the clip may show in, as 0..1 of the frame
+  // (missing = all of it): it's placed by `box` and its framing as usual,
+  // then cut to this. The pop-out uses it on two clips of one take framed
+  // alike: the take in the bottom strip, its cutout above the line.
+  window?: Box;
+  // Rounds the corners of the window (or, without one, of the box), as
+  // 0..0.25 of the frame's width; a corner that's the frame's own stays
+  // square. The pop-out's strip rounds its top corners this way.
+  radius?: number;
 };
 
 export type Box = { x: number; y: number; w: number; h: number };
@@ -112,7 +123,9 @@ export type Track = {
   items: (Clip | Graphic)[];
 };
 
-export type CaptionStyle = "words" | "lines" | "karaoke"; // one word, a line at a time, line with the spoken word lit
+// One word, a line at a time, a line with the spoken word lit, or one big
+// serif word at a time with the key words in colour.
+export type CaptionStyle = "words" | "lines" | "karaoke" | "serif";
 
 export type Edit = {
   version: 1;
@@ -124,6 +137,7 @@ export type Edit = {
     // and editable on their own (fixing a misheard word changes only this).
     words: Word[];
     position: "bottom" | "middle";
+    tag?: string; // a small series line under the captions: "SpendOS | Example 1/10"
   };
   background: string; // what shows where nothing covers the frame
 };

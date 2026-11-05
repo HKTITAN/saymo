@@ -29,7 +29,7 @@ export default function Film({ edit, media = {} }) {
         ),
       )}
       {edit.captions?.on ? (
-        <Captions words={edit.captions.words} style={edit.captions.style} position={edit.captions.position} />
+        <Captions words={edit.captions.words} style={edit.captions.style} position={edit.captions.position} tag={edit.captions.tag} />
       ) : null}
     </AbsoluteFill>
   );
@@ -105,10 +105,26 @@ function ClipBody({ clip, file, muted, soundOnly, length }) {
         style={{ ...framing(file, clip, bw, bh), objectFit: "cover", opacity }}
       />
     );
-  if (!box) return picture;
-  return (
-    <div style={{ position: "absolute", left: box.x * W, top: box.y * H, width: bw, height: bh, overflow: "hidden" }}>{picture}</div>
+  // Rounded corners go on the window when there is one, else on the box,
+  // all but the frame's own corners (which stay square).
+  const win = clip.window;
+  const radius = (clip.radius ?? 0) * W;
+  const round = (b) => {
+    const [l, t, r, d] = [b.x <= 0.001, b.y <= 0.001, b.x + b.w >= 0.999, b.y + b.h >= 0.999];
+    return [t && l, t && r, d && r, d && l].map((own) => `${own ? 0 : radius}px`).join(" ");
+  };
+  const placed = box ? (
+    <div style={{ position: "absolute", left: box.x * W, top: box.y * H, width: bw, height: bh, overflow: "hidden", borderRadius: win || !radius ? 0 : round(box) }}>
+      {picture}
+    </div>
+  ) : (
+    picture
   );
+  // A window cuts the placed clip to one part of the frame: the pop-out's
+  // bottom strip, or the space above its line where only the head shows.
+  if (!win) return placed;
+  const cut = [win.y, 1 - win.x - win.w, 1 - win.y - win.h, win.x].map((v) => `${Math.max(0, v) * 100}%`).join(" ");
+  return <AbsoluteFill style={{ clipPath: `inset(${cut}${radius ? ` round ${round(win)}` : ""})` }}>{placed}</AbsoluteFill>;
 }
 
 // A clip whose file isn't ready yet (still being brought in).

@@ -75,14 +75,24 @@ export async function checkEdit(id: string, body: unknown): Promise<Edit | strin
         if (!optNum(it.fadeIn, 0, 30) || !optNum(it.fadeOut, 0, 30)) return "Fades are 0 to 30 seconds.";
         if (!optNum(it.zoom, 1, 10)) return "Zoom goes from 1 to 10.";
         if (!optNum(it.x, 0, 1) || !optNum(it.y, 0, 1)) return "A clip's framing is between 0 and 1.";
+        if (!optNum(it.radius, 0, 0.25)) return "A clip's corner radius goes from 0 to 0.25 of the frame's width.";
         const clip: Clip = { id: it.id, type: "clip", media: m.id, start: it.start as number, from: it.from as number, to: it.to as number };
-        for (const k of ["speed", "volume", "fadeIn", "fadeOut", "zoom", "x", "y"] as const) {
+        for (const k of ["speed", "volume", "fadeIn", "fadeOut", "zoom", "x", "y", "radius"] as const) {
           if (it[k] !== undefined) clip[k] = it[k] as number;
         }
         if (it.box !== undefined) {
           const box = cleanBox(it.box);
           if (!box) return "A clip's box must sit inside the frame (x, y, w and h from 0 to 1).";
           clip.box = box;
+        }
+        if (it.cutout !== undefined) {
+          if (typeof it.cutout !== "boolean") return "A clip's cutout is true or false.";
+          if (it.cutout) clip.cutout = true;
+        }
+        if (it.window !== undefined) {
+          const shown = cleanBox(it.window);
+          if (!shown) return "A clip's window must sit inside the frame (x, y, w and h from 0 to 1).";
+          clip.window = shown;
         }
         items.push(clip);
       } else if (it.type === "graphic") {
@@ -110,11 +120,18 @@ export async function checkEdit(id: string, body: unknown): Promise<Edit | strin
     if (!Array.isArray(c.words) || c.words.length > 200000) return "The captions aren't readable.";
     for (const w of c.words) {
       if (!isObject(w) || typeof w.text !== "string" || !num(w.start, 0, LONGEST) || !num(w.end, 0, LONGEST)) return "One of the caption words isn't readable.";
-      words.push({ text: w.text.slice(0, 80), start: w.start as number, end: w.end as number, ...(num(w.confidence, 0, 1) ? { confidence: w.confidence as number } : {}) });
+      words.push({
+        text: w.text.slice(0, 80),
+        start: w.start as number,
+        end: w.end as number,
+        ...(num(w.confidence, 0, 1) ? { confidence: w.confidence as number } : {}),
+        ...(w.hit === true ? { hit: true } : {}),
+      });
     }
   }
-  const style = ["words", "lines", "karaoke"].includes(c.style as string) ? (c.style as Edit["captions"]["style"]) : "lines";
+  const style = ["words", "lines", "karaoke", "serif"].includes(c.style as string) ? (c.style as Edit["captions"]["style"]) : "lines";
   const position = c.position === "middle" ? "middle" : "bottom";
   const background = typeof body.background === "string" && /^#[0-9a-f]{6}$/i.test(body.background) ? body.background.toUpperCase() : "#141414";
-  return { version: 1, tracks, captions: { on: c.on === true, style, words, position }, background };
+  const tag = typeof c.tag === "string" ? c.tag.replace(/\s+/g, " ").trim().slice(0, 60) : "";
+  return { version: 1, tracks, captions: { on: c.on === true, style, words, position, ...(tag ? { tag } : {}) }, background };
 }

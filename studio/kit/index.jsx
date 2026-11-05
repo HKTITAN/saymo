@@ -227,16 +227,46 @@ export const WORDMARK_RATIO = WORDMARK.width / WORDMARK.height;
 //   lines    a line at a time
 //   words    one word at a time, big
 //   karaoke  a line at a time, the word being said in orange
-export function Captions({ words = [], style = "lines", position = "bottom" }) {
+// The serif captions' face: Apple's New York where the Mac has it.
+const SERIF = '"New York", "Iowan Old Style", Georgia, serif';
+
+export function Captions({ words = [], style = "lines", position = "bottom", tag = "" }) {
   const family = useBrandFont();
   const P = usePalette();
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;
   const t = frame / fps;
-  if (!words.length) return null;
+  if (!words.length && !tag) return null;
   const portrait = H > W;
   const bottom = position === "middle" ? undefined : Math.round(H * (portrait ? 0.2 : 0.09));
+  const place = bottom === undefined ? { top: "50%", transform: "translateY(-50%)" } : { bottom };
+  // The series tag, small under where the captions sit, all through the film.
+  const withTag = (caption) =>
+    tag ? (
+      <>
+        {caption}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            ...(bottom === undefined ? { top: `calc(50% + ${Math.round(66 * u)}px)` } : { bottom: bottom - Math.round(46 * u) }),
+            fontFamily: family,
+            fontWeight: 500,
+            fontSize: Math.round(26 * u),
+            color: "rgba(255,255,255,0.8)",
+            textShadow: `0 ${Math.round(2 * u)}px ${Math.round(10 * u)}px rgba(0,0,0,0.55)`,
+            pointerEvents: "none",
+          }}
+        >
+          {tag}
+        </div>
+      </>
+    ) : (
+      caption
+    );
   const box = (children, key) => (
     <div
       key={key}
@@ -271,16 +301,38 @@ export function Captions({ words = [], style = "lines", position = "bottom" }) {
     </div>
   );
 
+  if (style === "serif") {
+    // One big word at a time, no box, a soft shadow; key words in colour.
+    const w = words.find((x, i) => t >= x.start && t < Math.max(x.end, words[i + 1]?.start ?? x.end));
+    return withTag(
+      w ? (
+        <div key="s" style={{ position: "absolute", left: 0, right: 0, ...place, display: "flex", justifyContent: "center", padding: `0 ${Math.round(72 * u)}px`, pointerEvents: "none" }}>
+          <span
+            style={{
+              fontFamily: SERIF,
+              fontWeight: 700,
+              fontSize: Math.round(104 * u),
+              lineHeight: 1.05,
+              letterSpacing: "-0.02em",
+              color: w.hit ? P.orange.lit : "#ffffff",
+              textShadow: `0 ${Math.round(4 * u)}px ${Math.round(28 * u)}px rgba(0,0,0,0.5)`,
+            }}
+          >
+            {w.text}
+          </span>
+        </div>
+      ) : null,
+    );
+  }
   if (style === "words") {
     const w = words.find((x, i) => t >= x.start && t < Math.max(x.end, words[i + 1]?.start ?? x.end));
-    if (!w) return null;
-    return box(<span style={{ fontSize: Math.round(84 * u) }}>{w.text}</span>, "w");
+    return withTag(w ? box(<span style={{ fontSize: Math.round(84 * u) }}>{w.text}</span>, "w") : null);
   }
   const lines = captionLines(words, { maxChars: portrait ? 22 : 34 });
   const line = lines.find((l, i) => t >= l.start && t < Math.min(l.end + 0.4, lines[i + 1]?.start ?? Infinity));
-  if (!line) return null;
+  if (!line) return withTag(null);
   const size = Math.round((portrait ? 58 : 52) * u);
-  return box(
+  return withTag(box(
     <span style={{ fontSize: size }}>
       {line.words.map((w, i) => (
         <span key={i} style={{ color: style === "karaoke" && t >= w.start && t < w.end + 0.05 ? P.orange.lit : undefined }}>
@@ -290,7 +342,7 @@ export function Captions({ words = [], style = "lines", position = "bottom" }) {
       ))}
     </span>,
     "l",
-  );
+  ));
 }
 
 // "#141414", 0.88 → "rgba(20,20,20,0.88)"

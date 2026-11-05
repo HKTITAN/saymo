@@ -456,7 +456,9 @@ export async function startCutout(id: string, mid: string): Promise<Media | null
   if (!media) return null;
   if (media.kind !== "video") return "not video";
   if (media.status !== "ready" || !media.proxy) return "not ready";
-  if (media.cutting || media.cutout) return media;
+  // Made already with the crisp edge: nothing to do. An older, softer one
+  // is made again, playing until the new one is ready.
+  if (media.cutting || (media.cutout && media.cutoutCrisp)) return media;
   const next = await update(id, mid, () => ({ cutting: true, step: "Waiting to cut you out", error: undefined }));
   cutting.queue.push({ id, mid });
   nextCutout();
@@ -473,7 +475,7 @@ function nextCutout() {
       nextCutout();
     });
   cutOut(id, mid).then(
-    () => finish({ cutout: "cutout.webm" }),
+    () => finish({ cutout: "cutout.webm", cutoutCrisp: true }),
     (error) => {
       console.error(`[studio cutout] ${id}/${mid}:`, error);
       return finish({ error: "The studio couldn't cut the person out of this clip. Try a clip where they're closer to the camera." });
@@ -507,7 +509,7 @@ async function cutOut(id: string, mid: string) {
       "-y", "-loglevel", "error", "-i", proxy, "-framerate", String(fps), "-i", path.join(masks, "m%05d.png"),
       "-filter_complex", "[1:v]format=gray[a];[0:v][a]alphamerge,format=yuva420p[v]",
       "-map", "[v]", ...(media.hasAudio ? ["-map", "0:a:0", "-c:a", "libopus", "-b:a", "128k"] : []),
-      "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", "32", "-row-mt", "1", "-deadline", "good", "-cpu-used", "5",
+      "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", "22", "-row-mt", "1", "-deadline", "good", "-cpu-used", "5",
       "-shortest", "-f", "webm", path.join(dir, "cutout.webm.part"),
     ]);
     await rename(path.join(dir, "cutout.webm.part"), path.join(dir, "cutout.webm"));

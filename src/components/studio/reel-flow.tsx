@@ -246,7 +246,7 @@ function ScriptStep({
         },
         controller.signal,
       );
-      if (!done && !controller.signal.aborted) setError((e) => e ?? "Claude stopped before the script was finished. Try again.");
+      if (!done && !controller.signal.aborted) setError((e) => e ?? "Claude stopped early. Try again.");
     } catch (e) {
       setError(e instanceof StudioError ? e.message : "Unable to reach Claude. Try again.");
     } finally {
@@ -273,11 +273,7 @@ function ScriptStep({
           <h1 id="script-title" className="font-medium text-[15px] text-white/95">
             {heading}
           </h1>
-          <p className="text-pretty text-[12.5px] text-white/55 leading-relaxed">
-            {start === "reel"
-              ? "Type a topic or paste a script, then read it to camera"
-              : "Type a topic or paste a script, Claude splits it into beats"}
-          </p>
+          <p className="text-pretty text-[12.5px] text-white/55 leading-relaxed">Type a topic or paste a script.</p>
         </div>
         <PromptBox
           value={idea}
@@ -286,7 +282,7 @@ function ScriptStep({
           running={false}
           autoFocus
           maxRows={10}
-          placeholder="Why procurement teams lose a day a week to approvals, and how SpendOS gives it back"
+          placeholder="Why approvals cost teams a day a week"
         />
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Segmented
@@ -312,11 +308,8 @@ function ScriptStep({
           <Segmented
             label="Layout"
             value={layout}
-            options={[
-              ["split", "Split"],
-              ["popout", "Pop-out"],
-            ]}
-            onChange={(v) => setLayout(v === "popout" ? "popout" : "split")}
+            options={REEL_LAYOUTS.filter(([k]) => k !== "graphic" && k !== "you")}
+            onChange={(v) => setLayout(REEL_LAYOUTS.find(([k]) => k === v)?.[0] ?? "split")}
           />
         </div>
         {error ? <p className="text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
@@ -360,10 +353,34 @@ function ScriptStep({
           </p>
         ) : (
           <p className="text-[12px] text-white/45">
-            <span className="tabular-nums">{beats.length}</span> {beats.length === 1 ? "beat" : "beats"}, about <span className="tabular-nums">{Math.max(1, Math.round(total))}</span> s read
-            aloud. Click any words to change them.
+            <span className="tabular-nums">{beats.length}</span> {beats.length === 1 ? "beat" : "beats"}, about <span className="tabular-nums">{Math.max(1, Math.round(total))}</span> s. Click
+            words to edit.
           </p>
         )}
+        {/* The reel's captions: bold or serif, and a series tag under them. */}
+        {script && !writing ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
+            <Segmented
+              label="Captions"
+              value={script.captions ?? "bold"}
+              options={[
+                ["bold", "Bold"],
+                ["serif", "Serif"],
+              ]}
+              onChange={(v) => setScript({ ...script, captions: v === "serif" ? "serif" : undefined })}
+            />
+            {/* biome-ignore lint/a11y/noLabelWithoutControl: the input is inside */}
+            <label className="flex min-w-[180px] flex-1 items-center gap-2">
+              <span className="text-[12px] text-white/45">Tag</span>
+              <input
+                value={script.tag ?? ""}
+                onChange={(e) => setScript({ ...script, tag: e.target.value.slice(0, 60) || undefined })}
+                placeholder="SpendOS | Example 1/10"
+                className="h-7 min-w-0 flex-1 rounded-[8px] bg-white/[0.05] px-2.5 text-[12px] text-white/90 outline-none transition-colors placeholder:text-white/30 focus:bg-white/[0.08]"
+              />
+            </label>
+          </div>
+        ) : null}
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -560,7 +577,7 @@ function BeatView({
           <Editable
             label={`Beat ${n}, what's shown`}
             value={beat.visual}
-            placeholder="What's on screen while you say it"
+            placeholder="What's on screen"
             readOnly={locked}
             onChange={(visual) => onChange?.({ ...beat, visual })}
             className="min-w-0 flex-1 text-pretty text-[12px] text-white/50 leading-snug"
@@ -810,7 +827,7 @@ function FootageStep({
             Use videos I already have
           </h1>
           <p className="text-pretty text-[12.5px] text-white/55 leading-relaxed">
-            Drop your takes. Claude puts the speaker on the top half and makes a graphic for each idea on the bottom half, timed to the words, with captions.
+            Drop your takes, and Claude adds graphics and captions.
           </p>
         </div>
       </div>

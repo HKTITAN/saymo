@@ -15,11 +15,14 @@ Read `src/lib/studio/edit.ts` once: it is the exact shape of edit.json. Also rea
   - `video` tracks hold `clip`s of footage or photos.
   - `graphics` tracks hold `graphic`s (lower thirds, titles, end cards).
   - `audio` tracks hold `clip`s used only for sound (music, a voice carried under other pictures).
-- A clip: `{ "id", "type": "clip", "media", "start", "from", "to", "speed"?, "volume"?, "fadeIn"?, "fadeOut"?, "zoom"?, "x"?, "y"?, "box"? }`.
+- A clip: `{ "id", "type": "clip", "media", "start", "from", "to", "speed"?, "volume"?, "fadeIn"?, "fadeOut"?, "zoom"?, "x"?, "y"?, "box"?, "window"?, "radius"?, "cutout"? }`.
   - `start` is when it appears on the film's timeline.
   - `from` and `to` are the in and out points in the SOURCE, in seconds.
   - Length on screen is `(to - from) / speed`.
   - `box` (optional) is the part of the frame the clip fills, `{ "x", "y", "w", "h" }` as 0..1 of the frame. The clip covers the box as it would cover the frame (`zoom`, `x`, `y` frame it inside the box) and nothing shows outside it. No box means the whole frame.
+  - `window` (optional) is the part of the frame the clip may show in, the same shape as a box. The clip is placed by `box` and its framing as usual, then cut to the window. The reel's pop-out uses it.
+  - `radius` (optional) rounds the corners of the window (or, without one, of the box), as 0..0.25 of the frame's width. A corner that's also a corner of the frame stays square.
+  - `cutout` (optional, `true`) shows the person without their background (made by the media tool's `cutout` command), so what's beneath shows round them.
 - Items on one track must not overlap. Give every item a short unique id (`c1`, `c2`, `lt1`), and keep the ids of items you didn't change.
 - `captions.words` are on the FILM's timeline, not the source's.
 - `film.json` `duration` must equal where the edit ends. Update `marks` to the real beats ("Intro", "First answer", "End card"); one named exactly "Cover" is the poster frame, so put it on a strong shot.
@@ -38,7 +41,7 @@ Your system prompt gives the exact command (`node …/media-tool.mjs <film-id> �
 | `scenes <media> [0..1]` | camera cuts or big changes in the footage |
 | `frames <media> <t> …` | up to 12 small stills; **Read** the files it names to see them |
 | `faces <media> [every-s]` | where the main face sits over time (0..1 of the source), for reframing |
-| `cutout <media>` | the person cut out of their background (`cutout.webm`, see-through, sound kept), for clips set `"cutout": true`; waits until it's made, a minute or two for a long take |
+| `cutout <media>` | the person cut out of their background (`cutout.webm`, see-through, crisp edged, sound kept), for clips set `"cutout": true`; waits until it's made, a minute or two for a long take |
 
 Look before you cut. Read the transcript for talking footage. Check a few frames to see the shots. For a 9:16 reframe, check where the face is.
 
@@ -84,7 +87,9 @@ If there's no transcript, say so. The person can press Transcribe in the studio.
 - Style:
   - `lines` (a line at a time) is the default;
   - `karaoke` (the spoken word lit) suits energetic social;
-  - `words` (one word at a time) only for very short punchy edits.
+  - `words` (one word at a time) only for very short punchy edits;
+  - `serif` (one big serif word at a time, no box, a soft shadow) when serif captions are asked for. Mark the key word of each phrase with `"hit": true` on its caption word; it shows in the brand's accent.
+- `tag` (optional): a short series line shown small under the captions all through the film, such as "SpendOS | Example 1/10".
 - Position: `bottom` for 16:9; `middle` for 9:16 and 4:5, clear of platform UI.
 - Lines of 2 to 7 words, broken at natural phrases. No caption on screen during long silences.
 
@@ -149,14 +154,21 @@ With several videos and no script, find the ideas yourself from the transcript: 
 
 ### Reel layouts, one per beat
 
-A beat in the script can carry a `layout`; without one it's a split. Cut from one layout to the next on the beat's first word. Give `graphics/beat.jsx` a `layout` param (`"split"`, `"popout"`, `"graphic"`) and draw in the matching place.
+A beat in the script can carry a `layout`; without one it's a split. Cut from one layout to the next on the beat's first word. Give `graphics/beat.jsx` a `layout` param (`"split"`, `"popout"`, `"fade"`, `"graphic"`) and draw in the matching place.
 
 - **split**: as above, the speaker on the top half and the beat's graphic below.
-- **popout**: the beat's graphic on a card, with the speaker cut out of their background standing in front of it.
+- **popout**: the graphic fills the top 70% of the frame and the speaker the bottom 30%, and their head rises over the line into the graphic, as if popping out of their own strip.
   1. Run `cutout <media>` on the take first. If it fails, use split for those beats and say why.
-  2. The card is drawn by the beat's graphic: a rounded rectangle in the brand's surface colour filling the lower part of the frame (x from 4% to 96% of the width, y from 34% to 97% of the height, corners about 4.5% of the width), with the beat's visual inside it. Keep the card's top band (y 34% to 54%) quiet, because the captions sit there. Above the card is the edit's `background`, the brand's ground.
-  3. For that beat, the take's clip moves to a video track above the graphics track (add one named "Front" if there isn't one), with `"cutout": true` and `"box": { "x": 0, "y": 0.02, "w": 1, "h": 0.6 }`. Frame it with `faces` so the face sits about a quarter of the way down the frame and the shoulders cross the card's top edge. Only one clip of the take plays at a time (the cutout carries the voice), so take that stretch off the main track.
-  4. Check a draft frame there: the head clears the card's top edge, and no fringe of the old background shows round the hair. If it does, keep the speaker a little smaller.
+  2. The beat's graphic fills the top 70% (y from 0 to 70% of the height), edge to edge, on the edit's `background`; the speaker's strip below runs edge to edge, only its top corners rounded. Keep the middle of its lower part (y 48% to 70%, x 25% to 75%) calm, because the head rises into it. Captions stay in the middle, just above the head, never across the face.
+  3. Two clips of the same stretch of the take, framed exactly alike (the same `box`, `zoom`, `x` and `y`), so the person reads as one across the line. Start with `"box": { "x": 0, "y": 0.3, "w": 1, "h": 0.7 }` and move the box's `y` (on both) until, with `faces`, the top of the head sits at about 0.56 of the height (just under the captions) and the chin just above the line.
+     - On the main track: the take as it is, with `"window": { "x": 0, "y": 0.7, "w": 1, "h": 0.3 }` and `"radius": 0.045`, so it shows only in the bottom strip (its top corners rounded), room and all. It carries the voice.
+     - On a track above the graphics track (add a video track named "Front" if there isn't one): the same clip with `"cutout": true`, `"volume": 0` and `"window": { "x": 0, "y": 0, "w": 1, "h": 0.7 }`, so above the line only the person shows: their head over the graphic.
+  4. Check a draft frame there: the head and the strip meet without a step at the line, the head clears the captions, and no fringe of the old background shows round the hair. If it does, frame the speaker a little smaller.
+- **fade**: the speaker fills the frame, its top fades smoothly to dark with the beat's graphic in the dark, and the speaker stays in front, crisp.
+  1. Run `cutout <media>` on the take first. If it fails, use split for those beats and say why.
+  2. The beat's graphic draws the fade itself: the edit's `background` colour, solid from the top to about 30% of the height, then easing out to nothing by about 75% on a smooth S-curve with many stops, so the fade has no visible start, end or edge. Its visual sits in the solid part (y 6% to 30%): a chart, a screen recording, or a quote or prompt set large in a serif.
+  3. The take on the main track as it is, full frame, carrying the voice. The same stretch on the "Front" track above the graphics, framed alike, with `"cutout": true` and `"volume": 0`, so the speaker sits in front of the fade.
+  4. Check a draft frame there: no band or edge in the fade, and a clean outline round the speaker.
 - **graphic**: the graphic fills the frame. That stretch of the take moves to an audio track, so the voice carries on under it.
 - **you**: the take fills the frame (no box), for a beat that's all about the person, like the hook or the sign-off.
 
