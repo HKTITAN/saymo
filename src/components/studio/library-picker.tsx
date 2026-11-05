@@ -177,7 +177,7 @@ function LibraryPicker({ attachments, onBack, onClose }: { attachments: Attachme
         ) : empty ? (
           <div className="flex flex-col items-start gap-2 px-2 py-3">
             <p className="font-medium text-[12.5px] text-white/85">Your library is empty</p>
-            <p className="text-[12px] text-white/50 leading-relaxed">Save pictures, clips, sounds, notes and links in the library on the studio’s home page, then pick them here.</p>
+            <p className="text-[12px] text-white/50 leading-relaxed">Save pictures, clips and links there first.</p>
             <button
               type="button"
               onClick={() => {
@@ -231,7 +231,7 @@ function LibraryPicker({ attachments, onBack, onClose }: { attachments: Attachme
           })
         ) : (
           <p className="px-2 py-3 text-[12px] text-white/45">
-            {q ? `Nothing in the library matches “${query.trim()}”.` : place === "recent" ? "Nothing saved yet." : "This folder is empty."}
+            {q ? `Nothing matches “${query.trim()}”.` : place === "recent" ? "Nothing saved yet." : "This folder is empty."}
           </p>
         )}
       </div>

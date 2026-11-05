@@ -136,7 +136,7 @@ export function Bubble({
         queueing
         autoFocus
         maxRows={4}
-        placeholder={pinned ? "Make this bigger and bring it in later" : "Describe a change to the film"}
+        placeholder={pinned ? "Make this bigger and bring it in later" : "Make the title come in from the left"}
         chip={chipLabel(pinned?.pick ?? null, pinned?.t ?? time())}
         className="bg-transparent has-[:focus-visible]:bg-transparent has-[:focus-visible]:ring-0"
       />

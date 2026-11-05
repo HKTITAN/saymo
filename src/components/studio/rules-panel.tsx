@@ -84,7 +84,7 @@ export function RulesPage() {
           Rules
         </h1>
         <p className="text-[12.5px] text-white/50 leading-relaxed">
-          Claude follows these in every film unless your prompt says otherwise. Everyone on the team shares them.
+          Claude follows these in every film, for the whole team.
         </p>
       </div>
       {rules === null ? (
@@ -107,7 +107,7 @@ export function RulesPage() {
                     data-rule-title={r.id}
                     value={r.title}
                     onChange={(e) => change(r.id, { title: e.target.value })}
-                    placeholder="Name the rule"
+                    placeholder="Calm motion"
                     aria-label={`Rule ${i + 1} name`}
                     className="-ms-1.5 h-7 min-w-0 flex-1 rounded-[7px] bg-transparent px-1.5 font-medium text-[13px] text-white/90 outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
                   />
@@ -136,7 +136,7 @@ export function RulesPage() {
                 <textarea
                   value={r.body}
                   onChange={(e) => change(r.id, { body: e.target.value })}
-                  placeholder="What Claude should always do"
+                  placeholder="Keep every move slow and eased"
                   aria-label={`Rule ${i + 1}`}
                   rows={2}
                   className="-ms-1.5 me-1 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[12.5px] text-white/65 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30 hover:bg-white/[0.03] focus:bg-white/[0.05]"

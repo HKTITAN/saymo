@@ -128,18 +128,18 @@ function AboutPanel() {
         </div>
         <p className="px-1 pt-0.5 text-[11.5px] text-white/45 leading-relaxed">
           {data
-            ? `Built with ${count.format(data.total)} packages, models, fonts and skills made by others. Open one to read its licence.`
-            : "Built with work by others, open one to read its licence"}
+            ? `Built with ${count.format(data.total)} parts made by others.`
+            : "Built with parts made by others."}
         </p>
         {data && data.studio.edition !== EDITION ? (
           IS_PRODUCT ? (
             <p className="rounded-[10px] bg-[#ff9a5c]/10 px-3 py-2 text-[11.5px] text-[#ff9a5c] leading-relaxed">
-              This list was made for the {data.studio.edition} edition. To update it, run{" "}
+              This list is for the {data.studio.edition} edition. To update it, run{" "}
               <span className="tabular-nums">STUDIO_EDITION={EDITION} npm run licences</span>.
             </p>
           ) : (
             <p className="rounded-[10px] bg-white/[0.04] px-3 py-2 text-[11.5px] text-white/55 leading-relaxed">
-              This is the list for the {data.studio.edition} edition, what a version for sale would ship. The in-house studio also uses Strudel and GSAP for older films.
+              This is the {data.studio.edition} edition’s list, without Strudel and GSAP.
             </p>
           )
         ) : null}
@@ -180,7 +180,7 @@ function AboutPanel() {
           </p>
         ) : !groups.length ? (
           <p className="px-1 py-1 text-[11.5px] text-white/50">
-            Nothing matches &ldquo;{query.trim()}&rdquo;. Try a package name or a licence, such as MIT.
+            Nothing matches &ldquo;{query.trim()}&rdquo;.
           </p>
         ) : (
           <>
@@ -202,7 +202,7 @@ function AboutPanel() {
               />
             ))}
             {deferred && matches > SHOW_AT_MOST ? (
-              <p className="px-1 pt-1 text-[11px] text-white/35">Some matches are hidden. Type more of the name to narrow the list.</p>
+              <p className="px-1 pt-1 text-[11px] text-white/35">Some matches are hidden, type more to narrow them.</p>
             ) : null}
           </>
         )}
@@ -303,7 +303,7 @@ function LicenceText({ item, texts, onBack }: { item: Item; texts: Record<string
           </div>
         ) : null}
         {item.note ? <p className="px-1 pt-1 text-[11.5px] text-white/45 leading-relaxed">{item.note}</p> : null}
-        {text ? <TextBlock text={text} /> : <p className="px-1 pt-1 text-[11.5px] text-white/45">No licence text was found for this one.</p>}
+        {text ? <TextBlock text={text} /> : <p className="px-1 pt-1 text-[11.5px] text-white/45">No licence text found.</p>}
         {notice ? (
           <>
             <p className="px-1 pt-2 font-medium text-[12px] text-white/80">Notice</p>

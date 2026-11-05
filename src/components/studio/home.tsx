@@ -665,8 +665,8 @@ export function Hero({
       </h1>
       <p className="mt-2.5 text-pretty text-center text-[13px] text-white/45 leading-relaxed">
         {folderName
-          ? `Describe a film and Claude makes it. It goes in ${folderName}.`
-          : "Describe a film and Claude makes it, then point at any part of it to change it."}
+          ? `Describe a film and Claude makes it in ${folderName}.`
+          : "Describe a film and Claude makes it."}
       </p>
 
       {/* A library item dropped here comes along with the prompt. */}
@@ -692,7 +692,7 @@ export function Hero({
           try {
             attached.add(await filesFor(entry));
           } catch {
-            onProblem(`Unable to fetch “${entry.name}” from the library. Try again.`);
+            onProblem(`Unable to fetch “${entry.name}”. Try again.`);
           }
         }}
       >
@@ -706,7 +706,7 @@ export function Hero({
           held={over}
           autoFocus={Boolean(initial)}
           maxRows={8}
-          placeholder="A 6 second loop: lines rise like a staircase, then the wordmark appears"
+          placeholder="A 6 second loop of lines rising like stairs"
           className="min-h-[124px] justify-between rounded-[20px] bg-[#171717] p-2.5 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)] has-[:focus-visible]:bg-[#1a1a1a]"
           tools={<SizePicker size={size} onSize={setSize} />}
         />
@@ -938,7 +938,7 @@ export function EmptyStages() {
       <div className="flex flex-col items-center gap-1 text-center">
         <p className="font-medium text-[13px] text-white/85">Your films will live here</p>
         <p className="max-w-[340px] text-pretty text-[12px] text-white/45 leading-relaxed">
-          Describe one above, or start from footage, a script, a reel or a deck of slides.
+          Describe one above to get started.
         </p>
       </div>
     </div>

@@ -198,7 +198,7 @@ function Workspace({ initial }: { initial: PostDoc }) {
   // that fixes it, rather than in a passing toast.
   const generateImage = async (place: string) => {
     let problem: Problem | null = null;
-    await withBusy("image", `Making ${place}. This takes about 20 seconds.`, async () => {
+    await withBusy("image", `Making ${place}, about 20 seconds…`, async () => {
       try {
         const r = await api.generateImage(doc.id, place);
         setDoc((d) => ({ ...d, image: r.image, takes: r.takes, updatedAt: later(d.updatedAt, r.updatedAt) }));
@@ -418,15 +418,15 @@ function Workspace({ initial }: { initial: PostDoc }) {
 
               <DialGroup title="Words">
                 <ul className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.03] px-3 py-2.5 text-[11.5px] text-white/55 leading-relaxed">
-                  <li>Click any words on the post to change them.</li>
+                  <li>Click words on the post to change them.</li>
                   <li>
                     In the headline, <Kbd>Enter</Kbd> starts a new line.
                   </li>
-                  <li>To set words in orange, select them in the location.</li>
+                  <li>Select location words to make them orange.</li>
                 </ul>
                 {doc.titleSize < HEADLINE.size && (
                   <DialNote>
-                    The headline is set at {Math.round(doc.titleSize)} px instead of {HEADLINE.size}, so it fits.
+                    The headline shrinks to {Math.round(doc.titleSize)} px to fit.
                   </DialNote>
                 )}
               </DialGroup>
@@ -434,9 +434,7 @@ function Workspace({ initial }: { initial: PostDoc }) {
               <DialGroup title="Date and time">
                 <DatePicker handle={calendar} pick={pick} onPick={onPick} />
                 <TimePicker pick={pick} onPick={onPick} />
-                <DialNote>
-                  Picking writes the date lines on the post. You can still change their words there.
-                </DialNote>
+                <DialNote>You can still edit the date on the post.</DialNote>
               </DialGroup>
 
               <DialGroup title="Speaker photo">

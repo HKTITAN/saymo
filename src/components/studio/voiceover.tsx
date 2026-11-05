@@ -66,7 +66,7 @@ export function VoiceoverButton({ id, onMade }: { id: string; onMade: () => void
             <textarea
               value={text}
               rows={4}
-              placeholder="Type what the voice should say"
+              placeholder="Welcome to the product launch"
               aria-label="Words to read out"
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {

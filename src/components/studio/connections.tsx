@@ -50,7 +50,7 @@ export function ConnectionsButton() {
     url.searchParams.delete("connect_error");
     window.history.replaceState(window.history.state, "", url.toString());
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time message from the sign-in redirect
-    setNote(bad ? { text: bad, bad: true } : { text: "Google Drive is connected. Final renders will be saved there.", bad: false });
+    setNote(bad ? { text: bad, bad: true } : { text: "Google Drive is connected, final renders go there.", bad: false });
     setOpen(true);
   }, []);
 
@@ -74,7 +74,7 @@ export function ConnectionsButton() {
             <div className="px-1 pt-1">
               <p className="font-medium text-[12.5px] text-white/90">Where films are saved</p>
               <p className="pt-0.5 text-[11.5px] text-white/45 leading-relaxed">
-                After each final render, the videos go to Google Drive and the film&rsquo;s source goes to GitHub.
+                Final videos go to Google Drive, source to GitHub.
               </p>
             </div>
             {note ? (
@@ -181,7 +181,7 @@ export function GoogleSection({ status, onChange, onNote }: SectionProps) {
     return (
       <Section icon={<CloudIcon aria-hidden="true" />} title="Google Drive">
         <div className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] px-3 py-2.5 text-[11.5px] text-white/60 leading-relaxed">
-          <p className="text-white/80">Google Drive needs a one-time set-up on this Mac.</p>
+          <p className="text-white/80">Google Drive needs a one-time set-up.</p>
           <ol className="flex list-decimal flex-col gap-1 ps-4">
             <li>
               In{" "}
@@ -260,7 +260,7 @@ export function GoogleSection({ status, onChange, onNote }: SectionProps) {
           <DialButton onClick={() => window.location.assign(connectApi.googleStartUrl())}>Add another Drive</DialButton>
           <Disconnect
             label="Disconnect this Drive"
-            consequence={`The studio stops saving to ${active.email}. Videos already saved stay in that Drive.`}
+            consequence={`The studio stops saving to ${active.email}, saved videos stay.`}
             onConfirm={() => act(() => connectApi.disconnectGoogle(active.email), "Unable to disconnect. Try again.")}
           />
         </>
@@ -269,7 +269,7 @@ export function GoogleSection({ status, onChange, onNote }: SectionProps) {
           <DialButton className="bg-studio text-[#1f0612] hover:bg-studio-hover" onClick={() => window.location.assign(connectApi.googleStartUrl())}>
             Connect Google Drive
           </DialButton>
-          <DialNote>The studio only sees the folder it makes, Aerchain Studio. Nothing else in your Drive.</DialNote>
+          <DialNote>The studio only sees its own folder, Aerchain Studio.</DialNote>
         </>
       )}
     </Section>
@@ -366,7 +366,7 @@ export function GithubSection({
             {busy ? "Connecting" : "Connect"}
           </button>
         </div>
-        {canConnect ? null : <DialNote>Sign in to GitHub in Terminal with gh auth login, then come back.</DialNote>}
+        {canConnect ? null : <DialNote>Run gh auth login in Terminal, then come back.</DialNote>}
       </div>
     );
   }
@@ -428,7 +428,7 @@ export function GithubSection({
       ) : null}
       <Disconnect
         label="Disconnect GitHub"
-        consequence="The studio stops saving film source to GitHub. What's already in the repository stays there."
+        consequence="The studio stops saving to GitHub, saved files stay."
         onConfirm={() => act(() => connectApi.disconnectGithub(), "Unable to disconnect. Try again.").then(() => undefined)}
       />
     </Section>

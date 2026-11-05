@@ -88,8 +88,7 @@ export function Inspector({
         {editLength !== undefined ? (
           <DialNote>
             The film runs as long as its timeline,{" "}
-            <span className="tabular-nums">{editLength.toFixed(1)}</span>{"\u2009"}s. Changing the size keeps each
-            clip framed where you put it.
+            <span className="tabular-nums">{editLength.toFixed(1)}</span>{"\u2009"}s.
           </DialNote>
         ) : (
           <DialSlider
@@ -111,9 +110,7 @@ export function Inspector({
           ))}
         </DialGroup>
       ) : (
-        <DialNote>
-          Ask Claude to add settings here, such as colours, speeds or words you want to change without asking again.
-        </DialNote>
+        <DialNote>Ask Claude to add settings here, like colours or speeds.</DialNote>
       )}
       {soundGroup}
     </Panel>

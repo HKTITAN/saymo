@@ -5,11 +5,14 @@ import { EyeOnIcon, RefreshIcon, UploadUpIcon } from "@/components/icons";
 import { Kbd } from "@/components/ui/kbd";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { BrandSummary } from "@/lib/studio/brand";
+import type { Brief } from "@/lib/studio/brief";
 import type { Attachment, Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/contract";
+import { STUDIO_HEADERS } from "@/lib/studio/contract";
 import type { FilmSound } from "@/lib/studio/sound";
 import { editEnd, type GraphicInfo, type Media } from "@/lib/studio/edit";
 import { cn } from "@/lib/utils";
 import { api, StudioError } from "./api";
+import { BriefCard } from "./brief-card";
 import { Bubble, PickOutline } from "./bubble";
 import { ChatPanel } from "./chat";
 import { createClock, useClock } from "./clock";
@@ -171,7 +174,7 @@ export function Studio() {
   // is already on the dashboard.
   const kitHidden = (kitId: string | null) => {
     void refreshKits();
-    if (kitId) setKitNote("Claude is still making the kit. Open it to watch.");
+    if (kitId) setKitNote("Claude is still making the kit.");
   };
   useEffect(() => {
     if (!kitNote) return;
@@ -319,7 +322,7 @@ function Missing({ onBack }: { onBack: () => void }) {
     <div className="absolute inset-0 flex items-center justify-center p-6">
       <div className={cn(CARD, "flex max-w-[360px] flex-col items-start gap-3 p-5")}>
         <p className="font-medium text-[14px] text-white/90">This film isn’t here any more</p>
-        <p className="text-[12.5px] text-white/55 leading-relaxed">It may have been deleted. Your other films and kits are in the studio.</p>
+        <p className="text-[12.5px] text-white/55 leading-relaxed">It may have been deleted.</p>
         <button type="button" onClick={onBack} className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover")}>
           Back to the studio
         </button>
@@ -611,6 +614,32 @@ function FilmView({
       void ed.importFiles(files, { append: true });
     }
   }, [film, firstPromptRef, firstFilesRef, firstAttachRef, chatView, ed, id]);
+
+  // The blank-page brief (brief-card.tsx), written by Claude from a one-line
+  // prompt before the film is built: read when the film opens and after
+  // each turn, and shown on the empty stage until the film is made from it.
+  const [brief, setBrief] = useState<Brief | null>(null);
+  const hasFilm = Boolean(film);
+  const turnRunning = chatView.turn.running;
+  useEffect(() => {
+    if (!hasFilm || turnRunning) return;
+    let live = true;
+    fetch(`/api/studio/films/${id}/brief`, { cache: "no-store", headers: STUDIO_HEADERS })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b: Brief | null) => live && setBrief(b))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [id, hasFilm, turnRunning]);
+  const saveBrief = (next: Brief) => {
+    setBrief(next);
+    void fetch(`/api/studio/films/${id}/brief`, {
+      method: "PUT",
+      headers: { ...STUDIO_HEADERS, "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    }).catch(() => {});
+  };
 
   // What's under a click on a video film: the top visible graphic playing
   // now, else the top clip of footage.
@@ -1224,6 +1253,26 @@ function FilmView({
         words={!isVideo && texts.length > 0}
         onMessage={onStage}
       />
+
+      {/* The blank-page brief, on the empty stage until the film is made from it. */}
+      {brief?.state === "brief" && !isVideo ? (
+        <div
+          className="pointer-events-none absolute z-10 flex items-center justify-center p-4 *:pointer-events-auto"
+          style={{ top: insets.top, right: insets.right, bottom: insets.bottom, left: insets.left }}
+        >
+          <BriefCard
+            id={id}
+            brief={brief}
+            busy={turnRunning}
+            onChange={saveBrief}
+            onMake={() => {
+              saveBrief({ ...brief, state: "made" });
+              void chatView.send("Make the film from the brief.", { t: 0, pick: null });
+            }}
+            onAnother={() => void chatView.send(`Another look, a different direction from ${brief.look}.`, { t: 0, pick: null })}
+          />
+        </div>
+      ) : null}
 
       {/* Three versions, full screen: the slot machine, then the canvas. */}
       {away ? (

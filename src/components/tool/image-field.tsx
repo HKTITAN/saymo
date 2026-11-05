@@ -56,7 +56,7 @@ export function ImageField({
       ) : (
         <DropZone
           title="Drop a photo of the place here"
-          hint="Its background is removed for you. A PNG that is already cut out keeps its own edges. Or make one with AI below."
+          hint="Its background is removed for you."
           busy={busy}
           onFile={onUpload}
         />
@@ -96,7 +96,7 @@ export function ImageField({
         <>
           <div className="h-1.5" />
           <DialText label="Name" value={image.name} onChange={onName} />
-          <DialNote>Read out by screen readers in place of the image.</DialNote>
+          <DialNote>Read out by screen readers.</DialNote>
           <DialSlider
             label="Size"
             value={image.place.scale * 100}
@@ -123,7 +123,7 @@ export function ImageField({
           />
           <DialButton onClick={() => onPlace({ x: 0, y: 0, scale: 1 })}>Reset position</DialButton>
           <DialNote>
-            You can also drag it on the post. To resize it there, pinch, or hold <Kbd>⌘</Kbd> and scroll.
+            Drag it on the post too, and pinch or <Kbd>⌘</Kbd> scroll to resize.
           </DialNote>
         </>
       )}
@@ -188,10 +188,7 @@ function Generate({
       <DialButton type="submit" loading={making} disabled={!place.trim() || (Boolean(busy) && !making)}>
         Make
       </DialButton>
-      <DialNote>
-        Type a city or a landmark. It comes back cut out, in the same black and white style as the towers. Each
-        one takes about 20 seconds and 4 cents of Vercel credit.
-      </DialNote>
+      <DialNote>Each takes about 20 seconds and 4 cents of Vercel credit.</DialNote>
       {problem && (
         <div
           className="flex flex-col items-start gap-2 rounded-[10px] bg-destructive/12 px-3 py-2.5"

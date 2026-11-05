@@ -103,7 +103,7 @@ export function FilmsMenu({
                   <div className="flex flex-col gap-2 p-2">
                     <p className="font-medium text-[13px] text-white/90">Delete “{film.title}”?</p>
                     <p className="text-[12px] text-white/50 leading-relaxed">
-                      This removes the film, its chat with Claude and its videos. You can’t undo this.
+                      Its chat and videos go too. You can’t undo this.
                     </p>
                     <div className="mt-1 flex gap-1.5">
                       <button

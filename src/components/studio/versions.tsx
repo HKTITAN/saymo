@@ -108,7 +108,7 @@ export function VersionsButton({
             ) : null}
             {versions?.length === 1 ? (
               <p className="px-2.5 pt-1 pb-2 text-[12px] text-white/45 leading-relaxed">
-                Each prompt you send keeps a version here, so you can go back to it.
+                Each prompt keeps a version here.
               </p>
             ) : null}
             {versions?.map((v) => (

@@ -78,10 +78,7 @@ export function EditInspector({
         <GraphicPanel ed={ed} graphic={found.item} />
       ) : (
         <>
-          <DialNote>
-            {ids.length} items are selected. Drag any of them to move them together, or press S to split them at the
-            playhead.
-          </DialNote>
+          <DialNote>Drag to move them together, or press S to split.</DialNote>
           <DialButton
             onClick={() => {
               ed.change((e) => remove(e, new Set(ids)), { label: `Deleted ${ids.length} items` });
@@ -125,7 +122,7 @@ function ClipPanel({
   return (
     <>
       <DialNote>
-        {media?.name ?? "This footage is missing from Media. Delete the clip, or ask Claude to replace it."}
+        {media?.name ?? "This footage is missing. Delete the clip, or ask Claude to replace it."}
         <br />
         <span className="tabular-nums">
           {formatTime(clip.start)} to {formatTime(endOf(clip))}
@@ -209,7 +206,7 @@ function ClipPanel({
             filmAspect={(filmWidth * (clip.box?.w ?? 1)) / (filmHeight * (clip.box?.h ?? 1))}
             onMove={(x, y) => set({ x, y }, "Moved the framing", "frame")}
           />
-          <DialNote>Drag the box to choose what the frame shows, such as the speaker when a wide shot becomes a story.</DialNote>
+          <DialNote>Drag the box to choose what the frame shows.</DialNote>
         </DialGroup>
       ) : null}
       <DialButton
@@ -341,7 +338,7 @@ function GraphicPanel({ ed, graphic }: { ed: EditState; graphic: Graphic }) {
           ))}
         </DialGroup>
       ) : (
-        <DialNote>Ask Claude to change this graphic, or point at it on the film.</DialNote>
+        <DialNote>Ask Claude to change this graphic.</DialNote>
       )}
       <DialButton
         onClick={() => {
@@ -464,7 +461,7 @@ function CaptionsPanel({ id, ed }: { id: string; ed: EditState }) {
       </DialGroup>
       <DialGroup title="Words">
         <DialButton onClick={() => void make()} loading={making !== null}>
-          {captions.words.length ? "Make the captions again from the speech" : "Make captions from the speech"}
+          {captions.words.length ? "Make captions again" : "Make captions from the speech"}
         </DialButton>
         {making ? (
           <p key={making} className="studio-shimmer px-1 text-[11.5px] text-white/55">
@@ -490,7 +487,7 @@ function CaptionsPanel({ id, ed }: { id: string; ed: EditState }) {
             ))}
           </div>
         ) : !making ? (
-          <DialNote>Captions are made from what’s said in the footage. Fix any word here afterwards.</DialNote>
+          <DialNote>You can fix any word here afterwards.</DialNote>
         ) : null}
       </DialGroup>
     </>

@@ -22,7 +22,7 @@ const APPS: [App, string][] = [
 ];
 
 const WHERE: Record<App, string> = {
-  code: "Paste this in Terminal. Claude Code can then use the studio in any folder.",
+  code: "Paste this in Terminal.",
   desktop: "Claude Desktop › Settings › Developer › Edit Config, paste this, then restart Claude",
   cursor: "Paste this into ~/.cursor/mcp.json, then reload Cursor",
   terminal: "Make and render films from Terminal, run the doctor first",
@@ -98,12 +98,12 @@ export function OutsideAppsSection() {
         <CodeIcon aria-hidden="true" />
         Use the studio from other apps
       </h3>
-      <DialNote>While the studio is open, Claude and other apps on this Mac can list, make, change and render films.</DialNote>
+      <DialNote>Other apps can make films while the studio is open.</DialNote>
 
       {failed ? (
         <>
           <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">
-            Unable to load the set-up. Check that the studio is still running, then try again.
+            Unable to load the set-up. Check that the studio is running.
           </p>
           <DialButton onClick={() => void load("GET")}>Try again</DialButton>
         </>
@@ -171,7 +171,7 @@ export function OutsideAppsSection() {
           {asking ? (
             <div className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] p-2">
               <p className="px-1 text-[11.5px] text-white/65 leading-relaxed">
-                Scripts that use the current token stop working until you give them the new one. Claude and the command line pick it up on their own.
+                Scripts will need the new token, Claude and the command line update themselves.
               </p>
               <div className="flex gap-1.5">
                 <DialButton onClick={() => setAsking(false)}>Cancel</DialButton>

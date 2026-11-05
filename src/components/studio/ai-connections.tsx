@@ -59,8 +59,8 @@ export function AiSection() {
       </h3>
       <DialNote>
         {IS_PRODUCT
-          ? "Runs on your own Claude plan or API key, no extra plan to buy"
-          : "Uses the AI you already pay for, no extra plan to buy"}
+          ? "Uses your Claude plan or API key."
+          : "Uses the AI you already pay for."}
       </DialNote>
       {error ? <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
       {status ? (
@@ -236,8 +236,8 @@ function ApiKey({
           <div className="flex flex-col gap-1.5 rounded-[10px] bg-white/[0.04] p-2">
             <p className="px-1 text-[11.5px] text-white/65 leading-relaxed">
               {IS_PRODUCT
-                ? "The studio forgets the key. Prompts sent to the API key stop working until you add one again."
-                : "The studio forgets the key. Prompts sent to the API key stop working until you add one again."}
+                ? "Prompts that use the key stop working until you add another."
+                : "Prompts that use the key stop working until you add another."}
             </p>
             <div className="flex gap-1.5">
               <DialButton onClick={() => setAsking(false)}>Cancel</DialButton>
@@ -297,7 +297,7 @@ function ApiKey({
         Save key
       </DialButton>
       <DialNote>
-        {IS_PRODUCT ? "Kept on this Mac only, and used only when the studio asks Claude." : "Kept on this Mac only, and used only for prompts sent to the API key."}
+        {IS_PRODUCT ? "Stays on this Mac, used only to ask Claude." : "Stays on this Mac, used only to ask Claude."}
       </DialNote>
     </form>
   );

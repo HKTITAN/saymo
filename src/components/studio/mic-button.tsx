@@ -204,15 +204,15 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
               onChange={(script) => setDictationSettings({ script })}
             />
             {hindi && settings.script === "roman" && h && !h.installed && !(settings.accuracy === "best" && best?.installed) ? (
-              <DialNote>Mixed Hindi and English comes out better with Most accurate or the Hinglish model.</DialNote>
+              <DialNote>For mixed Hindi and English, use Most accurate or Hinglish.</DialNote>
             ) : null}
             <Choice label="Accuracy" options={ACCURACIES} value={settings.accuracy} onChange={(accuracy) => setDictationSettings({ accuracy })} />
             {settings.accuracy === "best" && best && !best.installed ? (
-              <DialNote>Most accurate needs its model below. Until then, Fast is used.</DialNote>
+              <DialNote>Uses Fast until the model below is downloaded.</DialNote>
             ) : null}
             {model("best", "Most accurate model")}
             {model("hinglish", "Hinglish model")}
-            <DialNote>Most accurate takes about twice as long as Fast.</DialNote>
+            <DialNote>Most accurate takes about twice as long.</DialNote>
             {status && !status.ready ? (
               <div className={cn(ROW, "gap-2 ps-3 pe-1")}>
                 <span className={LABEL}>Listening</span>

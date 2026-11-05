@@ -25,7 +25,7 @@ export function Opening({ what }: { what: "film" | "kit" }) {
         <Skeleton loading>
           <div className="flex flex-col gap-3">
             <p className="text-[12.5px]">Claude</p>
-            <p className="text-[12.5px] leading-relaxed">Tell Claude what to change, or point at a part of the film to change just that.</p>
+            <p className="text-[12.5px] leading-relaxed">Tell Claude what to change, or point at the film.</p>
             <div className="flex gap-1.5">
               <span className="h-7 w-[120px] rounded-[8px]" skullet-block="" />
               <span className="h-7 w-[136px] rounded-[8px]" skullet-block="" />

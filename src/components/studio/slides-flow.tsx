@@ -30,8 +30,8 @@ const POPUP =
 const HIDE_SCROLLBAR = "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
 
 const WAYS: { id: SlidesWay; label: string; note: string }[] = [
-  { id: "animate", label: "Animate my slides", note: "Keeps each slide's look and brings its parts in one by one." },
-  { id: "motion", label: "Make it a motion film", note: "Claude retells the deck's story as a motion film in your brand." },
+  { id: "animate", label: "Animate my slides", note: "Keeps each slide's look, part by part." },
+  { id: "motion", label: "Make it a motion film", note: "Claude retells the story in your brand." },
 ];
 
 // "q3-board_deck.pdf" becomes "Q3 board deck".
@@ -269,7 +269,7 @@ export function SlidesFlow({
                 </span>
               </p>
               <p className="text-[12px] text-white/40 leading-relaxed">
-                When it&apos;s ready, the film opens and Claude starts building it, slide by slide. Stay on this page until then.
+                Stay on this page, the film opens when it’s ready.
               </p>
             </>
           )}
@@ -290,7 +290,7 @@ export function SlidesFlow({
               Turn slides into a video
             </h1>
             <p className="text-pretty text-[12.5px] text-white/55 leading-relaxed">
-              Bring in a deck and Claude turns it into a film: your slides brought to life part by part, or retold as a motion film in your brand.
+              Claude turns your deck into a film.
             </p>
           </div>
           <div
@@ -309,7 +309,7 @@ export function SlidesFlow({
               <>
                 <p className="text-[12.5px] text-white/75">Drop your slides here</p>
                 <p className="max-w-[380px] text-pretty text-[11.5px] text-white/40 leading-relaxed">
-                  A PDF, PowerPoint, Keynote or OpenDocument file, or pictures of your slides. From Google Slides, choose File, Download, then PDF or PowerPoint.
+                  A PDF, PowerPoint, Keynote or OpenDocument file, or pictures.
                 </p>
                 <button type="button" onClick={() => picker.current?.click()} className={cn(SECONDARY, "mt-1.5")}>
                   <UploadUpIcon aria-hidden="true" />
@@ -430,8 +430,8 @@ export function SlidesFlow({
               <DialToggle label="Music" checked={music} onChange={setMusic} />
               <DialNote>
                 {voiceUsable
-                  ? `The voiceover reads your speaker notes (${withNotes} of ${plural(kept.length, "slide")} ${withNotes === 1 ? "has" : "have"} them).`
-                  : "No speaker notes, so no voiceover, PowerPoint and Keynote files bring theirs"}
+                  ? `Reads the speaker notes on ${withNotes} of ${plural(kept.length, "slide")}.`
+                  : "No speaker notes, so no voiceover."}
               </DialNote>
             </DialGroup>
           </div>

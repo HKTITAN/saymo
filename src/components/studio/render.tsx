@@ -165,16 +165,16 @@ export function RenderControl({
             <Popover.Popup className={cn(SURFACE, POPUP, "flex w-[260px] flex-col gap-0.5 p-1.5")}>
               <button type="button" className={OPTION} onClick={() => start("draft")}>
                 <span className="text-[12.5px] text-white/90">Draft</span>
-                <span className="text-[11.5px] text-white/45">A quick 1080p video to check the timing</span>
+                <span className="text-[11.5px] text-white/45">A quick 1080p preview</span>
               </button>
               <button type="button" className={OPTION} onClick={() => start("final")}>
                 <span className="text-[12.5px] text-white/90">4K video</span>
-                <span className="text-[11.5px] text-white/45">The finished film in 4K and 1080p, with a still</span>
+                <span className="text-[11.5px] text-white/45">4K and 1080p, with a still</span>
               </button>
               {sizes ? (
                 <button type="button" className={OPTION} onClick={() => start("sizes")}>
                   <span className="text-[12.5px] text-white/90">Every size</span>
-                  <span className="text-[11.5px] text-white/45">Wide, square, portrait and story, each laid out for its frame</span>
+                  <span className="text-[11.5px] text-white/45">Wide, square, portrait and story</span>
                 </button>
               ) : null}
               {id ? <SavedTo id={id} renderedAt={status.state === "done" ? status.at : null} /> : null}

@@ -872,7 +872,7 @@ export function Multitrack({
 
             {edit && !edit.tracks.some((tr) => tr.items.length) ? (
               <p className="pointer-events-none absolute start-4 top-[84px] text-[12px] text-white/40">
-                Drag footage here from Media, or drop files anywhere on the studio.
+                Drag footage here from Media.
               </p>
             ) : null}
 

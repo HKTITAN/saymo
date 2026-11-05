@@ -206,7 +206,7 @@ function Calendar({
   const hint = !a
     ? "Pick the day of the event."
     : !b
-      ? "If it runs over several days, pick the last day too."
+      ? "For several days, pick the last day too."
       : `${daysBetween(a, b) + 1} days. Pick another day to start again.`;
 
   return (
@@ -343,8 +343,8 @@ export function TimePicker({ pick, onPick }: { pick: DatePick; onPick: (change: 
       </div>
       <DialNote>
         {pick.start
-          ? "The time is written on the post after the day."
-          : "Pick a date as well. The time is written on the post with it."}
+          ? "Shown on the post after the day."
+          : "Pick a date too, the time shows with it."}
       </DialNote>
     </Picker>
   );

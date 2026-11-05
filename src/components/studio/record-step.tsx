@@ -112,9 +112,9 @@ export function RecordStep({
         if (live) {
           setBlocked(
             name === "NotAllowedError"
-              ? "Camera and mic blocked, allow them from the camera icon in the address bar"
+              ? "Camera and mic blocked, allow them in the address bar"
               : name === "NotFoundError"
-                ? "No camera was found. Connect one, then try again."
+                ? "No camera found. Connect one, then try again."
                 : "The camera couldn't start. Close other apps using it, then try again.",
           );
         }
@@ -432,10 +432,10 @@ export function RecordStep({
       : speechProblem
         ? speechProblem
         : support.kind === "local"
-          ? "The prompter follows your voice, listening on this Mac."
+          ? "Follows your voice, listening on this Mac."
           : support.kind === "none"
-            ? "This browser can't follow your voice. Move the script with the arrow keys."
-            : "The prompter follows your voice, using the browser's speech service";
+            ? "This browser can't follow your voice."
+            : "Follows your voice, using the browser's speech service.";
 
   return (
     <div className="absolute inset-0 bg-[#0b0b0b]">
@@ -619,7 +619,7 @@ export function RecordStep({
             </DialButton>
           ) : null}
           <DialNote>
-            <Kbd className="align-[-3px]">↑</Kbd> <Kbd className="align-[-3px]">↓</Kbd> move the script by a line. Click a word to jump to it.
+            <Kbd className="align-[-3px]">↑</Kbd> <Kbd className="align-[-3px]">↓</Kbd> move the script, or click a word.
           </DialNote>
         </DialGroup>
       </aside>

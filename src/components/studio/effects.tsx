@@ -19,7 +19,7 @@ export function EffectsPage({ onUse }: { onUse: (prompt: string) => void }) {
         <h1 id="effects-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
           Effects
         </h1>
-        <p className="text-[12.5px] text-white/50">Ready-made moves Claude builds films with. Pick one to start a film from it, or add one to any film from its chat.</p>
+        <p className="text-[12.5px] text-white/50">Pick a ready-made move to start a film.</p>
       </header>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
         {EFFECTS.map((e) => (

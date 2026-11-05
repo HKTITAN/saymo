@@ -145,7 +145,7 @@ export function Dashboard() {
         <div className="flex min-w-0 items-baseline gap-3">
           <h1 className="shrink-0 font-medium text-[13px] text-white/90">Speaker posts</h1>
           <p className="truncate text-[12px] text-white/40">
-            Change the words and pictures, then download the video
+            Edit each post, then download its video
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -164,7 +164,7 @@ export function Dashboard() {
             <div className="mx-auto flex max-w-72 flex-col items-center gap-1.5 py-24 text-center">
               <p className="font-medium text-[13px] text-white/90">No posts yet</p>
               <p className="text-[12px] text-white/45 leading-relaxed">
-                Each post announces one speaker and comes with its own 4K video.
+                One post per speaker, each with a 4K video.
               </p>
               <div className="mt-3">{addPost}</div>
             </div>
@@ -193,7 +193,7 @@ export function Dashboard() {
                 : "Delete this post?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Its photo, picture and videos are deleted with it. This can&apos;t be undone.
+              Its photo, picture and videos go too. You can’t undo this.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

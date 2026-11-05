@@ -170,9 +170,7 @@ export function MediaBin({
             {!ed.media.length && !ed.uploads.length ? (
               <div className="flex flex-col items-start gap-2 px-1.5 py-3">
                 <p className="font-medium text-[12.5px] text-white/85">No footage yet</p>
-                <p className="text-[12px] text-white/50 leading-relaxed">
-                  Drop videos, photos or music anywhere on the studio, or add them here.
-                </p>
+                <p className="text-[12px] text-white/50 leading-relaxed">Drop videos, photos or music anywhere.</p>
                 <button
                   type="button"
                   onClick={() => picker.current?.click()}
@@ -208,11 +206,11 @@ export function MediaBin({
             ))}
             {!ed.graphics.length ? (
               <p className="px-1.5 py-3 text-[12px] text-white/50 leading-relaxed">
-                No graphics yet. Ask Claude to make one, such as a lower third with a name and role.
+                No graphics yet. Ask Claude for one, like a lower third.
               </p>
             ) : (
               <p className="px-1.5 pt-1 text-[11.5px] text-white/35 leading-relaxed">
-                Drag one onto the timeline, or double-click to add it at the playhead.
+                Drag one onto the timeline, or double-click it.
               </p>
             )}
           </>

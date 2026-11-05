@@ -21,7 +21,7 @@ type Shared = { id: string; file: File; kind: FileKind; preview: string | null }
 const HINTS = [
   "What does the brand sell, and to whom?",
   "How should it sound? Calm, bold, playful, precise…",
-  "Colours you know, with hex codes if you have them",
+  "Colours, with hex codes if you know them",
   "Fonts it uses, and where",
   "Things it would never do",
   "Paste links: website, Figma, Framer, Notion",
@@ -42,8 +42,8 @@ const linkNote = (link: SharedLink, figmaReady: boolean): string | null => {
   if (link.kind === "figma" && !figmaReady) {
     return "Figma links don't open yet, drop in a PDF or PNG export instead";
   }
-  if (link.kind === "drive") return "Google Drive links can't be opened from here. Download the file and drop it in.";
-  if (link.kind === "video") return "Claude can't watch videos from here. Add a note on what's in it.";
+  if (link.kind === "drive") return "Google Drive links don't open here, download the file and drop it in.";
+  if (link.kind === "video") return "Claude can't watch videos, add a note on what's in it.";
   return null;
 };
 
@@ -154,8 +154,7 @@ export function KitMaker({
                 Make a brand kit
               </h2>
               <p className="text-[12.5px] text-white/55 leading-relaxed">
-                Tell Claude everything you know about the brand. Paste links, drop the guideline, logos and fonts, and write
-                it all down however it comes. Claude turns it into a kit you can change afterwards.
+                Tell Claude about the brand, with any links and files.
               </p>
             </div>
 
@@ -198,7 +197,7 @@ export function KitMaker({
                   }
                 }}
                 aria-label="Everything about the brand"
-                placeholder={`Tell Claude everything about the brand. ${HINTS[hint]}`}
+                placeholder={`${HINTS[hint]}`}
                 className="min-h-[132px] w-full resize-none bg-transparent px-4 pt-3.5 pb-2 text-[13.5px] text-white/90 leading-relaxed outline-none placeholder:text-white/30 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               />
 
@@ -451,7 +450,7 @@ function Building({
   const stop = async () => {
     if (kitId) await brandApi.stop(kitId).catch(() => {});
     abort.current?.abort();
-    setError("Stopped. Anything Claude had already written is in the kit.");
+    setError("Stopped, what Claude wrote so far is kept.");
   };
 
   // Which steps are done, from what the kit holds and what Claude is doing.

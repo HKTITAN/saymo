@@ -128,7 +128,7 @@ function ChatPanel({ working }: { working: boolean }) {
         label={<span className="font-medium text-[11px] text-white/80 uppercase tracking-[0.08em]">Claude</span>}
       >
         <div className="flex flex-col gap-3 px-4 pt-4 pb-1">
-          <p className="text-[12.5px] text-white/55 leading-relaxed">Tell Claude what to change, or point at a part of the film to change just that.</p>
+          <p className="text-[12.5px] text-white/55 leading-relaxed">Tell Claude what to change, or point at the film.</p>
           <div className="flex flex-col items-start gap-1.5">
             {["Make it loop smoothly", "Slow the opening down", "Add a title that types in"].map((t) => (
               <span key={t} className="rounded-[8px] bg-white/[0.06] px-2.5 py-1.5 text-[12px] text-white/75">

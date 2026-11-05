@@ -237,7 +237,7 @@ export function ChatPanel({
         ) : messages.length === 0 && !turn.running ? (
           <div className="flex flex-col gap-2 pt-1 pb-1">
             <p className="text-[12.5px] text-white/55 leading-relaxed">
-              Tell Claude what to change, or point at a part of the film to change just that.
+              Tell Claude what to change, or point at the film.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {IDEAS.map((idea) => (
@@ -330,11 +330,11 @@ function CarryOnNote({ carryOn, onCancel }: { carryOn: { reason: "time" | "limit
         {carryOn.reason === "time" ? (
           <span className="studio-shimmer">Carrying on in a fresh turn</span>
         ) : (
-          <>{`You've hit your usage limit. The studio carries on by itself at ${at}.`}</>
+          <>{`Usage limit reached, carrying on at ${at}.`}</>
         )}
       </p>
       <p className="text-white/40">
-        {carryOn.reason === "time" ? "The last turn reached the 15-minute limit. " : "You can close this page; keep the studio running and it picks up when the limit resets. "}
+        {carryOn.reason === "time" ? "The last turn reached the 15-minute limit. " : "You can close this page, but keep the studio running. "}
         <button type="button" onClick={onCancel} className="cursor-pointer text-white/70 underline-offset-2 hover:text-white hover:underline">
           {"Don't carry on"}
         </button>

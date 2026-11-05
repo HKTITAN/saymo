@@ -369,7 +369,7 @@ export function KitPage({
 
       {over ? (
         <div className="pointer-events-none absolute inset-3 z-20 flex items-center justify-center rounded-[20px] border-2 border-white/40 border-dashed bg-black/40">
-          <p className={cn(CARD, "px-4 py-2.5 text-[13px] text-white/90")}>Drop fonts, logos or guideline files to add them to the kit</p>
+          <p className={cn(CARD, "px-4 py-2.5 text-[13px] text-white/90")}>Drop to add them to the kit</p>
         </div>
       ) : null}
       {note || uploading ? (
@@ -538,7 +538,7 @@ function TopBar({
                 <div className="flex flex-col gap-2 p-2">
                   <p className="font-medium text-[13px] text-white/90">Delete “{kit.name}”?</p>
                   <p className="text-[12px] text-white/50 leading-relaxed">
-                    This removes the kit and its files. Films that use it go back to Aerchain’s kit. You can’t undo this.
+                    Films using it go back to Aerchain’s kit. You can’t undo this.
                   </p>
                   <div className="mt-1 flex gap-1.5">
                     <button
@@ -700,7 +700,7 @@ function KitSettings({
             <RemoveRow label={f.file.replace(/^fonts\//, "")} onRemove={() => change("Removed a font", (k) => ({ ...k, fonts: k.fonts.filter((_, i) => i !== fi) }))} />
           </div>
         ))}
-        {!kit.fonts.length ? <DialNote>Drop font files (TTF, OTF, WOFF) on the page, or choose them below.</DialNote> : null}
+        {!kit.fonts.length ? <DialNote>Drop TTF, OTF or WOFF files on the page.</DialNote> : null}
       </DialGroup>
 
       <DialGroup title="Logos">
@@ -730,7 +730,7 @@ function KitSettings({
             <RemoveRow label={l.file.replace(/^logos\//, "")} onRemove={() => change("Removed a logo", (k) => ({ ...k, logos: k.logos.filter((_, i) => i !== li) }))} />
           </div>
         ))}
-        {!kit.logos.length ? <DialNote>Drop SVG or PNG logos on the page, or choose them below.</DialNote> : null}
+        {!kit.logos.length ? <DialNote>Drop SVG or PNG logos on the page.</DialNote> : null}
       </DialGroup>
 
       <DialGroup title="Line texture" defaultOpen={false}>
@@ -752,10 +752,10 @@ function KitSettings({
               format={(v) => `${Math.round(v)} px`}
               onChange={(v) => change("Gap width", (k) => ({ ...k, texture: { ...(k.texture ?? { stroke: 8 }), gap: Math.round(v) } }))}
             />
-            <DialButton onClick={() => change("Removed the line texture", (k) => ({ ...k, texture: undefined }))}>This brand has no line texture</DialButton>
+            <DialButton onClick={() => change("Removed the line texture", (k) => ({ ...k, texture: undefined }))}>Remove the line texture</DialButton>
           </>
         ) : (
-          <DialButton onClick={() => change("Added a line texture", (k) => ({ ...k, texture: { stroke: 8, gap: 4 } }))}>Give the brand a line texture</DialButton>
+          <DialButton onClick={() => change("Added a line texture", (k) => ({ ...k, texture: { stroke: 8, gap: 4 } }))}>Add a line texture</DialButton>
         )}
       </DialGroup>
 
@@ -1082,10 +1082,7 @@ function KitChat({
           </Skeleton>
         ) : !messages.length && !turn.running ? (
           <div className="flex flex-col gap-2.5">
-            <p className="text-[12.5px] text-white/55 leading-relaxed">
-              Ask Claude to build or tidy this kit. It reads the files you add (a guideline PDF, screenshots, logos, fonts)
-              and any links you paste: the website, Framer or Notion pages, a Figma file.
-            </p>
+            <p className="text-[12.5px] text-white/55 leading-relaxed">Ask Claude to build or tidy this kit.</p>
             <div className="flex flex-wrap gap-1.5">
               {KIT_IDEAS.map((idea) => (
                 <button key={idea} type="button" onClick={() => setDraft(idea)} className="rounded-[8px] bg-white/[0.06] px-2 py-1 text-[11.5px] text-white/65 outline-none hover:bg-white/[0.1] hover:text-white focus-visible:ring-2 focus-visible:ring-ring">

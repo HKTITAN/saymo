@@ -437,7 +437,7 @@ export function LibraryView({
     await libraryApi.removeFolder(target.id).catch(() => undefined);
     setPlace(null);
     await load();
-    say(`Deleted the folder “${target.name}”. What was in it is back in the library.`);
+    say(`Deleted “${target.name}”, its items are back in the library.`);
   };
 
   // ─── What the grid shows ──────────────────────────────────────────────────
@@ -537,7 +537,7 @@ export function LibraryView({
               {folder ? (
                 <FolderMenu
                   folder={folder}
-                  deleteBody={counts(folder.id) ? `Only the folder goes. Its ${itemCount(counts(folder.id))} stay in the library.` : "It’s empty, so only the folder goes."}
+                  deleteBody={counts(folder.id) ? `Its ${itemCount(counts(folder.id))} stay in the library.` : "It’s empty, so only the folder goes."}
                   onRename={() => setRenamingFolder(true)}
                   onDelete={() => deleteFolder(folder)}
                 />
@@ -547,7 +547,7 @@ export function LibraryView({
             tabs
           )}
           <span className="ms-auto flex items-center gap-2">
-            {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder, or hold it over Films to drop it on a film</span> : null}
+            {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder, or hold it over Home</span> : null}
             {place !== "brands" ? (
               naming ? (
                 <RenameField
@@ -685,7 +685,7 @@ export function LibraryView({
                         folder={x}
                         pages={inside.map((i) => ({ id: i.id, poster: i.thumbUrl }))}
                         detail={inside.length ? `${itemCount(inside.length)}${now ? ` · ${ago(inside[0].updatedAt, now)}` : ""}` : "Empty"}
-                        deleteBody={inside.length ? `Only the folder goes. Its ${itemCount(inside.length)} stay in the library.` : "It’s empty, so only the folder goes."}
+                        deleteBody={inside.length ? `Its ${itemCount(inside.length)} stay in the library.` : "It’s empty, so only the folder goes."}
                         dragType={LIBRARY_DRAG}
                         dragging={dragging !== null}
                         onOpen={() => goPlace(x.id)}
@@ -733,7 +733,7 @@ export function LibraryView({
             <Empty
               doodle={<LibraryDoodle className="h-[84px] w-[120px]" />}
               title={`${folder.name} is empty`}
-              note="Drop files here, or drag items from the library onto the folder above."
+              note="Drop files here."
             >
               <button type="button" onClick={() => picker.current?.click()} className={cn(PILL_BUTTON, "mt-2 bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
                 <UploadUpIcon aria-hidden="true" />
@@ -744,7 +744,7 @@ export function LibraryView({
             <Empty
               doodle={<LibraryDoodle className="h-[84px] w-[120px]" />}
               title="Your library is empty"
-              note="Pictures, clips, sounds, PDFs and links for any prompt, drop or paste them here"
+              note="Drop or paste pictures, clips and links here."
             >
               <button type="button" onClick={() => picker.current?.click()} className={cn(PILL_BUTTON, "mt-2 bg-studio text-[#1f0612] hover:bg-studio-hover")}>
                 <UploadUpIcon aria-hidden="true" />
@@ -881,7 +881,7 @@ function AddMenu({ onPick, onLink, onNote }: { onPick: () => void; onLink: (url:
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void save();
                     }}
-                    placeholder="Open slow on the product, then three quick cuts to the logo."
+                    placeholder="Open slow, then three quick cuts to the logo"
                     className="resize-none rounded-[9px] bg-white/[0.06] px-2.5 py-2 text-[12.5px] text-white leading-relaxed outline-none placeholder:text-white/30 focus:bg-white/[0.08]"
                   />
                 )}
@@ -1383,7 +1383,7 @@ function RefPanel({
             {readOnly ? (
               <>
                 <p className="text-[12px] text-white/55 leading-relaxed">
-                  From the {e.brand?.name} brand kit. Add it to any prompt from the library; change it in the kit.
+                  From the {e.brand?.name} brand kit, change it there.
                 </p>
                 <button type="button" onClick={() => e.brand && onOpenKit(e.brand.id)} className={cn(PILL_BUTTON, "self-start bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
                   Open the kit
@@ -1455,7 +1455,7 @@ function RefPanel({
                     maxLength={2000}
                     onChange={(ev) => setNote(ev.target.value)}
                     onBlur={() => note !== e.note && onChange({ note })}
-                    placeholder="Why you saved it, or how to use it"
+                    placeholder="Good light for the opening shot"
                     className="resize-none rounded-[10px] bg-white/[0.05] px-2.5 py-2 text-[12.5px] text-white/90 leading-relaxed outline-none placeholder:text-white/25 focus:ring-1 focus:ring-white/15"
                   />
                 </label>

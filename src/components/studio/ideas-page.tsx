@@ -133,7 +133,7 @@ export function IdeasPage({ onMake }: { onMake: (idea: Idea) => void }) {
         <h1 id="ideas-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
           Ideas
         </h1>
-        <p className="text-[12.5px] text-white/50">Reels, demos and videos you want to make. Pick a pocket, make one from it, then tick it off.</p>
+        <p className="text-[12.5px] text-white/50">What to make next.</p>
       </header>
       {problem ? (
         <p role="alert" className="px-1 text-[12px] text-[#ff9592]">

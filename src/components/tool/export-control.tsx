@@ -123,7 +123,7 @@ export function ExportControl({ doc, flush }: { doc: PostDoc; flush: () => Promi
           {label}
         </TooltipTrigger>
         <TooltipPopup side="bottom" className="max-w-80">
-          Makes the video in 4K and Full HD at 60 fps, with a still of each. Takes about 4 minutes.
+          Makes 4K and Full HD videos with stills, in about 4 minutes.
         </TooltipPopup>
       </Tooltip>
     );

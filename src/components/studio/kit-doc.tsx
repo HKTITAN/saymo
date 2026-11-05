@@ -140,7 +140,7 @@ export function KitDoc({
           {/* 01 Colour */}
           <DocSection id="colour" title="Colour" onEdit={() => setEditing(editing === "colour" ? null : "colour")} editing={editing === "colour"}>
             {editing === "colour" ? (
-              <EditTray onDone={() => setEditing(null)} note="Colour ramps are in the Kit panel on the right.">
+              <EditTray onDone={() => setEditing(null)} note="Ramps are in the Kit panel on the right.">
                 {ROLES.map((role) => (
                   <ColorRow key={role.key} label={role.label} value={r[role.key]} onChange={(hex) => change(role.label, (k) => ({ ...k, colors: { ...k.colors, roles: { ...k.colors.roles, [role.key]: hex } } }))} />
                 ))}
@@ -499,7 +499,7 @@ function RuleGroup({
         </button>
       </div>
       {editing ? (
-        <EditTray onDone={onEdit} note="One plain sentence each. Rules that start with “Never” or “Don’t” show as Don’ts.">
+        <EditTray onDone={onEdit} note="Rules starting with “Never” or “Don’t” show as Don’ts.">
           {rules.map((rule, i) => (
             <div key={`${i}-${rules.length}`} className="flex min-h-9 items-start gap-2 rounded-[10px] bg-white/[0.05] py-1.5 ps-3 pe-1">
               <span className="pt-0.5 text-[11px] text-white/35 tabular-nums">{i + 1}</span>

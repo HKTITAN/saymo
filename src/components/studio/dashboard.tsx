@@ -96,7 +96,7 @@ const filmCount = (n: number) => `${n} ${plural.select(n) === "one" ? "film" : "
 const folderDetail = (films: FilmSummary[], now: number) =>
   films.length ? `${filmCount(films.length)}${films[0] && now ? ` · ${ago(films[0].updatedAt, now)}` : ""}` : "Empty";
 const folderDeleteBody = (count: number) =>
-  count > 0 ? `Only the folder goes. Its ${filmCount(count)} move back to Films.` : "It’s empty, so only the folder goes.";
+  count > 0 ? `Its ${filmCount(count)} move back to Films.` : "It’s empty, so only the folder goes.";
 
 
 const typing = (t: EventTarget | null) =>
@@ -258,7 +258,7 @@ export function Dashboard({
         onOpenFilm(to.film);
       }
     } catch {
-      say(`Unable to fetch “${entry.name}” from the library. Try again.`);
+      say(`Unable to fetch “${entry.name}”. Try again.`);
     }
   };
   useEffect(() => {
@@ -331,7 +331,7 @@ export function Dashboard({
     await api.removeFolder(target.id).catch(() => undefined);
     goFolder(null);
     await Promise.all([loadFolders(), onRefresh()]);
-    say(`Deleted the folder “${target.name}”. Its films are back in Films.`);
+    say(`Deleted “${target.name}”, its films are back in Films.`);
   };
 
   // ─── Keys: ⌘Z undoes, / finds a film, Esc closes the new-film card ──────
@@ -460,7 +460,7 @@ export function Dashboard({
                   {everyFilm ? <span className="text-[12px] text-white/35 tabular-nums">{everyFilm.length}</span> : null}
                   <span className="ms-auto flex items-center gap-3">
                     {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder</span> : null}
-                    {libDrag ? <span className="text-[11.5px] text-white/45">Drop it on a film to use it in that film’s chat</span> : null}
+                    {libDrag ? <span className="text-[11.5px] text-white/45">Drop it on a film</span> : null}
                     <SortMenu sort={sort} onSort={setSort} />
                   </span>
                 </header>
@@ -503,7 +503,7 @@ export function Dashboard({
                       <Empty
                         doodle={<FolderDoodle className="h-[84px] w-[120px]" open={dragging !== null} />}
                         title={`${folder.name} is empty`}
-                        note="Drag films onto the folder in the sidebar, or choose Move to folder in a film’s ••• menu."
+                        note="Drag films onto it in the sidebar."
                       >
                         <button type="button" onClick={() => goFolder(null)} className={cn(PILL_BUTTON, "mt-2 bg-white/[0.08] text-white/80 hover:bg-white/[0.12]")}>
                           See all films
@@ -524,7 +524,7 @@ export function Dashboard({
               tabs={
                 <div className="flex flex-col gap-1.5 px-1 pb-3">
                   <h1 className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">Library</h1>
-                  <p className="text-[12.5px] text-white/50">Pictures, clips, sounds, notes and links, ready to add to any prompt.</p>
+                  <p className="text-[12.5px] text-white/50">Pictures, clips, sounds and links for any prompt.</p>
                 </div>
               }
               query={query}
@@ -546,7 +546,7 @@ export function Dashboard({
                   <h1 id="kits-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
                     Brand kits
                   </h1>
-                  <p className="text-[12.5px] text-white/50">A kit holds a brand’s colours, fonts and logos, so every film made with it looks the part.</p>
+                  <p className="text-[12.5px] text-white/50">Each brand’s colours, fonts and logos.</p>
                 </div>
                 <input
                   ref={zip}
@@ -577,7 +577,7 @@ export function Dashboard({
                       ))}
                     </ul>
                   ) : (
-                    <Empty doodle={<KitsDoodle className="h-[84px] w-[120px]" />} title="No brand kits yet" note="Make one from your own style or a brand’s guideline, or import one another studio exported." />
+                    <Empty doodle={<KitsDoodle className="h-[84px] w-[120px]" />} title="No brand kits yet" note="Make one, or import one from another studio." />
                   )
                 }
               </Skeleton>
@@ -993,7 +993,7 @@ function FilmCard({
               ) : (
                 <Confirm
                   title={`Delete “${f.title}”?`}
-                  body="This removes the film, its chat with Claude and its videos. You can’t undo this."
+                  body="Its chat and videos go too. You can’t undo this."
                   action="Delete film"
                   busy={busy}
                   onYes={() => run(onDelete)}

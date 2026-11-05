@@ -52,7 +52,7 @@ export function SettingsPage() {
         <h1 id="settings-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
           Settings
         </h1>
-        <p className="text-[12.5px] text-white/50">Which AI makes your films, and where finished films go.</p>
+        <p className="text-[12.5px] text-white/50">Your AI, and where finished films go.</p>
       </div>
       {note ? (
         <p className={cn("rounded-[10px] px-3 py-2 text-[12px] leading-relaxed", note.bad ? "bg-[#ff9592]/10 text-[#ff9592]" : "bg-white/[0.06] text-white/75")}>

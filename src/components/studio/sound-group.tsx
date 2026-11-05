@@ -35,7 +35,7 @@ export function SoundGroup({
         <DialButton disabled={claudeBusy} onClick={() => onPrompt("Add sound design")}>
           Ask Claude to design the sound
         </DialButton>
-        <DialNote>Claude writes music and sound effects that land on the film’s moments.</DialNote>
+        <DialNote>Music and effects timed to the film’s moments.</DialNote>
       </DialGroup>
     );
   }

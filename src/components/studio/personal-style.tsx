@@ -49,11 +49,11 @@ export function NewKitMenu({ busy, onPick, className }: { busy?: boolean; onPick
       <Popover.Portal>
         <Popover.Positioner side="bottom" align="end" sideOffset={6} collisionPadding={12} className="z-50">
           <Popover.Popup aria-label="Ways to make a kit" className={cn(SURFACE, MENU_POPUP, "w-max max-w-[300px]")}>
-            <MenuWay icon={<UserIcon aria-hidden="true" />} title="Personal style" note="Your name, colours, fonts and a few rules. About two minutes." onClick={() => pick("personal")} />
+            <MenuWay icon={<UserIcon aria-hidden="true" />} title="Personal style" note="Your name, colours and fonts, in two minutes." onClick={() => pick("personal")} />
             <MenuWay
               icon={<FileIcon aria-hidden="true" />}
               title="Brand kit from a guideline"
-              note="Share a guideline, links and files, and Claude builds the kit."
+              note="Claude builds it from your files and links."
               onClick={() => pick("guideline")}
             />
           </Popover.Popup>
@@ -271,7 +271,7 @@ export function PersonalStyleMaker({ onDone, onClose }: { onDone: (kit: BrandKit
       if (!res.ok || !out) throw new Error(out?.error || "The style couldn't be saved. Try again.");
       onDone(out);
     } catch (e) {
-      setProblem(e instanceof TypeError ? "Unable to reach the studio. Check that it's still running, then try again." : (e as Error).message);
+      setProblem(e instanceof TypeError ? "Unable to reach the studio. Check that it's still running." : (e as Error).message);
       setSaving(false);
     }
   };
@@ -298,7 +298,7 @@ export function PersonalStyleMaker({ onDone, onClose }: { onDone: (kit: BrandKit
             Personal style
           </h2>
           <p className="text-[12.5px] text-white/55 leading-relaxed">
-            Your name, colours, fonts and a few rules. Every film made with it looks and sounds like you.
+            Make every film look and sound like you.
           </p>
         </div>
 
@@ -370,7 +370,7 @@ export function PersonalStyleMaker({ onDone, onClose }: { onDone: (kit: BrandKit
                   Add a second accent
                 </button>
               )}
-              {low ? <DialNote>The text and ground are close in tone, so words may be hard to read.</DialNote> : null}
+              {low ? <DialNote>Text may be hard to read on this ground.</DialNote> : null}
             </DialGroup>
 
             <DialGroup title="Fonts">
@@ -430,7 +430,7 @@ export function PersonalStyleMaker({ onDone, onClose }: { onDone: (kit: BrandKit
         ) : (
           <div className="flex items-center gap-3">
             <p className={cn("me-auto text-[12px] leading-relaxed", problem ? "text-[#ff9592]" : "text-white/45")} role={problem ? "alert" : undefined}>
-              {problem ?? "It’s saved as a brand kit, so you can change anything later."}
+              {problem ?? "Saved as a brand kit you can change later."}
             </p>
             <span className="hidden items-center gap-1.5 text-[11px] text-white/35 sm:inline-flex">
               <KbdGroup>

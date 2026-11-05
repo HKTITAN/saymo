@@ -26,7 +26,7 @@ export function PhotoField({
     return (
       <DropZone
         title="Drop a photo here"
-        hint="The face is framed for you, and the background can be made plain grey."
+        hint="The face is framed for you."
         busy={busy}
         onFile={onUpload}
       />

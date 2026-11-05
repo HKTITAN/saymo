@@ -455,7 +455,7 @@ function TakesCanvas({
           !hint && "opacity-0",
         )}
       >
-        Drag to move, pinch to zoom, click one to open it.
+        Drag to move, pinch to zoom, click to open.
       </p>
     </div>
   );
@@ -494,7 +494,7 @@ function TakeCard({
     state === "failed"
       ? (take?.error ?? "It stopped with an error.")
       : state === "stopped"
-        ? "Claude stopped before this one was done."
+        ? ""
         : ready
           ? lastSentence(take?.reply ?? "")
           : "";

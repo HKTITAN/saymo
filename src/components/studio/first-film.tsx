@@ -78,8 +78,7 @@ export function FirstFilm({
             {title}
           </h1>
           <p className="text-[12.5px] text-white/55 leading-relaxed">
-            Cut your own footage, or have Claude make motion graphics. Either way, change anything afterwards by asking
-            Claude or pointing at the film.
+            Cut your footage, or have Claude make motion graphics.
           </p>
         </div>
 
@@ -176,7 +175,7 @@ export function FirstFilm({
               )}
             >
               <p className="text-[12.5px] text-white/70">Drop footage, photos or music here</p>
-              <p className="text-[11.5px] text-white/40">They go on the timeline end to end, in the order you drop them.</p>
+              <p className="text-[11.5px] text-white/40">They go on the timeline end to end.</p>
               <button
                 type="button"
                 disabled={busy}
@@ -192,7 +191,7 @@ export function FirstFilm({
           <>
             {link ? (
               <p className="rounded-[10px] bg-white/[0.06] px-3 py-2 text-[11.5px] text-white/75 leading-relaxed">
-                This prompt came from a link. Check it, then send it to make the film.
+                This prompt came from a link. Check it, then send it.
               </p>
             ) : null}
             <PromptBox
@@ -206,7 +205,7 @@ export function FirstFilm({
               running={busy}
               autoFocus
               maxRows={5}
-              placeholder="A 6 second loop: orange lines rise like a staircase, then the Aerchain wordmark appears"
+              placeholder="A 6 second loop of orange lines rising like stairs"
             />
             <button
               type="button"
