@@ -132,9 +132,9 @@ export function IdeasPage() {
   const look = LOOKS.find((l) => l.kind === kind) ?? REELS;
 
   return (
-    // One centred column, as wide as the list, like Settings: the pockets
-    // span it edge to edge and the list sits right under them.
-    <section aria-labelledby="ideas-heading" className="mx-auto flex w-full max-w-[664px] flex-col gap-8 px-8 pt-10 pb-20">
+    // Two columns of widgets: the pockets with the open list on the left,
+    // the brain dump on the right. One column when the window is narrow.
+    <section aria-labelledby="ideas-heading" className="mx-auto flex w-full max-w-[1160px] flex-col gap-8 px-8 pt-10 pb-20">
       <header className="flex flex-col gap-1.5 px-1">
         <h1 id="ideas-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
           Ideas
@@ -147,7 +147,9 @@ export function IdeasPage() {
         </p>
       ) : null}
 
-      <div role="tablist" aria-label="Kinds of idea" className="flex justify-between gap-6">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="flex min-w-0 flex-col gap-8">
+      <div role="tablist" aria-label="Kinds of idea" className="flex justify-between gap-4">
         {LOOKS.map((l) => (
           <Pocket
             key={l.kind}
@@ -179,6 +181,9 @@ export function IdeasPage() {
             />
           </div>
         </Glide>
+      </div>
+      </div>
+      <BrainDump />
       </div>
     </section>
   );
@@ -272,6 +277,72 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
         </span>
       </span>
     </button>
+  );
+}
+
+// The brain dump: one free page for anything not yet an idea, as a widget
+// like the list, its tab in butter yellow. Saves on its own as you type.
+function BrainDump() {
+  const [text, setText] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pending = useRef<string | null>(null);
+  const put = (t: string, keepalive = false) =>
+    fetch("/api/studio/dump", { method: "PUT", keepalive, headers: { "Content-Type": "application/json", "x-studio": "1" }, body: JSON.stringify({ text: t }) });
+  useEffect(() => {
+    let live = true;
+    fetch("/api/studio/dump", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { text: "" }))
+      .then((d: { text: string }) => live && setText(d.text))
+      .catch(() => live && setText(""));
+    // Notes typed just before leaving still get saved.
+    const flush = () => {
+      if (pending.current !== null) void put(pending.current, true);
+    };
+    window.addEventListener("pagehide", flush);
+    return () => {
+      live = false;
+      flush();
+      window.removeEventListener("pagehide", flush);
+    };
+  }, []);
+  const change = (t: string) => {
+    setText(t);
+    pending.current = t;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      pending.current = null;
+      put(t)
+        .then((r) => setProblem(r.ok ? null : "Unable to save your notes. Try again in a moment."))
+        .catch(() => setProblem("Unable to save your notes. Check that the studio is running."));
+    }, 500);
+  };
+  return (
+    <section aria-labelledby="dump-heading" className="relative flex flex-col pt-7">
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-16 rounded-t-[22px] bg-[#f3dc8a] px-4 pt-[6px] font-medium text-[12px] text-black/55">
+        Anything goes
+      </div>
+      <div className="relative flex flex-1 flex-col overflow-hidden rounded-[22px] bg-[#1a1a1d] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_18px_36px_-18px_rgba(0,0,0,0.8)]">
+        <header className="flex items-baseline gap-2 px-4 pt-4 pb-1.5">
+          <h2 id="dump-heading" className="font-semibold text-[22px] text-white tracking-[-0.015em]">
+            Brain dump
+          </h2>
+        </header>
+        <textarea
+          value={text ?? ""}
+          disabled={text === null}
+          onChange={(e) => change(e.target.value)}
+          aria-labelledby="dump-heading"
+          placeholder="Half thoughts, links, lines you like. Sort them into ideas later."
+          className="min-h-[420px] flex-1 resize-none bg-transparent px-4 pt-1 pb-4 text-[14px] text-white/85 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30"
+        />
+        {problem ? (
+          <p role="alert" className="border-white/[0.06] border-t px-4 py-3 text-[12px] text-[#ff9592]">
+            {problem}
+          </p>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

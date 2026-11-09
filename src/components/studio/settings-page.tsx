@@ -180,7 +180,7 @@ function NameRow({ onNote }: { onNote: (n: { text: string; bad: boolean } | null
   const save = async () => {
     if (name === null || name.trim() === saved) return;
     try {
-      const r = await fetch("/api/studio/me", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) });
+      const r = await fetch("/api/studio/me", { method: "PUT", headers: { "Content-Type": "application/json", "x-studio": "1" }, body: JSON.stringify({ name }) });
       const body = await r.json().catch(() => ({}));
       if (!r.ok) throw new StudioError(body.error ?? "Unable to save your name. Try again.");
       setSaved(name.trim());
