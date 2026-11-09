@@ -417,7 +417,7 @@ function IdeaRow({ idea, onChange, onRemove, onMake }: { idea: Idea; onChange: (
         )}
       </div>
 
-      <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover/idea:opacity-100">
+      <span className="flex shrink-0 items-center gap-0.5 self-center opacity-0 transition-opacity focus-within:opacity-100 group-hover/idea:opacity-100">
         {made || skip ? null : (
           <button type="button" onClick={onMake} className="me-1 h-6 cursor-pointer rounded-full bg-(--accent) px-2.5 font-medium text-[#141414] text-[11.5px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring">
             Make it
