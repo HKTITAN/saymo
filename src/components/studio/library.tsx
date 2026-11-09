@@ -819,7 +819,6 @@ function AddMenu({ onPick, onLink, onNote }: { onPick: () => void; onLink: (url:
       }}
     >
       <Popover.Trigger className={cn(PILL_BUTTON, "bg-studio text-[#1f0612] hover:bg-studio-hover")}>
-        <PlusIcon aria-hidden="true" />
         Add
       </Popover.Trigger>
       <Popover.Portal>
