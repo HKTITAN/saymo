@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DeleteDustbin01Icon, PlusIcon } from "@/components/icons";
+import { ChevronDownIcon, DeleteDustbin01Icon, PlusIcon } from "@/components/icons";
+import { LABEL, ROW } from "@/components/tool/dial";
 import type { Rule, RuleScope } from "@/lib/studio/rules";
 import { cn } from "@/lib/utils";
 import { api, StudioError } from "./api";
-import { ICON_BUTTON, PILL_BUTTON } from "./panel";
+import { PILL_BUTTON } from "./panel";
 
 // The studio's standing rules: Claude follows them in every film unless a
-// prompt says otherwise, and the whole team shares them. Set like a
-// rulebook: numbered rules you type straight into; changes save on their own.
+// prompt says otherwise, and the whole team shares them. Set like
+// Settings: each rule a row with its Off | On pair, unfolding to edit;
+// changes save on their own.
 
 const SCOPES: { value: RuleScope; label: string }[] = [
   { value: "all", label: "Every film" },
@@ -23,6 +25,7 @@ export function RulesPage() {
   const [removed, setRemoved] = useState<{ rule: Rule; at: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const known = useRef(new Set<string>()); // every rule this page has seen
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -59,6 +62,7 @@ export function RulesPage() {
     while (rules.some((r) => r.id === `rule-${n}`)) n++;
     const id = `rule-${n}`;
     save([...rules, { id, title: "", body: "", scope: "all", on: true }]);
+    setOpenId(id);
     requestAnimationFrame(() => document.querySelector<HTMLInputElement>(`[data-rule-title="${id}"]`)?.focus());
   };
   const remove = (rule: Rule) => {
@@ -75,16 +79,18 @@ export function RulesPage() {
     setRemoved(null);
   };
 
+  const on = rules?.filter((r) => r.on).length ?? 0;
   return (
-    // A page in the home's main panel, set like a printed rulebook: one
-    // sheet, the rules numbered down it, hairlines between them.
-    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[760px] flex-col gap-6 px-8 pt-10 pb-20">
+    // A page in the home's main panel, set like Settings: one quiet card of
+    // rows, each rule a name with its Off | On pair. Press a rule to unfold
+    // it and edit its words and which films it's for.
+    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[660px] flex-col gap-6 px-8 pt-10 pb-20">
       <div className="flex items-end gap-4 px-1">
         <div className="flex flex-col gap-1.5">
           <h1 id="rules-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
             Rules
           </h1>
-          <p className="text-[12.5px] text-white/50 leading-relaxed">Claude follows these in every film, for the whole team.</p>
+          <p className="text-[12.5px] text-white/50">Claude follows these in every film, for the whole team.</p>
         </div>
         <button
           type="button"
@@ -114,89 +120,108 @@ export function RulesPage() {
           <span className="studio-shimmer">Loading the rules</span>
         </p>
       ) : (
-        <ol className="flex flex-col rounded-[20px] bg-white/[0.025] px-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
-          {rules.map((r, i) => (
-            <RuleRow key={r.id} rule={r} n={i + 1} onChange={(part) => change(r.id, part)} onRemove={() => remove(r)} />
-          ))}
-        </ol>
+        <div className="flex flex-col gap-1.5 rounded-[16px] bg-white/[0.025] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+          <p className="px-1 pt-0.5 pb-1 text-[12px] text-white/45 tabular-nums">
+            {on} of {rules.length} on
+          </p>
+          <ul className="flex flex-col gap-1">
+            {rules.map((r) => (
+              <RuleRow
+                key={r.id}
+                rule={r}
+                open={openId === r.id}
+                onToggle={() => setOpenId((id) => (id === r.id ? null : r.id))}
+                onChange={(part) => change(r.id, part)}
+                onRemove={() => remove(r)}
+              />
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );
 }
 
-// Short names for the scope chip.
+// Short names for which films a rule is for.
 const SHORT: Record<RuleScope, string> = { all: "Every film", motion: "Motion", video: "Video" };
+const SCOPE_OPTIONS = SCOPES.map((s) => ({ value: s.value, label: SHORT[s.value] }));
+const ON_OFF = [
+  { value: false, label: "Off" },
+  { value: true, label: "On" },
+];
 
-function RuleRow({ rule: r, n, onChange, onRemove }: { rule: Rule; n: number; onChange: (part: Partial<Rule>) => void; onRemove: () => void }) {
-  const scope = SCOPES.findIndex((s) => s.value === r.scope);
-  const next = SCOPES[(scope + 1) % SCOPES.length];
-  const on = r.on;
+function RuleRow({
+  rule: r,
+  open,
+  onToggle,
+  onChange,
+  onRemove,
+}: {
+  rule: Rule;
+  open: boolean;
+  onToggle: () => void;
+  onChange: (part: Partial<Rule>) => void;
+  onRemove: () => void;
+}) {
+  const name = r.title.trim() || "Untitled rule";
   return (
-    <li
-      className={cn(
-        "group/rule relative flex gap-5 px-4 py-5",
-        "not-first:before:absolute not-first:before:top-0 not-first:before:right-4 not-first:before:left-4 not-first:before:h-px not-first:before:bg-white/[0.07]",
-      )}
-    >
-      {/* Its number, large and light, like a rulebook's. */}
-      <span aria-hidden="true" className={cn("w-8 shrink-0 pt-0.5 text-right font-light text-[28px] leading-none tabular-nums transition-colors", on ? "text-white/35" : "text-white/15")}>
-        {n}
-      </span>
-      <div className={cn("flex min-w-0 flex-1 flex-col gap-1 transition-opacity", !on && "opacity-45")}>
-        <input
-          data-rule-title={r.id}
-          value={r.title}
-          onChange={(e) => onChange({ title: e.target.value })}
-          placeholder="Calm motion"
-          aria-label={`Rule ${n} name`}
-          className="-mx-1.5 h-8 min-w-0 rounded-[8px] bg-transparent px-1.5 font-semibold text-[16px] text-white tracking-[-0.01em] outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
-        />
-        <textarea
-          value={r.body}
-          onChange={(e) => onChange({ body: e.target.value })}
-          placeholder="Keep every move slow and eased"
-          aria-label={`Rule ${n}`}
-          rows={2}
-          className="-mx-1.5 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[13px] text-white/60 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30 hover:bg-white/[0.03] focus:bg-white/[0.05]"
-        />
-      </div>
-      <div className="flex shrink-0 items-start gap-1.5 pt-0.5">
+    <li className={cn("flex flex-col rounded-[10px] bg-white/[0.05] transition-colors", open && "bg-white/[0.065]")}>
+      <div className="flex h-10 items-center gap-2 ps-1 pe-1.5">
         <button
           type="button"
-          className={cn(ICON_BUTTON, "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5")}
-          onClick={onRemove}
-          aria-label={`Delete rule ${n}`}
+          onClick={onToggle}
+          aria-expanded={open}
+          className="flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[8px] px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <DeleteDustbin01Icon aria-hidden="true" />
-        </button>
-        {/* Which films it's for: press to change. */}
-        <button
-          type="button"
-          onClick={() => onChange({ scope: next.value })}
-          aria-label={`Rule ${n} applies to ${SCOPES[scope]?.label ?? "every film"}. Change to ${next.label}`}
-          className="h-7 min-w-[78px] cursor-pointer rounded-full bg-white/[0.06] px-2.5 text-[11.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.1] hover:text-white/85 focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          {SHORT[r.scope] ?? "Every film"}
-        </button>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={on}
-          aria-label={`Rule ${n}, ${r.title || "untitled"}`}
-          onClick={() => onChange({ on: !on })}
-          className={cn(
-            "relative mt-px h-[24px] w-[40px] shrink-0 cursor-pointer rounded-full outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
-            on ? "bg-white/85" : "bg-white/[0.12]",
-          )}
-        >
-          <span
+          <ChevronDownIcon
             aria-hidden="true"
-            className={cn(
-              "absolute top-[3px] left-[3px] size-[18px] rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-              on ? "translate-x-[16px] bg-[#141414]" : "translate-x-0 bg-white/70",
-            )}
+            className={cn("size-3.5 shrink-0 text-white/40 transition-transform duration-200 motion-reduce:transition-none", !open && "-rotate-90")}
           />
+          <span className={cn("truncate text-[12.5px] transition-colors", r.on ? "text-white/90" : "text-white/40", !r.title.trim() && "text-white/40")}>{name}</span>
+          {r.scope !== "all" ? <span className="shrink-0 text-[11.5px] text-white/35">{SHORT[r.scope]}</span> : null}
         </button>
+        <Slide label={`${name}, on or off`} value={r.on} options={ON_OFF} onChange={(v) => onChange({ on: v })} segment={40} />
+      </div>
+      {/* Unfolds smoothly; closed, its fields can't be reached. */}
+      <div className={cn("grid transition-[grid-template-rows] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="overflow-hidden" inert={!open}>
+          <div className="flex flex-col gap-1.5 px-1.5 pt-0.5 pb-1.5">
+            <label className={cn(ROW, "gap-3 bg-white/[0.04] px-3 focus-within:bg-white/[0.07]")}>
+              <span className={LABEL}>Name</span>
+              <input
+                data-rule-title={r.id}
+                value={r.title}
+                onChange={(e) => onChange({ title: e.target.value })}
+                placeholder="Calm motion"
+                className="h-full min-w-0 flex-1 bg-transparent text-right text-white/90 outline-none placeholder:text-white/30"
+              />
+            </label>
+            <label className="flex flex-col gap-1 rounded-[10px] bg-white/[0.04] px-3 pt-2 pb-1.5 text-[12px] focus-within:bg-white/[0.07]">
+              <span className={LABEL}>Rule</span>
+              <textarea
+                value={r.body}
+                onChange={(e) => onChange({ body: e.target.value })}
+                placeholder="Keep every move slow and eased"
+                rows={2}
+                className="resize-none bg-transparent text-[12.5px] text-white/80 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30"
+              />
+            </label>
+            <div className={cn(ROW, "gap-3 bg-white/[0.04] ps-3 pe-1")}>
+              <span className={LABEL}>For</span>
+              <span className="ms-auto">
+                <Slide label={`${name} applies to`} value={r.scope} options={SCOPE_OPTIONS} onChange={(v) => onChange({ scope: v })} segment={76} />
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={onRemove}
+              className={cn(ROW, "cursor-pointer justify-center gap-2 bg-white/[0.04] px-3 text-white/55 outline-none hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5")}
+            >
+              <DeleteDustbin01Icon aria-hidden="true" />
+              Delete rule
+            </button>
+          </div>
+        </div>
       </div>
     </li>
   );
