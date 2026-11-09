@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDownIcon, DeleteDustbin01Icon, PlusIcon } from "@/components/icons";
+import { DeleteDustbin01Icon, PlusIcon } from "@/components/icons";
 import { LABEL, ROW } from "@/components/tool/dial";
 import type { Rule, RuleScope } from "@/lib/studio/rules";
 import { cn } from "@/lib/utils";
 import { api, StudioError } from "./api";
-import { PILL_BUTTON } from "./panel";
+import { ICON_BUTTON, PILL_BUTTON } from "./panel";
 
 // The studio's standing rules: Claude follows them in every film unless a
 // prompt says otherwise, and the whole team shares them. Set like
-// Settings: each rule a row with its Off | On pair, unfolding to edit;
-// changes save on their own.
+// Settings: each rule a card with its Off | On pair; changes save on
+// their own.
 
 const SCOPES: { value: RuleScope; label: string }[] = [
   { value: "all", label: "Every film" },
@@ -25,7 +25,6 @@ export function RulesPage() {
   const [removed, setRemoved] = useState<{ rule: Rule; at: number } | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const known = useRef(new Set<string>()); // every rule this page has seen
-  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -62,7 +61,6 @@ export function RulesPage() {
     while (rules.some((r) => r.id === `rule-${n}`)) n++;
     const id = `rule-${n}`;
     save([...rules, { id, title: "", body: "", scope: "all", on: true }]);
-    setOpenId(id);
     requestAnimationFrame(() => document.querySelector<HTMLInputElement>(`[data-rule-title="${id}"]`)?.focus());
   };
   const remove = (rule: Rule) => {
@@ -81,16 +79,17 @@ export function RulesPage() {
 
   const on = rules?.filter((r) => r.on).length ?? 0;
   return (
-    // A page in the home's main panel, set like Settings: one quiet card of
-    // rows, each rule a name with its Off | On pair. Press a rule to unfold
-    // it and edit its words and which films it's for.
+    // A page in the home's main panel, set like Settings: each rule its own
+    // quiet card, open to edit, with its Off | On pair at the top.
     <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[660px] flex-col gap-6 px-8 pt-10 pb-20">
       <div className="flex items-end gap-4 px-1">
         <div className="flex flex-col gap-1.5">
           <h1 id="rules-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
             Rules
           </h1>
-          <p className="text-[12.5px] text-white/50">Claude follows these in every film, for the whole team.</p>
+          <p className="text-[12.5px] text-white/50 tabular-nums">
+            Claude follows these in every film, for the whole team.{rules ? ` ${on} of ${rules.length} on.` : ""}
+          </p>
         </div>
         <button
           type="button"
@@ -120,23 +119,11 @@ export function RulesPage() {
           <span className="studio-shimmer">Loading the rules</span>
         </p>
       ) : (
-        <div className="flex flex-col gap-1.5 rounded-[16px] bg-white/[0.025] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
-          <p className="px-1 pt-0.5 pb-1 text-[12px] text-white/45 tabular-nums">
-            {on} of {rules.length} on
-          </p>
-          <ul className="flex flex-col gap-1">
-            {rules.map((r) => (
-              <RuleRow
-                key={r.id}
-                rule={r}
-                open={openId === r.id}
-                onToggle={() => setOpenId((id) => (id === r.id ? null : r.id))}
-                onChange={(part) => change(r.id, part)}
-                onRemove={() => remove(r)}
-              />
-            ))}
-          </ul>
-        </div>
+        <ul className="flex flex-col gap-3">
+          {rules.map((r) => (
+            <RuleCard key={r.id} rule={r} onChange={(part) => change(r.id, part)} onRemove={() => remove(r)} />
+          ))}
+        </ul>
       )}
     </section>
   );
@@ -150,77 +137,48 @@ const ON_OFF = [
   { value: true, label: "On" },
 ];
 
-function RuleRow({
-  rule: r,
-  open,
-  onToggle,
-  onChange,
-  onRemove,
-}: {
-  rule: Rule;
-  open: boolean;
-  onToggle: () => void;
-  onChange: (part: Partial<Rule>) => void;
-  onRemove: () => void;
-}) {
+function RuleCard({ rule: r, onChange, onRemove }: { rule: Rule; onChange: (part: Partial<Rule>) => void; onRemove: () => void }) {
   const name = r.title.trim() || "Untitled rule";
   return (
-    <li className={cn("flex flex-col rounded-[10px] bg-white/[0.05] transition-colors", open && "bg-white/[0.065]")}>
-      <div className="flex h-10 items-center gap-2 ps-1 pe-1.5">
+    <li className="group/rule flex flex-col gap-1.5 rounded-[16px] bg-white/[0.025] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+      <div className="flex items-center gap-2 ps-1">
+        <input
+          data-rule-title={r.id}
+          value={r.title}
+          onChange={(e) => onChange({ title: e.target.value })}
+          placeholder="Name this rule"
+          aria-label="Rule name"
+          className={cn(
+            "-ms-1 h-8 min-w-0 flex-1 rounded-[8px] bg-transparent px-1.5 font-medium text-[13px] outline-none transition-colors placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]",
+            r.on ? "text-white/90" : "text-white/40",
+          )}
+        />
         <button
           type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          className="flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-[8px] px-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(ICON_BUTTON, "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5")}
+          onClick={onRemove}
+          aria-label={`Delete ${name}`}
         >
-          <ChevronDownIcon
-            aria-hidden="true"
-            className={cn("size-3.5 shrink-0 text-white/40 transition-transform duration-200 motion-reduce:transition-none", !open && "-rotate-90")}
-          />
-          <span className={cn("truncate text-[12.5px] transition-colors", r.on ? "text-white/90" : "text-white/40", !r.title.trim() && "text-white/40")}>{name}</span>
-          {r.scope !== "all" ? <span className="shrink-0 text-[11.5px] text-white/35">{SHORT[r.scope]}</span> : null}
+          <DeleteDustbin01Icon aria-hidden="true" />
         </button>
         <Slide label={`${name}, on or off`} value={r.on} options={ON_OFF} onChange={(v) => onChange({ on: v })} segment={40} />
       </div>
-      {/* Unfolds smoothly; closed, its fields can't be reached. */}
-      <div className={cn("grid transition-[grid-template-rows] duration-250 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
-        <div className="overflow-hidden" inert={!open}>
-          <div className="flex flex-col gap-1.5 px-1.5 pt-0.5 pb-1.5">
-            <label className={cn(ROW, "gap-3 bg-white/[0.04] px-3 focus-within:bg-white/[0.07]")}>
-              <span className={LABEL}>Name</span>
-              <input
-                data-rule-title={r.id}
-                value={r.title}
-                onChange={(e) => onChange({ title: e.target.value })}
-                placeholder="Calm motion"
-                className="h-full min-w-0 flex-1 bg-transparent text-right text-white/90 outline-none placeholder:text-white/30"
-              />
-            </label>
-            <label className="flex flex-col gap-1 rounded-[10px] bg-white/[0.04] px-3 pt-2 pb-1.5 text-[12px] focus-within:bg-white/[0.07]">
-              <span className={LABEL}>Rule</span>
-              <textarea
-                value={r.body}
-                onChange={(e) => onChange({ body: e.target.value })}
-                placeholder="Keep every move slow and eased"
-                rows={2}
-                className="resize-none bg-transparent text-[12.5px] text-white/80 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30"
-              />
-            </label>
-            <div className={cn(ROW, "gap-3 bg-white/[0.04] ps-3 pe-1")}>
-              <span className={LABEL}>For</span>
-              <span className="ms-auto">
-                <Slide label={`${name} applies to`} value={r.scope} options={SCOPE_OPTIONS} onChange={(v) => onChange({ scope: v })} segment={76} />
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={onRemove}
-              className={cn(ROW, "cursor-pointer justify-center gap-2 bg-white/[0.04] px-3 text-white/55 outline-none hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5")}
-            >
-              <DeleteDustbin01Icon aria-hidden="true" />
-              Delete rule
-            </button>
-          </div>
+      <div className={cn("flex flex-col gap-1.5 transition-opacity", !r.on && "opacity-50")}>
+        <label className="flex flex-col rounded-[10px] bg-white/[0.05] px-3 py-2 text-[12px] focus-within:bg-white/[0.08]">
+          <textarea
+            value={r.body}
+            onChange={(e) => onChange({ body: e.target.value })}
+            placeholder="Keep every move slow and eased"
+            aria-label={`${name}, what Claude should do`}
+            rows={2}
+            className="resize-none bg-transparent text-[12.5px] text-white/75 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30"
+          />
+        </label>
+        <div className={cn(ROW, "gap-3 ps-3 pe-1")}>
+          <span className={LABEL}>For</span>
+          <span className="ms-auto">
+            <Slide label={`${name} applies to`} value={r.scope} options={SCOPE_OPTIONS} onChange={(v) => onChange({ scope: v })} segment={76} />
+          </span>
         </div>
       </div>
     </li>
