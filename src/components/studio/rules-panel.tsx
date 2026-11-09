@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { DeleteDustbin01Icon, PlusIcon } from "@/components/icons";
 import type { Rule, RuleScope } from "@/lib/studio/rules";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,15 @@ import { ICON_BUTTON, PILL_BUTTON } from "./panel";
 
 // The studio's standing rules: Claude follows them in every film unless a
 // prompt says otherwise, and the whole team shares them. Each rule is a
-// card you type straight into; changes save on their own.
+// widget you type straight into; changes save on their own.
+
+// Each scope's tab, in the Ideas page's colours: lavender for every film,
+// mint for motion graphics, pink for video edits.
+const TABS: Record<RuleScope, { tab: string; accent: string }> = {
+  all: { tab: "#a79dff", accent: "#958aff" },
+  motion: { tab: "#93e3b9", accent: "#5fd59c" },
+  video: { tab: "#ffa6c8", accent: "#ff86b6" },
+};
 
 const SCOPES: { value: RuleScope; label: string }[] = [
   { value: "all", label: "Every film" },
@@ -76,101 +84,119 @@ export function RulesPage() {
   };
 
   return (
-    // A page in the home's main panel, as Settings is: the rules, then a
-    // way to add one.
-    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[660px] flex-col gap-6 px-8 pt-10 pb-20">
-      <div className="flex flex-col gap-1.5 px-1">
-        <h1 id="rules-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
-          Rules
-        </h1>
-        <p className="text-[12.5px] text-white/50 leading-relaxed">
-          Claude follows these in every film, for the whole team.
-        </p>
+    // A page in the home's main panel. Each rule is a widget, like an idea
+    // list on the Ideas page: a dark card tucked into a coloured tab that
+    // says which films it applies to, in a grid of two.
+    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[920px] flex-col gap-8 px-8 pt-10 pb-20">
+      <div className="flex items-end gap-4 px-1">
+        <div className="flex flex-col gap-1.5">
+          <h1 id="rules-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
+            Rules
+          </h1>
+          <p className="text-[12.5px] text-white/50 leading-relaxed">Claude follows these in every film, for the whole team.</p>
+        </div>
+        <button
+          type="button"
+          disabled={rules === null}
+          onClick={add}
+          className={cn(PILL_BUTTON, "ms-auto bg-white/[0.06] text-white/80 hover:bg-white/[0.1] hover:text-white")}
+        >
+          <PlusIcon aria-hidden="true" />
+          Add a rule
+        </button>
       </div>
+      {removed || problem ? (
+        <div className="-mt-4 flex flex-wrap items-center gap-3 px-1">
+          {removed ? (
+            <p className="text-[12px] text-white/50" role="status">
+              Rule deleted.{" "}
+              <button type="button" onClick={undoRemove} className="cursor-pointer text-white/85 underline-offset-2 hover:underline">
+                Undo
+              </button>
+            </p>
+          ) : null}
+          {problem ? <p className="text-[12px] text-[#ff9592]">{problem}</p> : null}
+        </div>
+      ) : null}
       {rules === null ? (
         <p className="px-1 text-[12.5px]">
           <span className="studio-shimmer">Loading the rules</span>
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {rules.map((r, i) => (
-            <li
-              key={r.id}
-              className={cn(
-                "group/rule flex flex-col rounded-[14px] bg-white/[0.035] py-3 ps-4 pe-2 transition-[opacity,background-color] hover:bg-white/[0.05]",
-                !r.on && "opacity-50",
-              )}
-            >
-              <div className="flex min-w-0 flex-col gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  <input
-                    data-rule-title={r.id}
-                    value={r.title}
-                    onChange={(e) => change(r.id, { title: e.target.value })}
-                    placeholder="Calm motion"
-                    aria-label={`Rule ${i + 1} name`}
-                    className="-ms-1.5 h-7 min-w-0 flex-1 rounded-[7px] bg-transparent px-1.5 font-medium text-[13px] text-white/90 outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
-                  />
-                  <Slide
-                    label={`Rule ${i + 1} on or off`}
-                    value={r.on}
-                    options={[
-                      { value: false, label: "Off" },
-                      { value: true, label: "On" },
-                    ]}
-                    onChange={(on) => change(r.id, { on })}
-                    segment={34}
-                  />
-                  <button
-                    type="button"
-                    className={cn(
-                      ICON_BUTTON,
-                      "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5",
-                    )}
-                    onClick={() => remove(r)}
-                    aria-label={`Delete rule ${i + 1}`}
-                  >
-                    <DeleteDustbin01Icon aria-hidden="true" />
-                  </button>
+        <ul className="grid grid-cols-1 gap-x-5 gap-y-6 md:grid-cols-2">
+          {rules.map((r, i) => {
+            const look = TABS[r.scope] ?? TABS.all;
+            return (
+              <li key={r.id} className={cn("group/rule relative flex flex-col pt-7 transition-opacity", !r.on && "opacity-55")} style={{ "--accent": look.accent } as CSSProperties}>
+                {/* The coloured tab behind the card's top, saying which films it's for. */}
+                <div aria-hidden="true" className="absolute inset-x-0 top-0 h-16 rounded-t-[22px] px-4 pt-[6px] font-medium text-[12px] text-black/55" style={{ background: look.tab }}>
+                  {SCOPES.find((s) => s.value === r.scope)?.label ?? "Every film"}
                 </div>
-                <textarea
-                  value={r.body}
-                  onChange={(e) => change(r.id, { body: e.target.value })}
-                  placeholder="Keep every move slow and eased"
-                  aria-label={`Rule ${i + 1}`}
-                  rows={2}
-                  className="-ms-1.5 me-1 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[12.5px] text-white/65 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30 hover:bg-white/[0.03] focus:bg-white/[0.05]"
-                />
-                <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                  <span className="text-[11.5px] text-white/35">Applies to</span>
-                  <Slide
-                    label={`Rule ${i + 1} applies to`}
-                    value={r.scope}
-                    options={SCOPES}
-                    onChange={(scope) => change(r.id, { scope })}
-                    segment={104}
+                <div className="relative flex flex-1 flex-col overflow-hidden rounded-[22px] bg-[#1a1a1d] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_18px_36px_-18px_rgba(0,0,0,0.8)]">
+                  {/* A faint dot grid over the right of the card, fading in from the left. */}
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 right-0 w-3/5 [background-image:radial-gradient(rgba(255,255,255,0.075)_1px,transparent_1.3px)] [background-size:12px_12px] [mask-image:linear-gradient(to_right,transparent,#000_45%)]"
                   />
+                  <div className="relative flex items-start gap-2 px-4 pt-4">
+                    <input
+                      data-rule-title={r.id}
+                      value={r.title}
+                      onChange={(e) => change(r.id, { title: e.target.value })}
+                      placeholder="Calm motion"
+                      aria-label={`Rule ${i + 1} name`}
+                      className="-ms-1.5 h-9 min-w-0 flex-1 rounded-[8px] bg-transparent px-1.5 font-semibold text-[19px] text-white tracking-[-0.015em] outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
+                    />
+                    <span className="flex shrink-0 items-center gap-0.5 pt-1">
+                      <button
+                        type="button"
+                        className={cn(
+                          ICON_BUTTON,
+                          "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5",
+                        )}
+                        onClick={() => remove(r)}
+                        aria-label={`Delete rule ${i + 1}`}
+                      >
+                        <DeleteDustbin01Icon aria-hidden="true" />
+                      </button>
+                      <Slide
+                        label={`Rule ${i + 1} on or off`}
+                        value={r.on}
+                        options={[
+                          { value: false, label: "Off" },
+                          { value: true, label: "On" },
+                        ]}
+                        onChange={(on) => change(r.id, { on })}
+                        segment={34}
+                      />
+                    </span>
+                  </div>
+                  <textarea
+                    value={r.body}
+                    onChange={(e) => change(r.id, { body: e.target.value })}
+                    placeholder="Keep every move slow and eased"
+                    aria-label={`Rule ${i + 1}`}
+                    rows={3}
+                    className="relative mx-2.5 mt-1 mb-3 flex-1 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[13px] text-white/65 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30 hover:bg-white/[0.03] focus:bg-white/[0.05]"
+                  />
+                  <div className="relative flex flex-wrap items-center gap-2 border-white/[0.06] border-t px-4 py-2.5">
+                    <span className="text-[11.5px] text-white/35">Applies to</span>
+                    <span className="ms-auto">
+                      <Slide
+                        label={`Rule ${i + 1} applies to`}
+                        value={r.scope}
+                        options={SCOPES}
+                        onChange={(scope) => change(r.id, { scope })}
+                        segment={96}
+                      />
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
-      <div className="flex items-center gap-3">
-        <button type="button" disabled={rules === null} onClick={add} className={cn(PILL_BUTTON, "text-white/75 hover:bg-white/[0.07] hover:text-white")}>
-          <PlusIcon aria-hidden="true" />
-          Add a rule
-        </button>
-        {removed ? (
-          <p className="text-[12px] text-white/50" role="status">
-            Rule deleted.{" "}
-            <button type="button" onClick={undoRemove} className="cursor-pointer text-white/85 underline-offset-2 hover:underline">
-              Undo
-            </button>
-          </p>
-        ) : null}
-        {problem ? <p className="text-[12px] text-[#ff9592]">{problem}</p> : null}
-      </div>
     </section>
   );
 }
