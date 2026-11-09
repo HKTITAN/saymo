@@ -457,7 +457,7 @@ export function Dashboard({
               <section aria-label={folder ? folder.name : "Films"} className="mx-auto flex max-w-[1180px] flex-col gap-4 px-8 pb-20">
                 <header className="flex h-8 items-center gap-2 px-1">
                   <h2 className="truncate font-medium text-[13px] text-white/90">{q ? "Search results" : folder ? folder.name : "Recent"}</h2>
-                  {everyFilm ? <span className="text-[12px] text-white/35 tabular-nums">{everyFilm.length}</span> : null}
+                  {everyFilm ? <span className="text-[12px] text-white/35 tabular-nums">({everyFilm.length})</span> : null}
                   <span className="ms-auto flex items-center gap-3">
                     {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder</span> : null}
                     {libDrag ? <span className="text-[11.5px] text-white/45">Drop it on a film</span> : null}
