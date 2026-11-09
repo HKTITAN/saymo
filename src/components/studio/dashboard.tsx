@@ -593,17 +593,7 @@ export function Dashboard({
             />
           ) : null}
           {section === "ideas" ? (
-            <IdeasPage
-              onMake={(idea) => {
-                if (idea.kind === "reel") {
-                  setReelIdea(idea.text);
-                  setOverlay("reel");
-                  return;
-                }
-                setSeed({ text: idea.kind === "demo" ? `A product demo: ${idea.text}` : `A video: ${idea.text}`, key: Date.now() });
-                goSection("home");
-              }}
-            />
+            <IdeasPage />
           ) : null}
           {section === "rules" ? <RulesPage /> : null}
           {section === "settings" ? <SettingsPage /> : null}

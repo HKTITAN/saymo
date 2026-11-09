@@ -14,13 +14,17 @@ import {
 import type { Idea, IdeaKind, IdeaState } from "@/lib/studio/ideas";
 import { cn } from "@/lib/utils";
 import { Glide } from "./slide-mark";
+import { Caveat } from "next/font/google";
 
 // The Ideas page: what to make next. Each kind (reels, demos, videos) is a
-// pocket, a glossy squircle tray with its next ideas tucked in as paper
-// cards, the way an app icon shows what's inside. Pick one and its list
-// opens below: a little dark widget with today's date on a coloured tab, a
-// faint dot grid, and ideas to tick off. Saved on this Mac through
-// /api/studio/ideas; "Make it" starts the film.
+// pocket, a glossy squircle tray with its next ideas listed on one paper
+// page, the way an app icon shows what's inside. Pick one and its list
+// opens below: a little dark widget with today's date on a coloured tab and
+// ideas to tick off, made ones crossed out by hand. Saved on this Mac through
+// /api/studio/ideas.
+
+// The notepad's handwriting, as in Settings' "Bring your own AI".
+const hand = Caveat({ subsets: ["latin"], weight: ["600"], display: "swap" });
 
 type Look = {
   kind: IdeaKind;
@@ -86,7 +90,7 @@ const STOPS = [0, 0.2, 0.35, 0.5, 0.65, 0.8, 1];
 const eased = ([from, to]: [string, string]) =>
   `linear-gradient(180deg, ${STOPS.map((p) => `color-mix(in oklab, ${to} ${Math.round(((1 - Math.cos(Math.PI * p)) / 2) * 100)}%, ${from}) ${Math.round(p * 100)}%`).join(", ")})`;
 
-export function IdeasPage({ onMake }: { onMake: (idea: Idea) => void }) {
+export function IdeasPage() {
   const [ideas, setIdeas] = useState<Idea[] | null>(null);
   const [kind, setKind] = useState<IdeaKind>("reel");
   const [problem, setProblem] = useState<string | null>(null);
@@ -172,7 +176,6 @@ export function IdeasPage({ onMake }: { onMake: (idea: Idea) => void }) {
               onAdd={(text) => save([...all, { id: newId(), kind, text, state: "todo", at: new Date().toISOString() }])}
               onChange={change}
               onRemove={(id) => save(all.filter((i) => i.id !== id))}
-              onMake={onMake}
             />
           </div>
         </Glide>
@@ -181,30 +184,12 @@ export function IdeasPage({ onMake }: { onMake: (idea: Idea) => void }) {
   );
 }
 
-// Where the cards rest in a pocket, back to front: how far down (px), how
-// far each is turned (so the stack looks dropped in by hand), and its
-// delay, so they settle one after another, the front one first.
-type Slot = { top: number; tilt: number; delay: string };
-const FRONT: Slot = { top: 60, tilt: 0, delay: "delay-0" };
-const SLOTS: Slot[] = [{ top: 20, tilt: -1.5, delay: "delay-[60ms]" }, { top: 40, tilt: 1, delay: "delay-[30ms]" }, FRONT];
-
-// One kind as a pocket: the dark inside, up to three of its next ideas as
-// paper cards (the next one in front), and the front with the kind's mark
-// pressed in. Hovering lifts the cards a little; the open one has them
-// pulled up, the front card clear of the pocket.
+// One kind as a pocket: the dark inside, one paper page with its next
+// ideas listed down it, and the front with the kind's mark pressed in.
+// Hovering lifts the page a little; the open pocket has it pulled up.
 function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[]; loading: boolean; on: boolean; onPick: () => void }) {
   const open = ideas.filter((i) => i.state === "todo").sort(oldestFirst);
-  const made = ideas.some((i) => i.state === "made");
-  // Back to front, so the next one is drawn last, on top.
-  const cards = open.slice(0, 3).reverse();
-  const slots = SLOTS.slice(SLOTS.length - Math.max(1, cards.length));
-  const card = (slot: Slot) =>
-    cn(
-      "absolute left-[24px] flex h-[30px] w-[120px] items-start gap-1.5 rounded-[7px] bg-[#f7f6f2] px-2 pt-[9px] shadow-[0_-1px_3px_rgba(0,0,0,0.2),0_1px_2px_rgba(0,0,0,0.12)]",
-      "[transform:translateY(var(--lift))_rotate(var(--tilt))] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-      on ? "[--lift:-8px]" : "[--lift:0px] group-hover/pocket:[--lift:-4px]",
-      slot.delay,
-    );
+  const lines = open.slice(0, 3);
   return (
     <button
       type="button"
@@ -229,27 +214,51 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
           className="absolute inset-x-[14px] top-[14px] h-[96px] rounded-[22px] shadow-[inset_0_7px_12px_rgba(0,0,0,0.5)] supports-[corner-shape:squircle]:rounded-[32px] supports-[corner-shape:squircle]:[corner-shape:squircle]"
           style={{ background: look.well }}
         />
-        {/* The cards drop in on the way in, all together. */}
+        {/* The page drops in on the way in. */}
         <span className="absolute inset-0 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-3 motion-safe:duration-500">
-          {loading ? null : cards.length ? (
-            cards.map((idea, i) => {
-              const slot = slots[i] ?? FRONT;
-              return (
-                <span key={idea.id} className={card(slot)} style={{ top: slot.top, "--tilt": `${slot.tilt}deg` } as CSSProperties}>
-                  <span className="size-[10px] shrink-0 rounded-[3px] border-[1.25px] border-[#c4c4ca]" />
-                  <span className="min-w-0 truncate font-semibold text-[#232326] text-[10px] leading-[12px]">{idea.text}</span>
-                </span>
-              );
-            })
-          ) : (
-            // Empty: one blank card, waiting.
-            <span className={card(FRONT)} style={{ top: FRONT.top, "--tilt": "0deg" } as CSSProperties}>
-              <span className="size-[10px] shrink-0 rounded-[3px] border-[1.25px] border-[#d4d4d9]" />
-              <span className="min-w-0 truncate font-medium text-[#9d9da4] text-[10px] leading-[12px]">{look.add}</span>
+          {loading ? null : (
+            // A little spiral notepad: coil along the top, a margin line,
+            // "To do" and the next ideas written by hand on ruled lines.
+            <span
+              className={cn(
+                "absolute top-[16px] left-[26px] block h-[100px] w-[116px] rounded-[8px] bg-[#fbfaf5] shadow-[0_-1px_3px_rgba(0,0,0,0.2),0_1px_2px_rgba(0,0,0,0.12)]",
+                "[transform:translateY(var(--lift))_rotate(-1.5deg)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+                on ? "[--lift:-6px]" : "[--lift:0px] group-hover/pocket:[--lift:-3px]",
+              )}
+            >
+              <span className="absolute inset-x-[10px] top-[-4px] flex justify-between">
+                {[0, 1, 2, 3, 4, 5, 6].map((k) => (
+                  <span key={k} className="relative block h-[11px] w-[5px]">
+                    <span className="absolute bottom-0 left-1/2 size-[4px] -translate-x-1/2 rounded-full bg-[#2a2833]/70" />
+                    <span className="absolute top-0 left-0 h-[8px] w-[5px] rounded-full border-[#a9a8b2] border-[1.5px] border-b-transparent" />
+                  </span>
+                ))}
+              </span>
+              <span className="absolute top-[12px] bottom-[6px] left-[17px] w-px" style={{ background: look.accent, opacity: 0.45 }} />
+              <span className={cn(hand.className, "absolute top-[10px] left-[22px] text-[13px] leading-[14px]")} style={{ color: look.glyph }}>
+                To do
+              </span>
+              <span className="absolute inset-x-0 top-[26px] flex flex-col">
+                {/* Always three ruled lines with boxes; the ideas fill them from the top. */}
+                {[0, 1, 2].map((k) => {
+                  const idea = lines[k];
+                  const hint = !lines.length && k === 0;
+                  return (
+                    <span key={idea?.id ?? `blank-${k}`} className="flex h-[14px] min-w-0 items-center gap-[5px] border-[#1d2b5a]/[0.08] border-b ps-[22px] pe-2">
+                      <span className="size-[7px] shrink-0 rounded-[2px] border-[1.2px]" style={{ borderColor: look.accent }} />
+                      {idea || hint ? (
+                        <span className={cn(hand.className, "min-w-0 truncate pe-1 text-[12px] leading-[14px]", idea ? "text-[#2a2a2e]" : "text-[#a3a3aa]")}>
+                          {idea ? idea.text : look.add}
+                        </span>
+                      ) : null}
+                    </span>
+                  );
+                })}
+              </span>
             </span>
           )}
         </span>
-        {/* The front, its top casting a soft shadow down onto the cards. */}
+        {/* The front, its top casting a soft shadow down onto the page. */}
         <span
           className="absolute inset-x-0 top-[86px] bottom-0 flex items-end justify-center pb-[16px] shadow-[0_-10px_18px_-10px_rgba(0,0,0,0.5)]"
           style={{ background: eased(look.face), color: look.glyph }}
@@ -260,9 +269,6 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
       <span className="flex flex-col items-center gap-0.5 px-1">
         <span className={cn("font-medium text-[13.5px] transition-colors duration-200", on ? "text-white" : "text-white/60 group-hover/pocket:text-white/85")}>
           {look.title}
-        </span>
-        <span className="text-[11.5px] text-white/40 tabular-nums">
-          {loading ? " " : open.length ? `${open.length} to make` : made ? "All made" : "Empty"}
         </span>
       </span>
     </button>
@@ -278,7 +284,6 @@ function Widget({
   onAdd,
   onChange,
   onRemove,
-  onMake,
 }: {
   look: Look;
   today: string;
@@ -288,31 +293,23 @@ function Widget({
   onAdd: (text: string) => void;
   onChange: (id: string, patch: Partial<Idea>) => void;
   onRemove: (id: string) => void;
-  onMake: (idea: Idea) => void;
 }) {
   const [draft, setDraft] = useState("");
   // Still to make first, then made, then the ones let go; oldest first in each.
   const sorted = [...ideas].sort((a, b) => ORDER[a.state] - ORDER[b.state] || oldestFirst(a, b));
-  const open = ideas.filter((i) => i.state === "todo").length;
   return (
     <section aria-label={look.title} className="relative pt-7" style={{ "--accent": look.accent } as CSSProperties}>
-      {/* The coloured tab behind the card's top, today's date on it, peeking out above and in its corners. */}
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-16 rounded-t-[22px] px-4 pt-[6px] font-medium text-[12px] text-black/55" style={{ background: look.tab }}>
-        {today}
+      {/* The coloured tab behind the card's top, today's date on its left and how many are left on its right, peeking out above and in its corners. */}
+      <div className="absolute inset-x-0 top-0 flex h-16 items-start justify-between rounded-t-[22px] px-4 pt-[6px] font-medium text-[12px] text-black/55" style={{ background: look.tab }}>
+        <span aria-hidden="true">{today}</span>
       </div>
       <div className="relative overflow-hidden rounded-[22px] bg-[#1a1a1d] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_18px_36px_-18px_rgba(0,0,0,0.8)]">
-        {/* A faint dot grid over the right of the card, fading in from the left. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 right-0 w-3/5 [background-image:radial-gradient(rgba(255,255,255,0.075)_1px,transparent_1.3px)] [background-size:12px_12px] [mask-image:linear-gradient(to_right,transparent,#000_45%)]"
-        />
         <header className="relative flex items-baseline gap-2 px-4 pt-4 pb-1.5">
           <h2 className="font-semibold text-[22px] text-white tracking-[-0.015em]">{look.title}</h2>
-          {ideas.length ? <span className="ms-auto text-[12px] text-white/35 tabular-nums">{open ? `${open} to make` : "All made"}</span> : null}
         </header>
         <ul className="relative flex flex-col px-2 pb-1.5">
-          {sorted.map((idea) => (
-            <IdeaRow key={idea.id} idea={idea} onChange={(patch) => onChange(idea.id, patch)} onRemove={() => onRemove(idea.id)} onMake={() => onMake(idea)} />
+          {sorted.map((idea, k) => (
+            <IdeaRow key={idea.id} idea={idea} doodle={k} onChange={(patch) => onChange(idea.id, patch)} onRemove={() => onRemove(idea.id)} />
           ))}
           {!loading && !ideas.length ? <li className="px-2 pt-1 pb-2 text-[13px] text-white/35">Nothing here yet. What’s the first one?</li> : null}
         </ul>
@@ -343,7 +340,7 @@ function Widget({
 
 const ICON = "flex size-6 cursor-pointer items-center justify-center rounded-[7px] text-white/40 outline-none transition-colors hover:bg-white/[0.08] hover:text-white/85 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-3.5";
 
-function IdeaRow({ idea, onChange, onRemove, onMake }: { idea: Idea; onChange: (patch: Partial<Idea>) => void; onRemove: () => void; onMake: () => void }) {
+function IdeaRow({ idea, doodle, onChange, onRemove }: { idea: Idea; doodle: number; onChange: (patch: Partial<Idea>) => void; onRemove: () => void }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(idea.text);
   const made = idea.state === "made";
@@ -403,7 +400,14 @@ function IdeaRow({ idea, onChange, onRemove, onMake }: { idea: Idea; onChange: (
           />
         ) : (
           <p onDoubleClick={() => setEditing(true)} className={cn("text-pretty text-[14px] leading-snug", made ? "text-white/35" : skip ? "text-white/30 line-through decoration-white/30" : "text-white/90")}>
-            {idea.text}
+            {made ? (
+              <span className="relative inline-block max-w-full">
+                {idea.text}
+                <Scribble n={doodle} text={idea.text} />
+              </span>
+            ) : (
+              idea.text
+            )}
           </p>
         )}
         {/* When it went on the list; once made, when it was made. */}
@@ -418,11 +422,6 @@ function IdeaRow({ idea, onChange, onRemove, onMake }: { idea: Idea; onChange: (
       </div>
 
       <span className="flex shrink-0 items-center gap-0.5 self-center opacity-0 transition-opacity focus-within:opacity-100 group-hover/idea:opacity-100">
-        {made || skip ? null : (
-          <button type="button" onClick={onMake} className="me-1 h-6 cursor-pointer rounded-full bg-(--accent) px-2.5 font-medium text-[#141414] text-[11.5px] outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring">
-            Make it
-          </button>
-        )}
         <button type="button" className={ICON} onClick={() => setEditing(true)} aria-label={`Edit “${idea.text}”`}>
           <PencilEditIcon aria-hidden="true" />
         </button>
@@ -439,5 +438,59 @@ function IdeaRow({ idea, onChange, onRemove, onMake }: { idea: Idea; onChange: (
         </button>
       </span>
     </li>
+  );
+}
+
+// Hand-drawn cross-outs for made ideas, drawn to the length of the words
+// (about 7.2 px a letter) so short ones don't squash. Which one an idea gets
+// comes from its place in the list, so neighbours never match.
+const n1 = (v: number) => Math.round(v * 10) / 10;
+const SCRIBBLES: ((w: number) => string)[] = [
+  // Zigzag
+  (w) => {
+    let d = "M0 11";
+    for (let x = 5, k = 0; x < w; x += 5, k++) d += ` L${n1(x)} ${k % 2 ? 14 : 6}`;
+    return `${d} L${n1(w)} 10`;
+  },
+  // Wave
+  (w) => {
+    let d = "M0 10";
+    for (let x = 0, k = 0; x < w; x += 6, k++) d += ` Q${n1(x + 3)} ${k % 2 ? 16 : 4} ${n1(Math.min(w, x + 6))} 10`;
+    return d;
+  },
+  // Loops
+  (w) => {
+    let d = "M0 13";
+    for (let x = 0; x + 9 <= w; x += 9) d += ` C${n1(x + 6)} 13 ${n1(x + 9)} 4 ${n1(x + 6)} 4 C${n1(x + 3)} 4 ${n1(x + 3)} 14 ${n1(x + 9)} 12`;
+    return d;
+  },
+  // Double strike
+  (w) => `M0 9 C${n1(w * 0.3)} 7 ${n1(w * 0.65)} 9 ${n1(w)} 7 M2 13 C${n1(w * 0.35)} 12 ${n1(w * 0.7)} 14 ${n1(w - 1)} 11`,
+  // Back and forth
+  (w) => `M1 9 C${n1(w * 0.35)} 7 ${n1(w * 0.7)} 8 ${n1(w - 1)} 8 C${n1(w * 0.7)} 10 ${n1(w * 0.35)} 11 3 13 C${n1(w * 0.35)} 13 ${n1(w * 0.7)} 12 ${n1(w - 2)} 12`,
+  // Slashes
+  (w) => {
+    let d = "";
+    for (let x = 1; x + 5 <= w; x += 6) d += `M${n1(x)} 16 L${n1(x + 5)} 4 `;
+    return d.trim();
+  },
+];
+
+function Scribble({ n, text }: { n: number; text: string }) {
+  const w = Math.max(18, Math.round(text.length * 7.2) + 8);
+  return (
+    <svg aria-hidden="true" viewBox={`0 0 ${w} 20`} preserveAspectRatio="none" className="pointer-events-none absolute -inset-x-1 top-1/2 h-[0.9em] w-[calc(100%+0.5rem)] -translate-y-1/2 overflow-visible text-(--accent)">
+      <path
+        d={SCRIBBLES[n % SCRIBBLES.length](w)}
+        pathLength={1}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        className="[stroke-dasharray:1] motion-safe:animate-[scribble_450ms_cubic-bezier(0.23,1,0.32,1)_both]"
+      />
+    </svg>
   );
 }
