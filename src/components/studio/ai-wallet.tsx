@@ -172,7 +172,7 @@ export function AiWallet({ choice, onPick }: { choice: AiChoice; onPick: (provid
         <Pocket mark={look.mark} />
       </div>
 
-      <div className="flex items-center justify-between border-white/[0.06] border-t pt-3">
+      <div className="flex items-center justify-between pt-1">
         <span className="font-medium text-[13px] text-white/55">
           {current.name} · {current.via}
         </span>
