@@ -9,6 +9,6 @@
     "telemetry:off": "hyperframes telemetry disable"
   },
   "devDependencies": {
-    "hyperframes": "0.8.227"
+    "hyperframes": "0.9.26"
   }
 }

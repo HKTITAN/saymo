@@ -4,7 +4,7 @@
   "type": "module",
   "description": "The studio's sound design engine: Tone.js (MIT), bundled for an offline render in headless Chrome. Old Strudel scores need the in-house add-on in ./strudel.",
   "dependencies": {
-    "tone": "15.1.22",
-    "esbuild": "0.28.1"
+    "esbuild": "0.28.2",
+    "tone": "15.1.22"
   }
 }

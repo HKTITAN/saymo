@@ -1,29 +1,27 @@
 # Third-party notices
 
-Motion Studio 0.1.0 (product edition) is built with the software, models, font, icons and skills below, made by others. Each is listed with its version, licence and copyright line, followed by the text of its licence. A licence text that several of them share is printed once, after the list of every one that uses it.
+Motion Studio 0.1.0 (in-house edition) is built with the software, models, font, icons and skills below, made by others. Each is listed with its version, licence and copyright line, followed by the text of its licence. A licence text that several of them share is printed once, after the list of every one that uses it.
 
 This file is made by `npm run licences` from what's installed. Don't edit it by hand: run that again after adding or updating anything.
 
-Left out of the product edition, which doesn't ship them: @strudel/core, @strudel/mini, @strudel/tonal, @strudel/transpiler, @strudel/webaudio, gsap, superdough.
-
 | Licence | How many |
 | --- | --- |
-| MIT | 640 |
+| MIT | 633 |
 | MIT OR Apache-2.0 | 173 |
 | Apache-2.0 | 38 |
-| ISC | 35 |
+| ISC | 36 |
 | BSD-2-Clause | 21 |
 | MIT OR Apache-2.0 OR Zlib | 19 |
 | BSD-3-Clause | 15 |
 | Remotion License | 11 |
 | MPL-2.0 | 10 |
 | Zlib | 9 |
+| CC-BY-4.0 | 3 |
 | MIT OR Apache-2.0 OR BSD-2-Clause | 3 |
 | MIT OR Unlicense | 3 |
 | (MIT OR Apache-2.0) AND Unicode-3.0 | 2 |
 | 0BSD | 2 |
 | Apache-2.0 OR BSD-3-Clause | 2 |
-| CC-BY-4.0 | 2 |
 | CC0-1.0 | 2 |
 | Unlicense | 2 |
 | Apache-2.0 AND MIT | 1 |
@@ -34,45 +32,44 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 | MIT OR Apache-2.0 OR 0BSD | 1 |
 | OFL-1.1 | 1 |
 | Python-2.0 | 1 |
+| UNLICENSED | 1 |
 | WTFPL | 1 |
 | Not checked | 134 |
-| All | 1132 |
+| All | 1128 |
 
 ## MIT
 
 - **@alloc/quick-lru** 5.3.0: Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com). https://github.com/aleclarson/quick-lru
 - **@babel/code-frame** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-code-frame
 - **@babel/compat-data** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://github.com/babel/babel
-- **@babel/core** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-core
-- **@babel/generator** 7.29.8: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-generator
-- **@babel/generator** 7.29.12: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-generator
-- **@babel/helper-compilation-targets** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://github.com/babel/babel
+- **@babel/core** 7.29.13: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-core
+- **@babel/generator** 7.29.13: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-generator
+- **@babel/helper-compilation-targets** 7.29.13: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://github.com/babel/babel
 - **@babel/helper-globals** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://github.com/babel/babel
 - **@babel/helper-module-imports** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-helper-module-imports
-- **@babel/helper-module-transforms** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-helper-module-transforms
-- **@babel/helper-string-parser** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-helper-string-parser
-- **@babel/helper-string-parser** 7.29.11: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-helper-string-parser
+- **@babel/helper-module-transforms** 7.29.13: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-helper-module-transforms
+- **@babel/helper-string-parser** 7.29.13: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-helper-string-parser
 - **@babel/helper-validator-identifier** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://github.com/babel/babel
 - **@babel/helper-validator-option** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://github.com/babel/babel
-- **@babel/helpers** 7.29.10: Copyright (c) 2014-present Sebastian McKenzie and other contributors; Copyright (c) 2014-present, Facebook, Inc. (ONLY ./src/helpers/regenerator* files). https://babel.dev/docs/en/next/babel-helpers
+- **@babel/helpers** 7.29.13: Copyright (c) 2014-present Sebastian McKenzie and other contributors; Copyright (c) 2014-present, Facebook, Inc. (ONLY ./src/helpers/regenerator* files). https://babel.dev/docs/en/next/babel-helpers
 - **@babel/parser** 7.24.1: Copyright (C) 2012-2014 by various contributors (see AUTHORS). https://babel.dev/docs/en/next/babel-parser
-- **@babel/parser** 7.29.9: Copyright (C) 2012-2014 by various contributors (see AUTHORS). https://babel.dev/docs/en/next/babel-parser
-- **@babel/parser** 7.29.12: Copyright (C) 2012-2014 by various contributors (see AUTHORS). https://babel.dev/docs/en/next/babel-parser
+- **@babel/parser** 7.29.13: Copyright (C) 2012-2014 by various contributors (see AUTHORS). https://babel.dev/docs/en/next/babel-parser
 - **@babel/runtime** 7.29.10: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-runtime
-- **@babel/runtime** 8.0.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-runtime
+- **@babel/runtime** 8.1.0: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-runtime
 - **@babel/template** 7.29.7: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-template
-- **@babel/traverse** 7.29.10: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-traverse
-- **@babel/traverse** 7.29.12: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-traverse
+- **@babel/traverse** 7.29.13: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-traverse
 - **@babel/types** 7.24.0: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-types
-- **@babel/types** 7.29.8: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-types
 - **@babel/types** 7.29.11: Copyright (c) 2014-present Sebastian McKenzie and other contributors. https://babel.dev/docs/en/next/babel-types
 - **@base-ui/react** 1.9.0: Copyright (c) 2019 Material-UI SAS. https://base-ui.com
 - **@base-ui/utils** 0.5.0: Copyright (c) 2019 Material-UI SAS. https://github.com/mui/base-ui
+- **@emnapi/core** 1.11.3: Copyright (c) 2021-present Toyobayashi. https://github.com/toyobayashi/emnapi#readme
+- **@emnapi/runtime** 1.11.3: Copyright (c) 2021-present Toyobayashi. https://github.com/toyobayashi/emnapi#readme
+- **@emnapi/wasi-threads** 1.2.3: Copyright (c) 2021-present Toyobayashi. https://github.com/toyobayashi/emnapi#readme
 - **@esbuild/darwin-arm64** 0.28.1: No copyright line given. https://github.com/evanw/esbuild. It has no licence file of its own, so this is its licence's standard text.
 - **@esbuild/darwin-arm64** 0.28.2: No copyright line given. https://github.com/evanw/esbuild. It has no licence file of its own, so this is its licence's standard text.
 - **@eslint-community/eslint-utils** 4.9.1: Copyright (c) 2018 Toru Nagashima. https://github.com/eslint-community/eslint-utils#readme
 - **@eslint-community/eslint-utils** 4.10.1: Copyright (c) 2018 Toru Nagashima. https://github.com/eslint-community/eslint-utils#readme
-- **@eslint-community/regexpp** 4.12.2: Copyright (c) 2018 Toru Nagashima. https://github.com/eslint-community/regexpp#readme
+- **@eslint-community/regexpp** 4.12.3: Copyright (c) 2018 Toru Nagashima. https://github.com/eslint-community/regexpp#readme
 - **@eslint/eslintrc** 3.3.7: Copyright OpenJS Foundation and other contributors, <www.openjsf.org>. https://github.com/eslint/eslintrc#readme
 - **@eslint/js** 9.39.5: Copyright OpenJS Foundation and other contributors, <www.openjsf.org>. https://eslint.org
 - **@floating-ui/core** 1.8.0: Copyright (c) 2021-present Floating UI contributors. https://floating-ui.com
@@ -81,7 +78,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **@floating-ui/utils** 0.2.12: Copyright (c) 2021-present Floating UI contributors. https://floating-ui.com
 - **@hono/node-server** 2.1.5: Copyright (c) 2022 - present, Yusuke Wada and Hono contributors. https://github.com/honojs/node-server
 - **@hono/node-server** 2.1.6: Copyright (c) 2022 - present, Yusuke Wada and Hono contributors. https://github.com/honojs/node-server
-- **@hugeicons/core-free-icons** 4.3.5: Copyright (c) 2025 Hugeicons. https://hugeicons.com
+- **@hugeicons/core-free-icons** 4.4.0: Copyright (c) 2025 Hugeicons. https://hugeicons.com
 - **@hugeicons/react** 1.1.10: Copyright (c) 2025 Hugeicons. https://hugeicons.com
 - **@jridgewell/gen-mapping** 0.3.13: Copyright 2024 Justin Ridgewell <justin@ridgewell.name>. https://github.com/jridgewell/sourcemaps/tree/main/packages/gen-mapping
 - **@jridgewell/remapping** 2.3.5: Copyright 2024 Justin Ridgewell <justin@ridgewell.name>. https://github.com/jridgewell/sourcemaps/tree/main/packages/remapping
@@ -89,39 +86,33 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **@jridgewell/source-map** 0.3.11: Copyright 2024 Justin Ridgewell <justin@ridgewell.name>. https://github.com/jridgewell/sourcemaps/tree/main/packages/source-map
 - **@jridgewell/sourcemap-codec** 1.6.0: Copyright 2024 Justin Ridgewell <justin@ridgewell.name>. https://github.com/jridgewell/sourcemaps/tree/main/packages/sourcemap-codec
 - **@jridgewell/trace-mapping** 0.3.31: Copyright 2024 Justin Ridgewell <justin@ridgewell.name>. https://github.com/jridgewell/sourcemaps/tree/main/packages/trace-mapping
-- **@modelcontextprotocol/sdk** 1.32.1: Copyright (c) 2024 Anthropic, PBC. https://modelcontextprotocol.io
-- **@module-federation/error-codes** 0.22.0: Copyright (c) 2020 ScriptedAlchemy LLC (Zack Jackson) Zhou Shaw (zhouxiao). https://github.com/module-federation/core
-- **@module-federation/runtime** 0.22.0: Copyright (c) 2023-present zhouxiao(zhoushaw). https://github.com/module-federation/core
-- **@module-federation/runtime-core** 0.22.0: Copyright (c) 2023-present zhouxiao(zhoushaw). https://github.com/module-federation/core
-- **@module-federation/runtime-tools** 0.22.0: Copyright (c) 2023-present zhouxiao(zhoushaw). https://github.com/module-federation/core
-- **@module-federation/sdk** 0.22.0: Copyright (c) 2023-present zhanghang(2heal1). https://github.com/module-federation/core
-- **@module-federation/webpack-bundler-runtime** 0.22.0: Copyright (c) 2023-present zhanghang(2heal1). https://github.com/module-federation/core
-- **@next/env** 16.4.3: By Next.js Team. https://github.com/vercel/next.js. It has no licence file of its own, so this is its licence's standard text.
-- **@next/eslint-plugin-next** 16.4.3: No copyright line given. https://github.com/vercel/next.js. It has no licence file of its own, so this is its licence's standard text.
-- **@next/swc-darwin-arm64** 16.4.3: No copyright line given. https://github.com/vercel/next.js. It has no licence file of its own, so this is its licence's standard text.
+- **@modelcontextprotocol/sdk** 1.32.2: Copyright (c) 2024 Anthropic, PBC. https://modelcontextprotocol.io
+- **@napi-rs/wasm-runtime** 1.2.2: By LongYinan. https://napi.rs/. It has no licence file of its own, so this is its licence's standard text.
+- **@next/env** 16.4.5: By Next.js Team. https://github.com/vercel/next.js. It has no licence file of its own, so this is its licence's standard text.
+- **@next/eslint-plugin-next** 16.4.5: No copyright line given. https://github.com/vercel/next.js. It has no licence file of its own, so this is its licence's standard text.
+- **@next/swc-darwin-arm64** 16.4.5: No copyright line given. https://github.com/vercel/next.js. It has no licence file of its own, so this is its licence's standard text.
 - **@nodelib/fs.scandir** 2.1.5: Copyright (c) Denis Malinochkin. https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.scandir
 - **@nodelib/fs.stat** 2.0.5: Copyright (c) Denis Malinochkin. https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.stat
 - **@nodelib/fs.walk** 1.2.8: Copyright (c) Denis Malinochkin. https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.walk
 - **@nolyfill/is-core-module** 1.0.39: Copyright (c) 2023 Sukka. https://github.com/SukkaW/nolyfill
-- **@remotion/captions** 4.0.539: By Jonny Burger. https://remotion.dev/docs/captions/api. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/codemods** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/codemods. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/elevenlabs** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/elevenlabs. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/fonts** 4.0.539: By Lucas Benya. https://www.remotion.dev/docs/fonts-api. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/licensing** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/licensing. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/media-utils** 4.0.539: Copyright (c) 2021 JonnyBurger. https://www.remotion.dev/docs/media-utils
-- **@remotion/openai-whisper** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/openai-whisper. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/paths** 4.0.539: Copyright (c) 2023 JonnyBurger. https://www.remotion.dev/paths
-- **@remotion/streaming** 4.0.539: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/streaming. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/studio** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/studio/api. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/studio-server** 4.0.539: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/studio-server. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/studio-shared** 4.0.539: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/studio-shared. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/timeline-utils** 4.0.539: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/timeline-utils. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/zod-types** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/zod-types. It has no licence file of its own, so this is its licence's standard text.
-- **@rspack/binding** 1.7.11: Copyright (c) 2022-present Bytedance, Inc. and its affiliates.. https://rspack.rs
-- **@rspack/binding-darwin-arm64** 1.7.11: Copyright (c) 2022-present Bytedance Inc and its affiliates.. https://rspack.rs
-- **@rspack/core** 1.7.11: Copyright (c) 2022-present Bytedance, Inc. and its affiliates.. https://rspack.rs
-- **@rspack/lite-tapable** 1.1.0: Copyright (c) 2022-present Bytedance, Inc. and its affiliates.. https://github.com/rspack-contrib/rspack-lite-tapable
-- **@rspack/plugin-react-refresh** 1.6.1: Copyright (c) 2022-present Bytedance, Inc. and its affiliates.. https://github.com/rstackjs/rspack-plugin-react-refresh
+- **@remotion/captions** 4.0.542: By Jonny Burger. https://remotion.dev/docs/captions/api. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/codemods** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/codemods. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/elevenlabs** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/elevenlabs. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/fonts** 4.0.542: By Lucas Benya. https://www.remotion.dev/docs/fonts-api. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/licensing** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/licensing. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/media-utils** 4.0.542: Copyright (c) 2021 JonnyBurger. https://www.remotion.dev/docs/media-utils
+- **@remotion/openai-whisper** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/openai-whisper. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/paths** 4.0.542: Copyright (c) 2023 JonnyBurger. https://www.remotion.dev/paths
+- **@remotion/streaming** 4.0.542: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/streaming. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/studio** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/studio/api. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/studio-server** 4.0.542: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/studio-server. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/studio-shared** 4.0.542: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/studio-shared. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/timeline-utils** 4.0.542: By Jonny Burger. https://github.com/remotion-dev/remotion/tree/main/packages/timeline-utils. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/zod-types** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/zod-types. It has no licence file of its own, so this is its licence's standard text.
+- **@rspack/binding** 2.3.0: Copyright (c) 2022-present Bytedance, Inc. and its affiliates.. https://rspack.rs
+- **@rspack/binding-darwin-arm64** 2.3.0: Copyright (c) 2022-present Bytedance Inc and its affiliates.. https://rspack.rs
+- **@rspack/core** 2.3.0: Copyright (c) 2022-present Bytedance, Inc. and its affiliates.. https://rspack.rs
+- **@rspack/plugin-react-refresh** 2.0.2: Copyright (c) 2022-present Bytedance, Inc. and its affiliates.. https://github.com/rstackjs/rspack-plugin-react-refresh
 - **@rtsao/scc** 1.1.0: Copyright (c) 2019 Ryan Tsao. https://github.com/rtsao/scc
 - **@svgr/babel-plugin-add-jsx-attribute** 8.0.0: Copyright 2017 Smooth Code. https://react-svgr.com
 - **@svgr/babel-plugin-remove-jsx-attribute** 8.0.0: Copyright 2017 Smooth Code. https://react-svgr.com
@@ -135,24 +126,26 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **@svgr/core** 8.1.0: Copyright 2017 Smooth Code. https://react-svgr.com
 - **@svgr/hast-util-to-babel-ast** 8.0.0: Copyright 2017 Smooth Code. https://react-svgr.com
 - **@svgr/plugin-jsx** 8.1.0: Copyright 2017 Smooth Code. https://react-svgr.com
-- **@tailwindcss/node** 4.3.3: Copyright (c) Tailwind Labs, Inc.. https://tailwindcss.com
-- **@tailwindcss/oxide** 4.3.3: Copyright (c) Tailwind Labs, Inc.. https://github.com/tailwindlabs/tailwindcss
-- **@tailwindcss/oxide-darwin-arm64** 4.3.3: Copyright (c) Tailwind Labs, Inc.. https://github.com/tailwindlabs/tailwindcss
-- **@tailwindcss/turbopack** 4.3.3: Copyright (c) Tailwind Labs, Inc.. https://tailwindcss.com
+- **@tailwindcss/node** 4.3.5: Copyright (c) Tailwind Labs, Inc.. https://tailwindcss.com
+- **@tailwindcss/oxide** 4.3.5: Copyright (c) Tailwind Labs, Inc.. https://github.com/tailwindlabs/tailwindcss
+- **@tailwindcss/oxide-darwin-arm64** 4.3.5: Copyright (c) Tailwind Labs, Inc.. https://github.com/tailwindlabs/tailwindcss
+- **@tailwindcss/oxide-wasm32-wasi** 4.3.5: No copyright line given. https://github.com/tailwindlabs/tailwindcss. It has no licence file of its own, so this is its licence's standard text.
+- **@tailwindcss/turbopack** 4.3.5: Copyright (c) Tailwind Labs, Inc.. https://tailwindcss.com
 - **@tanstack/react-virtual** 3.14.9: Copyright (c) 2021-present Tanner Linsley. https://tanstack.com/virtual
 - **@tanstack/virtual-core** 3.17.7: Copyright (c) 2021-present Tanner Linsley. https://tanstack.com/virtual
+- **@tybys/wasm-util** 0.10.3: By toyobayashi. https://github.com/toyobayashi/wasm-util. It has no licence file of its own, so this is its licence's standard text.
 - **@types/json5** 0.0.29: By Jason Swearingen. https://www.github.com/DefinitelyTyped/DefinitelyTyped. It has no licence file of its own, so this is its licence's standard text.
-- **@typescript-eslint/eslint-plugin** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/eslint-plugin
-- **@typescript-eslint/parser** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/parser
-- **@typescript-eslint/project-service** 8.71.2: Copyright (c) 2025 typescript-eslint and other contributors. https://typescript-eslint.io
-- **@typescript-eslint/scope-manager** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/scope-manager
-- **@typescript-eslint/tsconfig-utils** 8.71.2: Copyright (c) 2025 typescript-eslint and other contributors. https://typescript-eslint.io
-- **@typescript-eslint/type-utils** 8.71.2: Copyright (c) 2021 typescript-eslint and other contributors. https://typescript-eslint.io
-- **@typescript-eslint/types** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io
-- **@typescript-eslint/typescript-estree** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/typescript-estree
-- **@typescript-eslint/utils** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/utils
-- **@typescript-eslint/visitor-keys** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io
-- **@unrs/resolver-binding-darwin-arm64** 1.12.2: No copyright line given. https://github.com/unrs/unrs-resolver. It has no licence file of its own, so this is its licence's standard text.
+- **@typescript-eslint/eslint-plugin** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/eslint-plugin
+- **@typescript-eslint/parser** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/parser
+- **@typescript-eslint/project-service** 8.72.2: Copyright (c) 2025 typescript-eslint and other contributors. https://typescript-eslint.io
+- **@typescript-eslint/scope-manager** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/scope-manager
+- **@typescript-eslint/tsconfig-utils** 8.72.2: Copyright (c) 2025 typescript-eslint and other contributors. https://typescript-eslint.io
+- **@typescript-eslint/type-utils** 8.72.2: Copyright (c) 2021 typescript-eslint and other contributors. https://typescript-eslint.io
+- **@typescript-eslint/types** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io
+- **@typescript-eslint/typescript-estree** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/typescript-estree
+- **@typescript-eslint/utils** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/utils
+- **@typescript-eslint/visitor-keys** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io
+- **@unrs/resolver-binding-darwin-arm64** 1.13.0: No copyright line given. https://github.com/unrs/unrs-resolver. It has no licence file of its own, so this is its licence's standard text.
 - **@webassemblyjs/ast** 1.14.1: Copyright (c) 2018 Sven Sauleau <sven@sauleau.com>. https://github.com/xtuc/webassemblyjs
 - **@webassemblyjs/floating-point-hex-parser** 1.13.2: Copyright (c) 2017 Mauro Bringolf. https://github.com/xtuc/webassemblyjs
 - **@webassemblyjs/helper-api-error** 1.13.2: Copyright (c) 2018 Sven Sauleau <sven@sauleau.com>. https://github.com/xtuc/webassemblyjs
@@ -195,13 +188,14 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **av-scenechange** 0.14.1 (Rust crate): Copyright (c) 2019 Multimedia and Rust. https://github.com/rust-av/av-scenechange
 - **available-typed-arrays** 1.0.7: Copyright (c) 2020 Inspect JS. https://github.com/inspect-js/available-typed-arrays#readme
 - **base64-js** 1.5.1: Copyright (c) 2014 Jameson Little. https://github.com/beatgammit/base64-js
+- **blank-page** (Claude skill): Copyright (c) 2026 Cekura, Inc.. https://github.com/StewdioAI/blank-page
 - **block** 0.1.6 (Rust crate): By Steven Sheldon. http://github.com/SSheldon/rust-block. It has no licence file of its own, so this is its licence's standard text.
 - **block2** 0.5.1 (Rust crate): By Steven Sheldon, Mads Marquart. https://github.com/madsmtm/objc2. It has no licence file of its own, so this is its licence's standard text.
 - **block2** 0.6.2 (Rust crate): By Mads Marquart. https://github.com/madsmtm/objc2. It has no licence file of its own, so this is its licence's standard text.
+- **border-beam** 1.4.1: Copyright (c) 2026 Jakub Antalik. https://libraries.dev/beam
 - **brace-expansion** 1.1.21: Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>. https://github.com/juliangruber/brace-expansion
 - **braces** 3.0.3: Copyright (c) 2014-present, Jon Schlinkert.. https://github.com/micromatch/braces
 - **brotli** 1.3.3: By Devon Govett. https://github.com/devongovett/brotli.js. It has no licence file of its own, so this is its licence's standard text.
-- **browserslist** 4.29.3: Copyright 2014 Andrey Sitnik <andrey@sitnik.es> and other contributors. https://github.com/browserslist/browserslist
 - **browserslist** 4.29.5: Copyright 2014 Andrey Sitnik <andrey@sitnik.es> and other contributors. https://github.com/browserslist/browserslist
 - **buffer-from** 1.1.2: Copyright (c) 2016, 2018 Linus Unnebäck. https://github.com/LinusU/buffer-from
 - **built** 0.8.1 (Rust crate): Copyright (c) 2017-2023 Lukas Lueg. https://github.com/lukaslueg/built
@@ -215,6 +209,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **chalk** 4.1.2: Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (sindresorhus.com). https://github.com/chalk/chalk
 - **citty** 0.2.2: Copyright (c) Pooya Parsa <pooya@pi0.io>. https://github.com/unjs/citty
 - **client-only** 0.0.1: No copyright line given. https://reactjs.org/. It has no licence file of its own, so this is its licence's standard text.
+- **client-zip** 2.5.1: Copyright 2020 David Junger. https://github.com/Touffy/client-zip
 - **clsx** 2.1.1: Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com). https://github.com/lukeed/clsx
 - **color_quant** 1.1.0 (Rust crate): Copyright (c) 2016 PistonDevelopers. https://github.com/image-rs/color_quant.git
 - **color-convert** 2.0.1: Copyright (c) 2011-2016 Heather Arthur <fayearthur@gmail.com>. https://github.com/Qix-/color-convert
@@ -246,7 +241,6 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **equator** 0.4.2 (Rust crate): Copyright (c) 2023 sarah. https://github.com/sarah-ek/equator/
 - **equator-macro** 0.4.2 (Rust crate): Copyright (c) 2023 sarah. https://github.com/sarah-ek/equator/
 - **error-ex** 1.3.4: Copyright (c) 2015 JD Ballard. https://github.com/qix-/node-error-ex
-- **error-stack-parser** 2.1.4: Copyright (c) 2017 Eric Wendelin and other contributors. https://www.stacktracejs.com
 - **es-abstract** 1.24.2: Copyright (C) 2015 Jordan Harband. https://github.com/ljharb/es-abstract
 - **es-abstract-get** 1.0.0: Copyright (c) 2026 Jordan Harband. https://github.com/ljharb/es-abstract-get#readme
 - **es-define-property** 1.0.1: Copyright (c) 2024 Jordan Harband. https://github.com/ljharb/es-define-property#readme
@@ -261,7 +255,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **escalade** 3.2.0: Copyright (c) Luke Edwards <luke.edwards05@gmail.com> (lukeed.com). https://github.com/lukeed/escalade
 - **escape-string-regexp** 4.0.0: Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com). https://github.com/sindresorhus/escape-string-regexp
 - **eslint** 9.39.5: Copyright OpenJS Foundation and other contributors, <www.openjsf.org>. https://eslint.org
-- **eslint-config-next** 16.4.3: No copyright line given. https://nextjs.org/docs/app/api-reference/config/eslint. It has no licence file of its own, so this is its licence's standard text.
+- **eslint-config-next** 16.4.5: No copyright line given. https://nextjs.org/docs/app/api-reference/config/eslint. It has no licence file of its own, so this is its licence's standard text.
 - **eslint-import-resolver-node** 0.3.10: Copyright (c) 2015 Ben Mosher. https://github.com/import-js/eslint-plugin-import
 - **eslint-module-utils** 2.14.0: Copyright (c) 2015 Ben Mosher. https://github.com/import-js/eslint-plugin-import#readme
 - **eslint-plugin-import** 2.32.0: Copyright (c) 2015 Ben Mosher. https://github.com/import-js/eslint-plugin-import
@@ -271,7 +265,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **eventsource** 3.0.7: Copyright (c) EventSource GitHub organisation. https://github.com/EventSource/eventsource#readme
 - **eventsource-parser** 3.1.1: Copyright (c) 2026 Espen Hovlandsdal <espen@hovlandsdal.com>. https://github.com/rexxars/eventsource-parser#readme
 - **execa** 5.1.1: Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com). https://github.com/sindresorhus/execa
-- **express-rate-limit** 8.7.2: Copyright 2023 Nathan Friedly, Vedant K. https://github.com/express-rate-limit/express-rate-limit
+- **express-rate-limit** 8.7.3: Copyright 2023 Nathan Friedly, Vedant K. https://github.com/express-rate-limit/express-rate-limit
 - **fast-deep-equal** 3.1.3: Copyright (c) 2017 Evgeny Poberezkin. https://github.com/epoberezkin/fast-deep-equal#readme
 - **fast-glob** 3.3.1: Copyright (c) Denis Malinochkin. https://github.com/mrmlnc/fast-glob
 - **fdir** 6.5.0: Copyright 2023 Abdullah Atta. https://github.com/thecodrr/fdir#readme
@@ -313,15 +307,15 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **hermes-estree** 0.25.1: Copyright (c) Meta Platforms, Inc. and affiliates.. git@github.com:facebook/hermes
 - **hermes-parser** 0.25.1: Copyright (c) Meta Platforms, Inc. and affiliates.. git@github.com:facebook/hermes
 - **hono** 4.13.16: Copyright (c) 2021 - present, Yusuke Wada and Hono contributors. https://hono.dev
+- **hono** 4.13.17: Copyright (c) 2021 - present, Yusuke Wada and Hono contributors. https://hono.dev
 - **html-demo** (Claude skill): Copyright (c) 2026 Meng To
-- **html-entities** 2.6.0: Copyright (c) 2021 Dulin Marat. https://github.com/mdevils/html-entities
 - **http-errors** 2.0.1: Copyright (c) 2014 Jonathan Ong me@jongleberry.com; Copyright (c) 2016 Douglas Christopher Wilson doug@somethingdoug.com. https://github.com/jshttp/http-errors
 - **iconv-lite** 0.7.3: Copyright (c) 2011 Alexander Shtuchkin. https://github.com/pillarjs/iconv-lite
 - **import-fresh** 3.3.1: Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com). https://github.com/sindresorhus/import-fresh
 - **imurmurhash** 0.1.4: By Jens Taylor. https://github.com/jensyt/imurmurhash-js. It has no licence file of its own, so this is its licence's standard text.
 - **indicatif** 0.18.6 (Rust crate): Copyright (c) 2017 Armin Ronacher <armin.ronacher@active-4.com>. https://github.com/console-rs/indicatif
 - **internal-slot** 1.1.0: Copyright (c) 2019 Jordan Harband. https://github.com/ljharb/internal-slot#readme
-- **ip-address** 10.7.5: Copyright (C) 2011 by Beau Gunderson. https://github.com/beaugunderson/ip-address
+- **ip-address** 10.7.6: Copyright (C) 2011 by Beau Gunderson. https://github.com/beaugunderson/ip-address
 - **ipaddr.js** 1.9.1: Copyright (C) 2011-2017 whitequark <whitequark@whitequark.org>. https://github.com/whitequark/ipaddr.js
 - **is-array-buffer** 3.0.5: Copyright (c) 2015 Chen Gengyuan, Inspect JS. https://github.com/inspect-js/is-array-buffer#readme
 - **is-arrayish** 0.2.1: Copyright (c) 2015 JD Ballard. https://github.com/qix-/node-is-arrayish
@@ -330,7 +324,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **is-boolean-object** 1.2.2: Copyright (c) 2015 Jordan Harband. https://github.com/inspect-js/is-boolean-object
 - **is-bun-module** 2.0.0: Copyright (c) 2024 SunsetTechuila. https://github.com/SunsetTechuila/is-bun-module
 - **is-callable** 1.2.7: Copyright (c) 2015 Jordan Harband. https://github.com/inspect-js/is-callable
-- **is-core-module** 2.17.0: Copyright (c) 2014 Dave Justice. https://github.com/inspect-js/is-core-module
+- **is-core-module** 2.18.0: Copyright (c) 2014 Dave Justice. https://github.com/inspect-js/is-core-module
 - **is-data-view** 1.0.2: Copyright (c) 2024 Inspect JS. https://github.com/inspect-js/is-data-view#readme
 - **is-date-object** 1.1.0: Copyright (c) 2015 Jordan Harband. https://github.com/inspect-js/is-date-object
 - **is-docker** 2.2.1: Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com). https://github.com/sindresorhus/is-docker
@@ -362,7 +356,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **iterator.prototype** 1.1.5: Copyright (c) 2022 Jordan Harband. https://github.com/ljharb/Iterator.prototype#readme
 - **jest-worker** 27.5.1: Copyright (c) Facebook, Inc. and its affiliates.. https://github.com/facebook/jest
 - **jiti** 2.7.0: Copyright (c) Pooya Parsa <pooya@pi0.io>. https://github.com/unjs/jiti
-- **jose** 6.2.15: Copyright (c) 2018 Filip Skokan. https://github.com/panva/jose
+- **jose** 6.2.17: Copyright (c) 2018 Filip Skokan. https://github.com/panva/jose
 - **js-tokens** 4.0.0: Copyright (c) 2014, 2015, 2016, 2017, 2018 Simon Lydell. https://github.com/lydell/js-tokens
 - **jsesc** 3.1.0: Copyright Mathias Bynens <https://mathiasbynens.be/>. https://mths.be/jsesc
 - **json-buffer** 3.0.1: Copyright (c) 2013 Dominic Tarr. https://github.com/dominictarr/json-buffer
@@ -380,7 +374,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **loose-envify** 1.4.0: Copyright (c) 2015 Andres Suarez <zertosh@gmail.com>. https://github.com/zertosh/loose-envify
 - **lower-case** 2.0.2: Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com). https://github.com/blakeembrey/change-case/tree/master/packages/lower-case#readme
 - **lru** 0.18.5 (Rust crate): Copyright (c) 2016 Jerome Froelich. https://github.com/jeromefroe/lru-rs.git
-- **magic-string** 0.30.21: Copyright 2018 Rich Harris. https://github.com/Rich-Harris/magic-string
+- **magic-string** 1.4.5: Copyright 2018 Rich Harris. https://github.com/Rich-Harris/magic-string
 - **malloc_buf** 0.0.6 (Rust crate): By Steven Sheldon. https://github.com/SSheldon/malloc_buf. It has no licence file of its own, so this is its licence's standard text.
 - **math-intrinsics** 1.1.0: Copyright (c) 2024 ECMAScript Shims. https://github.com/es-shims/math-intrinsics#readme
 - **maybe-rayon** 0.1.1 (Rust crate): Copyright (c) 2021 Joshua Holmer. https://github.com/shssoichiro/maybe-rayon
@@ -394,13 +388,12 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **modern-tar** 0.8.6: Copyright (c) 2025 Ayuhito. https://github.com/ayuhito/modern-tar
 - **ms** 2.1.3: Copyright (c) 2020 Vercel, Inc.. https://github.com/vercel/ms
 - **nanoid** 3.3.20: Copyright 2017 Andrey Sitnik <andrey@sitnik.ru>. https://github.com/ai/nanoid
-- **napi-postinstall** 0.3.4: Copyright (c) 2021-present UnTS. https://github.com/un-ts/napi-postinstall
+- **napi-postinstall** 0.3.8: Copyright (c) 2021-present UnTS. https://github.com/un-ts/napi-postinstall
 - **natural-compare** 1.4.0: By Lauri Rooden. https://github.com/litejs/natural-compare-lite. It has no licence file of its own, so this is its licence's standard text.
 - **new_debug_unreachable** 1.0.6 (Rust crate): Copyright (c) 2015 Jonathan Reem. https://github.com/mbrubeck/rust-debug-unreachable
-- **next** 16.4.3: Copyright (c) 2025 Vercel, Inc.. https://nextjs.org
+- **next** 16.4.5: Copyright (c) 2025 Vercel, Inc.. https://nextjs.org
 - **no-case** 3.0.4: Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com). https://github.com/blakeembrey/change-case/tree/master/packages/no-case#readme
 - **node-exports-info** 1.6.2: Copyright (c) 2022 Inspect JS. https://github.com/inspect-js/node-exports-info#readme
-- **node-releases** 2.0.58: Copyright (c) 2017 Sergey Rubanov (https://github.com/chicoxyzzy). https://github.com/chicoxyzzy/node-releases
 - **node-releases** 2.0.63: Copyright (c) 2017 Sergey Rubanov (https://github.com/chicoxyzzy). https://github.com/chicoxyzzy/node-releases
 - **nom** 7.1.3 (Rust crate): Copyright (c) 2014-2019 Geoffroy Couprie. https://github.com/Geal/nom
 - **nom** 8.0.0 (Rust crate): Copyright (c) 2014-2019 Geoffroy Couprie. https://github.com/rust-bakery/nom
@@ -462,8 +455,8 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **punycode** 2.3.1: Copyright Mathias Bynens <https://mathiasbynens.be/>. https://mths.be/punycode
 - **queue-microtask** 1.2.3: Copyright (c) Feross Aboukhadijeh. https://github.com/feross/queue-microtask
 - **raw-body** 3.0.2: Copyright (c) 2013-2014 Jonathan Ong <me@jongleberry.com>; Copyright (c) 2014-2022 Douglas Christopher Wilson <doug@somethingdoug.com>. https://github.com/stream-utils/raw-body
-- **react** 19.3.0: Copyright (c) Meta Platforms, Inc. and affiliates.. https://react.dev/
-- **react-dom** 19.3.0: Copyright (c) Meta Platforms, Inc. and affiliates.. https://react.dev/
+- **react** 19.3.1: Copyright (c) Meta Platforms, Inc. and affiliates.. https://react.dev/
+- **react-dom** 19.3.1: Copyright (c) Meta Platforms, Inc. and affiliates.. https://react.dev/
 - **react-is** 16.13.1: Copyright (c) Facebook, Inc. and its affiliates.. https://reactjs.org/
 - **react-refresh** 0.18.0: Copyright (c) Meta Platforms, Inc. and affiliates.. https://react.dev/
 - **reborrow** 0.5.5 (Rust crate): Copyright (c) 2022 sarah. https://github.com/sarah-ek/reborrow/
@@ -509,7 +502,6 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **snake-case** 3.0.4: Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com). https://github.com/blakeembrey/change-case/tree/master/packages/snake-case#readme
 - **source-map-support** 0.5.21: Copyright (c) 2014 Evan Wallace. https://github.com/evanw/node-source-map-support
 - **stable-hash** 0.0.5: By Shu Ding. https://github.com/shuding/stable-hash. It has no licence file of its own, so this is its licence's standard text.
-- **stackframe** 1.3.4: Copyright (c) 2017 Eric Wendelin and other contributors. https://www.stacktracejs.com
 - **stageshow** (Claude skill): Copyright (c) 2026 Benji Taylor. https://github.com/benjitaylor/skills
 - **standardized-audio-context** 25.3.77: Copyright (c) 2024 Christoph Guttandin. https://github.com/chrisguttandin/standardized-audio-context
 - **statuses** 2.0.2: Copyright (c) 2014 Jonathan Ong <me@jongleberry.com>; Copyright (c) 2016 Douglas Christopher Wilson <doug@somethingdoug.com>. https://github.com/jshttp/statuses
@@ -537,7 +529,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **svgr-macro** 1.3.0 (Rust crate): No copyright line given. https://crates.io/crates/svgr-macro. It has no licence file of its own, so this is its licence's standard text.
 - **syn-helpers** 0.5.0 (Rust crate): By Ben. https://github.com/kaleidawave/syn-helpers. It has no licence file of its own, so this is its licence's standard text.
 - **tailwind-merge** 3.7.0: Copyright (c) 2021 Dany Castillo. https://github.com/dcastil/tailwind-merge
-- **tailwindcss** 4.3.3: Copyright (c) Tailwind Labs, Inc.. https://tailwindcss.com
+- **tailwindcss** 4.3.5: Copyright (c) Tailwind Labs, Inc.. https://tailwindcss.com
 - **tapable** 2.3.3: Copyright JS Foundation and other contributors. https://github.com/webpack/tapable
 - **thingbuf** 0.1.6 (Rust crate): Copyright (c) 2022 Eliza Weisman. https://github.com/hawkw/thingbuf
 - **tiff** 0.11.3 (Rust crate): Copyright (c) 2018 PistonDevelopers. https://github.com/image-rs/image-tiff
@@ -547,6 +539,7 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **to-regex-range** 5.0.1: Copyright (c) 2015-present, Jon Schlinkert.. https://github.com/micromatch/to-regex-range
 - **toidentifier** 1.0.1: Copyright (c) 2016 Douglas Christopher Wilson <doug@somethingdoug.com>. https://github.com/component/toidentifier
 - **tone** 15.1.22: Copyright (c) 2014-2020 Yotam Mann. https://github.com/Tonejs/Tone.js
+- **torph** 0.1.3: Copyright (c) 2025 Lochie Axon. https://torph.lochie.me
 - **tracing** 0.1.44 (Rust crate): Copyright (c) 2019 Tokio Contributors. https://github.com/tokio-rs/tracing
 - **tracing-core** 0.1.36 (Rust crate): Copyright (c) 2019 Tokio Contributors. https://github.com/tokio-rs/tracing
 - **tsconfig-paths** 3.15.0: Copyright (c) 2016 Jonas Kello. https://github.com/dividab/tsconfig-paths
@@ -557,15 +550,15 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **typed-array-byte-offset** 1.0.5: Copyright (c) 2020 Inspect JS. https://github.com/inspect-js/typed-array-byte-offset#readme
 - **typed-array-length** 1.0.8: Copyright (c) 2020 Inspect JS. https://github.com/inspect-js/typed-array-length#readme
 - **typed-query-selector** 2.12.3: Copyright (c) 2020-present Pig Fang. https://github.com/g-plane/typed-query-selector
-- **typescript-eslint** 8.71.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/typescript-eslint
+- **typescript-eslint** 8.72.2: Copyright (c) 2019 typescript-eslint and other contributors. https://typescript-eslint.io/packages/typescript-eslint
 - **unbox-primitive** 1.1.0: Copyright (c) 2019 Jordan Harband. https://github.com/ljharb/unbox-primitive#readme
 - **undici** 7.25.0: Copyright (c) Matteo Collina and Undici contributors. https://undici.nodejs.org
-- **undici-types** 6.21.0: Copyright (c) Matteo Collina and Undici contributors. https://undici.nodejs.org
+- **undici-types** 7.24.6: Copyright (c) Matteo Collina and Undici contributors. https://undici.nodejs.org
 - **undici-types** 8.9.0: Copyright (c) Matteo Collina and Undici contributors. https://undici.nodejs.org
 - **unicode-properties** 1.4.1: Copyright 2018. https://github.com/devongovett/unicode-properties
 - **unicode-trie** 2.0.0: Copyright 2018. https://github.com/devongovett/unicode-trie
 - **unit-prefix** 0.5.2 (Rust crate): Copyright (c) 2024 Benjamin Sago, Fabio Valentini. https://codeberg.org/commons-rs/unit-prefix
-- **unrs-resolver** 1.12.2: No copyright line given. https://github.com/unrs/unrs-resolver. It has no licence file of its own, so this is its licence's standard text.
+- **unrs-resolver** 1.13.0: Copyright (c) 2025-present UnRS & Contributors; Copyright (c) 2024 VoidZero Inc. & Contributors; Copyright (c) 2023 Boshen. https://github.com/unrs/unrs-resolver
 - **update-browserslist-db** 1.3.4: Copyright 2022 Andrey Sitnik <andrey@sitnik.es> and other contributors. https://github.com/browserslist/update-db
 - **use-sync-external-store** 1.7.0: Copyright (c) Meta Platforms, Inc. and affiliates.. https://github.com/react/react
 - **webpack-sources** 3.7.0: Copyright (c) 2017 JS Foundation and other contributors. https://github.com/webpack/webpack-sources#readme
@@ -588,7 +581,6 @@ Left out of the product edition, which doesn't ship them: @strudel/core, @strude
 - **yauzl** 3.4.0: Copyright (c) 2014 Josh Wolfe. https://github.com/thejoshwolfe/yauzl
 - **yocto-queue** 0.1.0: Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com). https://github.com/sindresorhus/yocto-queue
 - **zmij** 1.0.23 (Rust crate): By David Tolnay. https://github.com/dtolnay/zmij
-- **zod** 4.5.4: Copyright (c) 2025 Colin McDonnell. https://zod.dev
 - **zod** 4.6.7: Copyright (c) 2025 Colin McDonnell. https://zod.dev
 
 ```text
@@ -726,10 +718,9 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 - **@types/dom-webcodecs** 0.1.13: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/dom-webcodecs
 - **@types/eslint** 9.6.1: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/eslint
 - **@types/eslint-scope** 3.7.7: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/eslint-scope
-- **@types/estree** 1.0.9: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/estree
 - **@types/estree** 1.0.10: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/estree
 - **@types/json-schema** 7.0.15: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/json-schema
-- **@types/node** 20.19.43: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node
+- **@types/node** 24.19.2: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node
 - **@types/node** 26.6.6: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node
 - **@types/react** 19.3.0: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react
 - **@types/react-dom** 19.3.0: Copyright (c) Microsoft Corporation.. https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom
@@ -996,6 +987,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 - **css-loader** 7.1.4: Copyright JS Foundation and other contributors. https://github.com/webpack/css-loader
 - **enhanced-resolve** 5.26.0: Copyright JS Foundation and other contributors. https://github.com/webpack/enhanced-resolve#readme
+- **enhanced-resolve** 5.26.1: Copyright JS Foundation and other contributors. https://github.com/webpack/enhanced-resolve#readme
 - **minimizer-webpack-plugin** 5.14.0: Copyright JS Foundation and other contributors. https://github.com/webpack/minimizer-webpack-plugin
 - **schema-utils** 4.8.2: Copyright JS Foundation and other contributors. https://github.com/webpack/schema-utils
 - **style-loader** 4.0.0: Copyright JS Foundation and other contributors. https://github.com/webpack-contrib/style-loader
@@ -1282,7 +1274,7 @@ software or this license, under any kind of legal claim._**
 ```
 
 - **ignore** 5.3.2: Copyright (c) 2013 Kael Zhang <i@kael.me>, contributors. git@github.com:kaelzhang/node-ignore
-- **ignore** 7.0.12: Copyright (c) 2013 Kael Zhang <i@kael.me>, contributors. https://github.com/kaelzhang/node-ignore
+- **ignore** 7.0.14: Copyright (c) 2013 Kael Zhang <i@kael.me>, contributors. https://github.com/kaelzhang/node-ignore
 
 ```text
 http://kael.me/
@@ -4445,8 +4437,8 @@ SOFTWARE.
 - **@humanwhocodes/module-importer** 1.0.1: (c) You must retain, in the Source form of any Derivative Works. https://github.com/humanwhocodes/module-importer
 - **@humanwhocodes/retry** 0.4.3: (c) You must retain, in the Source form of any Derivative Works. https://github.com/humanwhocodes/retry
 - **@xtuc/long** 4.2.2: (c) You must retain, in the Source form of any Derivative Works. https://github.com/dcodeIO/long.js
-- **baseline-browser-mapping** 2.11.28: (c) You must retain, in the Source form of any Derivative Works. https://github.com/web-platform-dx/baseline-browser-mapping
 - **baseline-browser-mapping** 2.11.34: (c) You must retain, in the Source form of any Derivative Works. https://github.com/web-platform-dx/baseline-browser-mapping
+- **baseline-browser-mapping** 2.11.35: (c) You must retain, in the Source form of any Derivative Works. https://github.com/web-platform-dx/baseline-browser-mapping
 - **chromium-bidi** 157.0.8090-0: (c) You must retain, in the Source form of any Derivative Works. https://github.com/GoogleChromeLabs/chromium-bidi
 - **clang-sys** 1.9.1 (Rust crate): (c) You must retain, in the Source form of any Derivative Works. https://github.com/KyleMayes/clang-sys
 - **cpal** 0.18.2 (Rust crate): (c) You must retain, in the Source form of any Derivative Works. https://github.com/RustAudio/cpal
@@ -4657,7 +4649,7 @@ Apache License
 - **@humanfs/types** 0.15.0: By Nicholas C. Zakas. https://github.com/humanwhocodes/humanfs#readme. It has no licence file of its own, so this is its licence's standard text.
 - **@puppeteer/browsers** 3.2.6: By The Chromium Authors. https://github.com/puppeteer/puppeteer/tree/main/packages/browsers. It has no licence file of its own, so this is its licence's standard text.
 - **class-variance-authority** 0.7.1: (c) You must retain, in the Source form of any Derivative Works; Copyright 2022 Joe Bell. https://github.com/joe-bell/cva#readme
-- **hyperframes** 0.8.227: No copyright line given. https://hyperframes.heygen.com. It has no licence file of its own, so this is its licence's standard text.
+- **hyperframes** 0.9.26: No copyright line given. https://hyperframes.heygen.com. It has no licence file of its own, so this is its licence's standard text.
 - **puppeteer-core** 25.16.0: By The Chromium Authors. https://github.com/puppeteer/puppeteer/tree/main/packages/puppeteer-core. It has no licence file of its own, so this is its licence's standard text.
 - **Whisper-Hindi2Hinglish-Apex** q8_0 (model): By Oriserve; converted for whisper.cpp by Marquestra. https://huggingface.co/Oriserve/Whisper-Hindi2Hinglish-Apex. Optional: downloaded only when asked for in the mic's menu. It has no licence file of its own, so this is its licence's standard text.
 
@@ -6270,8 +6262,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-- **playwright** 1.64.0: (c) You must retain, in the Source form of any Derivative Works. https://playwright.dev
-- **playwright-core** 1.64.0: (c) You must retain, in the Source form of any Derivative Works. https://playwright.dev
+- **playwright** 1.65.0: (c) You must retain, in the Source form of any Derivative Works. https://playwright.dev
+- **playwright-core** 1.65.0: (c) You must retain, in the Source form of any Derivative Works. https://playwright.dev
 
 ```text
 Apache License
@@ -6477,7 +6469,7 @@ Apache License
    limitations under the License.
 ```
 
-Notice for playwright 1.64.0:
+Notice for playwright 1.65.0:
 
 ```text
 Playwright
@@ -6487,7 +6479,7 @@ This software contains code derived from the Puppeteer project (https://github.c
 available under the Apache 2.0 license (https://github.com/puppeteer/puppeteer/blob/master/LICENSE).
 ```
 
-Notice for playwright-core 1.64.0:
+Notice for playwright-core 1.65.0:
 
 ```text
 Playwright
@@ -6497,7 +6489,7 @@ This software contains code derived from the Puppeteer project (https://github.c
 available under the Apache 2.0 license (https://github.com/puppeteer/puppeteer/blob/master/LICENSE).
 ```
 
-- **typescript** 5.9.3: By Microsoft Corp.. https://www.typescriptlang.org/
+- **typescript** 6.0.3: By Microsoft Corp.. https://www.typescriptlang.org/
 
 ```text
 Apache License
@@ -6560,8 +6552,8 @@ END OF TERMS AND CONDITIONS
 ## ISC
 
 - **cliui** 9.0.1: Copyright (c) 2015, Contributors. https://github.com/yargs/cliui
-- **electron-to-chromium** 1.5.455: Copyright 2018 Kilian Valkhof. https://github.com/Kilian/electron-to-chromium
 - **electron-to-chromium** 1.5.472: Copyright 2018 Kilian Valkhof. https://github.com/Kilian/electron-to-chromium
+- **electron-to-chromium** 1.5.478: Copyright 2018 Kilian Valkhof. https://github.com/Kilian/electron-to-chromium
 - **eslint-import-resolver-typescript** 3.10.1: Copyright 2021 Alex Gorbatchev <alex.gorbatchev@gmail.com>. https://github.com/import-js/eslint-import-resolver-typescript
 - **fastq** 1.20.3: Copyright (c) 2015-2020, Matteo Collina <matteo.collina@gmail.com>. https://github.com/mcollina/fastq#readme
 - **libloading** 0.8.9 (Rust crate): Copyright © 2015, Simonas Kazlauskas. https://github.com/nagisa/rust_libloading/
@@ -6619,9 +6611,10 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 - **lru-cache** 6.0.0: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/isaacs/node-lru-cache
 - **minimatch** 3.1.5: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/isaacs/minimatch
 - **once** 1.4.0: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/isaacs/once
-- **semver** 6.3.1: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/npm/node-semver
+- **semver** 6.3.2: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/npm/node-semver
 - **semver** 7.5.3: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/npm/node-semver
 - **semver** 7.8.5: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/npm/node-semver
+- **semver** 7.8.6: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/npm/node-semver
 - **signal-exit** 3.0.7: Copyright (c) 2015, Contributors. https://github.com/tapjs/signal-exit
 - **which** 2.0.2: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/isaacs/node-which
 - **wrappy** 1.0.2: Copyright (c) Isaac Z. Schlueter and Contributors. https://github.com/npm/wrappy
@@ -6645,7 +6638,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
-- **lucide-react** 1.56.0: Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis. https://lucide.dev
+- **lucide-react** 1.70.0: Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis. https://lucide.dev
 
 ```text
 ISC License
@@ -8591,17 +8584,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## Remotion License
 
-- **@remotion/bundler** 4.0.539: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/bundler
-- **@remotion/cli** 4.0.539: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/cli
-- **@remotion/compositor-darwin-arm64** 4.0.539: No copyright line given. https://github.com/remotion-dev/remotion/tree/main/packages/compositor-darwin-arm64. Its package doesn't name a licence; the Remotion License covers every Remotion package (remotion.dev/docs/license). It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/install-whisper-cpp** 4.0.539: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/install-whisper-cpp
-- **@remotion/media** 4.0.539: By Jonny Burger. https://remotion.dev/docs/media. Its package doesn't name a licence; the Remotion License covers every Remotion package (remotion.dev/docs/license). It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/player** 4.0.539: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/player
-- **@remotion/renderer** 4.0.539: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/renderer
-- **@remotion/sdk** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/sdk. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/studio-protocol** 4.0.539: By Jonny Burger. https://www.remotion.dev/docs/studio-protocol. It has no licence file of its own, so this is its licence's standard text.
-- **@remotion/web-renderer** 4.0.539: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/web-renderer/
-- **remotion** 4.0.539: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/remotion
+- **@remotion/bundler** 4.0.542: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/bundler
+- **@remotion/cli** 4.0.542: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/cli
+- **@remotion/compositor-darwin-arm64** 4.0.542: No copyright line given. https://github.com/remotion-dev/remotion/tree/main/packages/compositor-darwin-arm64. Its package doesn't name a licence; the Remotion License covers every Remotion package (remotion.dev/docs/license). It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/install-whisper-cpp** 4.0.542: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/install-whisper-cpp
+- **@remotion/media** 4.0.542: By Jonny Burger. https://remotion.dev/docs/media. Its package doesn't name a licence; the Remotion License covers every Remotion package (remotion.dev/docs/license). It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/player** 4.0.542: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/player
+- **@remotion/renderer** 4.0.542: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/renderer
+- **@remotion/sdk** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/sdk. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/studio-protocol** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/studio-protocol. It has no licence file of its own, so this is its licence's standard text.
+- **@remotion/web-renderer** 4.0.542: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/web-renderer/
+- **remotion** 4.0.542: Copyright © 2026 [Remotion](https://www.remotion.dev). https://www.remotion.dev/docs/remotion
 
 ```text
 # Remotion License
@@ -8656,12 +8649,12 @@ Are you not sure whether you need a Company License because of an edge case? Her
 
 ## MPL-2.0
 
-- **@mediabunny/aac-encoder** 1.62.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/guide/extensions/aac-encoder
-- **@mediabunny/flac-encoder** 1.62.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/guide/extensions/flac-encoder
-- **@mediabunny/mp3-encoder** 1.62.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/guide/extensions/mp3-encoder
-- **lightningcss** 1.32.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://github.com/parcel-bundler/lightningcss
-- **lightningcss-darwin-arm64** 1.32.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://github.com/parcel-bundler/lightningcss
-- **mediabunny** 1.62.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/
+- **@mediabunny/aac-encoder** 1.64.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/guide/extensions/aac-encoder
+- **@mediabunny/flac-encoder** 1.64.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/guide/extensions/flac-encoder
+- **@mediabunny/mp3-encoder** 1.64.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/guide/extensions/mp3-encoder
+- **lightningcss** 1.33.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://github.com/parcel-bundler/lightningcss
+- **lightningcss-darwin-arm64** 1.33.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://github.com/parcel-bundler/lightningcss
+- **mediabunny** 1.64.0: (c) under Patent Claims infringed by Covered Software in the absence of. https://mediabunny.dev/
 
 ```text
 Mozilla Public License Version 2.0
@@ -9877,6 +9870,415 @@ freely, subject to the following restrictions:
 2. Altered source versions must be plainly marked as such, and must not be
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
+```
+
+## CC-BY-4.0
+
+- **caniuse-lite** 1.0.30001820: By Ben Briggs. https://github.com/browserslist/caniuse-lite
+- **caniuse-lite** 1.0.30001823: By Ben Briggs. https://github.com/browserslist/caniuse-lite
+
+```text
+Attribution 4.0 International
+
+=======================================================================
+
+Creative Commons Corporation ("Creative Commons") is not a law firm and
+does not provide legal services or legal advice. Distribution of
+Creative Commons public licenses does not create a lawyer-client or
+other relationship. Creative Commons makes its licenses and related
+information available on an "as-is" basis. Creative Commons gives no
+warranties regarding its licenses, any material licensed under their
+terms and conditions, or any related information. Creative Commons
+disclaims all liability for damages resulting from their use to the
+fullest extent possible.
+
+Using Creative Commons Public Licenses
+
+Creative Commons public licenses provide a standard set of terms and
+conditions that creators and other rights holders may use to share
+original works of authorship and other material subject to copyright
+and certain other rights specified in the public license below. The
+following considerations are for informational purposes only, are not
+exhaustive, and do not form part of our licenses.
+
+     Considerations for licensors: Our public licenses are
+     intended for use by those authorized to give the public
+     permission to use material in ways otherwise restricted by
+     copyright and certain other rights. Our licenses are
+     irrevocable. Licensors should read and understand the terms
+     and conditions of the license they choose before applying it.
+     Licensors should also secure all rights necessary before
+     applying our licenses so that the public can reuse the
+     material as expected. Licensors should clearly mark any
+     material not subject to the license. This includes other CC-
+     licensed material, or material used under an exception or
+     limitation to copyright. More considerations for licensors:
+	wiki.creativecommons.org/Considerations_for_licensors
+
+     Considerations for the public: By using one of our public
+     licenses, a licensor grants the public permission to use the
+     licensed material under specified terms and conditions. If
+     the licensor's permission is not necessary for any reason--for
+     example, because of any applicable exception or limitation to
+     copyright--then that use is not regulated by the license. Our
+     licenses grant only permissions under copyright and certain
+     other rights that a licensor has authority to grant. Use of
+     the licensed material may still be restricted for other
+     reasons, including because others have copyright or other
+     rights in the material. A licensor may make special requests,
+     such as asking that all changes be marked or described.
+     Although not required by our licenses, you are encouraged to
+     respect those requests where reasonable. More_considerations
+     for the public: 
+	wiki.creativecommons.org/Considerations_for_licensees
+
+=======================================================================
+
+Creative Commons Attribution 4.0 International Public License
+
+By exercising the Licensed Rights (defined below), You accept and agree
+to be bound by the terms and conditions of this Creative Commons
+Attribution 4.0 International Public License ("Public License"). To the
+extent this Public License may be interpreted as a contract, You are
+granted the Licensed Rights in consideration of Your acceptance of
+these terms and conditions, and the Licensor grants You such rights in
+consideration of benefits the Licensor receives from making the
+Licensed Material available under these terms and conditions.
+
+
+Section 1 -- Definitions.
+
+  a. Adapted Material means material subject to Copyright and Similar
+     Rights that is derived from or based upon the Licensed Material
+     and in which the Licensed Material is translated, altered,
+     arranged, transformed, or otherwise modified in a manner requiring
+     permission under the Copyright and Similar Rights held by the
+     Licensor. For purposes of this Public License, where the Licensed
+     Material is a musical work, performance, or sound recording,
+     Adapted Material is always produced where the Licensed Material is
+     synched in timed relation with a moving image.
+
+  b. Adapter's License means the license You apply to Your Copyright
+     and Similar Rights in Your contributions to Adapted Material in
+     accordance with the terms and conditions of this Public License.
+
+  c. Copyright and Similar Rights means copyright and/or similar rights
+     closely related to copyright including, without limitation,
+     performance, broadcast, sound recording, and Sui Generis Database
+     Rights, without regard to how the rights are labeled or
+     categorized. For purposes of this Public License, the rights
+     specified in Section 2(b)(1)-(2) are not Copyright and Similar
+     Rights.
+
+  d. Effective Technological Measures means those measures that, in the
+     absence of proper authority, may not be circumvented under laws
+     fulfilling obligations under Article 11 of the WIPO Copyright
+     Treaty adopted on December 20, 1996, and/or similar international
+     agreements.
+
+  e. Exceptions and Limitations means fair use, fair dealing, and/or
+     any other exception or limitation to Copyright and Similar Rights
+     that applies to Your use of the Licensed Material.
+
+  f. Licensed Material means the artistic or literary work, database,
+     or other material to which the Licensor applied this Public
+     License.
+
+  g. Licensed Rights means the rights granted to You subject to the
+     terms and conditions of this Public License, which are limited to
+     all Copyright and Similar Rights that apply to Your use of the
+     Licensed Material and that the Licensor has authority to license.
+
+  h. Licensor means the individual(s) or entity(ies) granting rights
+     under this Public License.
+
+  i. Share means to provide material to the public by any means or
+     process that requires permission under the Licensed Rights, such
+     as reproduction, public display, public performance, distribution,
+     dissemination, communication, or importation, and to make material
+     available to the public including in ways that members of the
+     public may access the material from a place and at a time
+     individually chosen by them.
+
+  j. Sui Generis Database Rights means rights other than copyright
+     resulting from Directive 96/9/EC of the European Parliament and of
+     the Council of 11 March 1996 on the legal protection of databases,
+     as amended and/or succeeded, as well as other essentially
+     equivalent rights anywhere in the world.
+
+  k. You means the individual or entity exercising the Licensed Rights
+     under this Public License. Your has a corresponding meaning.
+
+
+Section 2 -- Scope.
+
+  a. License grant.
+
+       1. Subject to the terms and conditions of this Public License,
+          the Licensor hereby grants You a worldwide, royalty-free,
+          non-sublicensable, non-exclusive, irrevocable license to
+          exercise the Licensed Rights in the Licensed Material to:
+
+            a. reproduce and Share the Licensed Material, in whole or
+               in part; and
+
+            b. produce, reproduce, and Share Adapted Material.
+
+       2. Exceptions and Limitations. For the avoidance of doubt, where
+          Exceptions and Limitations apply to Your use, this Public
+          License does not apply, and You do not need to comply with
+          its terms and conditions.
+
+       3. Term. The term of this Public License is specified in Section
+          6(a).
+
+       4. Media and formats; technical modifications allowed. The
+          Licensor authorizes You to exercise the Licensed Rights in
+          all media and formats whether now known or hereafter created,
+          and to make technical modifications necessary to do so. The
+          Licensor waives and/or agrees not to assert any right or
+          authority to forbid You from making technical modifications
+          necessary to exercise the Licensed Rights, including
+          technical modifications necessary to circumvent Effective
+          Technological Measures. For purposes of this Public License,
+          simply making modifications authorized by this Section 2(a)
+          (4) never produces Adapted Material.
+
+       5. Downstream recipients.
+
+            a. Offer from the Licensor -- Licensed Material. Every
+               recipient of the Licensed Material automatically
+               receives an offer from the Licensor to exercise the
+               Licensed Rights under the terms and conditions of this
+               Public License.
+
+            b. No downstream restrictions. You may not offer or impose
+               any additional or different terms or conditions on, or
+               apply any Effective Technological Measures to, the
+               Licensed Material if doing so restricts exercise of the
+               Licensed Rights by any recipient of the Licensed
+               Material.
+
+       6. No endorsement. Nothing in this Public License constitutes or
+          may be construed as permission to assert or imply that You
+          are, or that Your use of the Licensed Material is, connected
+          with, or sponsored, endorsed, or granted official status by,
+          the Licensor or others designated to receive attribution as
+          provided in Section 3(a)(1)(A)(i).
+
+  b. Other rights.
+
+       1. Moral rights, such as the right of integrity, are not
+          licensed under this Public License, nor are publicity,
+          privacy, and/or other similar personality rights; however, to
+          the extent possible, the Licensor waives and/or agrees not to
+          assert any such rights held by the Licensor to the limited
+          extent necessary to allow You to exercise the Licensed
+          Rights, but not otherwise.
+
+       2. Patent and trademark rights are not licensed under this
+          Public License.
+
+       3. To the extent possible, the Licensor waives any right to
+          collect royalties from You for the exercise of the Licensed
+          Rights, whether directly or through a collecting society
+          under any voluntary or waivable statutory or compulsory
+          licensing scheme. In all other cases the Licensor expressly
+          reserves any right to collect such royalties.
+
+
+Section 3 -- License Conditions.
+
+Your exercise of the Licensed Rights is expressly made subject to the
+following conditions.
+
+  a. Attribution.
+
+       1. If You Share the Licensed Material (including in modified
+          form), You must:
+
+            a. retain the following if it is supplied by the Licensor
+               with the Licensed Material:
+
+                 i. identification of the creator(s) of the Licensed
+                    Material and any others designated to receive
+                    attribution, in any reasonable manner requested by
+                    the Licensor (including by pseudonym if
+                    designated);
+
+                ii. a copyright notice;
+
+               iii. a notice that refers to this Public License;
+
+                iv. a notice that refers to the disclaimer of
+                    warranties;
+
+                 v. a URI or hyperlink to the Licensed Material to the
+                    extent reasonably practicable;
+
+            b. indicate if You modified the Licensed Material and
+               retain an indication of any previous modifications; and
+
+            c. indicate the Licensed Material is licensed under this
+               Public License, and include the text of, or the URI or
+               hyperlink to, this Public License.
+
+       2. You may satisfy the conditions in Section 3(a)(1) in any
+          reasonable manner based on the medium, means, and context in
+          which You Share the Licensed Material. For example, it may be
+          reasonable to satisfy the conditions by providing a URI or
+          hyperlink to a resource that includes the required
+          information.
+
+       3. If requested by the Licensor, You must remove any of the
+          information required by Section 3(a)(1)(A) to the extent
+          reasonably practicable.
+
+       4. If You Share Adapted Material You produce, the Adapter's
+          License You apply must not prevent recipients of the Adapted
+          Material from complying with this Public License.
+
+
+Section 4 -- Sui Generis Database Rights.
+
+Where the Licensed Rights include Sui Generis Database Rights that
+apply to Your use of the Licensed Material:
+
+  a. for the avoidance of doubt, Section 2(a)(1) grants You the right
+     to extract, reuse, reproduce, and Share all or a substantial
+     portion of the contents of the database;
+
+  b. if You include all or a substantial portion of the database
+     contents in a database in which You have Sui Generis Database
+     Rights, then the database in which You have Sui Generis Database
+     Rights (but not its individual contents) is Adapted Material; and
+
+  c. You must comply with the conditions in Section 3(a) if You Share
+     all or a substantial portion of the contents of the database.
+
+For the avoidance of doubt, this Section 4 supplements and does not
+replace Your obligations under this Public License where the Licensed
+Rights include other Copyright and Similar Rights.
+
+
+Section 5 -- Disclaimer of Warranties and Limitation of Liability.
+
+  a. UNLESS OTHERWISE SEPARATELY UNDERTAKEN BY THE LICENSOR, TO THE
+     EXTENT POSSIBLE, THE LICENSOR OFFERS THE LICENSED MATERIAL AS-IS
+     AND AS-AVAILABLE, AND MAKES NO REPRESENTATIONS OR WARRANTIES OF
+     ANY KIND CONCERNING THE LICENSED MATERIAL, WHETHER EXPRESS,
+     IMPLIED, STATUTORY, OR OTHER. THIS INCLUDES, WITHOUT LIMITATION,
+     WARRANTIES OF TITLE, MERCHANTABILITY, FITNESS FOR A PARTICULAR
+     PURPOSE, NON-INFRINGEMENT, ABSENCE OF LATENT OR OTHER DEFECTS,
+     ACCURACY, OR THE PRESENCE OR ABSENCE OF ERRORS, WHETHER OR NOT
+     KNOWN OR DISCOVERABLE. WHERE DISCLAIMERS OF WARRANTIES ARE NOT
+     ALLOWED IN FULL OR IN PART, THIS DISCLAIMER MAY NOT APPLY TO YOU.
+
+  b. TO THE EXTENT POSSIBLE, IN NO EVENT WILL THE LICENSOR BE LIABLE
+     TO YOU ON ANY LEGAL THEORY (INCLUDING, WITHOUT LIMITATION,
+     NEGLIGENCE) OR OTHERWISE FOR ANY DIRECT, SPECIAL, INDIRECT,
+     INCIDENTAL, CONSEQUENTIAL, PUNITIVE, EXEMPLARY, OR OTHER LOSSES,
+     COSTS, EXPENSES, OR DAMAGES ARISING OUT OF THIS PUBLIC LICENSE OR
+     USE OF THE LICENSED MATERIAL, EVEN IF THE LICENSOR HAS BEEN
+     ADVISED OF THE POSSIBILITY OF SUCH LOSSES, COSTS, EXPENSES, OR
+     DAMAGES. WHERE A LIMITATION OF LIABILITY IS NOT ALLOWED IN FULL OR
+     IN PART, THIS LIMITATION MAY NOT APPLY TO YOU.
+
+  c. The disclaimer of warranties and limitation of liability provided
+     above shall be interpreted in a manner that, to the extent
+     possible, most closely approximates an absolute disclaimer and
+     waiver of all liability.
+
+
+Section 6 -- Term and Termination.
+
+  a. This Public License applies for the term of the Copyright and
+     Similar Rights licensed here. However, if You fail to comply with
+     this Public License, then Your rights under this Public License
+     terminate automatically.
+
+  b. Where Your right to use the Licensed Material has terminated under
+     Section 6(a), it reinstates:
+
+       1. automatically as of the date the violation is cured, provided
+          it is cured within 30 days of Your discovery of the
+          violation; or
+
+       2. upon express reinstatement by the Licensor.
+
+     For the avoidance of doubt, this Section 6(b) does not affect any
+     right the Licensor may have to seek remedies for Your violations
+     of this Public License.
+
+  c. For the avoidance of doubt, the Licensor may also offer the
+     Licensed Material under separate terms or conditions or stop
+     distributing the Licensed Material at any time; however, doing so
+     will not terminate this Public License.
+
+  d. Sections 1, 5, 6, 7, and 8 survive termination of this Public
+     License.
+
+
+Section 7 -- Other Terms and Conditions.
+
+  a. The Licensor shall not be bound by any additional or different
+     terms or conditions communicated by You unless expressly agreed.
+
+  b. Any arrangements, understandings, or agreements regarding the
+     Licensed Material not stated herein are separate from and
+     independent of the terms and conditions of this Public License.
+
+
+Section 8 -- Interpretation.
+
+  a. For the avoidance of doubt, this Public License does not, and
+     shall not be interpreted to, reduce, limit, restrict, or impose
+     conditions on any use of the Licensed Material that could lawfully
+     be made without permission under this Public License.
+
+  b. To the extent possible, if any provision of this Public License is
+     deemed unenforceable, it shall be automatically reformed to the
+     minimum extent necessary to make it enforceable. If the provision
+     cannot be reformed, it shall be severed from this Public License
+     without affecting the enforceability of the remaining terms and
+     conditions.
+
+  c. No term or condition of this Public License will be waived and no
+     failure to comply consented to unless expressly agreed to by the
+     Licensor.
+
+  d. Nothing in this Public License constitutes or may be interpreted
+     as a limitation upon, or waiver of, any privileges and immunities
+     that apply to the Licensor or You, including from the legal
+     processes of any jurisdiction or authority.
+
+
+=======================================================================
+
+Creative Commons is not a party to its public
+licenses. Notwithstanding, Creative Commons may elect to apply one of
+its public licenses to material it publishes and in those instances
+will be considered the “Licensor.” The text of the Creative Commons
+public licenses is dedicated to the public domain under the CC0 Public
+Domain Dedication. Except for the limited purpose of indicating that
+material is shared under a Creative Commons public license or as
+otherwise permitted by the Creative Commons policies published at
+creativecommons.org/policies, Creative Commons does not authorize the
+use of the trademark "Creative Commons" or any other trademark or logo
+of Creative Commons without its prior written consent including,
+without limitation, in connection with any unauthorized modifications
+to any of its public licenses or any other arrangements,
+understandings, or agreements concerning use of licensed material. For
+the avoidance of doubt, this paragraph does not form part of the
+public licenses.
+
+Creative Commons may be contacted at creativecommons.org.
+```
+
+- **Figma UI3 kit: multiplayer cursor, name tag and cursor chat** (artwork): By Figma. The default pointer of the cursor part (studio/starters/html/assets/parts/cursor.js), copied into HTML films.
+
+```text
+From Figma's UI3 kit on Figma Community (its Cursors page), shared under the Creative Commons Attribution 4.0 International licence: https://creativecommons.org/licenses/by/4.0/. The pointer's outline and dart are used as drawn; the name tag and chat bubble are rebuilt as code from the kit's measurements, and their colours follow each film.
 ```
 
 ## MIT OR Apache-2.0 OR BSD-2-Clause
@@ -11239,409 +11641,6 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-```
-
-## CC-BY-4.0
-
-- **caniuse-lite** 1.0.30001816: By Ben Briggs. https://github.com/browserslist/caniuse-lite
-- **caniuse-lite** 1.0.30001820: By Ben Briggs. https://github.com/browserslist/caniuse-lite
-
-```text
-Attribution 4.0 International
-
-=======================================================================
-
-Creative Commons Corporation ("Creative Commons") is not a law firm and
-does not provide legal services or legal advice. Distribution of
-Creative Commons public licenses does not create a lawyer-client or
-other relationship. Creative Commons makes its licenses and related
-information available on an "as-is" basis. Creative Commons gives no
-warranties regarding its licenses, any material licensed under their
-terms and conditions, or any related information. Creative Commons
-disclaims all liability for damages resulting from their use to the
-fullest extent possible.
-
-Using Creative Commons Public Licenses
-
-Creative Commons public licenses provide a standard set of terms and
-conditions that creators and other rights holders may use to share
-original works of authorship and other material subject to copyright
-and certain other rights specified in the public license below. The
-following considerations are for informational purposes only, are not
-exhaustive, and do not form part of our licenses.
-
-     Considerations for licensors: Our public licenses are
-     intended for use by those authorized to give the public
-     permission to use material in ways otherwise restricted by
-     copyright and certain other rights. Our licenses are
-     irrevocable. Licensors should read and understand the terms
-     and conditions of the license they choose before applying it.
-     Licensors should also secure all rights necessary before
-     applying our licenses so that the public can reuse the
-     material as expected. Licensors should clearly mark any
-     material not subject to the license. This includes other CC-
-     licensed material, or material used under an exception or
-     limitation to copyright. More considerations for licensors:
-	wiki.creativecommons.org/Considerations_for_licensors
-
-     Considerations for the public: By using one of our public
-     licenses, a licensor grants the public permission to use the
-     licensed material under specified terms and conditions. If
-     the licensor's permission is not necessary for any reason--for
-     example, because of any applicable exception or limitation to
-     copyright--then that use is not regulated by the license. Our
-     licenses grant only permissions under copyright and certain
-     other rights that a licensor has authority to grant. Use of
-     the licensed material may still be restricted for other
-     reasons, including because others have copyright or other
-     rights in the material. A licensor may make special requests,
-     such as asking that all changes be marked or described.
-     Although not required by our licenses, you are encouraged to
-     respect those requests where reasonable. More_considerations
-     for the public: 
-	wiki.creativecommons.org/Considerations_for_licensees
-
-=======================================================================
-
-Creative Commons Attribution 4.0 International Public License
-
-By exercising the Licensed Rights (defined below), You accept and agree
-to be bound by the terms and conditions of this Creative Commons
-Attribution 4.0 International Public License ("Public License"). To the
-extent this Public License may be interpreted as a contract, You are
-granted the Licensed Rights in consideration of Your acceptance of
-these terms and conditions, and the Licensor grants You such rights in
-consideration of benefits the Licensor receives from making the
-Licensed Material available under these terms and conditions.
-
-
-Section 1 -- Definitions.
-
-  a. Adapted Material means material subject to Copyright and Similar
-     Rights that is derived from or based upon the Licensed Material
-     and in which the Licensed Material is translated, altered,
-     arranged, transformed, or otherwise modified in a manner requiring
-     permission under the Copyright and Similar Rights held by the
-     Licensor. For purposes of this Public License, where the Licensed
-     Material is a musical work, performance, or sound recording,
-     Adapted Material is always produced where the Licensed Material is
-     synched in timed relation with a moving image.
-
-  b. Adapter's License means the license You apply to Your Copyright
-     and Similar Rights in Your contributions to Adapted Material in
-     accordance with the terms and conditions of this Public License.
-
-  c. Copyright and Similar Rights means copyright and/or similar rights
-     closely related to copyright including, without limitation,
-     performance, broadcast, sound recording, and Sui Generis Database
-     Rights, without regard to how the rights are labeled or
-     categorized. For purposes of this Public License, the rights
-     specified in Section 2(b)(1)-(2) are not Copyright and Similar
-     Rights.
-
-  d. Effective Technological Measures means those measures that, in the
-     absence of proper authority, may not be circumvented under laws
-     fulfilling obligations under Article 11 of the WIPO Copyright
-     Treaty adopted on December 20, 1996, and/or similar international
-     agreements.
-
-  e. Exceptions and Limitations means fair use, fair dealing, and/or
-     any other exception or limitation to Copyright and Similar Rights
-     that applies to Your use of the Licensed Material.
-
-  f. Licensed Material means the artistic or literary work, database,
-     or other material to which the Licensor applied this Public
-     License.
-
-  g. Licensed Rights means the rights granted to You subject to the
-     terms and conditions of this Public License, which are limited to
-     all Copyright and Similar Rights that apply to Your use of the
-     Licensed Material and that the Licensor has authority to license.
-
-  h. Licensor means the individual(s) or entity(ies) granting rights
-     under this Public License.
-
-  i. Share means to provide material to the public by any means or
-     process that requires permission under the Licensed Rights, such
-     as reproduction, public display, public performance, distribution,
-     dissemination, communication, or importation, and to make material
-     available to the public including in ways that members of the
-     public may access the material from a place and at a time
-     individually chosen by them.
-
-  j. Sui Generis Database Rights means rights other than copyright
-     resulting from Directive 96/9/EC of the European Parliament and of
-     the Council of 11 March 1996 on the legal protection of databases,
-     as amended and/or succeeded, as well as other essentially
-     equivalent rights anywhere in the world.
-
-  k. You means the individual or entity exercising the Licensed Rights
-     under this Public License. Your has a corresponding meaning.
-
-
-Section 2 -- Scope.
-
-  a. License grant.
-
-       1. Subject to the terms and conditions of this Public License,
-          the Licensor hereby grants You a worldwide, royalty-free,
-          non-sublicensable, non-exclusive, irrevocable license to
-          exercise the Licensed Rights in the Licensed Material to:
-
-            a. reproduce and Share the Licensed Material, in whole or
-               in part; and
-
-            b. produce, reproduce, and Share Adapted Material.
-
-       2. Exceptions and Limitations. For the avoidance of doubt, where
-          Exceptions and Limitations apply to Your use, this Public
-          License does not apply, and You do not need to comply with
-          its terms and conditions.
-
-       3. Term. The term of this Public License is specified in Section
-          6(a).
-
-       4. Media and formats; technical modifications allowed. The
-          Licensor authorizes You to exercise the Licensed Rights in
-          all media and formats whether now known or hereafter created,
-          and to make technical modifications necessary to do so. The
-          Licensor waives and/or agrees not to assert any right or
-          authority to forbid You from making technical modifications
-          necessary to exercise the Licensed Rights, including
-          technical modifications necessary to circumvent Effective
-          Technological Measures. For purposes of this Public License,
-          simply making modifications authorized by this Section 2(a)
-          (4) never produces Adapted Material.
-
-       5. Downstream recipients.
-
-            a. Offer from the Licensor -- Licensed Material. Every
-               recipient of the Licensed Material automatically
-               receives an offer from the Licensor to exercise the
-               Licensed Rights under the terms and conditions of this
-               Public License.
-
-            b. No downstream restrictions. You may not offer or impose
-               any additional or different terms or conditions on, or
-               apply any Effective Technological Measures to, the
-               Licensed Material if doing so restricts exercise of the
-               Licensed Rights by any recipient of the Licensed
-               Material.
-
-       6. No endorsement. Nothing in this Public License constitutes or
-          may be construed as permission to assert or imply that You
-          are, or that Your use of the Licensed Material is, connected
-          with, or sponsored, endorsed, or granted official status by,
-          the Licensor or others designated to receive attribution as
-          provided in Section 3(a)(1)(A)(i).
-
-  b. Other rights.
-
-       1. Moral rights, such as the right of integrity, are not
-          licensed under this Public License, nor are publicity,
-          privacy, and/or other similar personality rights; however, to
-          the extent possible, the Licensor waives and/or agrees not to
-          assert any such rights held by the Licensor to the limited
-          extent necessary to allow You to exercise the Licensed
-          Rights, but not otherwise.
-
-       2. Patent and trademark rights are not licensed under this
-          Public License.
-
-       3. To the extent possible, the Licensor waives any right to
-          collect royalties from You for the exercise of the Licensed
-          Rights, whether directly or through a collecting society
-          under any voluntary or waivable statutory or compulsory
-          licensing scheme. In all other cases the Licensor expressly
-          reserves any right to collect such royalties.
-
-
-Section 3 -- License Conditions.
-
-Your exercise of the Licensed Rights is expressly made subject to the
-following conditions.
-
-  a. Attribution.
-
-       1. If You Share the Licensed Material (including in modified
-          form), You must:
-
-            a. retain the following if it is supplied by the Licensor
-               with the Licensed Material:
-
-                 i. identification of the creator(s) of the Licensed
-                    Material and any others designated to receive
-                    attribution, in any reasonable manner requested by
-                    the Licensor (including by pseudonym if
-                    designated);
-
-                ii. a copyright notice;
-
-               iii. a notice that refers to this Public License;
-
-                iv. a notice that refers to the disclaimer of
-                    warranties;
-
-                 v. a URI or hyperlink to the Licensed Material to the
-                    extent reasonably practicable;
-
-            b. indicate if You modified the Licensed Material and
-               retain an indication of any previous modifications; and
-
-            c. indicate the Licensed Material is licensed under this
-               Public License, and include the text of, or the URI or
-               hyperlink to, this Public License.
-
-       2. You may satisfy the conditions in Section 3(a)(1) in any
-          reasonable manner based on the medium, means, and context in
-          which You Share the Licensed Material. For example, it may be
-          reasonable to satisfy the conditions by providing a URI or
-          hyperlink to a resource that includes the required
-          information.
-
-       3. If requested by the Licensor, You must remove any of the
-          information required by Section 3(a)(1)(A) to the extent
-          reasonably practicable.
-
-       4. If You Share Adapted Material You produce, the Adapter's
-          License You apply must not prevent recipients of the Adapted
-          Material from complying with this Public License.
-
-
-Section 4 -- Sui Generis Database Rights.
-
-Where the Licensed Rights include Sui Generis Database Rights that
-apply to Your use of the Licensed Material:
-
-  a. for the avoidance of doubt, Section 2(a)(1) grants You the right
-     to extract, reuse, reproduce, and Share all or a substantial
-     portion of the contents of the database;
-
-  b. if You include all or a substantial portion of the database
-     contents in a database in which You have Sui Generis Database
-     Rights, then the database in which You have Sui Generis Database
-     Rights (but not its individual contents) is Adapted Material; and
-
-  c. You must comply with the conditions in Section 3(a) if You Share
-     all or a substantial portion of the contents of the database.
-
-For the avoidance of doubt, this Section 4 supplements and does not
-replace Your obligations under this Public License where the Licensed
-Rights include other Copyright and Similar Rights.
-
-
-Section 5 -- Disclaimer of Warranties and Limitation of Liability.
-
-  a. UNLESS OTHERWISE SEPARATELY UNDERTAKEN BY THE LICENSOR, TO THE
-     EXTENT POSSIBLE, THE LICENSOR OFFERS THE LICENSED MATERIAL AS-IS
-     AND AS-AVAILABLE, AND MAKES NO REPRESENTATIONS OR WARRANTIES OF
-     ANY KIND CONCERNING THE LICENSED MATERIAL, WHETHER EXPRESS,
-     IMPLIED, STATUTORY, OR OTHER. THIS INCLUDES, WITHOUT LIMITATION,
-     WARRANTIES OF TITLE, MERCHANTABILITY, FITNESS FOR A PARTICULAR
-     PURPOSE, NON-INFRINGEMENT, ABSENCE OF LATENT OR OTHER DEFECTS,
-     ACCURACY, OR THE PRESENCE OR ABSENCE OF ERRORS, WHETHER OR NOT
-     KNOWN OR DISCOVERABLE. WHERE DISCLAIMERS OF WARRANTIES ARE NOT
-     ALLOWED IN FULL OR IN PART, THIS DISCLAIMER MAY NOT APPLY TO YOU.
-
-  b. TO THE EXTENT POSSIBLE, IN NO EVENT WILL THE LICENSOR BE LIABLE
-     TO YOU ON ANY LEGAL THEORY (INCLUDING, WITHOUT LIMITATION,
-     NEGLIGENCE) OR OTHERWISE FOR ANY DIRECT, SPECIAL, INDIRECT,
-     INCIDENTAL, CONSEQUENTIAL, PUNITIVE, EXEMPLARY, OR OTHER LOSSES,
-     COSTS, EXPENSES, OR DAMAGES ARISING OUT OF THIS PUBLIC LICENSE OR
-     USE OF THE LICENSED MATERIAL, EVEN IF THE LICENSOR HAS BEEN
-     ADVISED OF THE POSSIBILITY OF SUCH LOSSES, COSTS, EXPENSES, OR
-     DAMAGES. WHERE A LIMITATION OF LIABILITY IS NOT ALLOWED IN FULL OR
-     IN PART, THIS LIMITATION MAY NOT APPLY TO YOU.
-
-  c. The disclaimer of warranties and limitation of liability provided
-     above shall be interpreted in a manner that, to the extent
-     possible, most closely approximates an absolute disclaimer and
-     waiver of all liability.
-
-
-Section 6 -- Term and Termination.
-
-  a. This Public License applies for the term of the Copyright and
-     Similar Rights licensed here. However, if You fail to comply with
-     this Public License, then Your rights under this Public License
-     terminate automatically.
-
-  b. Where Your right to use the Licensed Material has terminated under
-     Section 6(a), it reinstates:
-
-       1. automatically as of the date the violation is cured, provided
-          it is cured within 30 days of Your discovery of the
-          violation; or
-
-       2. upon express reinstatement by the Licensor.
-
-     For the avoidance of doubt, this Section 6(b) does not affect any
-     right the Licensor may have to seek remedies for Your violations
-     of this Public License.
-
-  c. For the avoidance of doubt, the Licensor may also offer the
-     Licensed Material under separate terms or conditions or stop
-     distributing the Licensed Material at any time; however, doing so
-     will not terminate this Public License.
-
-  d. Sections 1, 5, 6, 7, and 8 survive termination of this Public
-     License.
-
-
-Section 7 -- Other Terms and Conditions.
-
-  a. The Licensor shall not be bound by any additional or different
-     terms or conditions communicated by You unless expressly agreed.
-
-  b. Any arrangements, understandings, or agreements regarding the
-     Licensed Material not stated herein are separate from and
-     independent of the terms and conditions of this Public License.
-
-
-Section 8 -- Interpretation.
-
-  a. For the avoidance of doubt, this Public License does not, and
-     shall not be interpreted to, reduce, limit, restrict, or impose
-     conditions on any use of the Licensed Material that could lawfully
-     be made without permission under this Public License.
-
-  b. To the extent possible, if any provision of this Public License is
-     deemed unenforceable, it shall be automatically reformed to the
-     minimum extent necessary to make it enforceable. If the provision
-     cannot be reformed, it shall be severed from this Public License
-     without affecting the enforceability of the remaining terms and
-     conditions.
-
-  c. No term or condition of this Public License will be waived and no
-     failure to comply consented to unless expressly agreed to by the
-     Licensor.
-
-  d. Nothing in this Public License constitutes or may be interpreted
-     as a limitation upon, or waiver of, any privileges and immunities
-     that apply to the Licensor or You, including from the legal
-     processes of any jurisdiction or authority.
-
-
-=======================================================================
-
-Creative Commons is not a party to its public
-licenses. Notwithstanding, Creative Commons may elect to apply one of
-its public licenses to material it publishes and in those instances
-will be considered the “Licensor.” The text of the Creative Commons
-public licenses is dedicated to the public domain under the CC0 Public
-Domain Dedication. Except for the limited purpose of indicating that
-material is shared under a Creative Commons public license or as
-otherwise permitted by the Creative Commons policies published at
-creativecommons.org/policies, Creative Commons does not authorize the
-use of the trademark "Creative Commons" or any other trademark or logo
-of Creative Commons without its prior written consent including,
-without limitation, in connection with any unauthorized modifications
-to any of its public licenses or any other arrangements,
-understandings, or agreements concerning use of licensed material. For
-the avoidance of doubt, this paragraph does not form part of the
-public licenses.
-
-Creative Commons may be contacted at creativecommons.org.
 ```
 
 ## CC0-1.0
@@ -13500,6 +13499,12 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
+
+## UNLICENSED
+
+- **@remotion/effects** 4.0.542: By Jonny Burger. https://www.remotion.dev/docs/effects/api. It has no licence file; the licence's text is at https://spdx.org/licenses/UNLICENSED.html
+
+No licence text was found for these.
 
 ## WTFPL
 
