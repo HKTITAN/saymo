@@ -1,4 +1,4 @@
-# Selling Motion Studio: what to do
+# Selling Saymo: what to do
 
 Written on 2026-11-03 on the second Mac, for whoever picks this up next, person or agent. It's the plan for turning the studio into a product people pay for, based on a check of the licence of everything it ships. It isn't legal advice: have a lawyer read it before launch.
 

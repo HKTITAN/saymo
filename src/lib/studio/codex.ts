@@ -89,7 +89,7 @@ export function codexConfig(id: string, instructions: string) {
     path.join(home, ".npmrc"),
   ];
   return [
-    "# Written by the motion studio before each Codex turn. Not the person's own Codex settings.",
+    "# Written by Saymo before each Codex turn. Not the person's own Codex settings.",
     'approval_policy = "never"',
     'default_permissions = "studio"',
     'cli_auth_credentials_store = "file"',

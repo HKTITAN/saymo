@@ -15,10 +15,10 @@ The quickest set-up is in the studio itself: open **Where films are saved** (the
 Paste this in Terminal (with your own paths, or copy it from the studio):
 
 ```sh
-claude mcp add --scope user motion-studio -- /path/to/node /path/to/motion-studio/scripts/studio/mcp.mjs
+claude mcp add --scope user saymo -- /path/to/node /path/to/saymo/scripts/studio/mcp.mjs
 ```
 
-Then ask Claude Code things like "make a 9:16 Motion Studio film of orange lines rising" or "render film abcd1234 as a draft".
+Then ask Claude Code things like "make a 9:16 Saymo film of orange lines rising" or "render film abcd1234 as a draft".
 
 ## Claude Desktop
 
@@ -27,9 +27,9 @@ In Claude Desktop, open **Settings**, **Developer**, **Edit Config**. Add this t
 ```json
 {
   "mcpServers": {
-    "motion-studio": {
+    "saymo": {
       "command": "/path/to/node",
-      "args": ["/path/to/motion-studio/scripts/studio/mcp.mjs"]
+      "args": ["/path/to/saymo/scripts/studio/mcp.mjs"]
     }
   }
 }
@@ -43,13 +43,13 @@ Add the same block to `~/.cursor/mcp.json` (or **Cursor Settings**, **MCP**, **A
 
 ## A studio on another port
 
-The MCP server and the command line look for the studio at `http://127.0.0.1:3200`. For another port, set `MOTION_STUDIO_URL`:
+The MCP server and the command line look for the studio at `http://127.0.0.1:3200`. For another port, set `SAYMO_URL`:
 
 ```sh
-claude mcp add --scope user motion-studio -e MOTION_STUDIO_URL=http://127.0.0.1:3333 -- /path/to/node /path/to/motion-studio/scripts/studio/mcp.mjs
+claude mcp add --scope user saymo -e SAYMO_URL=http://127.0.0.1:3333 -- /path/to/node /path/to/saymo/scripts/studio/mcp.mjs
 ```
 
-In a JSON config, add `"env": { "MOTION_STUDIO_URL": "http://127.0.0.1:3333" }` beside `args`.
+In a JSON config, add `"env": { "SAYMO_URL": "http://127.0.0.1:3333" }` beside `args`.
 
 ## The tools
 
@@ -100,11 +100,11 @@ npm run studio -- doctor
 
 Add `--json` to any command for JSON on stdout. Results go to stdout; progress and problems go to stderr, so `--json` output can be piped straight into other tools. A command that fails exits with 1 (2 for a mistake in the command itself).
 
-To type `motion-studio` instead of `npm run studio --` from any folder, run `npm link` once in the studio's folder.
+To type `saymo` instead of `npm run studio --` from any folder, run `npm link` once in the studio's folder.
 
 ## How it connects
 
-The MCP server (`scripts/studio/mcp.mjs`, built on the official `@modelcontextprotocol/sdk`) and the command line (`scripts/studio/cli.mjs`) share one small client, `scripts/studio/client.mjs`. It calls the studio's own routes under `/api/studio` with the local API token from `.studio/api-token`. The token never appears in any of the set-ups above: both read it from the file, and make it if it isn't there yet. To use a token from somewhere else, set `MOTION_STUDIO_TOKEN`.
+The MCP server (`scripts/studio/mcp.mjs`, built on the official `@modelcontextprotocol/sdk`) and the command line (`scripts/studio/cli.mjs`) share one small client, `scripts/studio/client.mjs`. It calls the studio's own routes under `/api/studio` with the local API token from `.studio/api-token`. The token never appears in any of the set-ups above: both read it from the file, and make it if it isn't there yet. To use a token from somewhere else, set `SAYMO_TOKEN`.
 
 What the token allows and what it doesn't: [Security](security.md).
 

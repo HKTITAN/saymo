@@ -116,7 +116,7 @@ Read those reports: the gaps they list are the next round. Helpers stop at usage
 - `references/brief.md`: the shared brief template for helper agents.
 - `demo/index.html`: a self-contained demo (vanilla) of Fil for Mac making a picture, with a scrubber.
 
-## In Motion Studio
+## In Saymo
 
 Borrowed from github.com/MengTo/Skills, agent-skills/web-design/html-demo (MIT, by Meng To; licence beside this file). The Vite preview plugin is left out on purpose (it can serve any local path). In the studio:
 

@@ -1,5 +1,5 @@
 {
-  "name": "motion-studio",
+  "name": "saymo",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -43,6 +43,6 @@
     "typescript": "^6.0.3"
   },
   "bin": {
-    "motion-studio": "scripts/studio/cli.mjs"
+    "saymo": "scripts/studio/cli.mjs"
   }
 }

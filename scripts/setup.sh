@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sets up Motion Studio on a Mac in one go: the tools it needs, the app's
+# Sets up Saymo on a Mac in one go: the tools it needs, the app's
 # packages and each engine's packages. Safe to run again; it skips what's
 # already there.
 #
@@ -25,10 +25,10 @@ ok() { printf '  done: %s\n' "$1"; }
 stop() { printf '\n%s\n' "$1" >&2; exit 1; }
 
 step "1. Checking this Mac"
-[[ "$(uname)" == "Darwin" ]] || stop "Motion Studio runs on macOS only."
+[[ "$(uname)" == "Darwin" ]] || stop "Saymo runs on macOS only."
 command -v brew >/dev/null || stop "Install Homebrew first (https://brew.sh), then run this again."
 NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
-(( NODE_MAJOR >= 22 )) || stop "Motion Studio needs Node.js 22 or newer. Install it (https://nodejs.org) and run this again."
+(( NODE_MAJOR >= 22 )) || stop "Saymo needs Node.js 22 or newer. Install it (https://nodejs.org) and run this again."
 [[ -d "/Applications/Google Chrome.app" ]] || stop "Install Google Chrome: the studio renders videos with it."
 xcrun --find swiftc >/dev/null 2>&1 || stop "Install Apple's command line tools first: run xcode-select --install"
 ok "macOS, Homebrew, Node $(node -v), Chrome, Swift"

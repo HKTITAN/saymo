@@ -8,7 +8,7 @@ import Sparkle
 // starts when the app was built with Sparkle (scripts/fetch-sparkle.sh) AND
 // its Info.plist names a feed (SUFeedURL) and the key releases are signed
 // with (SUPublicEDKey). scripts/build.sh fills those in from
-// MOTION_STUDIO_FEED_URL and MOTION_STUDIO_ED_KEY; without them the app
+// SAYMO_FEED_URL and SAYMO_ED_KEY; without them the app
 // never checks.
 @MainActor
 final class Updates {
@@ -22,7 +22,7 @@ final class Updates {
         let info = Bundle.main.infoDictionary ?? [:]
         let feed = (info["SUFeedURL"] as? String) ?? ""
         let key = (info["SUPublicEDKey"] as? String) ?? ""
-        return !feed.isEmpty && !key.isEmpty && ProcessInfo.processInfo.environment["MOTION_STUDIO_UPDATES"] != "off"
+        return !feed.isEmpty && !key.isEmpty && ProcessInfo.processInfo.environment["SAYMO_UPDATES"] != "off"
     }
 
     var available: Bool {

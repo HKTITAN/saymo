@@ -261,7 +261,7 @@ async function fetchCapped(url: string, max: number, ms: number) {
   const res = await fetch(url, {
     redirect: "follow",
     signal: AbortSignal.timeout(ms),
-    headers: { "user-agent": "Mozilla/5.0 (Macintosh) MotionStudio/1.0", accept: "text/html,image/*;q=0.9,*/*;q=0.5" },
+    headers: { "user-agent": "Mozilla/5.0 (Macintosh) Saymo/1.0", accept: "text/html,image/*;q=0.9,*/*;q=0.5" },
   });
   if (!res.ok || !res.body) return null;
   const chunks: Uint8Array[] = [];

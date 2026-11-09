@@ -2,21 +2,29 @@ import Foundation
 
 // The app's own files. Never films or keys: those stay in the studio folder.
 //
-//   ~/Library/Application Support/Motion Studio/
+//   ~/Library/Application Support/Saymo/
 //       settings.json   which studio folder, which port, what you've dismissed
 //       builds.json     which build of the studio is ready to open
-//   ~/Library/Logs/Motion Studio/
+//   ~/Library/Logs/Saymo/
 //       launch.log, build.log, server.log, setup.log
+// The app was called Motion Studio; its old folders move to the new names
+// the first time Saymo opens.
 enum AppPaths {
     static let support: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent("Motion Studio", isDirectory: true)
+        return moved(from: base.appendingPathComponent("Motion Studio", isDirectory: true), to: base.appendingPathComponent("Saymo", isDirectory: true))
     }()
 
     static let logs: URL = {
         let base = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0]
-        return base.appendingPathComponent("Logs/Motion Studio", isDirectory: true)
+        return moved(from: base.appendingPathComponent("Logs/Motion Studio", isDirectory: true), to: base.appendingPathComponent("Logs/Saymo", isDirectory: true))
     }()
+
+    private static func moved(from old: URL, to new: URL) -> URL {
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: new.path), fm.fileExists(atPath: old.path) { try? fm.moveItem(at: old, to: new) }
+        return new
+    }
 
     static func log(_ name: String) -> URL { logs.appendingPathComponent(name) }
 

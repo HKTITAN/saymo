@@ -9,7 +9,7 @@ description: Read first to make, edit, animate or render any video with HyperFra
 
 HyperFrames renders HTML to video by seeking a paused timeline frame by frame, so every render is identical; the person edits the same files in the Studio preview. Use it unless another framework or a plain browser recording is asked for. Run the CLI as `npx hyperframes <command>` (`/hyperframes-cli`); at the start of a new video, `npx hyperframes usage --json` reports the person's remaining plan usage (say "unknown" when it is).
 
-**In Motion Studio** (a film under `films/<id>/`), films move with Motion (motion.dev, MIT), not GSAP: one Motion sequence wrapped by `filmTimeline()` from the film's `assets/timeline.js` and registered as `window.__timelines["main"]` (`references/runtimes.md`, "Motion"). Where this skill says GSAP or "tween", read the film's timeline. GSAP is only in films made before Motion.
+**In Saymo** (a film under `films/<id>/`), films move with Motion (motion.dev, MIT), not GSAP: one Motion sequence wrapped by `filmTimeline()` from the film's `assets/timeline.js` and registered as `window.__timelines["main"]` (`references/runtimes.md`, "Motion"). Where this skill says GSAP or "tween", read the film's timeline. GSAP is only in films made before Motion.
 
 `index.html` is the root composition: it declares the video's variables and mounts one scene per sub-composition from `compositions/`. Media and fonts live in `assets/`. A new project: `npx hyperframes init <dir>`. A website as the subject: `npx hyperframes capture <url> --json`.
 
@@ -21,7 +21,7 @@ Build what was asked: no voiceover or captions and no new aspect ratio unless th
 
 1. Every timed element has `class="clip"`, `data-start` and `data-duration` in seconds, and shows over `[start, start + duration)`: land an end state just before its end. `data-track-index` is only a Studio lane; paint order is `z-index`.
 2. The video's length is the root's `data-duration`: overrun is cut, an early end holds the last frame.
-3. Each composition builds one paused timeline and registers it after its tweens: `window.__timelines["<data-composition-id>"] = tl` (in Motion Studio, `tl = filmTimeline(sequence, { duration })`).
+3. Each composition builds one paused timeline and registers it after its tweens: `window.__timelines["<data-composition-id>"] = tl` (in Saymo, `tl = filmTimeline(sequence, { duration })`).
 4. No `Date.now()`, unseeded `Math.random()`, network fetches, timers or `repeat: -1`. Everything visible is a function of timeline time.
 5. Never tween `display`, `visibility` or `autoAlpha` on a `.clip`; animate a child.
 6. No CSS `transform` on an element the timeline transforms; animate transforms, not `left`/`top`/`width`/`height`.

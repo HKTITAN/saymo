@@ -2,7 +2,7 @@ import Foundation
 
 // One command the app runs (the studio's server, a build, setup), started
 // through guard.mjs on the Mac's own Node. What it prints goes to a log file
-// in ~/Library/Logs/Motion Studio. The app keeps the guard's stdin open; when
+// in ~/Library/Logs/Saymo. The app keeps the guard's stdin open; when
 // the app quits or crashes it closes, and the guard stops the command and
 // everything it started.
 final class Job: @unchecked Sendable {

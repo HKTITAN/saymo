@@ -212,5 +212,5 @@ Remotion's (`remotion-dev/skills`), HyperFrames' (`heygen-com/hyperframes`),
 fframes' (`fframes.studio`), GSAP's (`greensock/gsap-skills`, for films made
 before Motion) and LottieFiles' motion design principles
 (`lottiefiles/motion-design-skill`). Each skill that used to point at GSAP
-starts with an "In Motion Studio" note saying to write Motion instead; a
+starts with an "In Saymo" note saying to write Motion instead; a
 skills update overwrites those notes, so put them back after one.

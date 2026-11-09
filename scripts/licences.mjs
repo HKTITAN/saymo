@@ -513,7 +513,7 @@ const groups = [...byLicence.entries()]
   .sort((a, b) => Number(LAST.has(a.licence)) - Number(LAST.has(b.licence)) || b.count - a.count || a.licence.localeCompare(b.licence));
 
 const pkg = readJson(path.join(ROOT, "package.json"));
-const studio = { name: "Motion Studio", version: pkg?.version ?? "0.0.0", edition: EDITION };
+const studio = { name: "Saymo", version: pkg?.version ?? "0.0.0", edition: EDITION };
 const textsById = Object.fromEntries([...texts.values()].map((t) => [t.id, t.body]));
 
 // ─── public/licences.json ───────────────────────────────────────────────────

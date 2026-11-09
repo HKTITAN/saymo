@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Motion Studio as an MCP server, over stdio. Claude Desktop, Claude Code,
+// Saymo as an MCP server, over stdio. Claude Desktop, Claude Code,
 // Cursor and other MCP apps start this script; it talks to the studio that
 // is already running on this Mac (`npm run dev`) through its local API, with
 // the token in .studio/api-token. It starts nothing itself. Set-up and the
@@ -26,10 +26,10 @@ import {
 } from "./client.mjs";
 
 const server = new McpServer(
-  { name: "motion-studio", title: "Motion Studio", version: "1.0.0" },
+  { name: "saymo", title: "Saymo", version: "1.0.0" },
   {
     instructions:
-      "Makes and changes Aerchain films in the Motion Studio running on this Mac. Each film has an 8-character id; list_films finds them. " +
+      "Makes and changes Aerchain films in Saymo, the motion studio running on this Mac. Each film has an 8-character id; list_films finds them. " +
       "change_film and create_film with a prompt run one Claude turn in the studio, which can take a few minutes. " +
       "render_film makes the video files. open_in_studio gives the link to watch a film in the studio. " +
       "list_library lists saved references (pictures, clips, sounds, PDFs, notes, links); pass their ids to change_film as library to send them with the prompt.",

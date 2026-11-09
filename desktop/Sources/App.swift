@@ -1,6 +1,6 @@
 import AppKit
 
-// Motion Studio for the Mac. A small native shell around the studio: at
+// Saymo for the Mac. A small native shell around the studio: at
 // launch it finds the studio folder, checks the Mac has what the studio
 // needs, builds the studio if its code changed, starts the studio's server
 // on this Mac only and shows /studio in the window. Quitting stops the server
@@ -92,20 +92,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         servicesItem.submenu = services
 
         var appItems: [NSMenuItem] = [
-            item("About Motion Studio", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
+            item("About Saymo", #selector(NSApplication.orderFrontStandardAboutPanel(_:))),
         ]
         if Updates.shared.available {
             appItems.append(item("Check for Updates…", #selector(checkForUpdates), target: self))
         }
         appItems += [
             .separator(), servicesItem, .separator(),
-            item("Hide Motion Studio", #selector(NSApplication.hide(_:)), "h"),
+            item("Hide Saymo", #selector(NSApplication.hide(_:)), "h"),
             item("Hide Others", #selector(NSApplication.hideOtherApplications(_:)), "h", [.command, .option]),
             item("Show All", #selector(NSApplication.unhideAllApplications(_:))),
             .separator(),
-            item("Quit Motion Studio", #selector(NSApplication.terminate(_:)), "q"),
+            item("Quit Saymo", #selector(NSApplication.terminate(_:)), "q"),
         ]
-        bar.addItem(menu("Motion Studio", appItems))
+        bar.addItem(menu("Saymo", appItems))
 
         bar.addItem(menu("File", [
             item("Show Studio Folder", #selector(showFolder), target: self),

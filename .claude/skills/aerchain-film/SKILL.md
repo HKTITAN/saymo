@@ -1,6 +1,6 @@
 ---
 name: aerchain-film
-description: Read first when working on a film in Aerchain's motion studio (a folder under films/<id>/ with a film.json). How a studio film is built for each engine, what film.json must say, which other skills to use, the Aerchain look, and how to check the work. Use for every change to a studio film.
+description: Read first when working on a film in Saymo, Aerchain's motion studio (a folder under films/<id>/ with a film.json). How a studio film is built for each engine, what film.json must say, which other skills to use, the Aerchain look, and how to check the work. Use for every change to a studio film.
 ---
 
 # Aerchain studio films
@@ -123,11 +123,11 @@ Every film can have a sound track, written as a score in `sound/score.js` (a mus
 
 ## A one-line prompt: blank-page first
 
-When a new film starts from a one-line prompt ("a 5 second launch clip for my app"), or they ask to expand a prompt, load the **blank-page** skill (borrowed from Stewdio, MIT) before building. It finds a look (five reference images from one aesthetic) and three moves to copy on are.na, writes the brief as numbered beats with a turn, and saves it as `brief.md` with the references in `look/`. Then build the film from that brief in the same turn. Its "In Motion Studio" section says how its search runs here and how it gives way to the kit and these rules.
+When a new film starts from a one-line prompt ("a 5 second launch clip for my app"), or they ask to expand a prompt, load the **blank-page** skill (borrowed from Stewdio, MIT) before building. It finds a look (five reference images from one aesthetic) and three moves to copy on are.na, writes the brief as numbered beats with a turn, and saves it as `brief.md` with the references in `look/`. Then build the film from that brief in the same turn. Its "In Saymo" section says how its search runs here and how it gives way to the kit and these rules.
 
 ## Product films and app walkthroughs
 
-For a film about a product (SpendOS launch films, feature films, promos), load the **product-film** skill (borrowed, MIT). For a film that shows an app being used step by step (a SpendOS walkthrough, a feature in action), load the **html-demo** skill (borrowed, MIT). Each has an "In Motion Studio" section at its end with what applies here. Both keep the brand kit and the studio rules on top.
+For a film about a product (SpendOS launch films, feature films, promos), load the **product-film** skill (borrowed, MIT). For a film that shows an app being used step by step (a SpendOS walkthrough, a feature in action), load the **html-demo** skill (borrowed, MIT). Each has an "In Saymo" section at its end with what applies here. Both keep the brand kit and the studio rules on top.
 
 ## Cutting to the music
 

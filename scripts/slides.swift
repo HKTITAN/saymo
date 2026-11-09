@@ -1,4 +1,4 @@
-// Slides helper for the motion studio, using the Mac's own frameworks, so
+// Slides helper for Saymo, using the Mac's own frameworks, so
 // turning a deck into slides works without any extra installs.
 //
 //   slides pdf <in.pdf> <out-dir> <width>   draws each page to

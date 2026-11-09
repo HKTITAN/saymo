@@ -47,7 +47,7 @@ import { type Away, TakesAway } from "./takes-canvas";
 import { isMediaFile } from "./video-api";
 import { type Pinned, type SoundPin, soundChipLabel, tryAnotherPrompt } from "./words";
 
-// The motion studio: the film fills the window and every panel floats over
+// Saymo, the motion studio: the film fills the window and every panel floats over
 // it. The engines that make the film stay out of sight; you work by asking
 // Claude, pointing at the film, and tweaking the settings the film exposes.
 // A video film adds a timeline of tracks, a bin of footage and graphics,

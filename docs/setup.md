@@ -1,6 +1,6 @@
 # Setup
 
-Motion Studio runs on your own Mac. Each person on the team installs it once and signs in with their own Claude and Google accounts.
+Saymo runs on your own Mac. Each person on the team installs it once and signs in with their own Claude and Google accounts.
 
 ## What you need
 

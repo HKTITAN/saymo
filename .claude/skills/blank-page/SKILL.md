@@ -226,7 +226,7 @@ line each.
 Sketchfab search + download, file downloads, video contact sheets. Run it with no
 arguments for the command list.
 
-## In Motion Studio
+## In Saymo
 
 Borrowed from github.com/StewdioAI/blank-page (MIT, by Blake Shao at Stewdio, © Cekura, Inc.; licence beside this file). In the studio:
 

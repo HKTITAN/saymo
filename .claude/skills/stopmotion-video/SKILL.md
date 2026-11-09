@@ -203,4 +203,4 @@ Tools:
 - `scripts/duck.mjs`: the music silenced or lowered round clicks.
 - `scripts/make-metronome.mjs`: a click track for checking.
 
-<!-- Borrowed from github.com/kosta4a/stopmotion-video (MIT, by Kosta, steel.dev). In Motion Studio the film keeps its own engine; see the "Cutting to the music" section of the aerchain-film skill for how these rules apply here. -->
+<!-- Borrowed from github.com/kosta4a/stopmotion-video (MIT, by Kosta, steel.dev). In Saymo the film keeps its own engine; see the "Cutting to the music" section of the aerchain-film skill for how these rules apply here. -->

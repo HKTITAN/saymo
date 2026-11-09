@@ -1,4 +1,4 @@
-# Motion Studio
+# Saymo
 
 Aerchain's in-house tool for motion graphics and video. Bring in footage or start from a blank film, then change it by talking to Claude, by pointing at the part you mean, or by moving the controls yourself. Every film follows a brand kit, has its own sound design, and renders to a crisp video.
 

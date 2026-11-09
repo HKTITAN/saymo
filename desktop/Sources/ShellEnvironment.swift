@@ -19,7 +19,7 @@ struct StudioEnvironment {
 }
 
 enum ShellEnvironment {
-    private static let mark = "__MOTION_STUDIO_ENV__"
+    private static let mark = "__SAYMO_ENV__"
     private static let basics = ["HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "LC_ALL"]
 
     private static func basicVariables() -> [String: String] {

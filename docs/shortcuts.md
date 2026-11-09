@@ -40,11 +40,11 @@ For things a link can't do, such as listing films or rendering one, use a Script
 # @raycast.schemaVersion 1
 # @raycast.title Render studio film
 # @raycast.mode fullOutput
-# @raycast.packageName Motion Studio
+# @raycast.packageName Saymo
 # @raycast.argument1 { "type": "text", "placeholder": "film id" }
 # @raycast.argument2 { "type": "dropdown", "placeholder": "quality", "data": [{"title": "Draft", "value": "--draft"}, {"title": "Final", "value": ""}] }
 
-STUDIO="$HOME/Desktop/projects/motion-studio"
+STUDIO="$HOME/Desktop/projects/saymo"
 cd "$STUDIO" || exit 1
 node scripts/studio/cli.mjs render "$1" $2
 ```
@@ -60,4 +60,4 @@ The same pattern works for the other commands, for example `node scripts/studio/
 3. Add **Text**: `http://localhost:3200/studio?new=` followed by the **URL Encoded Text** variable, then `&format=9:16` if you want a story.
 4. Add **Open URLs** with that text.
 
-To run a command instead, use **Run Shell Script** with `cd ~/Desktop/projects/motion-studio && node scripts/studio/cli.mjs films`.
+To run a command instead, use **Run Shell Script** with `cd ~/Desktop/projects/saymo && node scripts/studio/cli.mjs films`.

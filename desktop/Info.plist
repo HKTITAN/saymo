@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>Motion Studio</string>
+	<string>Saymo</string>
 	<key>CFBundleDisplayName</key>
-	<string>Motion Studio</string>
+	<string>Saymo</string>
 	<key>CFBundleExecutable</key>
-	<string>Motion Studio</string>
+	<string>Saymo</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.aerchain.motion-studio</string>
+	<string>io.aerchain.saymo</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -32,9 +32,9 @@
 
 	<!-- Asked the first time the studio uses each one. -->
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Motion Studio uses the microphone when you dictate a prompt or record a voiceover.</string>
+	<string>Saymo uses the microphone when you dictate a prompt or record a voiceover.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Motion Studio uses the camera when you record a reel.</string>
+	<string>Saymo uses the camera when you record a reel.</string>
 
 	<!-- The studio runs on this Mac at http://127.0.0.1, which needs this. -->
 	<key>NSAppTransportSecurity</key>

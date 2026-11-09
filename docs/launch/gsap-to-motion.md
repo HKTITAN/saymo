@@ -32,7 +32,7 @@ Motion animates through exactly these: the Web Animations API where it can, `req
   - Motion runs every value on the main thread. Left alone it hands some values to the browser's own animations, which HyperFrames would then seek a second time on its own clock. The wrapper makes Motion's one-time "can the browser animate?" check answer no.
   - A seek draws at once. Motion normally draws on the next animation frame; `seek()` runs that frame's work straight away (`Motion.frameSteps`).
 - **The bridge** (`src/lib/studio/bridge.ts`) and **`render.mjs`'s own capture** seek a `filmTimeline`, a GSAP timeline, or a bare Motion animation. In the product edition (`STUDIO_EDITION=product`), a film that loads GSAP doesn't play in the stage, render or pass `check-film.mjs`; each says so in plain words.
-- **What Claude is told:** the film skill (`.claude/skills/aerchain-film`), the `hyperframes` skill (a "Motion" section in `references/runtimes.md`, notes in `SKILL.md` and `format.md`), an "In Motion Studio" note at the top of each `gsap-*` skill and `motion-design`, `html-demo`'s studio section, and the engine line in `src/lib/studio/claude.ts`.
+- **What Claude is told:** the film skill (`.claude/skills/aerchain-film`), the `hyperframes` skill (a "Motion" section in `references/runtimes.md`, notes in `SKILL.md` and `format.md`), an "In Saymo" note at the top of each `gsap-*` skill and `motion-design`, `html-demo`'s studio section, and the engine line in `src/lib/studio/claude.ts`.
 
 ### Frame match
 
@@ -69,5 +69,5 @@ The stage and the renderer draw the headline's text slightly differently (up to 
 
 - **The sample composition** `studio/hyperframes/aerchain-bands` still loads GSAP from a CDN. Port it the same way, or leave it out of a product build.
 - **Borrowed skills and presets** still contain GSAP code: `hyperframes-registry` blocks, the `hyperframes` caption presets, `remotion-to-hyperframes`, `hyperframes-cli`. The film skill tells Claude to rewrite any of it in Motion. A product build could drop the `gsap-*` skills altogether.
-- **Skills updates overwrite the notes.** The `hyperframes`, `gsap-*`, `motion-design` and `html-demo` skills come from upstream (`skills-lock.json`); after an update, put the "In Motion Studio" notes back.
+- **Skills updates overwrite the notes.** The `hyperframes`, `gsap-*`, `motion-design` and `html-demo` skills come from upstream (`skills-lock.json`); after an update, put the "In Saymo" notes back.
 - **Older films:** move one to Motion only when someone asks. A product build mustn't ship them.

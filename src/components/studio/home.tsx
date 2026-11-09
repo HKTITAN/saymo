@@ -132,7 +132,7 @@ export function SideNav({
           aria-hidden={collapsed}
         >
           <StudioMark />
-          <span className="truncate whitespace-nowrap font-medium text-[13px] text-white/90">Motion Studio</span>
+          <span className="truncate whitespace-nowrap font-medium text-[13px] text-white/90">Saymo</span>
         </span>
         {/* Out of sight once folded (the twin in the page's corner takes over). */}
         {collapsed && !gliding ? null : <SideToggle open={!collapsed} onToggle={() => fold(!collapsed)} />}

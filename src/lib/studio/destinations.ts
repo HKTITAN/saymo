@@ -11,14 +11,14 @@ import { outDir, readFilm } from "./films";
 // already keeps in sync (Google Drive, Dropbox, OneDrive, iCloud Drive), or any folder picked in Finder. Picking one is the whole set-up:
 // no keys and no sign-in here, because the app on the Mac does the
 // uploading. After each final render the videos are copied to
-// <folder>/Motion Studio/<film title>/. The Google Drive connection in
+// <folder>/Saymo/<film title>/. The Google Drive connection in
 // google.ts stays, for a Mac without Google's app.
 
 const run = promisify(execFile);
 const HOME = os.homedir();
 const CLOUD = path.join(HOME, "Library", "CloudStorage");
 const ICLOUD = path.join(HOME, "Library", "Mobile Documents", "com~apple~CloudDocs");
-const FOLDER = "Motion Studio";
+const FOLDER = "Saymo";
 const SECRET = "destination";
 const MEDIA = new Set([".mp4", ".mov", ".webm", ".gif", ".png", ".jpg"]);
 

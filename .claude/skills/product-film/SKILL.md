@@ -59,7 +59,7 @@ A film that looks like the product made it: its colors, type, components, logo a
   - alias the app's path imports in the webpack override
 - Stop only the processes you started; other sessions may be waiting on the machine.
 
-## In Motion Studio
+## In Saymo
 
 Borrowed from github.com/Rieranthony/product-film-skill (MIT, by Anthony Riera; licence beside this file). In the studio:
 

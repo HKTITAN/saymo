@@ -35,14 +35,14 @@ function setup(app: App, info: OutsideApps) {
   // Another port than the usual one: the MCP server is told where to look.
   const url = info.port === "3200" ? null : `http://127.0.0.1:${info.port}`;
   if (app === "code") {
-    return `claude mcp add --scope user motion-studio${url ? ` -e MOTION_STUDIO_URL=${url}` : ""} -- ${sh(info.node)} ${sh(info.mcp)}`;
+    return `claude mcp add --scope user saymo${url ? ` -e SAYMO_URL=${url}` : ""} -- ${sh(info.node)} ${sh(info.mcp)}`;
   }
   if (app === "terminal") {
-    const env = url ? `MOTION_STUDIO_URL=${url} ` : "";
+    const env = url ? `SAYMO_URL=${url} ` : "";
     return `cd ${sh(info.root)}\n${env}npm run studio -- doctor\n${env}npm run studio -- films`;
   }
-  const server = { command: info.node, args: [info.mcp], ...(url ? { env: { MOTION_STUDIO_URL: url } } : {}) };
-  return JSON.stringify({ mcpServers: { "motion-studio": server } }, null, 2);
+  const server = { command: info.node, args: [info.mcp], ...(url ? { env: { SAYMO_URL: url } } : {}) };
+  return JSON.stringify({ mcpServers: { saymo: server } }, null, 2);
 }
 
 async function call(method: "GET" | "POST") {

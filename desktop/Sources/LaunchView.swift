@@ -46,7 +46,7 @@ struct LaunchView: View {
             EmptyView()
 
         case let .folder(error):
-            Heading("Where is the Motion Studio folder?")
+            Heading("Where is the Saymo folder?")
             Detail("The app opens the studio from its folder on this Mac, the one with your films in it. If you don't have it yet, ask whoever looks after the studio for a copy.")
             if let error {
                 Text(error).font(.system(size: 12)).foregroundStyle(Look.missing)

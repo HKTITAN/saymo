@@ -21,15 +21,15 @@ final class StudioWindow: NSObject, NSWindowDelegate {
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered, defer: false)
         super.init()
-        window.title = "Motion Studio"
+        window.title = "Saymo"
         window.minSize = NSSize(width: 900, height: 600)
         window.backgroundColor = Look.groundNS
         window.appearance = NSAppearance(named: .darkAqua)
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.tabbingMode = .disallowed
-        if !window.setFrameUsingName("MotionStudioMain") { window.center() }
-        window.setFrameAutosaveName("MotionStudioMain")
+        if !window.setFrameUsingName("SaymoMain") { window.center() }
+        window.setFrameAutosaveName("SaymoMain")
         showLaunch()
     }
 
@@ -42,7 +42,7 @@ final class StudioWindow: NSObject, NSWindowDelegate {
         // The window keeps its size; the launch screen fits itself inside.
         hosting.sizingOptions = []
         window.contentView = hosting
-        window.title = "Motion Studio"
+        window.title = "Saymo"
     }
 
     func showStudio(_ url: URL) {
@@ -51,7 +51,7 @@ final class StudioWindow: NSObject, NSWindowDelegate {
         titleWatch = view.observe(\.title, options: [.new]) { [weak self] view, _ in
             Task { @MainActor in
                 let title = view.title ?? ""
-                self?.window.title = title.isEmpty ? "Motion Studio" : title
+                self?.window.title = title.isEmpty ? "Saymo" : title
             }
         }
         window.contentView = view
@@ -80,7 +80,7 @@ final class StudioWeb: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadD
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
         config.preferences.isElementFullscreenEnabled = true
         config.mediaTypesRequiringUserActionForPlayback = []
-        config.applicationNameForUserAgent = "MotionStudio"
+        config.applicationNameForUserAgent = "Saymo"
         // Feels like a native app, not a web page: the page never bounces
         // past its top or bottom. In every frame, so a film's stage too.
         // Panels inside the page still scroll as before.
@@ -194,7 +194,7 @@ final class StudioWeb: NSObject, WKNavigationDelegate, WKUIDelegate, WKDownloadD
         popup.backgroundColor = Look.groundNS
         popup.appearance = NSAppearance(named: .darkAqua)
         popup.isReleasedWhenClosed = false
-        popup.title = "Motion Studio"
+        popup.title = "Saymo"
         popup.cascadeTopLeft(from: NSApp.keyWindow?.frame.origin ?? .zero)
         popup.makeKeyAndOrderFront(nil)
         popups.append(popup)

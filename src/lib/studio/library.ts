@@ -175,7 +175,7 @@ async function save({ id, message }: Job) {
       return;
     }
     const who = await githubIdentity();
-    await must(dir, ["-c", `user.name=${who.name}`, "-c", `user.email=${who.email}`, "commit", "-q", "-m", message, "-m", `Saved by Aerchain motion studio. Film ${film.id}.`]);
+    await must(dir, ["-c", `user.name=${who.name}`, "-c", `user.email=${who.email}`, "commit", "-q", "-m", message, "-m", `Saved by Saymo, Aerchain's motion studio. Film ${film.id}.`]);
     await step("Sending it to GitHub");
     const pushed = await git(dir, ["push", "-q", "origin", "HEAD:refs/heads/main"], token);
     if (pushed.code === 0) {
@@ -385,13 +385,15 @@ async function filmReadme(film: Film) {
     film.kind === "video" ? "- `edit.json`: the cut: clips, graphics, music and captions. `media.json` lists the footage it uses (the footage itself isn't stored)." : "- The film's own code (`index.html`, `src/` or a Cargo crate), as the studio wrote it.",
     "- `sound/score.js`, if the film has sound design.",
     "",
-    "Open it in the Aerchain motion studio to change or render it.",
+    "Open it in Saymo, Aerchain's motion studio, to change or render it.",
     "",
   );
   return lines.join("\n");
 }
 
 async function writeIndex(dir: string, fullName: string) {
+  // "aerchain-motion-studio" is the marker that identifies a library repo,
+  // so it keeps its old name.
   await writeFile(path.join(dir, "studio.json"), `${JSON.stringify({ studio: "aerchain-motion-studio", layout: 1, schemas: SCHEMA }, null, 2)}\n`);
   await writeFile(path.join(dir, ".gitattributes"), "* text=auto eol=lf\n*.png binary\n*.jpg binary\n*.ttf binary\n*.otf binary\n*.woff binary\n*.woff2 binary\n");
   await writeFile(
@@ -417,7 +419,7 @@ async function writeIndex(dir: string, fullName: string) {
   const readme = [
     "# Aerchain motion library",
     "",
-    `The source of every film made in Aerchain's motion studio, saved by the studio itself (${fullName}). Videos live on Google Drive; this repository keeps what they're made from.`,
+    `The source of every film made in Saymo, Aerchain's motion studio, saved by the studio itself (${fullName}). Videos live on Google Drive; this repository keeps what they're made from.`,
     "",
     `## Films (${found.length})`,
     "",

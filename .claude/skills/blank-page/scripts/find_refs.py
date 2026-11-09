@@ -173,7 +173,7 @@ FONT = "/System/Library/Fonts/Supplemental/Arial.ttf"
 _LABELS = None
 
 def labels():
-    # Motion Studio change: Homebrew's ffmpeg is built without freetype, so it has no drawtext.
+    # Saymo change: Homebrew's ffmpeg is built without freetype, so it has no drawtext.
     # Then tiles go unnumbered and are counted row-major from the top left, instead of the sheet failing.
     global _LABELS
     if _LABELS is None:

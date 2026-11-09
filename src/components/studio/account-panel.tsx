@@ -132,7 +132,7 @@ export function AccountRow({ on = false, onSettings }: { on?: boolean; onSetting
               <Settings01Icon aria-hidden="true" />
               Settings
             </button>
-            {me?.version ? <p className="px-2 pt-1.5 pb-1 text-[11px] text-white/30 tabular-nums">Motion Studio {me.version}</p> : null}
+            {me?.version ? <p className="px-2 pt-1.5 pb-1 text-[11px] text-white/30 tabular-nums">Saymo {me.version}</p> : null}
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>

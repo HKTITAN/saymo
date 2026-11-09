@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Motion Studio: house rules
+# Saymo: house rules
 
 Read by every Claude working here, including the studio's chat. The owner is
 a visual designer; explain in plain words.

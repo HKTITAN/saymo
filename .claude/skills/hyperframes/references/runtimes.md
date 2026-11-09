@@ -2,7 +2,7 @@
 
 HyperFrames seeks each frame on its own, so motion must be a function of time, never of the previous frame. Full GSAP reference: `npx hyperframes docs gsap`.
 
-## Motion (Motion Studio films)
+## Motion (Saymo films)
 
 Studio films load `assets/vendor/motion.min.js` (Motion 14, MIT, global `Motion`) and `assets/timeline.js`, then build every move as one Motion sequence and wrap it:
 

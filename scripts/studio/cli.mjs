@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Motion Studio from the terminal: `npm run studio -- <command>`, or
-// `motion-studio <command>` after `npm link`. Talks to the studio that is
+// Saymo from the terminal: `npm run studio -- <command>`, or
+// `saymo <command>` after `npm link`. Talks to the studio that is
 // already running (`npm run dev`) through its local API. Results go to
 // stdout; progress and problems go to stderr. --json prints the result as
 // JSON instead. See docs/mcp.md.
@@ -29,7 +29,7 @@ import {
   tokenFileMode,
 } from "./client.mjs";
 
-const HELP = `Motion Studio from the terminal
+const HELP = `Saymo from the terminal
 
 Usage: npm run studio -- <command> [options]
 
@@ -56,7 +56,7 @@ Options
   --json                        Print the result as JSON
   --help                        Show this
 
-The studio must be running (npm run dev). Set MOTION_STUDIO_URL to use
+The studio must be running (npm run dev). Set SAYMO_URL to use
 another one, e.g. http://127.0.0.1:3333.`;
 
 // ─── Arguments ──────────────────────────────────────────────────────────────
@@ -219,7 +219,7 @@ async function doctor() {
     add("Token", false, error.message);
   }
   if (tokenOk) {
-    if (process.env.MOTION_STUDIO_TOKEN) add("Token", true, "from MOTION_STUDIO_TOKEN");
+    if (process.env.SAYMO_TOKEN ?? process.env.MOTION_STUDIO_TOKEN) add("Token", true, "from SAYMO_TOKEN");
     else {
       const mode = await tokenFileMode();
       const tight = mode !== null && (mode & 0o077) === 0;

@@ -72,7 +72,7 @@ final class Launcher: ObservableObject {
         guard !stale(), let environment else { return }
 
         // The first read of a folder on the Desktop or in Documents waits for
-        // macOS to ask "Motion Studio would like to access files…". Look off
+        // macOS to ask "Saymo would like to access files…". Look off
         // the main thread, and say what's happening if it takes a moment.
         let saved = settings.folder
         let search = Task.detached { StudioFolder.find(saved: saved) }
@@ -188,14 +188,14 @@ final class Launcher: ObservableObject {
 
     func chooseFolder() {
         let panel = NSOpenPanel()
-        panel.title = "Choose the Motion Studio folder"
+        panel.title = "Choose the Saymo folder"
         panel.prompt = "Use this folder"
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         guard StudioFolder.isStudio(url.path) else {
-            return show(.folder(error: "That folder isn't the Motion Studio folder. Choose the folder that holds package.json, src and films."))
+            return show(.folder(error: "That folder isn't the Saymo folder. Choose the folder that holds package.json, src and films."))
         }
         saveSettings { $0.folder = url.path }
         Task { await launch() }
@@ -244,7 +244,7 @@ final class Launcher: ObservableObject {
 // each of their printed lines means.
 enum Stage {
     static let preparing = "Getting the studio ready"
-    static let permission = "Waiting for you to let Motion Studio open the studio folder"
+    static let permission = "Waiting for you to let Saymo open the studio folder"
     static let firstBuild = "Building the studio. The first time takes a minute or two."
     static let update = "Updating the studio to its latest version"
     static let pages = "Putting the pages together"

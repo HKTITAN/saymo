@@ -18,11 +18,11 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
 
 ## In progress
 
-- **Motion Studio as a Mac app** (from Pond). Built in Swift in `desktop/`, kept local and off GitHub until the owner says to push it. Left: signing, updates, Homebrew, a real icon (see `desktop/README.md`).
+- **Saymo as a Mac app** (from Pond). Built in Swift in `desktop/`, kept local and off GitHub until the owner says to push it. Left: signing, updates, Homebrew, a real icon (see `desktop/README.md`).
 
 ## Bigger features
 
-1. **"Send to Motion Studio" browser extension** (from Pond). Right-click any image, video or page on Pinterest, X or anywhere, and it lands in a film as a reference. Pairs with the references library.
+1. **"Send to Saymo" browser extension** (from Pond). Right-click any image, video or page on Pinterest, X or anywhere, and it lands in a film as a reference. Pairs with the references library.
 2. **Prompt templates with fields** (from Prompt Motion): product film, explainer, launch film and showreel, each with fields to fill in and already following the studio rules.
 3. **Start a film from a reference link.** Paste an X post or a Prompt Motion link, and Claude makes our branded version of it.
 4. **Make another like this one.** Turn a finished film into a template with fields, so the next speaker post or event film is a fill-in job.
@@ -50,7 +50,7 @@ Saved on 2026-11-03: the things to add next, in order, kept here until the owner
 14. **Take out the Aerchain material.** Kept for now, at the owner's call.
 15. **Smaller selling leftovers:**
     - the sample `studio/hyperframes/aerchain-bands` still loads GSAP;
-    - skill updates overwrite the "In Motion Studio" notes;
+    - skill updates overwrite the "In Saymo" notes;
     - run `STUDIO_EDITION=product npm run licences` again;
     - run `cargo fetch` so the Rust engine's crates are in the licence check;
     - test the product edition from start to finish.

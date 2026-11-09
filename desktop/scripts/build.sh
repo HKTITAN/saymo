@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Builds "Motion Studio.app" in desktop/build/.
+# Builds "Saymo.app" in desktop/build/.
 #
 # Compiles the Swift sources with swiftc and puts the .app together by hand
 # (Info.plist, icon, Contents/MacOS, Contents/Resources). Needs only Apple's
@@ -12,8 +12,8 @@
 #   npm run dmg           the app plus a .dmg and a .zip to hand to teammates
 #
 # Optional, for later (see README.md):
-#   MOTION_STUDIO_SIGN_IDENTITY="Developer ID Application: …"  sign for real
-#   MOTION_STUDIO_FEED_URL=… MOTION_STUDIO_ED_KEY=…            turn on updates
+#   SAYMO_SIGN_IDENTITY="Developer ID Application: …"  sign for real
+#   SAYMO_FEED_URL=… SAYMO_ED_KEY=…            turn on updates
 set -euo pipefail
 
 DESKTOP="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -29,7 +29,7 @@ for arg in "$@"; do
   esac
 done
 
-NAME="Motion Studio"
+NAME="Saymo"
 APP="build/${NAME}.app"
 VERSION="$(/usr/bin/plutil -extract version raw -o - package.json)"
 ARCH="$(uname -m)"
@@ -58,10 +58,10 @@ PLIST="$APP/Contents/Info.plist"
 cp Info.plist "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$PLIST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$PLIST"
-if [[ -n "${MOTION_STUDIO_FEED_URL:-}" && -n "${MOTION_STUDIO_ED_KEY:-}" ]]; then
-  /usr/libexec/PlistBuddy -c "Add :SUFeedURL string $MOTION_STUDIO_FEED_URL" "$PLIST"
-  /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $MOTION_STUDIO_ED_KEY" "$PLIST"
-  echo "   updates on, from $MOTION_STUDIO_FEED_URL"
+if [[ -n "${SAYMO_FEED_URL:-}" && -n "${SAYMO_ED_KEY:-}" ]]; then
+  /usr/libexec/PlistBuddy -c "Add :SUFeedURL string $SAYMO_FEED_URL" "$PLIST"
+  /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $SAYMO_ED_KEY" "$PLIST"
+  echo "   updates on, from $SAYMO_FEED_URL"
 fi
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 cp Resources/AppIcon.icns Resources/guard.mjs "$APP/Contents/Resources/"
@@ -73,9 +73,9 @@ if [[ -d vendor/Sparkle.framework ]]; then
 fi
 
 echo "3. Signing"
-if [[ -n "${MOTION_STUDIO_SIGN_IDENTITY:-}" ]]; then
+if [[ -n "${SAYMO_SIGN_IDENTITY:-}" ]]; then
   # A real Developer ID: inside out, with the hardened runtime notarising needs.
-  SIGN=(codesign --force --timestamp --options runtime --sign "$MOTION_STUDIO_SIGN_IDENTITY")
+  SIGN=(codesign --force --timestamp --options runtime --sign "$SAYMO_SIGN_IDENTITY")
   if [[ -d "$APP/Contents/Frameworks/Sparkle.framework" ]]; then
     S="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
     for part in "$S/XPCServices/Installer.xpc" "$S/XPCServices/Downloader.xpc" "$S/Autoupdate" "$S/Updater.app"; do
@@ -84,7 +84,7 @@ if [[ -n "${MOTION_STUDIO_SIGN_IDENTITY:-}" ]]; then
     "${SIGN[@]}" "$APP/Contents/Frameworks/Sparkle.framework"
   fi
   "${SIGN[@]}" --entitlements entitlements.plist "$APP"
-  echo "   signed as $MOTION_STUDIO_SIGN_IDENTITY"
+  echo "   signed as $SAYMO_SIGN_IDENTITY"
 else
   # "Ad hoc": runs on this Mac. Teammates' Macs will say it's from an
   # unidentified developer until it's signed for real (README.md).
@@ -99,11 +99,11 @@ if (( DMG )); then
   trap 'rm -rf "$STAGE"' EXIT
   ditto "$APP" "$STAGE/$NAME.app"
   ln -s /Applications "$STAGE/Applications"
-  DMG_FILE="build/Motion-Studio-${VERSION}-${ARCH}.dmg"
+  DMG_FILE="build/Saymo-${VERSION}-${ARCH}.dmg"
   rm -f "$DMG_FILE"
   hdiutil create -volname "$NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG_FILE" >/dev/null
   # The .zip is what Sparkle downloads when updates are on.
-  ditto -c -k --keepParent "$APP" "build/Motion-Studio-${VERSION}-${ARCH}.zip"
+  ditto -c -k --keepParent "$APP" "build/Saymo-${VERSION}-${ARCH}.zip"
   echo "   $DMG_FILE"
 fi
 

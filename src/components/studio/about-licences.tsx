@@ -123,7 +123,7 @@ function AboutPanel() {
     <>
       <div className="flex flex-col gap-1">
         <div className={cn(ROW, "gap-3 px-3")}>
-          <span className="font-medium text-white/90">Motion Studio</span>
+          <span className="font-medium text-white/90">Saymo</span>
           <span className={cn(VALUE, "ms-auto")}>{STUDIO_VERSION}</span>
         </div>
         <p className="px-1 pt-0.5 text-[11.5px] text-white/45 leading-relaxed">

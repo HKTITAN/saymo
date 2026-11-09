@@ -216,7 +216,7 @@ export async function chooseRepo(owner: string, name: string): Promise<GithubRep
         body: JSON.stringify({
           name: clean,
           private: true,
-          description: "Aerchain motion studio: the source of every film, kept by the studio.",
+          description: "Saymo, Aerchain's motion studio: the source of every film, kept by the studio.",
           has_issues: false,
           has_wiki: false,
           auto_init: false,

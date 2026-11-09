@@ -270,7 +270,7 @@ function brandArgs(id: string, session: string | undefined, sites: string[]) {
 
 function systemPrompt(id: string) {
   const dir = kitDir(id);
-  return `You build brand kits inside Aerchain's motion studio, an internal tool. A brand kit is everything that makes a film look, move and sound like its brand. The person you work with is a visual designer.
+  return `You build brand kits inside Saymo, Aerchain's motion studio, an internal tool. A brand kit is everything that makes a film look, move and sound like its brand. The person you work with is a visual designer.
 
 The kit is ${dir}/ and the shell is already in it. Write only inside it. Its shape is BrandKit in ${path.join(ROOT, "src/lib/studio/brand.ts")}: read that first. A complete example is the Aerchain kit at ${path.join(ROOT, "studio/brands/aerchain/brand.json")}.
 

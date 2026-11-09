@@ -1,6 +1,6 @@
 # Third-party notices
 
-Motion Studio 0.1.0 (in-house edition) is built with the software, models, font, icons and skills below, made by others. Each is listed with its version, licence and copyright line, followed by the text of its licence. A licence text that several of them share is printed once, after the list of every one that uses it.
+Saymo 0.1.0 (in-house edition) is built with the software, models, font, icons and skills below, made by others. Each is listed with its version, licence and copyright line, followed by the text of its licence. A licence text that several of them share is printed once, after the list of every one that uses it.
 
 This file is made by `npm run licences` from what's installed. Don't edit it by hand: run that again after adding or updating anything.
 

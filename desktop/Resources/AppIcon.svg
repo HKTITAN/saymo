@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <!-- Motion Studio's app icon, a placeholder: the studio's own mark (a frame
+  <!-- Saymo's app icon, a placeholder: the studio's own mark (a frame
        with a play button) on the studio's dark ground, in macOS's icon grid.
        Rebuild AppIcon.icns from it with scripts/make-icon.sh. -->
   <rect x="100" y="100" width="824" height="824" rx="185" fill="#161616"/>

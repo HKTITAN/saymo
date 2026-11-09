@@ -4,11 +4,11 @@
 // never opens a film's files itself, except to say where renders were saved.
 //
 // Every request carries the local API token from .studio/api-token (or
-// MOTION_STUDIO_TOKEN). If the file is missing it is made here, the same way
+// SAYMO_TOKEN). If the file is missing it is made here, the same way
 // the studio makes it (src/lib/studio/api-token.ts): random, mode 600. The
 // token is never printed or logged.
 //
-// MOTION_STUDIO_URL points at another studio, e.g. http://127.0.0.1:3333.
+// SAYMO_URL points at another studio, e.g. http://127.0.0.1:3333.
 
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
@@ -17,7 +17,8 @@ import { fileURLToPath } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const TOKEN_FILE = path.join(ROOT, ".studio", "api-token");
-export const STUDIO_URL = (process.env.MOTION_STUDIO_URL ?? "http://127.0.0.1:3200").replace(/\/+$/, "");
+// The old names (MOTION_STUDIO_URL, MOTION_STUDIO_TOKEN) still work.
+export const STUDIO_URL = (process.env.SAYMO_URL ?? process.env.MOTION_STUDIO_URL ?? "http://127.0.0.1:3200").replace(/\/+$/, "");
 
 // The address to give a person: the same studio, as localhost.
 export const PAGE_URL = (() => {
@@ -41,7 +42,7 @@ export class StudioError extends Error {
 }
 
 export const NOT_RUNNING =
-  `The studio isn't running at ${PAGE_URL}. Open Terminal in the motion-studio folder, run \`npm run dev\`, then try again.`;
+  `The studio isn't running at ${PAGE_URL}. Open Terminal in the saymo folder, run \`npm run dev\`, then try again.`;
 const REFUSED =
   "The studio turned the request away. If it was started before this update, restart it (`npm run dev`). Otherwise the token may have been replaced: copy it again from the studio, under Where films are saved, Use the studio from other apps.";
 
@@ -49,7 +50,7 @@ const validToken = (t) => /^ms_[A-Za-z0-9_-]{43}$/.test(t);
 
 // The token, made the first time if the studio hasn't made it yet.
 export async function readToken({ create = true } = {}) {
-  const fromEnv = process.env.MOTION_STUDIO_TOKEN?.trim();
+  const fromEnv = (process.env.SAYMO_TOKEN ?? process.env.MOTION_STUDIO_TOKEN)?.trim();
   if (fromEnv) return fromEnv;
   let saved = null;
   try {

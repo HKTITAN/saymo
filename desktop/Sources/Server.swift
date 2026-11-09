@@ -38,7 +38,7 @@ enum Server {
     }
 
     static func pickPort(preferred: Int?) -> Int {
-        let env = Int(ProcessInfo.processInfo.environment["MOTION_STUDIO_PORT"] ?? "")
+        let env = Int(ProcessInfo.processInfo.environment["SAYMO_PORT"] ?? ProcessInfo.processInfo.environment["MOTION_STUDIO_PORT"] ?? "")
         let wanted = env ?? preferred ?? appPort
         return bind(wanted) ?? bind(0) ?? wanted
     }

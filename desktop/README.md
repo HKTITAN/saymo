@@ -1,6 +1,6 @@
-# Motion Studio for the Mac
+# Saymo for the Mac
 
-Motion Studio as a Mac app: open it from the Dock or Applications like any other app. No Terminal, no `npm run dev`. The window shows the studio; quitting the app stops the studio.
+Saymo as a Mac app: open it from the Dock or Applications like any other app. No Terminal, no `npm run dev`. The window shows the studio; quitting the app stops the studio.
 
 It's a small native app written in Swift (SwiftUI and AppKit, about 3.7 MB). It doesn't contain the studio itself: it runs the studio from the studio folder on your Mac, the same folder `npm run dev` uses, so your films, brand kits, sign-ins and `.env.local` stay exactly where they are.
 
@@ -8,24 +8,24 @@ It's a small native app written in Swift (SwiftUI and AppKit, about 3.7 MB). It 
 
 ```bash
 cd desktop
-npm run build      # makes build/Motion Studio.app
+npm run build      # makes build/Saymo.app
 npm run open       # opens it
-npm run dmg        # also makes build/Motion-Studio-0.1.0-arm64.dmg (and a .zip) to hand to teammates
+npm run dmg        # also makes build/Saymo-0.1.0-arm64.dmg (and a .zip) to hand to teammates
 npm run dev        # a quicker debug build, opened at once
 ```
 
 Only Apple's command line tools are needed (`xcode-select --install`). There are no packages to install: `npm run` only runs the scripts in `scripts/`.
 
-To keep it, drag `build/Motion Studio.app` into Applications.
+To keep it, drag `build/Saymo.app` into Applications.
 
-**The first time you open each new build**, macOS asks whether Motion Studio may open files in your Desktop folder (the studio folder is there). Click Allow. Until the app is signed with a Developer ID (below), macOS sees every rebuild as a new app and asks again.
+**The first time you open each new build**, macOS asks whether Saymo may open files in your Desktop folder (the studio folder is there). Click Allow. Until the app is signed with a Developer ID (below), macOS sees every rebuild as a new app and asks again.
 
-**On a teammate's Mac**, an app that isn't signed with a Developer ID is blocked the first time. Open it once, then go to System Settings, Privacy & Security, and click Open Anyway next to Motion Studio.
+**On a teammate's Mac**, an app that isn't signed with a Developer ID is blocked the first time. Open it once, then go to System Settings, Privacy & Security, and click Open Anyway next to Saymo.
 
 ## What happens when it opens
 
 1. **It reads your Mac's setup.** An app opened from the Dock doesn't see what Terminal sees (Homebrew, Node from fnm or nvm, Claude Code), so it asks your login shell once, the same way a new Terminal window would.
-2. **It finds the studio folder**: the one it was built from, or the usual places (`~/Desktop/projects/motion-studio`, `~/Documents/GitHub/motion-studio` and others). If it can't find one, it asks you to choose it. File, Choose Studio Folder changes it later.
+2. **It finds the studio folder**: the one it was built from, or the usual places (`~/Desktop/projects/saymo`, `~/Documents/GitHub/saymo` and others). If it can't find one, it asks you to choose it. File, Choose Studio Folder changes it later.
 3. **It checks the Mac** for what the studio needs (below). If something is missing, it says what, what it's for and how to get it, in plain words.
 4. **It builds the studio** if the folder's code changed since the last time (about 15 seconds here, longer the first time). The build goes into `.next/desktop/a` or `.next/desktop/b` inside the studio folder, never into the dev server's files. If a build fails, the last good one opens instead.
 5. **It starts the studio** on this Mac only (127.0.0.1), on port 3201 so it never takes 3200 from `npm run dev`. If 3201 is busy it picks any free port. Then the window shows `/studio`.
@@ -57,10 +57,10 @@ When the folder's code is unchanged, it's ready in about half a second.
 
 **The Mac's own Node, not one inside the app.** The studio already needs Node on the Mac: setup installs the engines with npm, and the studio starts its renders and tools with the same Node it runs on. One Node for all of it avoids two versions disagreeing, and keeps the app small. The app finds it (fnm, nvm, Homebrew or nodejs.org) and says so plainly if it's missing or too old.
 
-**Films stay in the studio folder.** The studio keeps everything relative to its folder (films, brand kits, `.studio/` sign-ins, `.env.local`), and that's how the team uses it in-house today. Moving films to `~/Library/Application Support/Motion Studio` would mean changing the studio itself and keeping two copies in step, so it waits until the product edition needs it. The app's own files are small and separate:
+**Films stay in the studio folder.** The studio keeps everything relative to its folder (films, brand kits, `.studio/` sign-ins, `.env.local`), and that's how the team uses it in-house today. Moving films to `~/Library/Application Support/Saymo` would mean changing the studio itself and keeping two copies in step, so it waits until the product edition needs it. The app's own files are small and separate:
 
-- `~/Library/Application Support/Motion Studio/`: `settings.json` (studio folder, port, skipped checks) and `builds.json` (which build is ready)
-- `~/Library/Logs/Motion Studio/`: `launch.log`, `build.log`, `server.log`, `setup.log` (Help, Show Logs)
+- `~/Library/Application Support/Saymo/`: `settings.json` (studio folder, port, skipped checks) and `builds.json` (which build is ready)
+- `~/Library/Logs/Saymo/`: `launch.log`, `build.log`, `server.log`, `setup.log` (Help, Show Logs)
 
 Nothing secret is bundled or logged: the app never reads `.env.local`, `.studio/connections/` or `.studio/api-token`, it only notices when `.env.local` changes so it can rebuild.
 
@@ -82,45 +82,45 @@ The app is wired for [Sparkle](https://sparkle-project.org), the usual Mac updat
 3. Build with updates on (and signed, see below; macOS only installs updates to a signed app):
 
    ```bash
-   MOTION_STUDIO_FEED_URL=https://…/appcast.xml MOTION_STUDIO_ED_KEY=<public key> \
-   MOTION_STUDIO_SIGN_IDENTITY="Developer ID Application: …" npm run dmg
+   SAYMO_FEED_URL=https://…/appcast.xml SAYMO_ED_KEY=<public key> \
+   SAYMO_SIGN_IDENTITY="Developer ID Application: …" npm run dmg
    ```
 
 4. Put the `.zip` in a folder with earlier ones and run `vendor/bin/generate_appcast <folder>`; upload the zips and `appcast.xml` to the feed address.
 
-The app then checks on its own, and Motion Studio, Check for Updates appears in the menu.
+The app then checks on its own, and Saymo, Check for Updates appears in the menu.
 
 ## Signing, notarising and Homebrew (later)
 
 What's needed so teammates can open it without Open Anyway, get updates, and install it with Homebrew:
 
 1. **An Apple Developer Program membership** ($99 a year) and, in it, a **Developer ID Application** certificate, installed in your Keychain.
-2. **Sign**: `MOTION_STUDIO_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" npm run dmg` signs Sparkle and the app with the hardened runtime and `entitlements.plist` (mic and camera). Then sign the .dmg: `codesign --sign "Developer ID Application: …" --timestamp build/Motion-Studio-0.1.0-arm64.dmg`.
+2. **Sign**: `SAYMO_SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" npm run dmg` signs Sparkle and the app with the hardened runtime and `entitlements.plist` (mic and camera). Then sign the .dmg: `codesign --sign "Developer ID Application: …" --timestamp build/Saymo-0.1.0-arm64.dmg`.
 3. **Notarise** (Apple checks it for malware, about 5 to 15 minutes):
 
    ```bash
-   xcrun notarytool store-credentials motion-studio --apple-id <you@…> --team-id <TEAMID>   # once; asks for an app-specific password
-   xcrun notarytool submit build/Motion-Studio-0.1.0-arm64.dmg --keychain-profile motion-studio --wait
-   xcrun stapler staple build/Motion-Studio-0.1.0-arm64.dmg
+   xcrun notarytool store-credentials saymo --apple-id <you@…> --team-id <TEAMID>   # once; asks for an app-specific password
+   xcrun notarytool submit build/Saymo-0.1.0-arm64.dmg --keychain-profile saymo --wait
+   xcrun stapler staple build/Saymo-0.1.0-arm64.dmg
    ```
 
 4. **Homebrew**: publish the .dmg somewhere public, then add a cask to a tap, as Pond does (its `Casks/pond.rb`):
 
    ```ruby
-   cask "motion-studio" do
+   cask "saymo" do
      version "0.1.0"
      sha256 "<shasum -a 256 of the dmg>"
-     url "https://github.com/<owner>/<public-repo>/releases/download/v#{version}/Motion-Studio-#{version}-arm64.dmg"
-     name "Motion Studio"
+     url "https://github.com/<owner>/<public-repo>/releases/download/v#{version}/Saymo-#{version}-arm64.dmg"
+     name "Saymo"
      desc "Make motion graphics and videos with Claude"
      homepage "https://github.com/<owner>/<public-repo>"
      depends_on macos: ">= :sonoma"
-     app "Motion Studio.app"
-     zap trash: ["~/Library/Application Support/Motion Studio", "~/Library/Logs/Motion Studio"]
+     app "Saymo.app"
+     zap trash: ["~/Library/Application Support/Saymo", "~/Library/Logs/Saymo"]
    end
    ```
 
-   Teammates then run `brew install --cask <owner>/<tap>/motion-studio`. Homebrew needs a public download, and it asks for a signed, notarised app.
+   Teammates then run `brew install --cask <owner>/<tap>/saymo`. Homebrew needs a public download, and it asks for a signed, notarised app.
 
 Pond's whole pipeline (a GitHub Action that builds, signs, notarises, uploads the release and updates the cask on every `v*` tag) is a good model once the above works by hand.
 

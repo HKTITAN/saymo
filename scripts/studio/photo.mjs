@@ -80,7 +80,7 @@ async function use(ref, name) {
 // ─── search and get: real photos from Openverse ─────────────────────────────
 
 const OPENVERSE = "https://api.openverse.org/v1/images/";
-const UA = { "User-Agent": "MotionStudio/1.0 (a motion design studio; one person's searches)" };
+const UA = { "User-Agent": "Saymo/1.0 (a motion design studio; one person's searches)" };
 // Licences that allow commercial use and changes, freest first.
 const FREEST = ["cc0", "pdm", "by", "by-sa"];
 
