@@ -3,7 +3,6 @@
 import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
-  ArrowLeftIcon,
   ChevronRightIcon,
   DeleteDustbin01Icon,
   ExternalLinkSquareIcon,
@@ -157,7 +156,7 @@ export function LibraryView({
   onCount,
 }: {
   active: boolean;
-  tabs: ReactNode; // Films | Library, shown at the top level
+  tabs: ReactNode; // Films | Library, always at the top
   query: string;
   sort: Sort;
   now: number;
@@ -513,38 +512,7 @@ export function LibraryView({
     <section aria-label={folder ? folder.name : "Library"} className="flex flex-col gap-3" hidden={!active}>
       <div className="sticky top-0 z-10 -mx-3 flex flex-col gap-2.5 bg-[#0e0e0e]/90 px-3 pt-1 pb-2.5 backdrop-blur-xl">
         <header className="flex h-8 items-center gap-1.5 px-1">
-          {folder || place === "brands" ? (
-            <>
-              <Hint label="Library">
-                <button type="button" aria-label="Back to the library" onClick={() => goPlace(null)} className={cn(ICON_BUTTON, "-ms-1.5")}>
-                  <ArrowLeftIcon aria-hidden="true" />
-                </button>
-              </Hint>
-              {folder && renamingFolder ? (
-                <RenameField
-                  value={folder.name}
-                  className="h-7 w-[240px] text-[13px]"
-                  onDone={(name) => {
-                    setRenamingFolder(false);
-                    if (name) renameFolder(folder, name);
-                  }}
-                />
-              ) : (
-                <h2 className="truncate font-medium text-[13px] text-white/90">{folder ? folder.name : "Brand kits"}</h2>
-              )}
-              <span className="ms-1 text-[11.5px] text-white/35 tabular-nums">({folder ? counts(folder.id) : brands.length})</span>
-              {folder ? (
-                <FolderMenu
-                  folder={folder}
-                  deleteBody={counts(folder.id) ? `Its ${itemCount(counts(folder.id))} stay in the library.` : "It’s empty, so only the folder goes."}
-                  onRename={() => setRenamingFolder(true)}
-                  onDelete={() => deleteFolder(folder)}
-                />
-              ) : null}
-            </>
-          ) : (
-            tabs
-          )}
+          {tabs}
           <span className="ms-auto flex items-center gap-2">
             {dragging ? <span className="text-[11.5px] text-white/45">Drop it on a folder, or hold it over Home</span> : null}
             {place !== "brands" ? (
@@ -594,16 +562,36 @@ export function LibraryView({
             />
           </li>
           {folders.map((f) => (
-            <li key={f.id}>
-              <FolderChip
-                label={f.name}
-                count={list ? counts(f.id) : null}
-                current={place === f.id}
-                folder
-                dragType={LIBRARY_DRAG}
-                onOpen={() => goPlace(f.id)}
-                onDrop={(id) => moveById(id, f.id)}
-              />
+            <li key={f.id} className="flex items-center gap-0.5">
+              {/* The open folder is renamed in place, and has its menu beside it. */}
+              {folder?.id === f.id && renamingFolder ? (
+                <RenameField
+                  value={f.name}
+                  className="h-8 w-[180px] rounded-[10px] px-2.5 text-[12px]"
+                  onDone={(name) => {
+                    setRenamingFolder(false);
+                    if (name) renameFolder(f, name);
+                  }}
+                />
+              ) : (
+                <FolderChip
+                  label={f.name}
+                  count={list ? counts(f.id) : null}
+                  current={place === f.id}
+                  folder
+                  dragType={LIBRARY_DRAG}
+                  onOpen={() => goPlace(f.id)}
+                  onDrop={(id) => moveById(id, f.id)}
+                />
+              )}
+              {folder?.id === f.id && !renamingFolder ? (
+                <FolderMenu
+                  folder={f}
+                  deleteBody={counts(f.id) ? `Its ${itemCount(counts(f.id))} stay in the library.` : "It’s empty, so only the folder goes."}
+                  onRename={() => setRenamingFolder(true)}
+                  onDelete={() => deleteFolder(f)}
+                />
+              ) : null}
             </li>
           ))}
           {brands.length ? (

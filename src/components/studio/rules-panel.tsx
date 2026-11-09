@@ -80,8 +80,9 @@ export function RulesPage() {
   const on = rules?.filter((r) => r.on).length ?? 0;
   return (
     // A page in the home's main panel, set like Settings: each rule its own
-    // quiet card, open to edit, with its Off | On pair at the top.
-    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[660px] flex-col gap-6 px-8 pt-10 pb-20">
+    // quiet card, open to edit, with its Off | On pair at the top; two
+    // columns when there's room.
+    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[1080px] flex-col gap-6 px-8 pt-10 pb-20">
       <div className="flex items-end gap-4 px-1">
         <div className="flex flex-col gap-1.5">
           <h1 id="rules-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
@@ -119,7 +120,7 @@ export function RulesPage() {
           <span className="studio-shimmer">Loading the rules</span>
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="gap-3 lg:columns-2 [&>li]:mb-3 [&>li]:break-inside-avoid">
           {rules.map((r) => (
             <RuleCard key={r.id} rule={r} onChange={(part) => change(r.id, part)} onRemove={() => remove(r)} />
           ))}
