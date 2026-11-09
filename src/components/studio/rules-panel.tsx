@@ -8,16 +8,8 @@ import { api, StudioError } from "./api";
 import { ICON_BUTTON, PILL_BUTTON } from "./panel";
 
 // The studio's standing rules: Claude follows them in every film unless a
-// prompt says otherwise, and the whole team shares them. Each rule is a
-// tile you type straight into, lit when it's on; changes save on their own.
-
-// Each scope's colour when a rule is on, from the Ideas page's pockets:
-// lavender for every film, mint for motion graphics, pink for video edits.
-const TILES: Record<RuleScope, { face: [string, string]; dot: string }> = {
-  all: { face: ["#d6d0ff", "#9d90fb"], dot: "#4a3db5" },
-  motion: { face: ["#cdf5df", "#6fd6a2"], dot: "#1d7447" },
-  video: { face: ["#ffd6e6", "#f28cb2"], dot: "#a8325c" },
-};
+// prompt says otherwise, and the whole team shares them. Set like a
+// rulebook: numbered rules you type straight into; changes save on their own.
 
 const SCOPES: { value: RuleScope; label: string }[] = [
   { value: "all", label: "Every film" },
@@ -84,11 +76,9 @@ export function RulesPage() {
   };
 
   return (
-    // A page in the home's main panel. Each rule is a tile that is also its
-    // own switch: on, it's lit in its kind's colour (lavender for every
-    // film, mint for motion graphics, pink for video edits); off, it goes
-    // dark. Three to a row.
-    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[980px] flex-col gap-8 px-8 pt-10 pb-20">
+    // A page in the home's main panel, set like a printed rulebook: one
+    // sheet, the rules numbered down it, hairlines between them.
+    <section aria-labelledby="rules-heading" className="mx-auto flex w-full max-w-[760px] flex-col gap-6 px-8 pt-10 pb-20">
       <div className="flex items-end gap-4 px-1">
         <div className="flex flex-col gap-1.5">
           <h1 id="rules-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
@@ -107,7 +97,7 @@ export function RulesPage() {
         </button>
       </div>
       {removed || problem ? (
-        <div className="-mt-4 flex flex-wrap items-center gap-3 px-1">
+        <div className="-mt-2 flex flex-wrap items-center gap-3 px-1">
           {removed ? (
             <p className="text-[12px] text-white/50" role="status">
               Rule deleted.{" "}
@@ -124,73 +114,70 @@ export function RulesPage() {
           <span className="studio-shimmer">Loading the rules</span>
         </p>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ol className="flex flex-col rounded-[20px] bg-white/[0.025] px-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
           {rules.map((r, i) => (
-            <RuleTile
-              key={r.id}
-              rule={r}
-              n={i + 1}
-              onChange={(part) => change(r.id, part)}
-              onRemove={() => remove(r)}
-            />
+            <RuleRow key={r.id} rule={r} n={i + 1} onChange={(part) => change(r.id, part)} onRemove={() => remove(r)} />
           ))}
-        </ul>
+        </ol>
       )}
     </section>
   );
 }
 
-// A gradient eased top to bottom (a sine), so its middle doesn't band.
-const STOPS = [0, 0.2, 0.35, 0.5, 0.65, 0.8, 1];
-const eased = ([from, to]: [string, string]) =>
-  `linear-gradient(160deg, ${STOPS.map((p) => `color-mix(in oklab, ${to} ${Math.round(((1 - Math.cos(Math.PI * p)) / 2) * 100)}%, ${from}) ${Math.round(p * 100)}%`).join(", ")})`;
+// Short names for the scope chip.
+const SHORT: Record<RuleScope, string> = { all: "Every film", motion: "Motion", video: "Video" };
 
-function RuleTile({ rule: r, n, onChange, onRemove }: { rule: Rule; n: number; onChange: (part: Partial<Rule>) => void; onRemove: () => void }) {
-  const look = TILES[r.scope] ?? TILES.all;
+function RuleRow({ rule: r, n, onChange, onRemove }: { rule: Rule; n: number; onChange: (part: Partial<Rule>) => void; onRemove: () => void }) {
   const scope = SCOPES.findIndex((s) => s.value === r.scope);
   const next = SCOPES[(scope + 1) % SCOPES.length];
   const on = r.on;
   return (
     <li
       className={cn(
-        "group/rule relative flex min-h-[240px] flex-col overflow-hidden rounded-[28px] p-[18px] transition-[background,box-shadow,color] duration-300 supports-[corner-shape:squircle]:rounded-[44px] supports-[corner-shape:squircle]:[corner-shape:squircle]",
-        on
-          ? "text-[#1d1b1a] shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_18px_34px_-18px_rgba(0,0,0,0.85)]"
-          : "bg-[#18181b] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
+        "group/rule relative flex gap-5 px-4 py-5",
+        "not-first:before:absolute not-first:before:top-0 not-first:before:right-4 not-first:before:left-4 not-first:before:h-px not-first:before:bg-white/[0.07]",
       )}
-      style={on ? { background: eased(look.face) } : undefined}
     >
-      {/* Its number, large and faint, in the corner. */}
-      <span aria-hidden="true" className={cn("pointer-events-none absolute -right-1 -bottom-6 font-semibold text-[120px] leading-none tracking-[-0.06em] tabular-nums", on ? "text-black/[0.07]" : "text-white/[0.04]")}>
+      {/* Its number, large and light, like a rulebook's. */}
+      <span aria-hidden="true" className={cn("w-8 shrink-0 pt-0.5 text-right font-light text-[28px] leading-none tabular-nums transition-colors", on ? "text-white/35" : "text-white/15")}>
         {n}
       </span>
-      <div className="relative flex items-center gap-2">
-        {/* Which films it's for: press to change. */}
+      <div className={cn("flex min-w-0 flex-1 flex-col gap-1 transition-opacity", !on && "opacity-45")}>
+        <input
+          data-rule-title={r.id}
+          value={r.title}
+          onChange={(e) => onChange({ title: e.target.value })}
+          placeholder="Calm motion"
+          aria-label={`Rule ${n} name`}
+          className="-mx-1.5 h-8 min-w-0 rounded-[8px] bg-transparent px-1.5 font-semibold text-[16px] text-white tracking-[-0.01em] outline-none placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]"
+        />
+        <textarea
+          value={r.body}
+          onChange={(e) => onChange({ body: e.target.value })}
+          placeholder="Keep every move slow and eased"
+          aria-label={`Rule ${n}`}
+          rows={2}
+          className="-mx-1.5 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[13px] text-white/60 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30 hover:bg-white/[0.03] focus:bg-white/[0.05]"
+        />
+      </div>
+      <div className="flex shrink-0 items-start gap-1.5 pt-0.5">
         <button
           type="button"
-          onClick={() => onChange({ scope: next.value })}
-          aria-label={`Rule ${n} applies to ${SCOPES[scope]?.label ?? "every film"}. Change to ${next.label}`}
-          className={cn(
-            "flex h-7 cursor-pointer items-center gap-1.5 rounded-full px-2.5 font-medium text-[11.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-            on ? "bg-black/[0.08] text-black/65 hover:bg-black/[0.13]" : "bg-white/[0.06] text-white/55 hover:bg-white/[0.1]",
-          )}
-        >
-          <span aria-hidden="true" className="size-[7px] rounded-full" style={{ background: on ? look.dot : look.face[1] }} />
-          {SCOPES[scope]?.label ?? "Every film"}
-        </button>
-        <button
-          type="button"
-          className={cn(
-            ICON_BUTTON,
-            "ms-auto size-7 opacity-0 focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5",
-            on ? "text-black/45 hover:bg-black/[0.08] hover:text-[#b4232a]" : "hover:bg-[#e5484d]/12 hover:text-[#ff9592]",
-          )}
+          className={cn(ICON_BUTTON, "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5")}
           onClick={onRemove}
           aria-label={`Delete rule ${n}`}
         >
           <DeleteDustbin01Icon aria-hidden="true" />
         </button>
-        {/* The switch: the whole tile lights up when it's on. */}
+        {/* Which films it's for: press to change. */}
+        <button
+          type="button"
+          onClick={() => onChange({ scope: next.value })}
+          aria-label={`Rule ${n} applies to ${SCOPES[scope]?.label ?? "every film"}. Change to ${next.label}`}
+          className="h-7 min-w-[78px] cursor-pointer rounded-full bg-white/[0.06] px-2.5 text-[11.5px] text-white/60 outline-none transition-colors hover:bg-white/[0.1] hover:text-white/85 focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {SHORT[r.scope] ?? "Every film"}
+        </button>
         <button
           type="button"
           role="switch"
@@ -198,43 +185,19 @@ function RuleTile({ rule: r, n, onChange, onRemove }: { rule: Rule; n: number; o
           aria-label={`Rule ${n}, ${r.title || "untitled"}`}
           onClick={() => onChange({ on: !on })}
           className={cn(
-            "relative h-[26px] w-[44px] shrink-0 cursor-pointer rounded-full outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
-            on ? "bg-black/80" : "bg-white/[0.14]",
-            "ms-1",
+            "relative mt-px h-[24px] w-[40px] shrink-0 cursor-pointer rounded-full outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ring",
+            on ? "bg-white/85" : "bg-white/[0.12]",
           )}
         >
           <span
             aria-hidden="true"
             className={cn(
-              "absolute top-[3px] left-[3px] size-5 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-              on ? "translate-x-[18px]" : "translate-x-0 bg-white/80",
+              "absolute top-[3px] left-[3px] size-[18px] rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
+              on ? "translate-x-[16px] bg-[#141414]" : "translate-x-0 bg-white/70",
             )}
-            style={on ? { background: look.face[0] } : undefined}
           />
         </button>
       </div>
-      <input
-        data-rule-title={r.id}
-        value={r.title}
-        onChange={(e) => onChange({ title: e.target.value })}
-        placeholder="Calm motion"
-        aria-label={`Rule ${n} name`}
-        className={cn(
-          "relative -mx-1.5 mt-4 h-9 min-w-0 rounded-[8px] bg-transparent px-1.5 font-semibold text-[19px] tracking-[-0.015em] outline-none",
-          on ? "placeholder:text-black/30 hover:bg-black/[0.05] focus:bg-black/[0.07]" : "text-white/70 placeholder:text-white/30 hover:bg-white/[0.04] focus:bg-white/[0.06]",
-        )}
-      />
-      <textarea
-        value={r.body}
-        onChange={(e) => onChange({ body: e.target.value })}
-        placeholder="Keep every move slow and eased"
-        aria-label={`Rule ${n}`}
-        rows={3}
-        className={cn(
-          "relative -mx-1.5 mt-1 flex-1 resize-none rounded-[8px] bg-transparent px-1.5 py-1 text-[13px] leading-relaxed outline-none [field-sizing:content]",
-          on ? "text-black/70 placeholder:text-black/30 hover:bg-black/[0.04] focus:bg-black/[0.06]" : "text-white/40 placeholder:text-white/25 hover:bg-white/[0.03] focus:bg-white/[0.05]",
-        )}
-      />
     </li>
   );
 }
