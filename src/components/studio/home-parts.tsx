@@ -352,7 +352,7 @@ export function FolderChip({
         (icon ?? <GridDashboard02Icon className="size-3.5 opacity-70" aria-hidden="true" />)
       )}
       <span className="max-w-[180px] truncate">{label}</span>
-      {count === null ? null : <span className="text-[11px] text-white/35 tabular-nums">{count}</span>}
+      {count === null ? null : <span className="text-[11px] text-white/35 tabular-nums">({count})</span>}
     </button>
   );
 }

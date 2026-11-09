@@ -533,7 +533,7 @@ export function LibraryView({
               ) : (
                 <h2 className="truncate font-medium text-[13px] text-white/90">{folder ? folder.name : "Brand kits"}</h2>
               )}
-              <span className="ms-1 text-[11.5px] text-white/35 tabular-nums">{folder ? counts(folder.id) : brands.length}</span>
+              <span className="ms-1 text-[11.5px] text-white/35 tabular-nums">({folder ? counts(folder.id) : brands.length})</span>
               {folder ? (
                 <FolderMenu
                   folder={folder}

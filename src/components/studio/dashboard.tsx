@@ -432,7 +432,7 @@ export function Dashboard({
                     <h2 id="home-folders" className="font-medium text-[13px] text-white/90">
                       Folders
                     </h2>
-                    <span className="text-[12px] text-white/35 tabular-nums">{folders.length}</span>
+                    <span className="text-[12px] text-white/35 tabular-nums">({folders.length})</span>
                   </header>
                   <ul aria-label="Folders" className="grid grid-cols-[repeat(auto-fill,minmax(128px,148px))] gap-x-3 gap-y-4">
                     {folders.map((x) => (
