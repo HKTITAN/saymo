@@ -10,7 +10,7 @@
     "id": "isometric",
     "title": "An isometric scene",
     "body": "Every motion film has at least one isometric scene: objects drawn on a 30 degree isometric grid in the brand's flat colours, used where it helps tell the idea (a process, a place, a system).",
-    "scope": "motion",
+    "scope": "video",
     "on": true
   },
   {
