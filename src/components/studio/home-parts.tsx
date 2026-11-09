@@ -2,7 +2,7 @@
 
 import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
-import { DeleteDustbin01Icon, GridDashboard02Icon, PencilEditIcon, ThreeDotsMenuHorizontalIcon } from "@/components/icons";
+import { DeleteDustbin01Icon, PencilEditIcon, ThreeDotsMenuHorizontalIcon } from "@/components/icons";
 import { SURFACE } from "@/components/tool/dial";
 import { RenameField } from "@/components/tool/rename";
 import { Spinner } from "@/components/ui/spinner";
@@ -293,7 +293,6 @@ export function FolderChip({
   count,
   current,
   folder = false,
-  icon,
   dragType,
   springType,
   onOpen,
@@ -303,7 +302,6 @@ export function FolderChip({
   count: number | null; // null while the list loads
   current: boolean;
   folder?: boolean;
-  icon?: ReactNode; // in place of the grid, for a chip that isn't a folder
   dragType: string | null; // null: nothing can be dropped on it
   springType?: string; // what, held over it, opens it
   onOpen: () => void;
@@ -346,11 +344,7 @@ export function FolderChip({
             : "bg-white/[0.04] text-white/60 hover:bg-white/[0.07] hover:text-white/85",
       )}
     >
-      {folder ? (
-        <TinyFolder open={over} current={current} />
-      ) : (
-        (icon ?? <GridDashboard02Icon className="size-3.5 opacity-70" aria-hidden="true" />)
-      )}
+      {folder ? <TinyFolder open={over} current={current} /> : null}
       <span className="max-w-[180px] truncate">{label}</span>
       {count === null ? null : <span className="text-[11px] text-white/35 tabular-nums">({count})</span>}
     </button>

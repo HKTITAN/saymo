@@ -10,7 +10,6 @@ import {
   FileIcon,
   FolderIcon,
   GridDashboard02Icon,
-  LayerThreeIcon,
   LinkChainHorizontalIcon,
   MultipleCrossCancelIcon,
   PauseCircleIcon,
@@ -613,7 +612,6 @@ export function LibraryView({
                 label="Brand kits"
                 count={brands.length}
                 current={place === "brands"}
-                icon={<LayerThreeIcon className="size-3.5 opacity-70" aria-hidden="true" />}
                 dragType={null}
                 onOpen={() => goPlace("brands")}
                 onDrop={() => {}}
