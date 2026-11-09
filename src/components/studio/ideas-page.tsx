@@ -128,7 +128,9 @@ export function IdeasPage({ onMake }: { onMake: (idea: Idea) => void }) {
   const look = LOOKS.find((l) => l.kind === kind) ?? REELS;
 
   return (
-    <section aria-labelledby="ideas-heading" className="mx-auto flex max-w-[1180px] flex-col gap-8 px-8 pt-10 pb-20">
+    // One centred column, as wide as the list, like Settings: the pockets
+    // span it edge to edge and the list sits right under them.
+    <section aria-labelledby="ideas-heading" className="mx-auto flex w-full max-w-[664px] flex-col gap-8 px-8 pt-10 pb-20">
       <header className="flex flex-col gap-1.5 px-1">
         <h1 id="ideas-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
           Ideas
@@ -141,7 +143,7 @@ export function IdeasPage({ onMake }: { onMake: (idea: Idea) => void }) {
         </p>
       ) : null}
 
-      <div role="tablist" aria-label="Kinds of idea" className="flex flex-wrap gap-x-8 gap-y-6">
+      <div role="tablist" aria-label="Kinds of idea" className="flex justify-between gap-6">
         {LOOKS.map((l) => (
           <Pocket
             key={l.kind}
@@ -158,7 +160,7 @@ export function IdeasPage({ onMake }: { onMake: (idea: Idea) => void }) {
         ))}
       </div>
 
-      <div id="ideas-list" role="tabpanel" aria-labelledby={`ideas-tab-${kind}`} className="w-full max-w-[600px]">
+      <div id="ideas-list" role="tabpanel" aria-labelledby={`ideas-tab-${kind}`} className="-mt-2 w-full">
         <Glide at={kind}>
           <div key={kind} className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300">
             <Widget
@@ -211,11 +213,15 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
       aria-selected={on}
       aria-controls="ideas-list"
       onClick={onPick}
-      className="group/pocket flex cursor-pointer flex-col items-start gap-3 rounded-[24px] text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e]"
+      className="group/pocket flex cursor-pointer flex-col items-center gap-3 rounded-[24px] text-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e]"
     >
+      {/* The open pocket in full colour; the others quieter until hovered. */}
       <span
         aria-hidden="true"
-        className="relative block size-[168px] overflow-hidden rounded-[38px] shadow-[0_16px_30px_-14px_rgba(0,0,0,0.75)] supports-[corner-shape:squircle]:rounded-[58px] supports-[corner-shape:squircle]:[corner-shape:squircle]"
+        className={cn(
+          "relative block size-[168px] overflow-hidden rounded-[38px] shadow-[0_16px_30px_-14px_rgba(0,0,0,0.75)] transition-[filter,opacity] duration-300 supports-[corner-shape:squircle]:rounded-[58px] supports-[corner-shape:squircle]:[corner-shape:squircle]",
+          on ? "" : "opacity-55 saturate-[0.55] group-hover/pocket:opacity-90 group-hover/pocket:saturate-100",
+        )}
         style={{ background: eased(look.rim) }}
       >
         {/* The inside. */}
@@ -251,7 +257,7 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
           <look.Icon width={26} height={26} aria-hidden="true" />
         </span>
       </span>
-      <span className="flex flex-col gap-0.5 px-1">
+      <span className="flex flex-col items-center gap-0.5 px-1">
         <span className={cn("font-medium text-[13.5px] transition-colors duration-200", on ? "text-white" : "text-white/60 group-hover/pocket:text-white/85")}>
           {look.title}
         </span>
