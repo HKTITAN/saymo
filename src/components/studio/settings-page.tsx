@@ -2,10 +2,11 @@
 
 import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { BotIcon, CheckTickCircleIcon, ChevronDownIcon, CloudIcon, ExternalLinkSquareIcon, FolderIcon } from "@/components/icons";
-import { LABEL, ROW_BUTTON, SURFACE } from "@/components/tool/dial";
+import { BotIcon, CheckTickCircleIcon, ChevronDownIcon, CloudIcon, ExternalLinkSquareIcon, FolderIcon, UserIcon } from "@/components/icons";
+import { LABEL, ROW, ROW_BUTTON, SURFACE } from "@/components/tool/dial";
 import type { ConnectionsStatus, DestinationsStatus } from "@/lib/studio/connect-types";
 import { cn } from "@/lib/utils";
+import { ME_CHANGED } from "./account-panel";
 import { StudioError } from "./api";
 import { connectApi } from "./connect-api";
 import { DEFAULT_REPO, GithubSection } from "./connections";
@@ -13,7 +14,8 @@ import { ITEM, MENU_POPUP } from "./home-parts";
 import { CloudMark } from "./cloud-marks";
 import { ModelChoice } from "./model-choice";
 
-// Settings, on the home page, in two cards:
+// Settings, on the home page, in three cards:
+//  - Profile: the name the studio shows for you.
 //  - AI: which AI every prompt goes to, whether it's ready, and Claude's
 //    model and effort.
 //  - Saving: where finished films are copied (a folder a cloud app on this
@@ -52,13 +54,18 @@ export function SettingsPage() {
         <h1 id="settings-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
           Settings
         </h1>
-        <p className="text-[12.5px] text-white/50">Your AI, and where finished films go.</p>
+        <p className="text-[12.5px] text-white/50">Your profile, your AI and where finished films go.</p>
       </div>
       {note ? (
         <p className={cn("rounded-[10px] px-3 py-2 text-[12px] leading-relaxed", note.bad ? "bg-[#ff9592]/10 text-[#ff9592]" : "bg-white/[0.06] text-white/75")}>
           {note.text}
         </p>
       ) : null}
+
+      <div className={CARD}>
+        <Heading icon={<UserIcon aria-hidden="true" />}>Profile</Heading>
+        <NameRow onNote={setNote} />
+      </div>
 
       <div className={CARD}>
         <Heading icon={<BotIcon aria-hidden="true" />}>AI</Heading>
@@ -145,6 +152,60 @@ function FilmsGoTo({
       </Popover.Root>
       {current?.gone ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">That folder isn&rsquo;t on this Mac any more. Pick another.</p> : null}
     </>
+  );
+}
+
+// Your name, as the sidebar shows it. Saved when you leave the field or
+// press Return; left empty, it's the name this Mac knows you by.
+function NameRow({ onNote }: { onNote: (n: { text: string; bad: boolean } | null) => void }) {
+  const [name, setName] = useState<string | null>(null);
+  const [macName, setMacName] = useState("");
+  const [saved, setSaved] = useState("");
+  useEffect(() => {
+    let live = true;
+    fetch("/api/studio/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m: { name: string; macName: string } | null) => {
+        if (!live || !m) return;
+        const own = m.name === m.macName ? "" : m.name;
+        setMacName(m.macName);
+        setSaved(own);
+        setName(own);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
+  const save = async () => {
+    if (name === null || name.trim() === saved) return;
+    try {
+      const r = await fetch("/api/studio/me", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ name }) });
+      const body = await r.json().catch(() => ({}));
+      if (!r.ok) throw new StudioError(body.error ?? "Unable to save your name. Try again.");
+      setSaved(name.trim());
+      onNote(null);
+      window.dispatchEvent(new Event(ME_CHANGED));
+    } catch (e) {
+      onNote(failure(e, "Unable to save your name. Try again."));
+    }
+  };
+  return (
+    <label className={cn(ROW, "gap-3 px-3 focus-within:bg-white/[0.08]")}>
+      <span className={LABEL}>Name</span>
+      <input
+        value={name ?? ""}
+        disabled={name === null}
+        maxLength={60}
+        placeholder={macName || "Your name"}
+        onChange={(e) => setName(e.target.value)}
+        onBlur={() => void save()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+        }}
+        className="h-full min-w-0 flex-1 bg-transparent text-right text-white/90 outline-none placeholder:text-white/35"
+      />
+    </label>
   );
 }
 
