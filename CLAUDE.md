@@ -34,16 +34,15 @@ a visual designer; explain in plain words.
 
 ## Icons
 
-Use PikaIcons for every interface icon. Don't hand-draw SVGs or add another
-icon library, and never use a sparkle icon.
-- Find: `npx pikaicons search home "user avatar"` (each argument is one
-  query; quote phrases)
-- React: `npx pikaicons add <name…>` writes components into
-  `src/components/icons` and prints the import line to use
-- Variants: stroke by default; `name:solid`, `name:duo-stroke`, … per icon
-Free icons work without signing in; search marks the rest "locked". For a
-locked icon, use a free one the error suggests, or ask the owner to run
-`npx pikaicons login`. Never ask for the key.
+Use Reicon (reicon.dev, MIT) for every interface icon. Don't hand-draw SVGs or add another icon
+library, and never use a sparkle icon. Saymo is open source, so every icon has to be one anyone may
+copy: that is why it moved off PikaIcons.
+- Icons are imported from `@/components/icons`, which re-exports Reicon components under the names
+  the studio uses (`src/components/icons/index.ts`). Add a new one there with its Reicon name.
+- Find names with the `reicon` skill, or `npx reicon-mcp search <word> --weight Outline`.
+- Outline everywhere; Filled (`weight="Filled"`, see `filled.tsx`) only marks a selected or
+  emphasised state.
+- Brand marks are the brand's own (GitHub's is Primer Octicons, MIT, in `github.tsx`).
 
 ## Working here
 
