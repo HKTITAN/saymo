@@ -33,6 +33,7 @@ export function PromptBox({
   queueing,
   placeholder,
   chip,
+  clearChipLabel = "Stop pointing at this",
   meta,
   onClearChip,
   tools,
@@ -55,6 +56,7 @@ export function PromptBox({
   chip?: string | null;
   meta?: React.ReactNode; // shown where the chip goes when there's no chip
   onClearChip?: () => void;
+  clearChipLabel?: string; // what the chip's ✕ does, for screen readers
   tools?: ReactNode;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   autoFocus?: boolean;
@@ -229,7 +231,7 @@ export function PromptBox({
             <button
               type="button"
               onClick={onClearChip}
-              aria-label="Stop pointing at this"
+              aria-label={clearChipLabel}
               className="inline-flex size-4 cursor-pointer items-center justify-center rounded-[4px] text-studio-soft/70 outline-none hover:bg-studio/20 hover:text-warm focus-visible:ring-1 focus-visible:ring-ring [&_svg]:size-3"
             >
               <MultipleCrossCancelIcon aria-hidden="true" />

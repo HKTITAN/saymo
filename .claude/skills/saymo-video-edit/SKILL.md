@@ -98,6 +98,10 @@ If there's no transcript, say so. The person can press Transcribe in the studio.
 - Position: `bottom` for 16:9; `middle` for 9:16 and 4:5, clear of platform UI.
 - Lines of 2 to 7 words, broken at natural phrases. No caption on screen during long silences.
 
+## Sketches
+
+A `<sketch>` block means the person drew on the paused edit. Read saymo-film's "Sketches" section. In a video edit, a mark over footage names the clip playing there, and a mark over a graphic names that graphic. A line drawn across the frame is usually where a graphic should move, or where a reframe should pan to.
+
 ## Graphics
 
 - A **lower third** with name and role when a person first speaks, about 4 s, entering 0.5 s after they start talking.

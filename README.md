@@ -26,6 +26,7 @@ Every film gets its own sound design, and Claude composes it as code instead of 
 ### More of what's inside
 
 - **Point and ask.** Press P and click any part of the film to change just that part. The chat always knows the moment the playhead is on.
+- **Sketch on the frame.** Press S and draw on the paused film: circle parts to pick them, draw a line for something to move along, and Claude sees your marks over the frame along with exactly which parts they touched.
 - **Three engines underneath.** Claude writes each film for HTML ([HyperFrames](https://hyperframes.heygen.com)), React ([Remotion](https://www.remotion.dev)) or Rust ([fframes](https://fframes.studio)), and you only ever see the film.
 - **Video editing.** Drop in footage, trim and split clips on a timeline, make captions from speech transcribed on your Mac, add branded lower thirds, titles and end cards, and record a voiceover in one of the Mac's voices.
 - **Try 3.** Ask for three versions of one idea at once, then keep the one you like.

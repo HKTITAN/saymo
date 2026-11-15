@@ -101,6 +101,15 @@ Choose the accent from the subject if the film needs colour, and use it once per
 - For principles of timing and choreography see **motion-design**. For faux product UI (app windows, dashboards, cursors) see **stageshow**.
 - Words on screen: plain English, sentence case, no em dashes.
 
+## Sketches
+
+When a message carries a `<sketch>` block, the person drew on the paused film at that moment. Look at its picture first (`refs/sketches/<n>.png`, the frame with their marks on it), then use the block:
+
+- **A loop** selects what it circles: those parts are "these". Change them together and leave everything else.
+- **A line** is a path, in film pixels, from where it starts to where its arrowhead points. When something should move along it, follow it as a real motion path: in an HTML film, CSS `offset-path` with the points (or a Motion keyframe path); in a React film, interpolate the element's position along the points over the move's time. Keep its shape and direction, scaled if the film's size differs. A line from one part to a place usually means "move this there".
+- **A mark** is a pointer to a spot, nothing more.
+- The sketch belongs to its moment: something that moves may sit elsewhere a second later, so match parts by their ids rather than their positions.
+
 ## Sound
 
 Every film can have a sound track, written as a score in `sound/score.js` (a music bed of looping parts, Tone.js hits on the film's moments) and rendered by the studio. Starters come with one. Load the **saymo-sound-design** skill before writing or changing sound, and whenever you change the film's timing or marks, check the score still lands on them: run the sound command from your instructions and read where each hit falls.

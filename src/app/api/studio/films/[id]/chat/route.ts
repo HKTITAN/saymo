@@ -6,6 +6,8 @@ import { readCarryOn, restoreCarryOns } from "@/lib/studio/agent/carry-on";
 import type { ChatContext, ChatEvent, ChatRequest } from "@/lib/studio/films/contract";
 import { checkAttachments } from "@/lib/studio/input/attachments";
 import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films/films";
+import { cleanSketch } from "@/lib/studio/films/sketch";
+import { sketchPicture } from "@/lib/studio/films/sketch-picture";
 
 // The film's conversation with Claude. POST sends one message and streams
 // back what happens (text/event-stream, one ChatEvent per `data:` line);
@@ -33,14 +35,22 @@ export async function GET(request: Request, ctx: RouteContext<"/api/studio/films
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/films/[id]/chat">) {
   if (!allowed(request)) return refused();
   const { id } = await ctx.params;
-  if (!(await readFilm(id))) return missing();
+  const film = await readFilm(id);
+  if (!film) return missing();
   const body = (await request.json().catch(() => null)) as Partial<ChatRequest> | null;
   // Attachments must be files already saved in this film's refs/.
   const attachments = await checkAttachments(filmDir(id), "refs", (body?.context as { attachments?: unknown } | undefined)?.attachments);
   let prompt = typeof body?.prompt === "string" ? body.prompt.slice(0, 8000) : "";
   if (!prompt.trim() && attachments.length) prompt = "Have a look at what I attached.";
   if (!prompt.trim()) return Response.json({ error: "Type what you'd like changed." }, { status: 400 });
-  const turnContext = { ...context(body?.context), ...(attachments.length ? { attachments } : {}) };
+  const turnContext: ChatContext = { ...context(body?.context), ...(attachments.length ? { attachments } : {}) };
+  // Marks drawn over the film: checked, then pictured over the frame they
+  // were drawn on, so Claude sees what the person saw.
+  const sketch = cleanSketch((body?.context as { sketch?: unknown } | undefined)?.sketch, film);
+  if (sketch) {
+    const picture = await sketchPicture(film, sketch, new URL(request.url).origin).catch(() => null);
+    turnContext.sketch = { ...sketch, ...(picture ? { picture } : {}) };
+  }
   // Which AI runs it: one this edition offers, or the default when not
   // given. The product edition offers the API key only.
   if (body?.provider !== undefined && !isProviderId(body.provider)) {

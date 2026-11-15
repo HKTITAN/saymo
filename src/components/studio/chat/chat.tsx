@@ -16,6 +16,8 @@ import { useAttachments } from "./use-attachments";
 import type { ChatState } from "./use-chat";
 import { VersionsButton } from "../film/versions";
 import { chipLabel, type Pinned, type SoundPin, soundChipLabel } from "../film/words";
+import { sketchChip } from "../film/sketch";
+import type { SketchContext } from "@/lib/studio/films/sketch";
 
 // The chat with Claude, on the left. It grows to full height while Claude
 // works and settles back when the turn ends.
@@ -42,6 +44,10 @@ export function ChatPanel({
   onClearPick,
   pointing,
   onPoint,
+  sketch = null,
+  sketching = false,
+  onSketch,
+  onClearSketch,
   folded,
   onFold,
   hidden,
@@ -61,6 +67,10 @@ export function ChatPanel({
   onClearPick: () => void;
   pointing: boolean;
   onPoint: () => void;
+  sketch?: SketchContext | null; // marks drawn over the film, to go with the next message
+  sketching?: boolean;
+  onSketch?: () => void;
+  onClearSketch?: () => void;
   folded: boolean;
   onFold: (folded: boolean) => void;
   hidden: boolean;
@@ -163,12 +173,14 @@ export function ChatPanel({
       return;
     }
     void chat.send(words, {
-      t: pinned?.t ?? time(),
+      t: sketch?.t ?? pinned?.t ?? time(),
       pick: pinned?.pick ?? null,
       ...(attached.length ? { attachments: attached } : {}),
       ...(sound ? { sound: sound.pin } : {}),
+      ...(sketch ? { sketch } : {}),
     });
     onClearPick();
+    onClearSketch?.();
   };
 
   const undo = async () => {
@@ -321,8 +333,9 @@ export function ChatPanel({
           glow
           queueing
           placeholder="Make the title come in from the left"
-          chip={sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
-          onClearChip={onClearPick}
+          chip={sketch ? sketchChip(sketch.t, sketch.marks.length) : sound ? sound.label : pinned ? chipLabel(pinned.pick, pinned.t) : null}
+          onClearChip={sketch ? onClearSketch : onClearPick}
+          clearChipLabel={sketch ? "Clear the sketch" : undefined}
           meta={<PlayheadChip clock={clock} />}
           tools={
             <>
@@ -340,6 +353,22 @@ export function ChatPanel({
                 Point
               </button>
             </Hint>
+            {onSketch ? (
+              <Hint label={sketching ? "Stop sketching" : "Sketch on the film"} keys={["S"]}>
+                <button
+                  type="button"
+                  onClick={onSketch}
+                  aria-pressed={sketching}
+                  className={cn(
+                    PILL_BUTTON,
+                    "h-7 px-2.5",
+                    sketching ? "bg-studio text-white hover:bg-studio-hover" : "text-white/60 hover:bg-white/[0.08] hover:text-white",
+                  )}
+                >
+                  Sketch
+                </button>
+              </Hint>
+            ) : null}
             {effects ? (
               <EffectsMenu
                 onPick={(text) => {
@@ -407,7 +436,11 @@ function Message({
   if (message.role === "you") {
     return (
       <div data-chat-role="you" className="flex flex-col items-end gap-1 ps-8">
-        {message.context?.sound ? (
+        {message.context?.sketch ? (
+          <span className="rounded-[6px] bg-studio/12 px-1.5 py-0.5 text-[11px] text-studio-soft/90">
+            {sketchChip(message.context.sketch.t, message.context.sketch.marks.length)}
+          </span>
+        ) : message.context?.sound ? (
           <span className="rounded-[6px] bg-studio/12 px-1.5 py-0.5 text-[11px] text-studio-soft/90">
             {soundChipLabel(message.context.sound, soundLength, video)}
           </span>

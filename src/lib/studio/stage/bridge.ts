@@ -544,14 +544,88 @@ function bridge(options: BridgeOptions) {
     return found;
   };
 
+  // Sketch on the frame: what lies under each mark (sketch.ts). A loop gets
+  // the parts mostly inside it (the outermost of nested ones; a part filling
+  // most of the frame only when nothing else is inside); a line gets the
+  // parts at its two ends and the ones it passes over, sampled every 12 px.
+  type Mark = { kind?: string; points?: { x: number; y: number }[] };
+  const pickedOf = (el: Element) => {
+    const r = el.getBoundingClientRect();
+    return {
+      x: Math.round(r.left + r.width / 2),
+      y: Math.round(r.top + r.height / 2),
+      id: idOf(el),
+      tag: el.tagName.toLowerCase(),
+      text: words(el),
+      rect: { x: Math.round(r.left), y: Math.round(r.top), width: Math.round(r.width), height: Math.round(r.height) },
+    };
+  };
+  const inPolygon = (x: number, y: number, poly: { x: number; y: number }[]) => {
+    let hit = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i];
+      const b = poly[j];
+      if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) hit = !hit;
+    }
+    return hit;
+  };
+  const hitTest = (marks: Mark[]) =>
+    marks.map((m) => {
+      const out = { inside: [] as ReturnType<typeof pickedOf>[], start: null as ReturnType<typeof pickedOf> | null, end: null as ReturnType<typeof pickedOf> | null, crosses: [] as ReturnType<typeof pickedOf>[] };
+      const points = Array.isArray(m.points) ? m.points.filter((p) => Number.isFinite(p?.x) && Number.isFinite(p?.y)) : [];
+      if (!PICK || !points.length) return out;
+      if (m.kind === "loop") {
+        const frame = innerWidth * innerHeight;
+        let found = [...document.querySelectorAll(PICK)].filter((el) => {
+          if (el === box || el === document.body || el.hasAttribute("data-composition-id")) return false;
+          const r = el.getBoundingClientRect();
+          if (r.width < 2 || r.height < 2) return false;
+          const style = getComputedStyle(el);
+          if (style.visibility === "hidden" || style.display === "none" || Number(style.opacity) === 0) return false;
+          let n = 0;
+          for (const fx of [0.15, 0.5, 0.85]) for (const fy of [0.15, 0.5, 0.85]) if (inPolygon(r.left + r.width * fx, r.top + r.height * fy, points)) n++;
+          return n >= 6;
+        });
+        const small = found.filter((el) => {
+          const r = el.getBoundingClientRect();
+          return r.width * r.height < frame * 0.8;
+        });
+        if (small.length) found = small;
+        found = found.filter((el) => !found.some((o) => o !== el && o.contains(el)));
+        out.inside = found.slice(0, 12).map(pickedOf);
+        return out;
+      }
+      const first = points[0];
+      const last = points[points.length - 1];
+      const startEl = target(first.x, first.y);
+      const endEl = target(last.x, last.y);
+      out.start = startEl ? pickedOf(startEl) : null;
+      out.end = endEl ? pickedOf(endEl) : null;
+      if (m.kind === "line") {
+        const seen = new Set<Element>();
+        for (let i = 1; i < points.length; i++) {
+          const a = points[i - 1];
+          const b = points[i];
+          const steps = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 12));
+          for (let k = 0; k <= steps; k++) {
+            const el = target(a.x + ((b.x - a.x) * k) / steps, a.y + ((b.y - a.y) * k) / steps);
+            if (el) seen.add(el);
+          }
+        }
+        out.crosses = [...seen].slice(0, 12).map(pickedOf);
+      }
+      return out;
+    });
+
   window.addEventListener("message", (e) => {
     if (e.source !== window.parent || e.origin !== location.origin) return;
-    const m = (e.data ?? {}) as { type?: string; t?: number; params?: Values; on?: boolean; edit?: unknown; key?: string };
+    const m = (e.data ?? {}) as { type?: string; t?: number; params?: Values; on?: boolean; edit?: unknown; key?: string; marks?: Mark[]; ask?: number };
     if (m.type === "studio:seek") {
       // A seek while editing would move the words being typed into.
       if (!editing) seek(Number(m.t));
     } else if (m.type === "studio:point") setPointing(Boolean(m.on));
     else if (m.type === "studio:text") setText(Boolean(m.on));
+    else if (m.type === "studio:hit-test" && Array.isArray(m.marks)) post({ type: "studio:hits", ask: m.ask ?? 0, hits: hitTest(m.marks.slice(0, 40)) });
     else if (m.type === "studio:find-param" && m.key) post({ type: "studio:param-at", key: m.key, t: findText(m.key) });
     else if (m.type === "studio:focus-param" && m.key) {
       const target = [...document.querySelectorAll<HTMLElement>(`[data-param="${CSS.escape(m.key)}"]`)].find(visible);

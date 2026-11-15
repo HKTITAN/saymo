@@ -13,6 +13,7 @@ import { listenCommand, referenceSoundNote, refAudioDenies } from "../sound/list
 import { atPlayhead } from "../films/captions";
 import type { Anchor, Clip, Edit, Graphic } from "../films/edit";
 import { readResolvedEdit } from "../films/edit-file";
+import { describe as describeSketch } from "../films/sketch";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "../brands/brand-tokens";
 import { filmDir, pruneVersions, readFilm, recordVersion, ROOT, snapshotFilm, wentBackTo, withFilm, writeFilm } from "../films/films";
 import { readRules, rulesNote } from "./rules";
@@ -706,6 +707,8 @@ function userMessage(
       `<pointed>They pointed at film pixel (${Math.round(pick.x)}, ${Math.round(pick.y)}) at ${context.t.toFixed(2)} s${what.length ? `: ${what.join(", ")}` : ""}. "This" or "here" means that.</pointed>`,
     );
   }
+  // Marks drawn over the film (sketch.ts), with the picture of them.
+  if (context.sketch) lines.push(describeSketch(context.sketch));
   const kit = film.brand && isBrandId(film.brand) ? film.brand : DEFAULT_BRAND;
   lines.push(
     `<brand>The film's brand kit is "${kit}": ${path.join(brandDir(ROOT, kit), "brand.json")} (colours, fonts, logos, rules and notes, with its files beside it). Follow its rules, and draw with its tokens (see the saymo-film skill) rather than fixed colours or fonts.</brand>`,

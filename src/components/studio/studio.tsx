@@ -36,6 +36,7 @@ import { SoundGroup } from "./sound/sound-group";
 import { type SoundLaneData, showLane, showStems, stemLanes } from "./sound/sound-lane";
 import { soundApi, soundOf } from "./api/sound";
 import { createBridge, type Insets, Stage, type StageStatus, useFit } from "./film/stage";
+import { type DraftMark, SketchHint, SketchLayer, sketchContext } from "./film/sketch";
 import { Timeline } from "./film/timeline";
 import { attachFiles } from "./chat/use-attachments";
 import { useChat } from "./chat/use-chat";
@@ -395,6 +396,13 @@ function FilmView({
   const [texts, setTexts] = useState<string[]>([]);
   const [pointing, setPointing] = useState(false);
   const [pinned, setPinned] = useState<Pinned | null>(null);
+  // Sketch on the frame (film/sketch.tsx): marks drawn over the paused film,
+  // the moment they belong to, and the latest question to the stage about
+  // what's under them.
+  const [sketching, setSketching] = useState(false);
+  const [marks, setMarks] = useState<DraftMark[]>([]);
+  const [sketchT, setSketchT] = useState(0);
+  const askRef = useRef(0);
   // Part of the sound, picked on the timeline and pinned to the prompt.
   const [soundPin, setSoundPin] = useState<SoundPin | null>(null);
   const [bubble, setBubble] = useState(false);
@@ -713,6 +721,27 @@ function FilmView({
           setSoundPin(null);
           setPointing(false);
           setBubble(true);
+          break;
+        }
+        case "studio:hits": {
+          if (m.ask !== askRef.current) break;
+          const video = filmRef.current?.kind === "video";
+          setMarks((cur) =>
+            cur.map((mark, i) => {
+              const hits = m.hits[i] ?? mark.hits;
+              if (!video) return { ...mark, hits };
+              // Footage has no parts to name: the clip or graphic playing there does.
+              const named = (p: { x: number; y: number }) => {
+                const pick = pickFromEdit(p);
+                return pick.id ? pick : null;
+              };
+              const first = mark.points[0];
+              const last = mark.points[mark.points.length - 1];
+              const centre = mark.points.reduce((a, p) => ({ x: a.x + p.x / mark.points.length, y: a.y + p.y / mark.points.length }), { x: 0, y: 0 });
+              const inside = hits.inside.length ? hits.inside : mark.kind === "loop" ? [named(centre)].filter((x) => x !== null) : [];
+              return { ...mark, hits: { ...hits, inside, start: hits.start ?? named(first), end: hits.end ?? named(last) } };
+            }),
+          );
           break;
         }
         case "studio:param-edit":
@@ -1059,11 +1088,39 @@ function FilmView({
 
   const togglePoint = useCallback(() => {
     setBubble(false);
+    setSketching(false);
     setPointing((p) => {
       if (!p) clock.pause();
       return !p;
     });
   }, [clock]);
+
+  // Sketch mode on and off; the marks stay until they're sent or cleared.
+  const toggleSketch = useCallback(() => {
+    setBubble(false);
+    setPointing(false);
+    setSketching((on) => {
+      if (!on) {
+        clock.pause();
+        if (!marks.length) setSketchT(clock.get().t);
+      }
+      return !on;
+    });
+  }, [clock, marks.length]);
+  // New marks, and a question to the stage about what lies under them.
+  const updateMarks = useCallback(
+    (next: DraftMark[]) => {
+      setMarks(next);
+      if (!next.length) return;
+      const ask = ++askRef.current;
+      bridge.post({ type: "studio:hit-test", ask, marks: next.map((mk) => ({ kind: mk.kind, points: mk.points })) });
+    },
+    [bridge],
+  );
+  const clearSketch = useCallback(() => {
+    setMarks([]);
+    setSketching(false);
+  }, []);
 
   // Keys: Space plays, P points, ⌘K asks, H hides the panels, L loops,
   // arrows step a frame (with Shift, a second), ⌘Z undoes and ⇧⌘Z redoes,
@@ -1073,6 +1130,12 @@ function FilmView({
       // The three versions' full-screen view has the keys while it's open.
       if (awayRef.current && awayRef.current !== "leaving") return;
       const which = undoKey(e);
+      // While sketching, ⌘Z takes back the last mark.
+      if (which === "undo" && sketching && marks.length && !isTyping(e.target)) {
+        e.preventDefault();
+        updateMarks(marks.slice(0, -1));
+        return;
+      }
       if (which) {
         // In a text field, the browser's own text undo stays in charge.
         if (isTyping(e.target)) return;
@@ -1089,6 +1152,7 @@ function FilmView({
       }
       if (e.key === "Escape") {
         if (bubble) setBubble(false);
+        else if (sketching) setSketching(false);
         else if (pointing) setPointing(false);
         else if (pinned) setPinned(null);
         else if (edRef.current?.selected.size) edRef.current.setSelected(new Set());
@@ -1112,6 +1176,16 @@ function FilmView({
           e.preventDefault();
           setHidden((h) => !h);
           break;
+        case "s":
+        case "S":
+          e.preventDefault();
+          toggleSketch();
+          break;
+        case "e":
+        case "E":
+          // Held to erase while sketching (film/sketch.tsx).
+          if (sketching) e.preventDefault();
+          break;
         case "l":
         case "L":
           clock.setLoop(!clock.get().loop);
@@ -1134,7 +1208,7 @@ function FilmView({
     };
     window.addEventListener("keydown", keys);
     return () => window.removeEventListener("keydown", keys);
-  }, [bubble, pointing, pinned, clock, togglePoint, setHidden, film?.fps, history]);
+  }, [bubble, pointing, pinned, clock, togglePoint, toggleSketch, sketching, marks, updateMarks, setHidden, film?.fps, history]);
 
   // Files dragged in from the computer, anywhere on a video film, go to the
   // bin (and onto the timeline when it's still empty).
@@ -1313,6 +1387,10 @@ function FilmView({
           </div>
         ) : null}
         {pinned && !pointing ? <PickOutline fit={fit} pinned={pinned} /> : null}
+        {sketching ? <SketchHint fit={fit} /> : null}
+        {film && (sketching || marks.length) ? (
+          <SketchLayer fit={fit} film={{ width: film.width, height: film.height }} marks={marks} drawing={sketching} onMarks={updateMarks} />
+        ) : null}
         {status.state === "loading" ? (
           <span
             className={cn(CARD, "absolute flex h-8 -translate-x-1/2 items-center gap-2 rounded-full px-3 text-[12px] text-white/70")}
@@ -1408,6 +1486,10 @@ function FilmView({
         <ChatPanel
           filmId={id}
           chat={chatView}
+          sketch={marks.length ? sketchContext(sketchT, marks) : null}
+          sketching={sketching}
+          onSketch={toggleSketch}
+          onClearSketch={clearSketch}
           pinned={bubble ? null : pinned}
           sound={soundPin ? { pin: soundPin, label: soundChipLabel(soundPin, soundLength, isVideo) } : null}
           soundLength={soundLength}

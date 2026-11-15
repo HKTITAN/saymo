@@ -22,6 +22,7 @@ What to add next, in order. Done items move out of this list.
 
 ## Bigger features
 
+- **Sketch on the frame.** Pause, draw, send: loops pick the parts they circle, lines become motion paths, and Claude sees the marks over the frame. Plan: [plans/sketch-on-the-frame.md](plans/sketch-on-the-frame.md).
 - **Saymo's reel workflow, step 1: the words are the timeline.** Cuts, captions, graphics and sound hits hang on words, so nothing drifts after a cut. Plan: [plans/words-are-the-timeline.md](plans/words-are-the-timeline.md). Then: record against the script, the beat sheet, cutting to the music, Try 3 for edits, and review like a viewer.
 0. **Bring the effects back, improved.** Cursors, magnetic grid, counter, text reveal and typing, UI stagger, carousel, wipes, glass and liquid glass, mesh gradients, attach and adjust, and SVG draw were taken out on 2026-11-16 (see the README's Effects section). Each returns to `studio/starters/html/assets/parts/` with a preview in `studio/effects/` and checks in `scripts/studio/parts-check.mjs`.
 1. **"Send to Saymo" browser extension** (from Pond). Right-click any image, video or page on Pinterest, X or anywhere, and it lands in a film as a reference. Pairs with the references library.

@@ -1,3 +1,5 @@
+import type { SketchContext } from "./sketch";
+
 // The studio's shared contract: what a film is, how the studio page talks to
 // the stage that plays it, and what the server's routes take and return.
 // Three parts are built against it at once (engines, the Claude bridge and
@@ -111,6 +113,9 @@ export type StageInbound =
   | { type: "studio:seek"; t: number } // seconds, clamped to [0, duration]
   | { type: "studio:params"; params: Record<string, Param["value"]> } // live values
   | { type: "studio:point"; on: boolean } // pointing mode: clicks pick, not play
+  // Sketch on the frame (sketch.ts): what's under each mark, answered with
+  // studio:hits carrying the same `ask`.
+  | { type: "studio:hit-test"; ask: number; marks: { kind: "loop" | "line" | "mark"; points: { x: number; y: number }[] }[] }
   | { type: "studio:reload" } // the film's files changed
   // Words on the film can be edited in place while it is paused. A text
   // param is bound to its element with `data-param="<key>"` (html films;
@@ -136,6 +141,7 @@ export type StageOutbound =
   // so the studio knows which words can be edited on the film.
   | { type: "studio:ready"; duration: number; fps: number; width: number; height: number; texts?: string[] }
   | { type: "studio:picked"; pick: Picked } // a click in pointing mode
+  | { type: "studio:hits"; ask: number; hits: { inside: Picked[]; start: Picked | null; end: Picked | null; crosses: Picked[] }[] }
   | { type: "studio:error"; message: string } // the film failed to load or threw
   | { type: "studio:loading" } // e.g. a rust draft is being made
   // Words typed into a data-param element: live while `editing`, then once
@@ -197,6 +203,9 @@ export type ChatContext = {
   // A part of the sound design picked on the timeline's lanes: change only
   // that stem between those film times.
   sound?: { stem: "music" | "effects" | "voice" | "both"; from: number; to: number };
+  // Marks drawn over the paused film (sketch.ts), with what's under them
+  // and, once the server has made it, the picture of the frame with them.
+  sketch?: SketchContext;
 };
 
 // A file attached to a prompt (a reference picture, a brief), saved beside
