@@ -1,18 +1,34 @@
 # Setup
 
-Saymo runs on your own Mac. Each person on the team installs it once and signs in with their own Claude and Google accounts.
+Saymo runs on your own Mac. You install it once, sign in with your own Claude account, and everything you make stays on your Mac.
 
 ## What you need
 
-- macOS with [Homebrew](https://brew.sh)
-- Node.js 22 or newer
-- Google Chrome (renders and exports use it)
-- Apple's command line tools (`xcode-select --install`), for the background remover and face finder
-- [Claude Code](https://claude.com/claude-code), signed in. The studio's chat runs on your Claude plan, so its requests count against your usage. Every studio turn uses Claude Opus 5.5 at high effort, so keep Claude Code up to date (`claude update`). To change it on one Mac, set `STUDIO_MODEL` or `STUDIO_EFFORT` in `.env.local`.
+- macOS 14 or newer, with [Homebrew](https://brew.sh)
+- [Node.js](https://nodejs.org) 22 or newer (`node -v` shows yours)
+- [Google Chrome](https://www.google.com/chrome/), which renders and exports use
+- Apple's command line tools (`xcode-select --install`), for the background remover, face finder and slide reader
+- [Claude Code](https://claude.com/claude-code), signed in. The studio's chat runs on your Claude plan, so its requests count against your usage. Every turn uses Claude Opus 5.5 at high effort, so keep Claude Code up to date (`claude update`). To change the model or effort, set `STUDIO_MODEL` or `STUDIO_EFFORT` in `.env.local`.
+- About 3 GB of free disk space, plus about 1.6 GB more the first time you transcribe speech
+
+## Install
+
+```bash
+git clone https://github.com/sethihq/saymo.git
+cd saymo
+npm run setup                  # everything but the Rust engine
+npm run setup -- --with-rust   # also the Rust engine (needs Rust from rustup.rs)
+claude                         # sign in to Claude Code, once
+npm run dev                    # then open http://localhost:3200
+```
+
+Setup works in five steps: it checks your Mac, installs ffmpeg, cmake and poppler with Homebrew, then installs the app's packages and each engine's packages. Run it again any time; it skips what's already there. It also checks that ffmpeg can use your Mac's hardware video encoder; if it says it can't, run `brew reinstall ffmpeg`.
+
+To update later, run `git pull`, then `npm run setup`, then restart `npm run dev`.
 
 ## AI for the chat
 
-Claude on your Claude plan is the default and needs nothing more. Two other AIs are optional, set up from the link button at the top right of the studio, under AI:
+Claude on your Claude plan is the default and needs nothing more. Two other AIs are optional. Set them up in the studio's settings, under AI:
 
 - **Codex, on your ChatGPT plan.** Install it yourself, then sign in:
 
@@ -21,36 +37,26 @@ Claude on your Claude plan is the default and needs nothing more. Two other AIs 
   codex login                          # sign in with ChatGPT
   ```
 
-- **Claude with an API key**, for teammates without a Claude plan. Make a key at console.anthropic.com and paste it into the AI section. It stays on this Mac in `.studio/connections/anthropic.json` and is billed to that key's account.
+- **Claude with an API key**, if you don't have a Claude plan. Make a key at console.anthropic.com and paste it into the AI section. It stays on this Mac in `.studio/connections/anthropic.json` and is billed to that key's account.
 
 Then pick the AI in any prompt box with the small picker next to Point. More in [connections.md](connections.md).
 
-### The product edition
+## Keys
 
-With `STUDIO_EDITION=product` in `.env.local` (see [research/ai-providers.md](research/ai-providers.md)), Claude with an API key is the only AI: there's no Claude plan or Codex option anywhere. Every Claude request (a film's chat, the kit maker, the script writer) uses the saved key, and Claude Code runs with a settings folder of the studio's own (`.studio/claude`), so a Claude sign-in on the Mac is never used. Until a key is saved, each of them says where to paste one. To keep the key in a file of your own instead, set `STUDIO_ANTHROPIC_KEY_FILE` to that file's path (the key alone, or JSON with a `key`).
+Optional keys go in `.env.local`, one per line. Git never commits this file; never paste a key anywhere else.
 
-## Install
+| Key | Turns on |
+| --- | --- |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Saving renders to Google Drive. One-time Google Cloud setup: [connections.md](connections.md) |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Signing in to GitHub with your own account (otherwise your `gh` sign-in is used) |
+| `FIGMA_TOKEN` | Reading Figma links when making a brand kit |
+| `AI_GATEWAY_API_KEY` | Making landmarks with AI in the post tool |
 
-```bash
-npm run setup                  # everything but the Rust engine
-npm run setup -- --with-rust   # also the Rust engine (needs Rust from rustup.rs)
-npm run dev                    # then open http://localhost:3200/studio
-```
-
-Setup installs ffmpeg and cmake, the app's packages and each engine's packages. Run it again any time; it skips what's already there. It also checks that ffmpeg can use your Mac's hardware video encoder; if it says it can't, run `brew reinstall ffmpeg`.
-
-### Licences
-
-```bash
-npm run licences                           # for the edition you run
-STUDIO_EDITION=product npm run licences    # what the product ships
-```
-
-Run it after adding or updating packages. It lists everything the studio uses that someone else made (the app's and engines' packages, the Rust crates, the speech models, the font, the icons and the borrowed skills) and writes `THIRD-PARTY-NOTICES.md` and `public/licences.json`, which the product edition shows under About and licences on the home page. The product's list leaves out what it doesn't ship (the Strudel music engine and GSAP). Never edit either file by hand.
+Restart `npm run dev` after changing `.env.local`.
 
 ## Renders on your Mac
 
-Each render looks at the Mac it runs on and sets itself up for it. You don't need to change anything.
+Each render looks at the Mac it runs on and sets itself up for it, so you don't need to change anything.
 
 - **Drawing frames:** Chrome draws several frames at once, as many as your Mac's cores and memory allow. An 8 GB Mac draws a 4K film with 2 at a time, so it doesn't run out of memory; a 16 GB Mac with 10 cores uses 8.
 - **Encoding:** a final's 4K file uses Apple's hardware encoder on Apple silicon Macs, which is about 2.5 times as fast as the software encoder and just as sharp. Intel Macs use the software encoder (x264). The 1080p file always uses x264.
@@ -77,19 +83,6 @@ Some things happen the first time you use them:
 - **Transcribing speech:** the speech model (about 1.6 GB) is downloaded and built, which takes a few minutes. After that, a minute of speech takes a few seconds.
 - **The first Rust film:** takes a few minutes to build. Later ones take seconds.
 
-## Keys
-
-Optional keys go in `.env.local`, one per line. Git never commits this file; never paste a key anywhere else.
-
-| Key | Turns on |
-| --- | --- |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Saving renders to Google Drive. One-time Google Cloud setup: [connections.md](connections.md) |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Signing in to GitHub with your own account (otherwise your `gh` sign-in is used) |
-| `FIGMA_TOKEN` | Reading Figma links when making a brand kit |
-| `AI_GATEWAY_API_KEY` | Making landmarks with AI in the post tool |
-
-Restart `npm run dev` after changing `.env.local`.
-
 ## Safety
 
 - The server only answers this Mac (`127.0.0.1`). Studio requests must come from the studio page itself.
@@ -104,3 +97,18 @@ Restart `npm run dev` after changing `.env.local`.
 - **A render fails:** check that Google Chrome is installed, then run `npm run setup` again.
 - **Your Mac slows down a lot while rendering:** add `STUDIO_WORKERS=2` to `.env.local` and restart `npm run dev`.
 - **Port 3200 is busy:** another copy of the studio is running. Close it, or stop it with `lsof -ti tcp:3200 | xargs kill`.
+- **`npm run setup` stops early:** it says what's missing (Homebrew, Node, Chrome or Apple's command line tools). Install that, then run setup again.
+- **Anything else:** run `npm run setup` again, restart `npm run dev`, and check the terminal running the studio for the error.
+
+## The product edition
+
+With `STUDIO_EDITION=product` in `.env.local` (see [research/ai-providers.md](research/ai-providers.md)), Claude with an API key is the only AI: there's no Claude plan or Codex option anywhere. Every Claude request (a film's chat, the kit maker, the script writer) uses the saved key, and Claude Code runs with a settings folder of the studio's own (`.studio/claude`), so a Claude sign-in on the Mac is never used. Until a key is saved, each of them says where to paste one. To keep the key in a file of your own instead, set `STUDIO_ANTHROPIC_KEY_FILE` to that file's path (the key alone, or JSON with a `key`).
+
+## Licences (for maintainers)
+
+```bash
+npm run licences                           # for the edition you run
+STUDIO_EDITION=product npm run licences    # what the product ships
+```
+
+Run it after adding or updating packages. It lists everything the studio uses that someone else made (the app's and engines' packages, the Rust crates, the speech models, the font, the icons and the borrowed skills) and writes `THIRD-PARTY-NOTICES.md` and `public/licences.json`, which the product edition shows under About and licences on the home page. The product's list leaves out what it doesn't ship (the Strudel music engine and GSAP). Never edit either file by hand.

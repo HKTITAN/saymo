@@ -1,45 +1,121 @@
 # Saymo
 
-An open-source motion editor for motion graphics and video. Bring in footage or start from a blank film, then change it by talking to Claude, by pointing at the part you mean, or by moving the controls yourself. Every film follows a brand kit, has its own sound design, and renders to a crisp video.
+Saymo is an open-source motion editor for the Mac. You make motion graphics and edit videos by talking to Claude, by pointing at the part of the film you want changed, or by moving the controls yourself. Every film follows a brand kit, has its own sound design and renders to a sharp 4K video.
 
-It runs on your own Mac, with your own Claude sign-in.
+It runs on your own laptop with your own Claude account, so your films never leave your Mac unless you save them somewhere.
 
-## What's inside
+## What you need
 
-| Part | Address | What it's for |
-| --- | --- | --- |
-| **Studio** | `/studio` (and `/`) | Make motion graphics and edit videos with Claude. Films, brand kits, sound and renders live here. |
-| **Post tool** | `/tool` | A sample template: make animated speaker posts without code by changing the words, photo and landmark, then download the 4K video. |
-| **Sample post** | `/post` | The animated speaker post the tool starts from, filled with sample words. |
+- A Mac running macOS 14 or newer (Apple silicon renders fastest)
+- [Homebrew](https://brew.sh)
+- [Node.js](https://nodejs.org) 22 or newer
+- [Google Chrome](https://www.google.com/chrome/), which draws the frames of every render
+- Apple's command line tools: run `xcode-select --install`
+- [Claude Code](https://claude.com/claude-code), signed in with your Claude plan or an API key
+- About 3 GB of free disk space
 
-## Set up
-
-You need a Mac with [Homebrew](https://brew.sh), Node.js 22 or newer, Google Chrome and [Claude Code](https://claude.com/claude-code). Then, in this folder:
+## Install
 
 ```bash
+git clone https://github.com/sethihq/saymo.git
+cd saymo
 npm run setup
+```
+
+Setup checks your Mac, installs ffmpeg and the other video tools, and installs the packages for the app and each engine. If something is missing, it stops and tells you what to install. You can run it again at any time; it skips what's already there.
+
+Then sign in to Claude Code once, if you haven't already:
+
+```bash
+claude
+```
+
+### Or let your coding agent set it up
+
+Paste this into Claude Code, Codex, Cursor or any coding agent that can run commands on your Mac:
+
+```text
+Set up Saymo, an open-source motion editor, on this Mac and start it.
+
+1. Clone https://github.com/sethihq/saymo into ~/saymo (or pull it if it's already there) and work in that folder.
+2. Read README.md and docs/setup.md first.
+3. Check what this Mac has: macOS 14 or newer, Homebrew, Node.js 22 or newer, Google Chrome, Apple's command line tools (xcode-select -p) and Claude Code (claude --version). Tell me what's missing and how to install it. Ask me before installing anything that needs my password or an app download, such as Homebrew, Node, Chrome or the command line tools.
+4. Run npm run setup. If it stops, read what it says, fix that one thing, and run it again.
+5. If Claude Code isn't signed in, tell me to run claude in a terminal and sign in, then wait for me.
+6. Run npm run dev in the background, wait until http://localhost:3200/studio answers, and open http://localhost:3200 in my browser.
+7. Tell me in a few plain sentences what you installed, anything that's still missing, and how to start Saymo again next time (cd ~/saymo && npm run dev).
+
+Don't change any of Saymo's files, don't commit or push anything, and don't paste keys or sign-ins anywhere.
+```
+
+## Start the studio
+
+```bash
 npm run dev
 ```
 
-Open http://localhost:3200. Setup installs the video tools, the app and each engine. Add `-- --with-rust` to also set up the Rust engine. [docs/setup.md](docs/setup.md) covers the details, the optional keys and what to do if something goes wrong.
+Open http://localhost:3200. The studio only answers your own Mac. Leave the terminal open while you work, and press Ctrl+C in it to stop the studio.
 
-The server only answers this Mac, and Claude in the studio can only change the film you're working on.
+Prefer an app in your Dock? The [Mac app](desktop/README.md) opens the studio in its own window without a terminal.
 
-## Using the studio
+## Make your first film
 
-- **Start a film.** On the studio's home page, make a new motion film or drop in footage to edit a video. Pick a size: 16:9, 1:1, 4:5 or 9:16.
-- **Change it by asking.** Type in the chat on the left. Press P and click any part of the film to ask about just that part. The prompt always knows the moment the playhead is on.
-- **Change it by hand.** The panel on the right holds the film's settings, size, length, brand and sound. Press ⌘Z to undo.
-- **Edit footage.** Trim, split and move clips on the timeline, make captions from the speech, add branded graphics, and add a voiceover in an Indian voice.
-- **Render.** Make a quick draft, or the final video in 4K and 1080p. Finals can save themselves to Google Drive, and the film's source to a GitHub library.
+1. **Start a film.** On the home page, describe what you want ("a 6 second launch teaser for a note-taking app"), pick a size (16:9, 1:1, 4:5 or 9:16) and press Return. To edit footage instead, drop video files on the home page.
+2. **Watch it build.** Claude writes the film while the chat on the left shows each step. The film plays in the middle when it's ready.
+3. **Change it by asking.** Type in the chat ("make the title bigger and slower"). Press P and click any part of the film to ask about just that part. The chat always knows the moment the playhead is on.
+4. **Change it by hand.** The panel on the right holds the film's words, colours, length, brand kit and sound. Press ⌘Z to undo anything.
+5. **Render it.** Use the button at the top right to make a quick draft, or the final video in 4K and 1080p. Finished videos are in `films/<id>/out/`, and the studio can open that folder for you.
 
-Press H to hide every panel, and Space to play.
+Press Space to play or pause, and H to hide every panel.
 
 ## Brand kits
 
-Each film follows a brand kit: colours, fonts, logos and the rules for look, motion, sound and words. The clean kit (black on white, Geist, one accent at most) comes built in and is the default. Make a kit from a brand's guideline, links and files, start a personal style in two minutes, or import a kit another studio exported.
+Each film follows a brand kit: colours, fonts, logos and the rules for look, motion, sound and words. A new film uses the built-in clean kit (black on white, Geist, one accent at most). To use your own brand, open Brand kits on the home page and make a kit from a guideline PDF, a website, logo and font files, or a two-minute personal style. Kits export and import as `.zip` files.
 
-## Where things are
+## Optional extras
+
+None of these are needed to make films:
+
+- **Codex** on your ChatGPT plan, or **Claude with an API key**, as the AI behind the chat. Set them up under AI in the studio's settings.
+- **Saving to Google Drive or GitHub**, so every final lands in a Drive folder and each film's source in a GitHub repository. See [connections](docs/connections.md).
+- **Using Saymo from other apps**: Claude Desktop, Cursor or Claude Code can make and change films through its MCP server, and the terminal through `npm run studio`. See [use Saymo from other apps](docs/mcp.md).
+- **The Rust engine**, for heavy generative scenes: `npm run setup -- --with-rust` (needs [Rust](https://rustup.rs)).
+
+[Setup](docs/setup.md) covers keys, settings and fixes for common problems.
+
+## Update
+
+```bash
+git pull
+npm run setup
+```
+
+Then restart `npm run dev`.
+
+## Where your work lives
+
+Everything you make stays in the Saymo folder on your Mac: films in `films/`, brand kits in `brands/`, speaker posts in `posts/`, saved references in `library/` and sign-ins in `.studio/`. Git ignores all of them, and keys in `.env.local`, so `git pull` never touches your work. Back up those folders to keep your films.
+
+## Also in the box
+
+| Part | Address | What it's for |
+| --- | --- | --- |
+| **Studio** | `/studio` | Make motion graphics and edit videos with Claude |
+| **Post tool** | `/tool` | A sample template: animated speaker posts made without code, downloaded as 4K video |
+| **Sample post** | `/post` | The animated post the tool starts from |
+
+## Docs
+
+- [Setup](docs/setup.md): requirements, keys, settings and fixes for common problems
+- [How the studio works](docs/studio.md): engines, video editing, sound, brand kits and renders
+- [Saving to Google Drive and GitHub](docs/connections.md)
+- [Use Saymo from other apps](docs/mcp.md): Claude Desktop, Claude Code, Cursor and the terminal
+- [Shortcuts and Raycast](docs/shortcuts.md): start a film from a link
+- [Security](docs/security.md): what the studio answers and what Claude can touch
+- [The post tool](docs/post-tool.md) and [the sample post](docs/speaker-post.md)
+- [Roadmap](docs/roadmap.md)
+
+## How the code is organised
 
 ```
 src/
@@ -83,18 +159,6 @@ desktop/              the native Mac app (Swift)
 docs/                 guides; docs/research/ holds dated research notes
 ```
 
-Your films, posts and brand kits stay on your Mac (`films/`, `posts/`, `brands/`). Git ignores them, and so do keys in `.env.local`.
-
-## Docs
-
-- [Setup](docs/setup.md): requirements, keys and fixes for common problems
-- [How the studio works](docs/studio.md): engines, video editing, sound, brand kits, renders
-- [Saving to Google Drive and GitHub](docs/connections.md)
-- [Use the studio from other apps](docs/mcp.md): Claude Desktop, Claude Code, Cursor (MCP) and the command line
-- [Shortcuts and Raycast](docs/shortcuts.md): start a film from a link
-- [Security](docs/security.md): who the studio answers, and the local API token
-- [The post tool](docs/post-tool.md) and [the sample post](docs/speaker-post.md)
-- [Roadmap](docs/roadmap.md)
 
 ## Contributing
 
