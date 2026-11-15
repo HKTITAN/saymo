@@ -2,7 +2,39 @@
 
 Saymo is an open-source motion editor for the Mac. You make motion graphics and edit videos by talking to Claude, by pointing at the part of the film you want changed, or by moving the controls yourself. Every film follows a brand kit, has its own sound design and renders to a sharp 4K video.
 
-It runs on your own laptop with your own Claude account, so your films never leave your Mac unless you save them somewhere.
+## How it runs
+
+Saymo runs on your own Mac, in your browser at http://localhost:3200, and only answers that Mac. It uses the Mac's own tools (Chrome to draw frames, Apple's video encoder, Vision for cutouts, the Mac's voices) and your own Claude account. Your films are stored on your Mac rather than in a cloud service; Claude reads what it needs from them to make each change.
+
+## Coming later
+
+- **A Mac app** that opens the studio from the Dock, with no terminal, as a signed download with automatic updates. An early version is in [`desktop/`](desktop/README.md).
+- **The effects listed under [Effects](#effects)**, back as improved versions.
+- More on the [roadmap](docs/roadmap.md).
+
+## What it does
+
+### Sound that's written, not downloaded
+
+Every film gets its own sound design, and Claude composes it as code instead of picking a stock track. Music is a bed of looping parts (synths, noise, filters that sweep slowly, a room and an echo) and the effects are [Tone.js](https://tonejs.github.io) hits placed at exact film times, so a whoosh lands on the frame a title arrives.
+
+- **Claude checks the sound before you hear it.** Claude can't hear audio, so the studio renders the score in headless Chrome in a second or two and reports what's in it: loudness, and each hit with the film moment it lands on. Claude reads that report and fixes anything that's off before it answers.
+- **Edit sound on the timeline.** Music, effects and voiceover each get their own lane with a waveform. Change the volume or mute a lane by hand, or drag across part of one and ask Claude to change just that bit ("make this softer").
+- **Match a reference.** Attach an audio file and say "make it feel like this". A listening tool measures its tempo, beats, key, brightness and loudness, Claude compares that with the film's own sound, and writes something original with the same feel. Nothing from the reference goes into the film.
+- **Ready to post.** Every sound renders at 48 kHz stereo, exactly the film's length, at about -16 LUFS. In a video edit the music dips under speech on its own.
+
+### More of what's inside
+
+- **Point and ask.** Press P and click any part of the film to change just that part. The chat always knows the moment the playhead is on.
+- **Three engines underneath.** Claude writes each film for HTML ([HyperFrames](https://hyperframes.heygen.com)), React ([Remotion](https://www.remotion.dev)) or Rust ([fframes](https://fframes.studio)), and you only ever see the film.
+- **Video editing.** Drop in footage, trim and split clips on a timeline, make captions from speech transcribed on your Mac, add branded lower thirds, titles and end cards, and record a voiceover in one of the Mac's voices.
+- **Try 3.** Ask for three versions of one idea at once, then keep the one you like.
+- **Undo everything.** Every prompt saves the film first, so you can step back through its history or undo any change.
+- **Talk instead of type.** Dictate prompts in English, Hindi or Hinglish; speech is transcribed on your Mac.
+- **Slides to video.** Turn a PDF, PowerPoint or Keynote deck into an animated film that keeps its words and charts, with an optional voiceover.
+- **Every size from one render.** One film renders as 16:9, 1:1, 4:5 and 9:16, each laid out for its frame, in 4K and 1080p.
+- **Brand kits from a guideline.** Drop in a brand's PDF, website, logos and fonts, and Claude builds a kit every film then follows.
+- **A reference library.** Save pictures, clips, sounds and notes, and attach them to any prompt.
 
 ## What you need
 
@@ -54,9 +86,7 @@ Don't change any of Saymo's files, don't commit or push anything, and don't past
 npm run dev
 ```
 
-Open http://localhost:3200. The studio only answers your own Mac. Leave the terminal open while you work, and press Ctrl+C in it to stop the studio.
-
-Prefer an app in your Dock? The [Mac app](desktop/README.md) opens the studio in its own window without a terminal.
+Open http://localhost:3200. Leave the terminal open while you work, and press Ctrl+C in it to stop the studio.
 
 ## Make your first film
 
@@ -72,13 +102,34 @@ Press Space to play or pause, and H to hide every panel.
 
 Each film follows a brand kit: colours, fonts, logos and the rules for look, motion, sound and words. A new film uses the built-in clean kit (black on white, Geist, one accent at most). To use your own brand, open Brand kits on the home page and make a kit from a guideline PDF, a website, logo and font files, or a two-minute personal style. Kits export and import as `.zip` files.
 
+## Effects
+
+HTML films can use ready-made effects, previewed on the studio's Effects page. Two ship for now:
+
+- **Grid field:** cards fall into a grid, then fold into a ring or a turning sphere.
+- **Sphere carousel:** cards orbit a turning sphere, each joined to a centre card.
+
+These were taken out to come back later as improved versions (films that already use them keep their own copies):
+
+- **Cursors:** teammates' pointers with name tags, clicks and cursor chat
+- **Magnetic grid:** dots that swell as a cursor passes and ripple when it clicks
+- **Counter:** a number that rolls up to its value
+- **Text reveal, typing and exploder:** words that rise, fade, sharpen, type on or burst in
+- **UI stagger:** interface pieces landing one after another
+- **Carousel:** cards stepping past like a shelf of records
+- **Wipe, glitch and soft wipes:** a moving edge that shows a picture or scene
+- **Glass and liquid glass:** frosted panels and clear lenses over moving footage
+- **Mesh gradients:** soft colour drifting on a loop
+- **Attach and adjust:** labels pinned to something that moves
+- **SVG draw:** an SVG drawing its lines on, then filling
+
 ## Optional extras
 
 None of these are needed to make films:
 
 - **Codex** on your ChatGPT plan, or **Claude with an API key**, as the AI behind the chat. Set them up under AI in the studio's settings.
-- **Saving to Google Drive or GitHub**, so every final lands in a Drive folder and each film's source in a GitHub repository. See [connections](docs/connections.md).
-- **Using Saymo from other apps**: Claude Desktop, Cursor or Claude Code can make and change films through its MCP server, and the terminal through `npm run studio`. See [use Saymo from other apps](docs/mcp.md).
+- **Saving to Google Drive or GitHub**, so every final lands in a Drive folder and each film's source in a GitHub repository. Read [how to connect Drive and GitHub](docs/connections.md).
+- **Using Saymo from other apps**: Claude Desktop, Cursor or Claude Code can make and change films through its MCP server, and the terminal through `npm run studio`. Read [how to use Saymo from other apps](docs/mcp.md).
 - **The Rust engine**, for heavy generative scenes: `npm run setup -- --with-rust` (needs [Rust](https://rustup.rs)).
 
 [Setup](docs/setup.md) covers keys, settings and fixes for common problems.
@@ -162,7 +213,7 @@ docs/                 guides; docs/research/ holds dated research notes
 
 ## Contributing
 
-Run `npx tsc --noEmit`, `npm run lint` and `npm run build` before sending a change, and `node scripts/studio/parts-check.mjs` after touching `studio/effects/` or the starters. House rules for the interface, copy and icons are in [CLAUDE.md](CLAUDE.md).
+Run `npx tsc --noEmit`, `npm run lint` and `npm run build` before sending a change, `node scripts/studio/parts-check.mjs` after touching `studio/effects/` or the starters, and `node scripts/studio/edit-check.mjs` after touching how video edits are timed. House rules for the interface, copy and icons are in [CLAUDE.md](CLAUDE.md).
 
 ## Licences
 

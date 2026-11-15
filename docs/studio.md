@@ -173,8 +173,8 @@ Every film can have a sound track, composed as code in
   noise sound, an envelope, filters that can sweep slowly, a room and an
   echo, for beds, pulses and rhythm. Nothing is downloaded.
 - **Effects** in [Tone.js](https://tonejs.github.io) at exact film times,
-  for hits on the film's moments: air arriving from the right with a
-  colour, a tick as a line lands, one bright note when orange lands.
+  for hits on the film's moments: air sweeping in with a panel, a tick
+  as a line lands, one bright note when the accent arrives.
 
 `node scripts/studio/sound.mjs <id>` plays the score in headless Chrome
 into offline audio contexts (never to speakers), so a 5 second film's sound
