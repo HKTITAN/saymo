@@ -259,3 +259,87 @@ export function captionsByWord(edit: Edit, transcripts: Transcripts): Edit {
 
 export const filmEnd = (edit: Edit) =>
   edit.tracks.reduce((end, t) => t.items.reduce((e, i) => Math.max(e, i.start + lengthOf(i)), end), 0);
+
+// ─── Bringing cut words back ─────────────────────────────────────────────────
+
+// Puts cut words back: the clip before them grows to take them in (up to the
+// quiet after the last one), or, for words cut from the start, the clip
+// after them reaches back to the quiet before the first. Everything later
+// moves along to make room, and two pieces of one take that meet again
+// become one clip.
+export function restoreWords(edit: Edit, transcripts: Transcripts, peaks: Peaks, refs: WordRef[]): CutResult {
+  const byMedia = new Map<string, number[]>();
+  for (const ref of refs) {
+    const r = parseWordRef(ref);
+    if (!r || !transcripts[r.media]?.[r.index]) continue;
+    byMedia.set(r.media, [...(byMedia.get(r.media) ?? []), r.index]);
+  }
+  let out = edit;
+  const removed: CutResult["removed"] = []; // here: what came back
+  const skipped: string[] = [];
+  const shiftAfter = (e: Edit, keep: string, from: number, by: number): Edit => ({
+    ...e,
+    tracks: e.tracks.map((t) => ({
+      ...t,
+      items: t.items
+        .map((i) => (i.id === keep || i.start < from - 1e-6 ? i : { ...i, start: round(i.start + by) }))
+        .sort((a, b) => a.start - b.start),
+    })),
+  });
+  for (const [media, list] of byMedia) {
+    const words = transcripts[media] ?? [];
+    const indices = [...new Set(list)].sort((a, b) => a - b);
+    // Runs of neighbouring cut words, latest first so earlier runs keep their places.
+    const runs: number[][] = [];
+    for (const i of indices) {
+      const run = runs.at(-1);
+      if (run && i === run[run.length - 1] + 1) run.push(i);
+      else runs.push([i]);
+    }
+    for (const run of runs.reverse()) {
+      const clips = speechClips(out).filter((c) => c.media === media);
+      const first = words[run[0]];
+      const last = words[run[run.length - 1]];
+      if (clips.some((c) => run.some((i) => plays(c, words[i])))) {
+        skipped.push(...run.map((i) => wordRef(media, i)));
+        continue;
+      }
+      const before = clips.filter((c) => c.to <= middle(first)).sort((a, b) => b.to - a.to)[0];
+      const after = clips.filter((c) => c.from >= middle(last)).sort((a, b) => a.from - b.from)[0];
+      const said = run.map((i) => words[i].text).join(" ");
+      if (before) {
+        const next = words[run[run.length - 1] + 1];
+        const meets = after && next && plays(after, next);
+        const to = meets ? after.from : next ? quietest(last.end, next.start, peaks[media]).t : last.end + 0.2;
+        const speed = before.speed ?? 1;
+        const end = before.start + (before.to - before.from) / speed;
+        const by = round((to - before.to) / speed);
+        if (by <= 0) continue;
+        out = shiftAfter(out, before.id, end, by);
+        out = { ...out, tracks: out.tracks.map((t) => ({ ...t, items: t.items.map((i) => (i.id === before.id ? { ...before, to: round(to), fadeOut: undefined } : i)) })) };
+        // The two pieces of the take meet again: one clip.
+        if (meets && after && (after.speed ?? 1) === speed && Math.abs(after.start + by - (end + by)) < 0.002) {
+          out = {
+            ...out,
+            tracks: out.tracks.map((t) => ({
+              ...t,
+              items: t.items
+                .filter((i) => i.id !== after.id)
+                .map((i) => (i.id === before.id ? { ...(i as Clip), to: after.to, fadeOut: after.fadeOut } : i)),
+            })),
+          };
+        }
+        removed.push({ said, seconds: by });
+      } else if (after) {
+        const prev = words[run[0] - 1];
+        const from = prev ? quietest(prev.end, first.start, peaks[media]).t : Math.max(0, first.start - 0.2);
+        const by = round((after.from - from) / (after.speed ?? 1));
+        if (by <= 0) continue;
+        out = shiftAfter(out, after.id, after.start, by);
+        out = { ...out, tracks: out.tracks.map((t) => ({ ...t, items: t.items.map((i) => (i.id === after.id ? { ...after, from: round(from), fadeIn: undefined } : i)) })) };
+        removed.push({ said, seconds: by });
+      } else skipped.push(...run.map((i) => wordRef(media, i)));
+    }
+  }
+  return { edit: out, removed, skipped };
+}

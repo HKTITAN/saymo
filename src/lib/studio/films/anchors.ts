@@ -233,3 +233,34 @@ export function remapAnchors(edit: Edit, media: string, before: Word[], after: W
     lost,
   };
 }
+
+// ─── Retyping a caption line ─────────────────────────────────────────────────
+
+// A caption line retyped by hand, as fixes on the words it's made of, so the
+// change outlives later cuts. The new words go onto the old ones in order:
+// spare old words are left out, and spare new words join the last one.
+// Returns null when a word in the line doesn't know where it came from (an
+// edit from before words had addresses); the caller edits the copy then.
+export function fixLine(
+  lineWords: Word[],
+  text: string,
+  fixes: Record<WordRef, CaptionFix>,
+): Record<WordRef, CaptionFix> | null {
+  if (!lineWords.length || lineWords.some((w) => !w.ref)) return null;
+  const parts = text.split(/\s+/).filter(Boolean);
+  const next = { ...fixes };
+  lineWords.forEach((w, k) => {
+    const ref = w.ref as WordRef;
+    const was = next[ref] ?? {};
+    const last = k === lineWords.length - 1;
+    const said = last ? parts.slice(k).join(" ") : parts[k];
+    if (!said) {
+      next[ref] = { ...was, hidden: true };
+      return;
+    }
+    const fix: CaptionFix = { ...was, text: said };
+    delete fix.hidden;
+    next[ref] = fix;
+  });
+  return next;
+}

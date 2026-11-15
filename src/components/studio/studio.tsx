@@ -1453,6 +1453,7 @@ function FilmView({
             className="bottom-4 left-4 w-[300px]"
             pillClassName="bottom-4 left-4"
             style={{ height: binH }}
+            clock={clock}
           />
         ) : null}
         {selection ? (

@@ -328,6 +328,11 @@ export function useEdit(
     importFiles,
     refreshMedia,
     transcripts,
+    // What's said in each file, as far as it's loaded, for turning caption
+    // edits into fixes by word (anchors.ts).
+    transcriptsNow: () => said.current,
+    // Goes up as each transcript arrives, so views that read the words redraw.
+    saidVersion: saidCount,
   };
 }
 

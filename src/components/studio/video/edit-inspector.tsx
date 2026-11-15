@@ -6,6 +6,8 @@ import type { CaptionStyle, Clip, Graphic, Media } from "@/lib/studio/films/edit
 import { cn } from "@/lib/utils";
 import { StudioError } from "../api/studio";
 import { formatTime } from "../film/clock";
+import { fixLine } from "@/lib/studio/films/anchors";
+import { captionsByWord } from "@/lib/studio/films/cuts";
 import { captionLines, captionsFromClips, endOf, findItem, lengthOf, remove, retypeLine, updateItem } from "./edit-ops";
 import { Choice, ParamRow } from "../film/inspector";
 import { CAPTIONS, clipNumber, defaults } from "./multitrack";
@@ -428,7 +430,8 @@ function CaptionsPanel({ id, ed }: { id: string; ed: EditState }) {
         );
       }
       // Laid along the edit as it is now, in case it changed meanwhile.
-      ed.change((e) => ({ ...e, captions: { ...e.captions, on: true, words: captionsFromClips(e, said) } }), {
+      // Kept by word from now on (anchors.ts): fixes made later follow every cut.
+      ed.change((e) => ({ ...e, version: 2, captions: { ...e.captions, on: true, words: captionsFromClips(e, said), fixes: e.captions.fixes ?? {} } }), {
         label: "Made captions from the speech",
       });
       if (failed.length) setNote(`No words came from ${failed.join(", ")}.`);
@@ -478,10 +481,18 @@ function CaptionsPanel({ id, ed }: { id: string; ed: EditState }) {
                 time={line.start}
                 text={line.text}
                 onChange={(text) =>
-                  ed.change((e) => ({ ...e, captions: { ...e.captions, words: retypeLine(e.captions.words, line, text) } }), {
-                    label: "Changed a caption",
-                    group: `caption-${line.first}`,
-                  })
+                  ed.change(
+                    (e) => {
+                      // A fix on each word, so it stays after later cuts; a line
+                      // from an older edit, whose words don't know their source,
+                      // is edited as it is.
+                      const base = captionsByWord(e, ed.transcriptsNow());
+                      const fixes = fixLine(base.captions.words.slice(line.first, line.last + 1), text, base.captions.fixes ?? {});
+                      if (!fixes) return { ...e, captions: { ...e.captions, words: retypeLine(e.captions.words, line, text) } };
+                      return { ...base, version: 2, captions: { ...base.captions, fixes } };
+                    },
+                    { label: "Changed a caption", group: `caption-${line.first}` },
+                  )
                 }
               />
             ))}

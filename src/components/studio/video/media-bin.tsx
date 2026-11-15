@@ -13,9 +13,11 @@ import { SlideMark, useSlide } from "../ui/slide-mark";
 import type { EditState } from "./use-edit";
 import { ACCEPTS, mediaUrl, videoApi } from "../api/video";
 import { VoiceoverButton } from "./voiceover";
+import { Transcript } from "./transcript";
+import type { Clock } from "../film/clock";
 
-// The bin: the footage, photos and sound brought into this film, and the
-// studio's graphics. Drag one onto the timeline, or double-click to put it
+// The bin: the footage, photos and sound brought into this film, the
+// studio's graphics, and the edit as words (transcript.tsx). Drag one onto the timeline, or double-click to put it
 // at the playhead. Files dropped anywhere on the studio land here. On hover,
 // a bookmark saves a piece of footage to the reference library.
 
@@ -30,9 +32,11 @@ export function MediaBin({
   className,
   pillClassName,
   style,
+  clock,
 }: {
   id: string;
   ed: EditState;
+  clock: Clock;
   onAddMedia: (media: Media) => void;
   onAddGraphic: (graphic: GraphicInfo) => void;
   folded: boolean;
@@ -42,8 +46,8 @@ export function MediaBin({
   pillClassName?: string;
   style?: React.CSSProperties;
 }) {
-  const [tab, setTab] = useState<"footage" | "graphics">("footage");
-  const tabs = useSlide(tab === "footage" ? 0 : 1);
+  const [tab, setTab] = useState<"footage" | "graphics" | "words">("footage");
+  const tabs = useSlide(tab === "footage" ? 0 : tab === "graphics" ? 1 : 2);
   const [error, setError] = useState<string | null>(null);
   const picker = useRef<HTMLInputElement>(null);
   const used = new Set(ed.edit?.tracks.flatMap((t) => t.items.map((i) => (i.type === "clip" ? i.media : ""))) ?? []);
@@ -94,9 +98,9 @@ export function MediaBin({
         }}
       />
 
-      <div className="relative mx-3 mb-2 flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="tablist" aria-label="Footage or graphics">
+      <div className="relative mx-3 mb-2 flex gap-0.5 rounded-[10px] bg-white/[0.05] p-0.5" role="tablist" aria-label="Footage, graphics or words">
         <SlideMark mark={tabs.mark} className="rounded-[8px] bg-white/[0.13]" />
-        {(["footage", "graphics"] as const).map((k, i) => (
+        {(["footage", "graphics", "words"] as const).map((k, i) => (
           <button
             key={k}
             ref={tabs.ref(i)}
@@ -109,11 +113,16 @@ export function MediaBin({
               tab === k ? cn("text-white", !tabs.mark && "bg-white/[0.13]") : "text-white/50 hover:text-white/80",
             )}
           >
-            {k === "footage" ? "Footage" : "Graphics"}
+            {k === "footage" ? "Footage" : k === "graphics" ? "Graphics" : "Words"}
           </button>
         ))}
       </div>
 
+      {tab === "words" ? (
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-2">
+          <Transcript id={id} ed={ed} clock={clock} />
+        </div>
+      ) : (
       <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tab === "footage" && !ed.binLoaded ? (
           // The footage is on its way: three rows' worth of shapes.
@@ -216,6 +225,7 @@ export function MediaBin({
           </>
         )}
       </div>
+      )}
     </Panel>
   );
 }

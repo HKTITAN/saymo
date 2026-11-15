@@ -5,8 +5,8 @@
 //
 //   node scripts/studio/edit-check.mjs
 
-import { applyFixes, remapAnchors, resolveEdit, wordRef } from "../../src/lib/studio/films/anchors.ts";
-import { cutPauses, cutWords, fillers, filmEnd, quietest } from "../../src/lib/studio/films/cuts.ts";
+import { applyFixes, fixLine, remapAnchors, resolveEdit, wordRef } from "../../src/lib/studio/films/anchors.ts";
+import { cutPauses, cutWords, fillers, filmEnd, quietest, restoreWords } from "../../src/lib/studio/films/cuts.ts";
 
 let failures = 0;
 const check = (name, ok, detail = "") => {
@@ -240,6 +240,38 @@ const items = (e) => e.tracks.flatMap((t) => t.items);
   const r = resolveEdit(after, transcripts);
   const fixed = r.edit.captions.words.find((w) => w.ref === ref("machine"));
   check("captions: rebuilt after the cut with the fix kept", fixed?.text === "Machine" && near(fixed.start, 7 - 1.8), JSON.stringify(fixed));
+}
+
+// 21. Retyping a caption line becomes fixes on its words.
+{
+  const line = [ref("we"), ref("launch"), ref("the")].map((r) => ({ text: SAID[Number(r.split(":")[1])], start: 0, end: 1, ref: r }));
+  const same = fixLine(line, "We launch today", {});
+  check("retype: one new word per old word", same[ref("we")].text === "We" && same[ref("the")].text === "today", JSON.stringify(same));
+  const fewer = fixLine(line, "We launch", {});
+  check("retype: fewer words hides the spare ones", fewer[ref("the")].hidden === true && fewer[ref("launch")].text === "launch", JSON.stringify(fewer));
+  const more = fixLine(line, "We launch the new one", {});
+  check("retype: spare new words join the last one", more[ref("the")].text === "the new one", JSON.stringify(more));
+  check("retype: words without an address fall back to editing the copy", fixLine([{ text: "hi", start: 0, end: 1 }], "hello", {}) === null);
+  const back = fixLine(line, "we launch the", { [ref("the")]: { hidden: true, hit: true } });
+  check("retype: bringing a hidden word back keeps its other fixes", !back[ref("the")].hidden && back[ref("the")].hit === true, JSON.stringify(back[ref("the")]));
+}
+
+// 22. Bringing cut words back.
+{
+  const whole = edit([clip("c1", 0, 10, 0)], [graphic("late", { start: 8, duration: 1 })]);
+  const { edit: cut } = cutWords(whole, transcripts, {}, [ref("the"), ref("new")]);
+  const { edit: back, removed } = restoreWords(cut, transcripts, {}, [ref("the"), ref("new")]);
+  const c = allClips(back);
+  check("restore: the cut words come back and the two pieces become one clip", c.length === 1 && near(c[0].from, 0) && near(c[0].to, 10), JSON.stringify(c));
+  check("restore: later items move back to where they were", near(items(back).find((i) => i.id === "late").start, 8), String(items(back).find((i) => i.id === "late").start));
+  check("restore: says what came back", removed.length === 1 && removed[0].said === "the new", JSON.stringify(removed));
+  const { edit: half } = restoreWords(cut, transcripts, {}, [ref("the")]);
+  const h = allClips(half);
+  check("restore: one word back grows the first piece to the quiet after it", h.length === 2 && near(h[0].to, 5.8) && near(h[1].start, 5.8), JSON.stringify(h.map((x) => [x.start, x.from, x.to])));
+  const { edit: front } = cutWords(whole, transcripts, {}, [ref("so"), ref("um")]);
+  const { edit: frontBack } = restoreWords(front, transcripts, {}, [ref("um")]);
+  check("restore: a word cut from the start brings the clip back to the quiet before it", near(allClips(frontBack)[0].from, 0.8), JSON.stringify(allClips(frontBack)[0]));
+  check("restore: a word still in the edit is left alone", restoreWords(whole, transcripts, {}, [ref("the")]).skipped.length === 1);
 }
 
 console.log(failures ? `\n${failures} failed` : "\nall passed");

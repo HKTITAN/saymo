@@ -45,7 +45,7 @@ export default {
 ```
 
 - `at(seconds)` turns film time into audio time. Always schedule with it.
-- `marks` are film.json's moments; `params` are the film's current values (a `speed` param changes when things happen: divide times by it, as the starters do).
+- `marks` are film.json's moments, plus, in a video edit, the moments in edit.json's `marks`, which hang on spoken words and are handed over in film time after every cut. Find a hit's moment by its label (`marks.find((m) => m.label === "Reveal")`), never by a time you typed, so it stays on its word when the edit changes. `params` are the film's current values (a `speed` param changes when things happen: divide times by it, as the starters do).
 - Video films also get `graphics` (each graphic on the timeline: `graphic`, `start`, `duration`) and `speech` (spans of film time where someone talks). Other films get empty lists.
 - **Deterministic only.** No `Math.random`, `Date.now`, `performance.now` or anything clock-timed in your own code: a score must sound identical every render. The bed's noise and rooms are seeded, and so is Tone's noise.
 - `Tone.Reverb` builds its room asynchronously: make `effects` `async` and `await reverb.ready` before playing into it.
