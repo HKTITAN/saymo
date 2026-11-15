@@ -384,17 +384,6 @@ const EXTRAS = [
     note: "Shipped with its OFL.txt. Not sold on its own.",
   },
   {
-    name: "Figma UI3 kit: multiplayer cursor, name tag and cursor chat",
-    version: "",
-    kind: "artwork",
-    licence: "CC-BY-4.0",
-    copyright: [],
-    author: "Figma",
-    url: null,
-    text: "From Figma's UI3 kit on Figma Community (its Cursors page), shared under the Creative Commons Attribution 4.0 International licence: https://creativecommons.org/licenses/by/4.0/. The pointer's outline and dart are used as drawn; the name tag and chat bubble are rebuilt as code from the kit's measurements, and their colours follow each film.",
-    note: "The default pointer of the cursor part (studio/starters/html/assets/parts/cursor.js), copied into HTML films.",
-  },
-  {
     name: "PikaIcons (free icons)",
     version: "",
     kind: "icons",

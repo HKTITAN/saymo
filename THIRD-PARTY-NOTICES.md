@@ -16,7 +16,7 @@ This file is made by `npm run licences` from what's installed. Don't edit it by 
 | Remotion License | 11 |
 | MPL-2.0 | 10 |
 | Zlib | 9 |
-| CC-BY-4.0 | 3 |
+| CC-BY-4.0 | 2 |
 | MIT OR Apache-2.0 OR BSD-2-Clause | 3 |
 | MIT OR Unlicense | 3 |
 | (MIT OR Apache-2.0) AND Unicode-3.0 | 2 |
@@ -35,7 +35,7 @@ This file is made by `npm run licences` from what's installed. Don't edit it by 
 | UNLICENSED | 1 |
 | WTFPL | 1 |
 | Not checked | 134 |
-| All | 1128 |
+| All | 1127 |
 
 ## MIT
 
@@ -10273,12 +10273,6 @@ the avoidance of doubt, this paragraph does not form part of the
 public licenses.
 
 Creative Commons may be contacted at creativecommons.org.
-```
-
-- **Figma UI3 kit: multiplayer cursor, name tag and cursor chat** (artwork): By Figma. The default pointer of the cursor part (studio/starters/html/assets/parts/cursor.js), copied into HTML films.
-
-```text
-From Figma's UI3 kit on Figma Community (its Cursors page), shared under the Creative Commons Attribution 4.0 International licence: https://creativecommons.org/licenses/by/4.0/. The pointer's outline and dart are used as drawn; the name tag and chat bubble are rebuilt as code from the kit's measurements, and their colours follow each film.
 ```
 
 ## MIT OR Apache-2.0 OR BSD-2-Clause
