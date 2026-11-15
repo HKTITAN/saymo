@@ -17,6 +17,7 @@ import { once } from "node:events";
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { post } from "../src/content/post.ts";
+import { TEAM_SLUG } from "../src/content/team-slug.ts";
 import { slugify } from "../src/lib/tool/doc.ts";
 
 const PORT = 3200;
@@ -29,10 +30,14 @@ const args = process.argv.slice(2);
 const postId = args.includes("--post") ? args[args.indexOf("--post") + 1] : null;
 const doc = postId ? JSON.parse(await readFile(`posts/${postId}/post.json`, "utf8")) : null;
 const OUT = postId ? `posts/${postId}/export` : "export";
-const NAME = `aerchain-speaker-${doc ? slugify(doc.speaker.name) || "speaker" : post.slug}`;
+// `npm run export -- team` makes the team post instead of the speaker post.
+const isTeam = !postId && args.includes("team");
+const NAME = isTeam
+  ? `aerchain-team-${TEAM_SLUG}`
+  : `aerchain-speaker-${doc ? slugify(doc.speaker.name) || "speaker" : post.slug}`;
 // The tool's posts render on their own page.
 const PAGE = postId ? `${BASE}/tool/render` : `${BASE}/`;
-const QUERY = postId ? { id: postId } : { export: "1" };
+const QUERY = postId ? { id: postId } : isTeam ? { export: "1", post: "team" } : { export: "1" };
 
 // Exactly half size: each 2 x 2 block of the 4K frame becomes one pixel.
 const HALF = "scale=1920:1080:flags=area";
@@ -111,6 +116,9 @@ await page.screenshot({ path: `${OUT}/${NAME}-4k.png`, clip: CLIP });
 await finished(ffmpeg(["-i", `${OUT}/${NAME}-4k.png`, "-vf", HALF, `${OUT}/${NAME}.png`]), "the still");
 console.log(`${OUT}/${NAME}-4k.png\n${OUT}/${NAME}.png`);
 
+// A post can start its video elsewhere than on the still (on black, say).
+const start = await page.evaluate(() => window.__post.start);
+
 for (const { id: motion, duration, still } of asked) {
   await open({ motion });
   const frames = Math.round(duration * FPS) * LOOPS;
@@ -130,8 +138,9 @@ for (const { id: motion, duration, still } of asked) {
   );
 
   for (let i = 0; i < frames; i++) {
-    // Videos open on the still frame, so the post's thumbnail is the design.
-    await page.evaluate((s) => window.__post.renderAt(s), still + i / FPS);
+    // Videos open on the still frame, so the post's thumbnail is the design,
+    // unless the post asks to start elsewhere.
+    await page.evaluate((s) => window.__post.renderAt(s), (start ?? still) + i / FPS);
     const png = await page.screenshot({ clip: CLIP, type: "png" });
     if (!encoder.stdin.write(png)) await once(encoder.stdin, "drain");
     if (postId && i % 6 === 0) {
