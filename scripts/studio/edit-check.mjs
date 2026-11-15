@@ -1,11 +1,12 @@
-// Checks words as the timeline (src/lib/studio/films/anchors.ts) without a
-// browser: graphics, caption fixes and sound marks that hang on words land
+// Checks words as the timeline (src/lib/studio/films/anchors.ts) and word
+// cuts (cuts.ts) without a browser: graphics, caption fixes and sound marks that hang on words land
 // where those words play, after cuts, splits, speed changes and a file
 // transcribed again, and an edit without anchors comes back unchanged.
 //
 //   node scripts/studio/edit-check.mjs
 
 import { applyFixes, remapAnchors, resolveEdit, wordRef } from "../../src/lib/studio/films/anchors.ts";
+import { cutPauses, cutWords, fillers, filmEnd, quietest } from "../../src/lib/studio/films/cuts.ts";
 
 let failures = 0;
 const check = (name, ok, detail = "") => {
@@ -159,6 +160,86 @@ const g1 = (r) => r.edit.tracks[1].items[0];
   const r = resolveEdit(edit([clip("c1", 0, 10, 0)], [graphic("t", { start: 3, at: { word: "other:2" } })]), transcripts);
   check("missing file: keeps its seconds", g1(r).start === 3);
   check("missing file: says so", r.notes.length === 1, r.notes.join(" | "));
+}
+
+// ─── Word cuts (cuts.ts) ─────────────────────────────────────────────────────
+
+const allClips = (e) => e.tracks.flatMap((t) => t.items).filter((i) => i.type === "clip");
+const items = (e) => e.tracks.flatMap((t) => t.items);
+
+// 14. Cutting "so um" from the front: the cut runs from the clip's start to the quiet before "today".
+{
+  const before = edit([clip("c1", 0, 10, 0)], [graphic("t", { at: { word: ref("launch") } })]);
+  const { edit: after, removed } = cutWords(before, transcripts, {}, [ref("so"), ref("um")]);
+  const c = allClips(after);
+  check("cut: words at the front go, the clip starts in the quiet before the next", c.length === 1 && near(c[0].from, 1.8) && c[0].start === 0, JSON.stringify(c));
+  check("cut: names what it took out", removed.length === 1 && removed[0].said === "so um" && near(removed[0].seconds, 1.8), JSON.stringify(removed));
+  const r = resolveEdit(after, transcripts);
+  check("cut: a graphic on a later word follows it", near(r.edit.tracks[1].items[0].start, 4 - 1.8), `start ${r.edit.tracks[1].items[0].start}`);
+}
+
+// 15. Cutting from the middle splits the clip and closes the gap on every track.
+{
+  const before = edit([clip("c1", 0, 10, 0)], [graphic("late", { start: 8, duration: 1 })]);
+  const { edit: after } = cutWords(before, transcripts, {}, [ref("the"), ref("new")]);
+  const c = allClips(after);
+  // "the" 5-5.6, "new" 6-6.6: the cut runs from the quiet after "launch" (4.8) to the quiet before "machine" (6.8).
+  check("cut: the middle splits the clip in two", c.length === 2 && near(c[0].to, 4.8) && near(c[1].from, 6.8) && near(c[1].start, 4.8), JSON.stringify(c.map((x) => [x.start, x.from, x.to])));
+  check("cut: the right piece gets its own id", c[0].id !== c[1].id);
+  check("cut: later items on other tracks move up", near(items(after).find((i) => i.id === "late").start, 8 - 2), String(items(after).find((i) => i.id === "late").start));
+  check("cut: the film is shorter by the cut", near(filmEnd(after), 10 - 2), String(filmEnd(after)));
+}
+
+// 16. The cut lands in the real quiet, read from the loudness.
+{
+  // Loud everywhere except a dip at 4.70 s, between "launch" (ends 4.6) and "the" (starts 5).
+  const loud = Array.from({ length: 1000 }, (_, i) => (i === 470 ? 0.01 : 0.5));
+  const q = quietest(4.6, 5, loud);
+  check("quiet: finds the dip between two words", near(q.t, 4.705) && !q.hard, JSON.stringify(q));
+  const touching = quietest(1, 1.03, loud);
+  check("quiet: words that touch leave no silence, so the cut gets a short fade", touching.hard, JSON.stringify(touching));
+}
+
+// 17. Words that run together get a short fade so the cut doesn't click.
+{
+  const tight = [{ text: "one", start: 0, end: 1 }, { text: "two", start: 1.02, end: 2 }, { text: "three", start: 2.01, end: 3 }];
+  const { edit: after } = cutWords(edit([{ ...clip("c1", 0, 3, 0), media: "tight" }]), { tight }, {}, ["tight:1"]);
+  const c = allClips(after);
+  check("hard cut: both sides fade for a hundredth of a second", c.length === 2 && c[0].fadeOut === 0.01 && c[1].fadeIn === 0.01, JSON.stringify(c));
+}
+
+// 18. Keeping the pause before the cut words.
+{
+  const { edit: after } = cutWords(edit([clip("c1", 0, 10, 0)]), transcripts, {}, [ref("the")], { keepPause: true });
+  check("keep the pause: the cut starts just before the cut word", near(allClips(after)[0].to, 5 - 0.04), JSON.stringify(allClips(after)[0]));
+}
+
+// 19. Fillers and long pauses.
+{
+  const said = [
+    { text: "So,", start: 0, end: 0.4 }, { text: "um,", start: 0.5, end: 0.8 }, { text: "this", start: 0.9, end: 1.1 },
+    { text: "is,", start: 1.2, end: 1.4 }, { text: "like,", start: 1.5, end: 1.8 }, { text: "you", start: 1.9, end: 2 },
+    { text: "know,", start: 2.05, end: 2.3 }, { text: "great", start: 4.5, end: 5 }, { text: "Uhh", start: 5.2, end: 5.5 },
+  ];
+  const e = edit([{ ...clip("c1", 0, 6, 0), media: "talk" }]);
+  const found = fillers(e, { talk: said }).sort();
+  check("fillers: um, uhh, a set-off like and you know", JSON.stringify(found) === JSON.stringify(["talk:1", "talk:4", "talk:5", "talk:6", "talk:8"]), found.join(" "));
+  const { edit: after, removed } = cutPauses(e, { talk: said }, {}, { longer: 0.8, keep: 0.3 });
+  check("pauses: a 2.2 s pause becomes 0.3 s", removed.length === 1 && near(removed[0].seconds, 2.2 - 0.3) && near(filmEnd(after), 6 - 1.9), JSON.stringify(removed));
+}
+
+// 20. Captions kept as timed words become fixes by word before a cut, so they follow it.
+{
+  const words = [
+    { text: "today", start: 2, end: 2.6, ref: ref("today") },
+    { text: "Machine", start: 7, end: 7.6, ref: ref("machine"), hit: true },
+  ];
+  const before = edit([clip("c1", 0, 10, 0)], [], { version: 1, captions: { on: true, style: "lines", words, position: "bottom" } });
+  const { edit: after } = cutWords(before, transcripts, {}, [ref("so"), ref("um")]);
+  check("captions: a retyped word becomes a fix", after.captions.fixes?.[ref("machine")]?.text === "Machine" && after.captions.fixes[ref("machine")].hit === true, JSON.stringify(after.captions.fixes));
+  const r = resolveEdit(after, transcripts);
+  const fixed = r.edit.captions.words.find((w) => w.ref === ref("machine"));
+  check("captions: rebuilt after the cut with the fix kept", fixed?.text === "Machine" && near(fixed.start, 7 - 1.8), JSON.stringify(fixed));
 }
 
 console.log(failures ? `\n${failures} failed` : "\nall passed");

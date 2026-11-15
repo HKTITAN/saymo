@@ -616,7 +616,10 @@ This film is a VIDEO EDIT of footage the person brought in. Load the saymo-video
 
 You can't open the footage files. To hear, see and measure them, run one of these per call, nothing chained:
   ${tool} list
-  ${tool} words <media> [from] [to]
+  ${tool} words <media> [from] [to]   (each word numbered)
+  ${tool} cut <media> <word numbers, like 12-18 22> [--keep-pause]   (cuts in the quiet, closes the gap)
+  ${tool} fillers [--cut]
+  ${tool} pauses [seconds] [--cut]
   ${tool} silences <media> [min-seconds] [threshold-dB]
   ${tool} scenes <media> [sensitivity]
   ${tool} frames <media> <t> [t ...]   (then Read the stills it names)

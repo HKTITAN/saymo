@@ -154,6 +154,8 @@ export async function checkEdit(id: string, body: unknown): Promise<Edit | strin
         end: w.end as number,
         ...(num(w.confidence, 0, 1) ? { confidence: w.confidence as number } : {}),
         ...(w.hit === true ? { hit: true } : {}),
+        // The transcript word it came from, so a fix can follow a cut.
+        ...(typeof w.ref === "string" && WORD_REF.test(w.ref) ? { ref: w.ref } : {}),
       });
     }
   }

@@ -4,7 +4,13 @@
 //
 // usage (from films/<id>/):
 //   node <project>/scripts/studio/media-tool.mjs <id> list
-//   node … <id> words <media> [from] [to]   what's said, as timed lines (source seconds)
+//   node … <id> words <media> [from] [to]   what's said, as timed lines (source seconds),
+//                                          each word with its number
+//   node … <id> cut <media> <numbers…> [--keep-pause]
+//                                          cuts those words from the edit, in the quiet
+//                                          around them, and closes the gap
+//   node … <id> fillers [--cut]            um, uh and the like in the edit (and cuts them)
+//   node … <id> pauses [seconds] [--cut]   pauses longer than that (0.8) (and shortens them)
 //   node … <id> silences <media> [min-seconds] [threshold-dB]
 //   node … <id> scenes <media> [sensitivity 0..1]
 //   node … <id> frames <media> <t> [t …]    small JPEGs to Read, in films/.work/<id>/frames/
@@ -18,12 +24,15 @@
 // shell, so a command can't be bent into doing something else.
 
 import { execFile, spawn } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { readToken, STUDIO_URL } from "./client.mjs";
+import { resolveEdit } from "../../src/lib/studio/films/anchors.ts";
+import { cutPauses, cutWords, fillers, filmEnd } from "../../src/lib/studio/films/cuts.ts";
+import { readTranscriptsSync } from "../../src/lib/studio/films/edit-file.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const exec = promisify(execFile);
@@ -134,13 +143,13 @@ function said(mid, fromRaw, toRaw) {
   if (!all) fail(`"${m.meta.name ?? mid}" has no transcript yet. It can be made from the studio (Transcribe), or use \`silences\` to find where speech is.`);
   const from = fromRaw === undefined ? 0 : number(fromRaw, "from", { min: 0 });
   const to = toRaw === undefined ? Infinity : number(toRaw, "to", { min: from });
-  const picked = all.filter((w) => w.end > from && w.start < to);
+  const picked = all.map((w, n) => ({ ...w, n })).filter((w) => w.end > from && w.start < to);
   if (!picked.length) return console.log(`Nothing is said between ${secs(from)} and ${toRaw === undefined ? "the end" : secs(to)} s.`);
-  console.log(`Times are seconds in the source. A word marked (?) was heard with low confidence.`);
+  console.log(`Times are seconds in the source. Each word has its number (12:machine): cut words by number with \`cut ${mid} 12-14\`, and fix things to a word with "${mid}:12". A word marked (?) was heard with low confidence.`);
   let line = [];
   const flush = () => {
     if (!line.length) return;
-    const text = line.map((w) => `${w.text}${w.confidence != null && w.confidence < 0.6 ? "(?)" : ""}`).join(" ");
+    const text = line.map((w) => `${w.n}:${w.text}${w.confidence != null && w.confidence < 0.6 ? "(?)" : ""}`).join(" ");
     console.log(`${secs(line[0].start)}-${secs(line.at(-1).end)}  ${text}`);
     line = [];
   };
@@ -314,6 +323,101 @@ async function cutout(mid) {
   fail("The cutout is taking a long time. It carries on in the studio; run this again later to see if it's done.");
 }
 
+// ─── Cutting by words ───────────────────────────────────────────────────────
+
+const editPath = path.join(dir, "edit.json");
+function readEditFile() {
+  const edit = readJson(editPath);
+  if (!edit?.tracks) fail("This film has no edit yet (edit.json), so there's nothing to cut.");
+  return edit;
+}
+const peaksFor = (edit) => {
+  const out = {};
+  for (const mid of new Set(edit.tracks.flatMap((t) => t.items.filter((i) => i.type === "clip").map((i) => i.media)))) {
+    if (/^[a-z0-9]{8}$/.test(mid)) out[mid] = readJson(path.join(mediaDir, mid, "peaks.json")) ?? undefined;
+  }
+  return out;
+};
+// Writes the cut edit and the film's new length, each whole (a temp file,
+// then renamed in), then says what changed in words.
+function saveCut(edit, result) {
+  if (!result.removed.length) {
+    console.log("Nothing to cut: none of those words play in the edit.");
+    if (result.skipped.length) console.log(`Not in the edit: ${result.skipped.join(", ")}.`);
+    return;
+  }
+  const transcripts = readTranscriptsSync(dir, result.edit);
+  const { notes } = resolveEdit(result.edit, transcripts);
+  writeFileSync(`${editPath}.tmp`, `${JSON.stringify(result.edit, null, 2)}\n`);
+  renameSync(`${editPath}.tmp`, editPath);
+  const filmPath = path.join(dir, "film.json");
+  const film = readJson(filmPath);
+  if (film) {
+    film.duration = Math.max(1, Math.round(filmEnd(result.edit) * 1000) / 1000);
+    writeFileSync(`${filmPath}.tmp`, `${JSON.stringify(film, null, 2)}\n`);
+    renameSync(`${filmPath}.tmp`, filmPath);
+  }
+  const total = result.removed.reduce((n, r) => n + r.seconds, 0);
+  for (const r of result.removed) console.log(`Cut "${r.said}" (${r.seconds.toFixed(2)} s)`);
+  console.log(`The film is ${total.toFixed(2)} s shorter: ${film ? `${film.duration.toFixed(2)} s now` : "edit.json saved"}.`);
+  if (result.skipped.length) console.log(`Not in the edit, so not cut: ${result.skipped.join(", ")}.`);
+  for (const note of notes) console.log(`Moved: ${note}`);
+}
+
+// "12-18 22 25" as word numbers.
+function wordNumbers(raw) {
+  const out = [];
+  for (const part of raw) {
+    const m = /^(\d+)(?:-(\d+))?$/.exec(part);
+    if (!m) fail(`"${part}" isn't a word number or a range like 12-18.`);
+    const a = Number(m[1]);
+    const b = m[2] === undefined ? a : Number(m[2]);
+    if (b < a || b - a > 2000) fail(`"${part}" isn't a range from a lower number to a higher one.`);
+    for (let n = a; n <= b; n++) out.push(n);
+  }
+  if (!out.length) fail("Name the words to cut by number, like: cut <media> 12-18 22. `words <media>` shows the numbers.");
+  return out;
+}
+
+function cut(mid, args) {
+  const m = media(mid);
+  if (!words(m)) fail(`"${m.meta.name ?? mid}" has no transcript yet, so its words can't be cut. Transcribe it in the studio first.`);
+  const keepPause = args.includes("--keep-pause");
+  const refs = wordNumbers(args.filter((a) => a !== "--keep-pause")).map((n) => `${mid}:${n}`);
+  const edit = readEditFile();
+  saveCut(edit, cutWords(edit, readTranscriptsSync(dir, edit), peaksFor(edit), refs, { keepPause }));
+}
+
+function fillerWords(args) {
+  const edit = readEditFile();
+  const transcripts = readTranscriptsSync(dir, edit);
+  const found = fillers(edit, transcripts);
+  if (!found.length) return console.log("No fillers (um, uh, erm, a set-off \"like\" or \"you know\") in the edit.");
+  if (!args.includes("--cut")) {
+    const list = found.map((ref) => {
+      const [mid, n] = ref.split(":");
+      return `${ref} "${transcripts[mid]?.[Number(n)]?.text ?? "?"}"`;
+    });
+    console.log(`${found.length} filler${found.length > 1 ? "s" : ""}: ${list.join(", ")}. Cut them all with \`fillers --cut\`, or some with \`cut\`.`);
+    return;
+  }
+  saveCut(edit, cutWords(edit, transcripts, peaksFor(edit), found));
+}
+
+function pauses(args) {
+  const longerRaw = args.find((a) => !a.startsWith("--"));
+  const longer = longerRaw === undefined ? 0.8 : number(longerRaw, "seconds", { min: 0.3, max: 10 });
+  const edit = readEditFile();
+  const result = cutPauses(edit, readTranscriptsSync(dir, edit), peaksFor(edit), { longer, keep: 0.3 });
+  if (!result.removed.length) return console.log(`No pauses longer than ${longer} s in the edit.`);
+  if (!args.includes("--cut")) {
+    for (const r of result.removed) console.log(`${r.said}: ${(r.seconds + 0.3).toFixed(2)} s`);
+    console.log(`Shorten them all to 0.3 s with \`pauses ${longerRaw ?? ""}${longerRaw ? " " : ""}--cut\`.`);
+    return;
+  }
+  saveCut(edit, result);
+}
+
 // ─── Run ────────────────────────────────────────────────────────────────────
 
 const commands = {
@@ -324,6 +428,9 @@ const commands = {
   frames: () => frames(rest[0], rest.slice(1)),
   faces: () => faces(rest[0], rest[1]),
   cutout: () => cutout(rest[0]),
+  cut: () => cut(rest[0], rest.slice(1)),
+  fillers: () => fillerWords(rest),
+  pauses: () => pauses(rest),
 };
 if (!commands[command]) fail(`Commands: ${Object.keys(commands).join(", ")}.`);
 await commands[command]();

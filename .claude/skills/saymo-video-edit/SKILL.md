@@ -27,7 +27,9 @@ Read `src/lib/studio/films/edit.ts` once: it is the exact shape of edit.json. Al
 - `captions.words` are on the FILM's timeline, not the source's.
 - `film.json` `duration` must equal where the edit ends. Update `marks` to the real beats ("Intro", "First answer", "End card"); one named exactly "Cover" is the poster frame, so put it on a strong shot.
 
-Make cuts by rewriting the clip list: split a source into several clips that play back to back (each next `start` = previous `start` + previous length). Don't leave gaps on the main video track unless a gap is wanted (it shows `background`).
+**Cut speech by its words, never by typing seconds.** The media tool's `cut` takes word numbers, places each cut in the real quiet between words (read from the footage's loudness), splits the clip and closes the gap on every track, then updates film.json's length. `fillers --cut` and `pauses --cut` do the same for ums and long pauses. Rewrite the clip list by hand only for things that aren't speech: reordering, B-roll, photos, music. When you do, clips play back to back (each next `start` = previous `start` + previous length), and don't leave gaps on the main video track unless a gap is wanted (it shows `background`).
+
+**Fix things to words.** Words have addresses, `"<media id>:<word number>"`, from `words`. Instead of a `start` in seconds, give a graphic `"at": { "word": "f0f2tq93:12" }` (add `"edge": "end"` or an `"offset"` in seconds if needed) and, for its end, `"until": { "word": … }`. Still write a rough `start` and `duration`; the studio fills in the exact seconds and keeps them right after every cut. Put the moments the sound should hit in `"marks": [{ "label": "Reveal", "at": { "word": "…" } }]` at the top of edit.json. Fix a misheard caption word with `captions.fixes`, `{ "f0f2tq93:12": { "text": "SpendOS" } }` (or `"hit": true`, or `"hidden": true`), rather than editing `captions.words`, so the fix survives later cuts. Use `"version": 2` once anything is fixed to a word.
 
 ## Hearing and seeing the footage: the media tool
 
@@ -36,7 +38,10 @@ Your system prompt gives the exact command (`node …/media-tool.mjs <film-id> �
 | Command | What it gives |
 | --- | --- |
 | `list` | every media item: id, length, size, sound, transcript yes/no |
-| `words <media> [from] [to]` | what's said, as timed lines, with pauses marked; low-confidence words get a `?` |
+| `words <media> [from] [to]` | what's said, as timed lines, with pauses marked and each word numbered (`12:machine`); low-confidence words get a `?` |
+| `cut <media> <numbers…> [--keep-pause]` | cuts those words (`12-18 22`) in the quiet around them and closes the gap; `--keep-pause` keeps the silence before them |
+| `fillers [--cut]` | the ums, uhs and set-off "like" or "you know" in the edit, numbered; `--cut` cuts them all |
+| `pauses [seconds] [--cut]` | pauses longer than that (default 0.8 s); `--cut` shortens each to 0.3 s |
 | `silences <media> [min-s] [dB]` | quiet stretches (default 0.4 s, -32 dB) |
 | `scenes <media> [0..1]` | camera cuts or big changes in the footage |
 | `frames <media> <t> …` | up to 12 small stills; **Read** the files it names to see them |
@@ -51,16 +56,16 @@ If there's no transcript, say so. The person can press Transcribe in the studio.
 
 - **Cut on whole sentences.** Start a clip just before the first word of a thought (about 0.1 s of lead-in), and end just after its last word (0.15 to 0.25 s of tail). Never clip a word.
 - **Remove:**
-  - ums, uhs, false starts ("we, we built");
-  - repeated phrases;
-  - long pauses, which `silences` finds: anything over about 0.7 s inside an answer.
+  - ums and uhs (`fillers`, then `fillers --cut` or `cut` the ones that should go);
+  - false starts ("we, we built") and repeated phrases, with `cut` by number;
+  - long pauses, which `pauses` finds: anything over about 0.7 s inside an answer.
 - **Keep:** natural breaths and short pauses, so it doesn't sound machine-gunned. Don't cut every gap under 0.3 s.
 - **Jump cuts:** on a locked-off camera, cutting the same shot can jump. Hide the jump in one of three ways:
   - punch in on alternate clips (`zoom` 1.15 to 1.25, `x`/`y` on the face);
   - cover it with a graphic or B-roll;
   - accept it for social pace.
 - **J and L cuts:** to let a speaker's voice run under other pictures, put the footage on an `audio` track for the voice, and the other picture on the video track with `volume: 0`.
-- After cutting, check the seams. Read the transcript again over the new timings with `words`, and look at frames either side of a cut.
+- After cutting, check the seams. `cut` tells you what it took out and anything fixed to a word that moved. Look at frames either side of a cut for jump cuts, and say what you cut in words, not seconds: "Cut 'so, um, basically' and the long pause before the answer."
 
 ## Pacing by platform
 

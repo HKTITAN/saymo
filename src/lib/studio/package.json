@@ -1,0 +1,4 @@
+{
+  "//": "Lets Node scripts import these TypeScript files as ES modules without a warning; Next ignores it.",
+  "type": "module"
+}
