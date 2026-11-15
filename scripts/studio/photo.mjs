@@ -63,7 +63,7 @@ async function sharp() {
 
 // ─── use: an attached picture, as it is ────────────────────────────────────
 
-async function use(ref, name) {
+async function adopt(ref, name) {
   if (!/^refs\/[A-Za-z0-9._-]{1,160}$/.test(ref ?? "")) fail("Name an attached file as refs/<file>, as listed in the message.");
   const from = path.join(dir, ref);
   if (!existsSync(from)) fail(`There's no ${ref} in this film.`);
@@ -234,7 +234,7 @@ async function get(nArg, name) {
   );
 }
 
-if (command === "use") await use(rest[0], rest[1]);
+if (command === "use") await adopt(rest[0], rest[1]);
 else if (command === "search") await search(rest[0], rest.slice(1));
 else if (command === "get") await get(rest[0], rest[1]);
 else fail('Commands: use refs/<file> [name], search "<words>" [--wide | --tall], get <n> [name].');
