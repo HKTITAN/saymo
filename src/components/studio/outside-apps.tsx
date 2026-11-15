@@ -102,7 +102,7 @@ export function OutsideAppsSection() {
 
       {failed ? (
         <>
-          <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">
+          <p className="rounded-[10px] bg-danger/10 px-3 py-2 text-[11.5px] text-danger leading-relaxed">
             Unable to load the set-up. Check that the studio is running.
           </p>
           <DialButton onClick={() => void load("GET")}>Try again</DialButton>
@@ -177,7 +177,7 @@ export function OutsideAppsSection() {
                 <DialButton onClick={() => setAsking(false)}>Cancel</DialButton>
                 <DialButton
                   loading={busy}
-                  className="bg-[#ff9592]/12 text-[#ff9592] hover:bg-[#ff9592]/20"
+                  className="bg-danger/12 text-danger hover:bg-danger/20"
                   onClick={async () => {
                     setBusy(true);
                     const ok = await load("POST").finally(() => setBusy(false));

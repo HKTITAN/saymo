@@ -39,7 +39,7 @@ function EffectTile({ effect, onUse }: { effect: Effect; onUse: () => void }) {
   const say = (preview: "play" | "stop") => frame.current?.contentWindow?.postMessage({ preview }, "*");
   return (
     <div className="group/effect relative flex flex-col gap-2 rounded-[14px] p-1.5 transition-[background-color] duration-200 ease-out has-[button:hover]:bg-white/[0.04]">
-      <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+      <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-well shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)]">
         <iframe
           ref={frame}
           title={`${effect.name}, a preview`}

@@ -236,7 +236,7 @@ export function SlidesFlow({
         // biome-ignore lint/a11y/noAutofocus: the one choice that needs a decision
         autoFocus
         onClick={onClose}
-        className={cn(PILL_BUTTON, "h-7 bg-[#ff9592]/15 text-[#ffb3b0] hover:bg-[#ff9592]/25")}
+        className={cn(PILL_BUTTON, "h-7 bg-danger/15 text-danger hover:bg-danger/25")}
       >
         Close
       </button>
@@ -251,7 +251,7 @@ export function SlidesFlow({
           <h1 className="font-medium text-[15px] text-white/95">Making your video</h1>
           {making.problem ? (
             <>
-              <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{making.problem}</p>
+              <p className="text-[12.5px] text-danger leading-relaxed">{making.problem}</p>
               <div className="flex gap-2">
                 <button type="button" className={PRIMARY} onClick={() => void make()}>
                   Try again
@@ -318,7 +318,7 @@ export function SlidesFlow({
               </>
             )}
           </div>
-          {notice ? <p className="text-[12px] text-[#ff9592] leading-relaxed">{notice}</p> : null}
+          {notice ? <p className="text-[12px] text-danger leading-relaxed">{notice}</p> : null}
           {confirmBar}
         </section>
       </div>
@@ -387,7 +387,7 @@ export function SlidesFlow({
               ) : null}
             </div>
             {[notice, ...imp.notes].filter(Boolean).map((n) => (
-              <p key={n} className="text-pretty text-[12px] text-[#ffcf99] leading-relaxed">
+              <p key={n} className="text-pretty text-[12px] text-warn leading-relaxed">
                 {n}
               </p>
             ))}
@@ -491,7 +491,7 @@ function Preview({ importId, slide, n }: { importId: string; slide: Slide | null
   if (!slide) return null;
   return (
     <div className="flex flex-col gap-2.5">
-      <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-[12px] bg-[#0e0e0e] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+      <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-[12px] bg-panel shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)]">
         {slide.image ? (
           // eslint-disable-next-line @next/next/no-img-element -- a local slide picture, shown as it is
           <img key={slide.key} src={slideImage(importId, slide.image)} alt={`Slide ${n}: ${slide.title}`} className="size-full object-contain animate-in fade-in duration-200" />
@@ -608,8 +608,8 @@ function Strip({
               }
             }}
             className={cn(
-              "relative block h-[72px] w-[128px] cursor-grab overflow-hidden rounded-[8px] bg-[#0e0e0e] outline-none transition-[box-shadow,opacity,scale] duration-150 active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-ring",
-              selected === s.key ? "shadow-[0_0_0_2px_rgba(255,255,255,0.85)]" : "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)]",
+              "relative block h-[72px] w-[128px] cursor-grab overflow-hidden rounded-[8px] bg-panel outline-none transition-[box-shadow,opacity,scale] duration-150 active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-ring",
+              selected === s.key ? "shadow-[0_0_0_2px_rgb(var(--hi)_/_0.85)]" : "shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.08)] hover:shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.25)]",
               dragging === i && "opacity-40",
               over === i && dragging !== null && dragging !== i && "scale-[0.96]",
             )}

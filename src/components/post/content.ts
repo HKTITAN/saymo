@@ -1,3 +1,5 @@
+import type { PartnerId } from "./partner-paths";
+
 // What a speaker post shows. The original post's words live in
 // src/content/post.ts; each post made in the tool lives in posts/<id>/.
 export type PostContent = {
@@ -35,6 +37,48 @@ export type PostContent = {
     // it from its foot.
     place: { x: number; y: number; scale: number };
   } | null;
+  // Partner logos in a row to the right of the Aerchain wordmark, left to
+  // right; the whole row ends at the right margin. Left out, the wordmark stands alone.
+  partners?: readonly PartnerId[];
+  // Centres the headline, the when and where, and the speaker as one block
+  // across the stone side, instead of setting them at the left margin.
+  centred?: boolean;
+  // Moves the centred block sideways, as a share of the stone side's width:
+  // -0.05 is 5% to the left.
+  shift?: number;
+  // The orange "ai" in the wordmark turns over when the colour behind it
+  // changes. False keeps it still; it only changes colour.
+  logoFlip?: boolean;
+  // "no-black" moves the panel between orange and stone only (stone comes in
+  // wherever black would); "no-orange" between black and stone only;
+  // "orange-low" keeps the top half stone and lets orange into the lower
+  // half only.
+  // "orange-once" (Scenes only): orange rise, black sweep, stone burst,
+  // black back, so orange comes in once a loop.
+  panelColors?: "all" | "no-black" | "no-orange" | "orange-low" | "orange-once";
+  // Where the viewer and the exported video start, in seconds into the loop.
+  // Left out, they start on the motion's still frame.
+  videoStart?: number;
+  // Draws the logo row smaller (0.9 is 90%), still ending at the right margin.
+  logoScale?: number;
+  // Post pixels the line panel gives up on its left, to widen the words'
+  // side.
+  panelCut?: number;
+  // Set, the left side shows a team instead of the speaker: a
+  // heading, two columns of people (square photo, name, role) and the
+  // details along the foot, one under each column.
+  team?: {
+    heading: string;
+    members: readonly {
+      name: string;
+      role: string;
+      photo: { x1: string; x2: string } | null;
+    }[];
+    details: readonly string[];
+  };
+  // How Scenes moves: "refined" (the default, softer landings) or
+  // "reference" (as measured from the reference video).
+  look?: "reference" | "refined";
   // Used for the exported file names.
   slug: string;
 };

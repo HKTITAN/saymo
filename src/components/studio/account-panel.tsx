@@ -91,7 +91,7 @@ export function AccountRow({ on = false, onSettings }: { on?: boolean; onSetting
         {/* The AI in use, and whether it's ready. */}
         <span aria-hidden="true" className="relative flex size-6 shrink-0 items-center justify-center text-white/45">
           <AiMark id={choice.provider} className="size-3.5" />
-          <span className={cn("absolute right-0 bottom-0.5 size-[7px] rounded-full ring-2 ring-[#080808]", dotFor(current))} />
+          <span className={cn("absolute right-0 bottom-0.5 size-[7px] rounded-full ring-2 ring-app", dotFor(current))} />
         </span>
       </Popover.Trigger>
       <Popover.Portal>
@@ -142,7 +142,7 @@ function AiInUse({ id, status, model, onOpen }: { id: ProviderId; status: Provid
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[12.5px] text-white/90">{PROVIDERS[id].name}</span>
-        <span className={cn("flex min-w-0 items-center gap-1.5 text-[11px]", status && !ready ? "text-[#febc2e]/85" : "text-white/40")}>
+        <span className={cn("flex min-w-0 items-center gap-1.5 text-[11px]", status && !ready ? "text-warn/85" : "text-white/40")}>
           <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", dotFor(status))} />
           <span className="truncate">{line}</span>
         </span>

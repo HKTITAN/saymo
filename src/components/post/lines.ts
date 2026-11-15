@@ -6,6 +6,7 @@
 
 import { PALETTE } from "./palette";
 import { WORDMARK } from "./wordmark-paths";
+import { ET_RED, PARTNERS, type PartnerId } from "./partner-paths";
 
 export const PANEL_W = 920;
 export const PANEL_H = 1080;
@@ -368,15 +369,15 @@ const colorAt = (s: LineState, x: number) =>
 
 // Moments in the loop when the colour behind the "ai" changes.
 const flipTimes = new Map<string, number[]>();
-function flipsFor(m: Motion, look: Look) {
-  const key = `${m.id}:${look}`;
+function flipsFor(m: Motion, look: Look, markX: number) {
+  const key = `${m.id}:${look}:${markX}`;
   let times = flipTimes.get(key);
   if (!times) {
     times = [];
     const step = 1 / 600;
-    let prev = colorAt(m.line(MARK_LINE, 0, look), MARK_X);
+    let prev = colorAt(m.line(MARK_LINE, 0, look), markX);
     for (let t = step; t <= m.duration; t += step) {
-      const now = colorAt(m.line(MARK_LINE, t, look), MARK_X);
+      const now = colorAt(m.line(MARK_LINE, t, look), markX);
       if (now !== prev) times.push(t - step / 2);
       prev = now;
     }
@@ -396,12 +397,17 @@ function drawLogo(
   lines: LineState[],
   snap: Snap,
   look: Look,
+  logoX: number,
+  flip: boolean,
+  zoom: number,
 ) {
   const { letters, mark } = getPaths();
+  const markX = MARK_X - LOGO_X + logoX;
   const base = ctx.getTransform();
   const place = () => {
     ctx.setTransform(base);
-    ctx.translate(LOGO_X, LOGO_Y);
+    zoomRow(ctx, zoom);
+    ctx.translate(logoX, LOGO_Y);
     ctx.scale(LOGO_SCALE, LOGO_SCALE);
   };
 
@@ -413,7 +419,7 @@ function drawLogo(
     const top = snap(r * PITCH);
     const bottom = snap((r + 1) * PITCH);
     for (const [a, b, color] of runs(lines[r])) {
-      if (b <= LOGO_X || a >= LOGO_X + LOGO_W) continue;
+      if (b <= logoX || a >= logoX + LOGO_W) continue;
       ctx.save();
       ctx.beginPath();
       ctx.rect(snap(a), top, snap(b) - snap(a), bottom - top);
@@ -427,21 +433,205 @@ function drawLogo(
 
   // The "ai": flat, or mid-flip around a change of colour behind it.
   let turn = 1;
-  for (const at of flipsFor(m, look)) {
+  for (const at of flip ? flipsFor(m, look, markX) : []) {
     const d = wrap(t - at + m.duration / 2, m.duration) - m.duration / 2;
     if (Math.abs(d) < FLIP / 2) turn = Math.abs(Math.cos(Math.PI * easeInOut(d / FLIP + 0.5)));
   }
   ctx.save();
   ctx.setTransform(base);
-  ctx.translate(MARK_X, MARK_Y);
+  zoomRow(ctx, zoom);
+  ctx.translate(markX, MARK_Y);
   ctx.scale(Math.max(turn, 0.02), 1);
-  ctx.translate(-MARK_X, -MARK_Y);
-  ctx.translate(LOGO_X, LOGO_Y);
+  ctx.translate(-markX, -MARK_Y);
+  ctx.translate(logoX, LOGO_Y);
   ctx.scale(LOGO_SCALE, LOGO_SCALE);
-  ctx.fillStyle = logoColors(colorAt(lines[MARK_LINE], MARK_X)).mark;
+  ctx.fillStyle = logoColors(colorAt(lines[MARK_LINE], markX)).mark;
   for (const p of mark) ctx.fill(p);
   ctx.restore();
 }
+
+// ---------------------------------------------------------------------------
+// Partner logos, in a row to the right of the wordmark, each behind a thin
+// divider and centred on the wordmark's middle. Like the wordmark's letters
+// they are painted one line-high slice at a time, so they take the same
+// colour as the letters wherever a wipe has reached. Every logo stands at
+// the wordmark's own height, so the row reads as one size. The ET square
+// keeps its red whatever is behind it.
+const PARTNER_H: Record<PartnerId, number> = { et: LOGO_H, cpo26: LOGO_H };
+const DIVIDER = { gap: 28, width: 1.5, height: 40, alpha: 0.45 };
+
+type Placed = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  paint: (ctx: CanvasRenderingContext2D) => void;
+  // Painted once, in its own colours, after the sliced pass.
+  fixed?: (ctx: CanvasRenderingContext2D) => void;
+};
+
+const partnerPaths = new Map<PartnerId, Path2D[]>();
+const getPartner = (id: PartnerId) => {
+  let p = partnerPaths.get(id);
+  if (!p) partnerPaths.set(id, (p = PARTNERS[id].paths.map((d) => new Path2D(d))));
+  return p;
+};
+
+const partnerW = (id: PartnerId) => (PARTNERS[id].width * PARTNER_H[id]) / PARTNERS[id].height;
+
+// Where the wordmark starts so the whole row (wordmark, then each partner
+// behind a divider) ends at the right margin, as the wordmark alone did.
+export const logoXFor = (ids: readonly PartnerId[]) =>
+  LOGO_X - ids.reduce((sum, id) => sum + 2 * DIVIDER.gap + DIVIDER.width + partnerW(id), 0);
+
+// Left to right from the wordmark: divider, logo, divider, logo.
+function placePartners(ids: readonly PartnerId[], logoX: number): Placed[] {
+  const mid = LOGO_Y + LOGO_H / 2;
+  const out: Placed[] = [];
+  let left = logoX + LOGO_W;
+  for (const id of ids) {
+    const x = left + DIVIDER.gap;
+    out.push({
+      x,
+      y: mid - DIVIDER.height / 2,
+      w: DIVIDER.width,
+      h: DIVIDER.height,
+      paint: (ctx) => {
+        ctx.globalAlpha = DIVIDER.alpha;
+        ctx.fillRect(x, mid - DIVIDER.height / 2, DIVIDER.width, DIVIDER.height);
+      },
+    });
+    const logo = PARTNERS[id];
+    const h = PARTNER_H[id];
+    const s = h / logo.height;
+    const w = logo.width * s;
+    const lx = x + DIVIDER.width + DIVIDER.gap;
+    const ly = mid - h / 2;
+    out.push({
+      x: lx,
+      y: ly,
+      w,
+      h,
+      paint: (ctx) => {
+        ctx.translate(lx, ly);
+        ctx.scale(s, s);
+        // A square with its own colours is left to the fixed pass.
+        if (logo.box) {
+          ctx.beginPath();
+          ctx.rect(logo.box[0] + logo.box[2], 0, logo.width, logo.height);
+          ctx.clip();
+        }
+        ctx.transform(...logo.matrix);
+        for (const p of getPartner(id)) ctx.fill(p);
+      },
+      fixed: logo.box
+        ? (ctx) => {
+            const [bx, by, bw, bh] = logo.box!;
+            ctx.translate(lx, ly);
+            ctx.scale(s, s);
+            // White behind, inset so no white shows round the edge, then
+            // the traced square with "ET" cut out of it, in red.
+            const inset = bw * 0.1;
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(bx + inset, by + inset, bw - 2 * inset, bh - 2 * inset);
+            ctx.beginPath();
+            ctx.rect(bx - 20, 0, bw + 40, logo.height);
+            ctx.clip();
+            ctx.transform(...logo.matrix);
+            ctx.fillStyle = ET_RED;
+            for (const p of getPartner(id)) ctx.fill(p);
+          }
+        : undefined,
+    });
+    left = lx + w;
+  }
+  return out;
+}
+
+function drawPartners(
+  ctx: CanvasRenderingContext2D,
+  ids: readonly PartnerId[],
+  lines: LineState[],
+  snap: Snap,
+  logoX: number,
+  zoom: number,
+) {
+  const base = ctx.getTransform();
+  for (const item of placePartners(ids, logoX)) {
+    const first = Math.floor(item.y / PITCH);
+    const last = Math.ceil((item.y + item.h) / PITCH);
+    for (let r = first; r < last; r++) {
+      const top = snap(r * PITCH);
+      const bottom = snap((r + 1) * PITCH);
+      for (const [a, b, color] of runs(lines[r])) {
+        if (b <= item.x || a >= item.x + item.w) continue;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(snap(a), top, snap(b) - snap(a), bottom - top);
+        ctx.clip();
+        ctx.setTransform(base);
+        zoomRow(ctx, zoom);
+        ctx.fillStyle = logoColors(color).letters;
+        item.paint(ctx);
+        ctx.restore();
+      }
+    }
+    if (item.fixed) {
+      ctx.save();
+      ctx.setTransform(base);
+      zoomRow(ctx, zoom);
+      item.fixed(ctx);
+      ctx.restore();
+    }
+  }
+}
+
+// The logo row can be drawn smaller, shrunk towards its top right corner so
+// it still ends at the right margin. Only the drawing shrinks: the slices
+// that pick each colour stay where the lines are, so the colours still
+// change exactly with the panel behind.
+function zoomRow(ctx: CanvasRenderingContext2D, k: number) {
+  if (k === 1) return;
+  const ax = LOGO_X + LOGO_W;
+  ctx.translate(ax, LOGO_Y);
+  ctx.scale(k, k);
+  ctx.translate(-ax, -LOGO_Y);
+}
+
+// Panels without black: wherever a motion would bring in black, stone comes
+// in instead, so the panel moves between orange and stone only.
+// And without orange: stone comes in wherever orange would and black
+// wherever stone would, so every wipe still shows (a straight orange-to-black
+// swap would lay black on black and the motion would vanish).
+const swap = (map: Map<Fill, Fill>) => (s: LineState): LineState => ({
+  base: map.get(s.base) ?? s.base,
+  layers: s.layers.map((l) => ({ ...l, color: map.get(l.color) ?? l.color })),
+});
+const noBlack = swap(new Map([[BLACK, STONE]]));
+// Orange only in the lower half: the top bands, where the logos sit, stay
+// stone throughout; the lower bands move between orange and stone.
+const allStone = swap(
+  new Map([
+    [ORANGE, STONE],
+    [BLACK, STONE],
+  ]),
+);
+// Scenes with orange once: the steps rise in orange, the sweep comes in
+// black, the burst in stone, and black wipes back, so every move still shows
+// and the loop starts and ends on black. Set by the layer's place in Scenes
+// (rise, sweep, burst, back), since orange is used twice there.
+const ORANGE_ONCE = [ORANGE, BLACK, STONE, BLACK];
+const orangeOnce = (s: LineState): LineState => ({
+  base: s.base,
+  layers: s.layers.map((l, k) => ({ ...l, color: ORANGE_ONCE[k] ?? l.color })),
+});
+const orangeLow = (r: number, s: LineState) => (bandOf(r) < BANDS / 2 ? allStone(s) : noBlack(s));
+const noOrange = swap(
+  new Map([
+    [ORANGE, STONE],
+    [STONE, BLACK],
+  ]),
+);
 
 // Draws one frame. `ctx` is expected to be scaled so 1 unit = 1 post pixel.
 export function drawPanel(
@@ -449,6 +639,17 @@ export function drawPanel(
   motion: MotionId,
   seconds: number,
   look: Look = "reference",
+  {
+    partners = [],
+    flip = true,
+    colors = "all",
+    logoScale = 1,
+  }: {
+    partners?: readonly PartnerId[];
+    flip?: boolean;
+    colors?: "all" | "no-black" | "no-orange" | "orange-low" | "orange-once";
+    logoScale?: number;
+  } = {},
 ) {
   const m = MOTION_BY_ID[motion];
   const t = wrap(seconds, m.duration);
@@ -459,7 +660,17 @@ export function drawPanel(
   ctx.fillRect(0, 0, PANEL_W, PANEL_H);
   const lines: LineState[] = [];
   for (let r = 0; r < ROWS; r++) {
-    const s = m.line(r, t, look);
+    const raw = m.line(r, t, look);
+    const s =
+      colors === "no-black"
+        ? noBlack(raw)
+        : colors === "no-orange"
+          ? noOrange(raw)
+          : colors === "orange-low"
+            ? orangeLow(r, raw)
+            : colors === "orange-once"
+              ? orangeOnce(raw)
+              : raw;
     lines.push(s);
     const top = snap(r * PITCH);
     const litTop = snap(r * PITCH + (PITCH - STROKE) / 2);
@@ -476,5 +687,7 @@ export function drawPanel(
       ctx.fillRect(a, litTop, PANEL_W - a, litBottom - litTop);
     }
   }
-  drawLogo(ctx, m, t, lines, snap, look);
+  const logoX = logoXFor(partners);
+  drawLogo(ctx, m, t, lines, snap, look, logoX, flip, logoScale);
+  if (partners.length) drawPartners(ctx, partners, lines, snap, logoX, logoScale);
 }

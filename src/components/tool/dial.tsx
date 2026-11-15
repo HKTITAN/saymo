@@ -17,7 +17,7 @@ export const VALUE = "text-white/90 tabular-nums";
 // A row that opens something, such as a picker.
 export const ROW_BUTTON = `${ROW} cursor-pointer gap-3 px-3 text-left outline-none hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-ring data-popup-open:bg-white/[0.08]`;
 // A floating panel: a picker, or the toolbar over selected words.
-export const SURFACE = "rounded-[14px] bg-popover p-1.5 text-[12px] text-white/90 shadow-2xl shadow-black/50 ring-1 ring-white/10";
+export const SURFACE = "rounded-[14px] bg-popover p-1.5 text-[12px] text-white/90 shadow-2xl shadow-shade/50 ring-1 ring-white/10";
 
 // A titled group of rows that folds away.
 export function DialGroup({

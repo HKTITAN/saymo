@@ -12,7 +12,7 @@ export function Toolbar({
   return (
     <ToolbarPrimitive.Root
       className={cn(
-        "relative flex items-center gap-1 rounded-[12px] border border-white/[0.07] bg-[#171717] p-1 text-white/85",
+        "relative flex items-center gap-1 rounded-[12px] border border-white/[0.07] bg-menu p-1 text-white/85",
         className,
       )}
       data-slot="toolbar"

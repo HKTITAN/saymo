@@ -2,7 +2,7 @@
 
 import { Popover } from "@base-ui/react/popover";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
-import { BotIcon, CheckTickCircleIcon, ChevronDownIcon, CloudIcon, ExternalLinkSquareIcon, FolderIcon, UserIcon } from "@/components/icons";
+import { BotIcon, CheckTickCircleIcon, ChevronDownIcon, CloudIcon, ExternalLinkSquareIcon, FolderIcon, MoonIcon, UserIcon } from "@/components/icons";
 import { LABEL, ROW, ROW_BUTTON, SURFACE } from "@/components/tool/dial";
 import type { ConnectionsStatus, DestinationsStatus } from "@/lib/studio/connect-types";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,8 @@ import { DEFAULT_REPO, GithubSection } from "./connections";
 import { ITEM, MENU_POPUP } from "./home-parts";
 import { CloudMark } from "./cloud-marks";
 import { ModelChoice } from "./model-choice";
+import { Slide } from "./rules-panel";
+import { setTheme, type Theme, useTheme } from "./theme";
 
 // Settings, on the home page, in three cards:
 //  - Profile: the name the studio shows for you.
@@ -24,7 +26,7 @@ import { ModelChoice } from "./model-choice";
 // Google Drive without its app (GoogleSection in connections.tsx) is off
 // the page for now; see docs/later.md.
 
-const CARD = "flex flex-col gap-1.5 rounded-[16px] bg-white/[0.025] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]";
+const CARD = "flex flex-col gap-1.5 rounded-[16px] bg-white/[0.025] p-2 shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.05)]";
 
 const failure = (e: unknown, fallback: string) => ({ text: e instanceof StudioError ? e.message : fallback, bad: true });
 
@@ -54,10 +56,10 @@ export function SettingsPage() {
         <h1 id="settings-heading" className="font-medium text-[20px] text-white/95 tracking-[-0.01em]">
           Settings
         </h1>
-        <p className="text-[12.5px] text-white/50">Your profile, your AI and where finished films go.</p>
+        <p className="text-[12.5px] text-white/50">Your profile, how the studio looks, your AI and where finished films go.</p>
       </div>
       {note ? (
-        <p className={cn("rounded-[10px] px-3 py-2 text-[12px] leading-relaxed", note.bad ? "bg-[#ff9592]/10 text-[#ff9592]" : "bg-white/[0.06] text-white/75")}>
+        <p className={cn("rounded-[10px] px-3 py-2 text-[12px] leading-relaxed", note.bad ? "bg-danger/10 text-danger" : "bg-white/[0.06] text-white/75")}>
           {note.text}
         </p>
       ) : null}
@@ -65,6 +67,11 @@ export function SettingsPage() {
       <div className={CARD}>
         <Heading icon={<UserIcon aria-hidden="true" />}>Profile</Heading>
         <NameRow onNote={setNote} />
+      </div>
+
+      <div className={CARD}>
+        <Heading icon={<MoonIcon aria-hidden="true" />}>Appearance</Heading>
+        <ThemeRow />
       </div>
 
       <div className={CARD}>
@@ -150,7 +157,7 @@ function FilmsGoTo({
           </Popover.Positioner>
         </Popover.Portal>
       </Popover.Root>
-      {current?.gone ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">That folder isn&rsquo;t on this Mac any more. Pick another.</p> : null}
+      {current?.gone ? <p className="px-1 text-[11.5px] text-danger leading-relaxed">That folder isn&rsquo;t on this Mac any more. Pick another.</p> : null}
     </>
   );
 }
@@ -206,6 +213,25 @@ function NameRow({ onNote }: { onNote: (n: { text: string; bad: boolean } | null
         className="h-full min-w-0 flex-1 bg-transparent text-right text-white/90 outline-none placeholder:text-white/35"
       />
     </label>
+  );
+}
+
+const THEMES: { value: Theme; label: string }[] = [
+  { value: "dark", label: "Dark" },
+  { value: "light", label: "Light" },
+  { value: "system", label: "System" },
+];
+
+// Dark, light, or the Mac's own setting. Kept in this browser.
+function ThemeRow() {
+  const theme = useTheme();
+  return (
+    <div className={cn(ROW, "gap-3 ps-3 pe-1")}>
+      <span className={LABEL}>Theme</span>
+      <span className="ms-auto">
+        <Slide label="Theme" value={theme} options={THEMES} onChange={setTheme} segment={64} />
+      </span>
+    </div>
   );
 }
 

@@ -149,7 +149,7 @@ export function MediaBin({
                   )}
                 </div>
                 {u.error ? (
-                  <p className="text-[11.5px] text-[#ff9592] leading-relaxed">{u.error}</p>
+                  <p className="text-[11.5px] text-danger leading-relaxed">{u.error}</p>
                 ) : (
                   <div className="h-1 overflow-hidden rounded-full bg-white/[0.08]">
                     <div className="h-full rounded-full bg-white/70 transition-[width]" style={{ width: `${u.progress * 100}%` }} />
@@ -181,7 +181,7 @@ export function MediaBin({
                 </button>
               </div>
             ) : null}
-            {error ? <p className="px-1.5 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+            {error ? <p className="px-1.5 text-[11.5px] text-danger leading-relaxed">{error}</p> : null}
           </>
         ) : (
           <>
@@ -329,7 +329,7 @@ function MediaRow({
               {media.step ?? "Getting it ready"}
             </span>
           ) : media.status === "failed" ? (
-            <span className="truncate text-[11.5px] text-[#ff9592]">{media.error ?? "Unable to read this file"}</span>
+            <span className="truncate text-[11.5px] text-danger">{media.error ?? "Unable to read this file"}</span>
           ) : media.transcribing ? (
             <span className="studio-shimmer truncate text-[11.5px] text-white/50">Writing down what’s said</span>
           ) : facts.length ? (
@@ -350,7 +350,7 @@ function MediaRow({
       </button>
       {media.status !== "importing" ? (
         // Save and remove, on hover: a small toolbar floating over the row's end.
-        <span className="absolute end-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-[9px] bg-[#262626] p-0.5 opacity-0 shadow-[0_4px_12px_rgba(0,0,0,0.45)] transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">
+        <span className="absolute end-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-[9px] bg-knob p-0.5 opacity-0 shadow-[0_4px_12px_rgb(0_0_0_/_calc(0.45*var(--shade)))] transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100">
           {ready ? (
             <SaveToLibrary
               className="size-7 rounded-[7px] [&_svg]:size-4"

@@ -312,7 +312,7 @@ function ScriptStep({
             onChange={(v) => setLayout(REEL_LAYOUTS.find(([k]) => k === v)?.[0] ?? "split")}
           />
         </div>
-        {error ? <p className="text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+        {error ? <p className="text-[12px] text-danger leading-relaxed">{error}</p> : null}
         {start === "reel" ? (
           <button type="button" className={cn(TEXT_BUTTON, "self-start")} onClick={onFootage}>
             Use videos I already have
@@ -406,7 +406,7 @@ function ScriptStep({
       </div>
 
       <footer className="flex shrink-0 flex-wrap items-center gap-2 border-white/[0.06] border-t px-5 py-3.5">
-        {error ? <p className="w-full pb-1 text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+        {error ? <p className="w-full pb-1 text-[12px] text-danger leading-relaxed">{error}</p> : null}
         {writing ? (
           <button type="button" className={SECONDARY} onClick={() => stop.current?.abort()}>
             Stop
@@ -927,7 +927,7 @@ function Making({ progress, problem, onRetry, onBack }: { progress: Progress | n
       <h1 className="font-medium text-[15px] text-white/95">Making your reel</h1>
       {problem ? (
         <>
-          <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{problem}</p>
+          <p className="text-[12.5px] text-danger leading-relaxed">{problem}</p>
           <div className="flex gap-2">
             <button type="button" className={PRIMARY} onClick={onRetry}>
               Try again

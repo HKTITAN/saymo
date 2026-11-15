@@ -78,7 +78,7 @@ export function AlertDialogPopup({
       >
         <AlertDialogPrimitive.Popup
           className={cn(
-            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-[360px] origin-center flex-col rounded-[16px] border border-white/[0.07] bg-[#171717] font-sans text-white opacity-[calc(1-var(--nested-dialogs))] shadow-2xl shadow-black/60 outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-97 sm:data-starting-style:scale-97",
+            "relative row-start-2 flex max-h-full min-h-0 w-full min-w-0 max-w-[360px] origin-center flex-col rounded-[16px] border border-white/[0.07] bg-menu font-sans text-white opacity-[calc(1-var(--nested-dialogs))] shadow-2xl shadow-shade/60 outline-none transition-[scale,opacity,translate] duration-200 ease-out will-change-transform data-ending-style:opacity-0 data-starting-style:opacity-0 sm:scale-[calc(1-0.1*var(--nested-dialogs))] sm:data-ending-style:scale-97 sm:data-starting-style:scale-97",
             bottomStickOnMobile &&
               "max-sm:max-w-none max-sm:origin-bottom max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 max-sm:data-ending-style:translate-y-4 max-sm:data-starting-style:translate-y-4",
             className,

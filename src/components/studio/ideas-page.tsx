@@ -142,7 +142,7 @@ export function IdeasPage() {
         <p className="text-[12.5px] text-white/50">What to make next.</p>
       </header>
       {problem ? (
-        <p role="alert" className="px-1 text-[12px] text-[#ff9592]">
+        <p role="alert" className="px-1 text-[12px] text-danger">
           {problem}
         </p>
       ) : null}
@@ -203,20 +203,20 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
       aria-selected={on}
       aria-controls="ideas-list"
       onClick={onPick}
-      className="group/pocket flex cursor-pointer flex-col items-center gap-3 rounded-[24px] text-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-[#0e0e0e]"
+      className="group/pocket flex cursor-pointer flex-col items-center gap-3 rounded-[24px] text-center outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-panel"
     >
       {/* The open pocket in full colour; the others quieter until hovered. */}
       <span
         aria-hidden="true"
         className={cn(
-          "relative block size-[168px] overflow-hidden rounded-[38px] shadow-[0_16px_30px_-14px_rgba(0,0,0,0.75)] transition-[filter,opacity] duration-300 supports-[corner-shape:squircle]:rounded-[58px] supports-[corner-shape:squircle]:[corner-shape:squircle]",
+          "relative block size-[168px] overflow-hidden rounded-[38px] shadow-[0_16px_30px_-14px_rgb(0_0_0_/_calc(0.75*var(--shade)))] transition-[filter,opacity] duration-300 supports-[corner-shape:squircle]:rounded-[58px] supports-[corner-shape:squircle]:[corner-shape:squircle]",
           on ? "" : "opacity-55 saturate-[0.55] group-hover/pocket:opacity-90 group-hover/pocket:saturate-100",
         )}
         style={{ background: eased(look.rim) }}
       >
         {/* The inside. */}
         <span
-          className="absolute inset-x-[14px] top-[14px] h-[96px] rounded-[22px] shadow-[inset_0_7px_12px_rgba(0,0,0,0.5)] supports-[corner-shape:squircle]:rounded-[32px] supports-[corner-shape:squircle]:[corner-shape:squircle]"
+          className="absolute inset-x-[14px] top-[14px] h-[96px] rounded-[22px] shadow-[inset_0_7px_12px_rgb(0_0_0_/_calc(0.5*var(--shade)))] supports-[corner-shape:squircle]:rounded-[32px] supports-[corner-shape:squircle]:[corner-shape:squircle]"
           style={{ background: look.well }}
         />
         {/* The page drops in on the way in. */}
@@ -226,7 +226,7 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
             // "To do" and the next ideas written by hand on ruled lines.
             <span
               className={cn(
-                "absolute top-[16px] left-[26px] block h-[100px] w-[116px] rounded-[8px] bg-[#fbfaf5] shadow-[0_-1px_3px_rgba(0,0,0,0.2),0_1px_2px_rgba(0,0,0,0.12)]",
+                "absolute top-[16px] left-[26px] block h-[100px] w-[116px] rounded-[8px] bg-[#fbfaf5] shadow-[0_-1px_3px_rgb(0_0_0_/_calc(0.2*var(--shade))),0_1px_2px_rgb(0_0_0_/_calc(0.12*var(--shade)))]",
                 "[transform:translateY(var(--lift))_rotate(-1.5deg)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
                 on ? "[--lift:-6px]" : "[--lift:0px] group-hover/pocket:[--lift:-3px]",
               )}
@@ -265,7 +265,7 @@ function Pocket({ look, ideas, loading, on, onPick }: { look: Look; ideas: Idea[
         </span>
         {/* The front, its top casting a soft shadow down onto the page. */}
         <span
-          className="absolute inset-x-0 top-[86px] bottom-0 flex items-end justify-center pb-[16px] shadow-[0_-10px_18px_-10px_rgba(0,0,0,0.5)]"
+          className="absolute inset-x-0 top-[86px] bottom-0 flex items-end justify-center pb-[16px] shadow-[0_-10px_18px_-10px_rgb(0_0_0_/_calc(0.5*var(--shade)))]"
           style={{ background: eased(look.face), color: look.glyph }}
         >
           <look.Icon width={26} height={26} aria-hidden="true" />
@@ -319,10 +319,10 @@ function BrainDump() {
   };
   return (
     <section aria-labelledby="dump-heading" className="relative flex flex-col pt-7">
-      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-16 rounded-t-[22px] bg-[#f3dc8a] px-4 pt-[6px] font-medium text-[12px] text-black/55">
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 h-16 rounded-t-[22px] bg-[#f3dc8a] px-4 pt-[6px] font-medium text-[12px] keep-colors text-black/55">
         Anything goes
       </div>
-      <div className="relative flex flex-1 flex-col overflow-hidden rounded-[22px] bg-[#1a1a1d] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_18px_36px_-18px_rgba(0,0,0,0.8)]">
+      <div className="relative flex flex-1 flex-col overflow-hidden rounded-[22px] bg-card-idea shadow-[0_0_0_1px_rgb(var(--hi)_/_0.05),0_18px_36px_-18px_rgb(0_0_0_/_calc(0.8*var(--shade)))]">
         <header className="flex items-baseline gap-2 px-4 pt-4 pb-1.5">
           <h2 id="dump-heading" className="font-semibold text-[22px] text-white tracking-[-0.015em]">
             Brain dump
@@ -337,7 +337,7 @@ function BrainDump() {
           className="min-h-[420px] flex-1 resize-none bg-transparent px-4 pt-1 pb-4 text-[14px] text-white/85 leading-relaxed outline-none [field-sizing:content] placeholder:text-white/30"
         />
         {problem ? (
-          <p role="alert" className="border-white/[0.06] border-t px-4 py-3 text-[12px] text-[#ff9592]">
+          <p role="alert" className="border-white/[0.06] border-t px-4 py-3 text-[12px] text-danger">
             {problem}
           </p>
         ) : null}
@@ -371,10 +371,10 @@ function Widget({
   return (
     <section aria-label={look.title} className="relative pt-7" style={{ "--accent": look.accent } as CSSProperties}>
       {/* The coloured tab behind the card's top, today's date on its left and how many are left on its right, peeking out above and in its corners. */}
-      <div className="absolute inset-x-0 top-0 flex h-16 items-start justify-between rounded-t-[22px] px-4 pt-[6px] font-medium text-[12px] text-black/55" style={{ background: look.tab }}>
+      <div className="absolute inset-x-0 top-0 flex h-16 items-start justify-between rounded-t-[22px] px-4 pt-[6px] font-medium text-[12px] keep-colors text-black/55" style={{ background: look.tab }}>
         <span aria-hidden="true">{today}</span>
       </div>
-      <div className="relative overflow-hidden rounded-[22px] bg-[#1a1a1d] shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_18px_36px_-18px_rgba(0,0,0,0.8)]">
+      <div className="relative overflow-hidden rounded-[22px] bg-card-idea shadow-[0_0_0_1px_rgb(var(--hi)_/_0.05),0_18px_36px_-18px_rgb(0_0_0_/_calc(0.8*var(--shade)))]">
         <header className="relative flex items-baseline gap-2 px-4 pt-4 pb-1.5">
           <h2 className="font-semibold text-[22px] text-white tracking-[-0.015em]">{look.title}</h2>
         </header>
@@ -437,7 +437,7 @@ function IdeaRow({ idea, doodle, onChange, onRemove }: { idea: Idea; doodle: num
         aria-label={made ? `Mark “${idea.text}” as still to make` : skip ? `Bring back “${idea.text}”` : `Mark “${idea.text}” as made`}
         onClick={() => onChange(made || skip ? { state: "todo", doneAt: undefined } : { state: "made", doneAt: new Date().toISOString() })}
         className={cn(
-          "mt-px flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-[5px] border-[1.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-(--accent) focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1d]",
+          "mt-px flex size-[18px] shrink-0 cursor-pointer items-center justify-center rounded-[5px] border-[1.5px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-(--accent) focus-visible:ring-offset-2 focus-visible:ring-offset-card-idea",
           made ? "border-(--accent) bg-(--accent)" : skip ? "border-white/20" : "border-white/30 hover:border-white/55",
         )}
       >
@@ -504,7 +504,7 @@ function IdeaRow({ idea, doodle, onChange, onRemove }: { idea: Idea; doodle: num
         >
           {skip ? <RefreshIcon aria-hidden="true" /> : <MultipleCrossCancelIcon aria-hidden="true" />}
         </button>
-        <button type="button" className={cn(ICON, "hover:text-[#ff9592]")} onClick={onRemove} aria-label={`Delete “${idea.text}”`}>
+        <button type="button" className={cn(ICON, "hover:text-danger")} onClick={onRemove} aria-label={`Delete “${idea.text}”`}>
           <DeleteDustbin01Icon aria-hidden="true" />
         </button>
       </span>

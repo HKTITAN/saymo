@@ -510,7 +510,7 @@ export function LibraryView({
 
   return (
     <section aria-label={folder ? folder.name : "Library"} className="flex flex-col gap-3" hidden={!active}>
-      <div className="sticky top-0 z-10 -mx-3 flex flex-col gap-2.5 bg-[#0e0e0e]/90 px-3 pt-1 pb-2.5 backdrop-blur-xl">
+      <div className="sticky top-0 z-10 -mx-3 flex flex-col gap-2.5 bg-panel/90 px-3 pt-1 pb-2.5 backdrop-blur-xl">
         <header className="flex h-8 items-center gap-1.5 px-1">
           {tabs}
           <span className="ms-auto flex items-center gap-2">
@@ -631,7 +631,7 @@ export function LibraryView({
             })}
           </ul>
         ) : null}
-        {problem ? <p className="px-1 text-[12px] text-[#ff9592]">{problem}</p> : null}
+        {problem ? <p className="px-1 text-[12px] text-danger">{problem}</p> : null}
       </div>
 
       <Skeleton data={shown} sample={SAMPLE} id="studio-library" label="Loading the library">
@@ -687,7 +687,7 @@ export function LibraryView({
                 <ul className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-x-3 gap-y-4">
                   {uploads.map((u) => (
                     <li key={`u${u.key}`} className="flex flex-col gap-2.5 p-1.5" aria-live="polite">
-                      <span className="block aspect-[4/3] w-full rounded-[10px] bg-white/[0.04] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" />
+                      <span className="block aspect-[4/3] w-full rounded-[10px] bg-white/[0.04] shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)]" />
                       <span className="flex flex-col gap-0.5 px-1 pb-0.5">
                         <span className="truncate text-[12.5px] text-white/60">{u.name}</span>
                         <span className="studio-shimmer text-[11.5px]">Adding it to the library</span>
@@ -965,7 +965,7 @@ export function RefPreview({ entry: e, hovered, large = false }: { entry: RefEnt
         className={cn(
           "max-h-full max-w-full object-contain",
           e.brand && e.kind === "image" && !e.thumbUrl.includes("?as=") && "max-h-[46%] max-w-[70%]",
-          e.kind === "pdf" && "max-h-[88%] rounded-[3px] shadow-[0_2px_10px_rgba(0,0,0,0.5)]",
+          e.kind === "pdf" && "max-h-[88%] rounded-[3px] shadow-[0_2px_10px_rgb(0_0_0_/_calc(0.5*var(--shade)))]",
         )}
       />
     );
@@ -1044,7 +1044,7 @@ function RefCard({
       >
         <span
           className={cn(
-            "relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]",
+            "relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[10px] bg-well shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)]",
             e.ground === "light" && "bg-[#e9e6e0]",
           )}
           skullet-block=""
@@ -1350,7 +1350,7 @@ function RefPanel({
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-row">
           <div
             className={cn(
-              "flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[#101010] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] sm:w-[58%]",
+              "flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-well-deep shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)] sm:w-[58%]",
               e.ground === "light" && "bg-[#e9e6e0]",
             )}
           >
@@ -1503,7 +1503,7 @@ function RefPanel({
                       {e.kind === "link" ? "Open the link" : "Open the original"}
                     </a>
                   ) : null}
-                  <button type="button" onClick={onDelete} className={cn(PILL_BUTTON, "text-[#ff9592] hover:bg-[#e5484d]/12")}>
+                  <button type="button" onClick={onDelete} className={cn(PILL_BUTTON, "text-danger hover:bg-[#e5484d]/12")}>
                     <DeleteDustbin01Icon aria-hidden="true" />
                     Delete
                   </button>

@@ -429,7 +429,7 @@ export function PersonalStyleMaker({ onDone, onClose }: { onDone: (kit: BrandKit
           <DiscardAsk what="your style" onKeep={() => setAsking(false)} onDiscard={onClose} />
         ) : (
           <div className="flex items-center gap-3">
-            <p className={cn("me-auto text-[12px] leading-relaxed", problem ? "text-[#ff9592]" : "text-white/45")} role={problem ? "alert" : undefined}>
+            <p className={cn("me-auto text-[12px] leading-relaxed", problem ? "text-danger" : "text-white/45")} role={problem ? "alert" : undefined}>
               {problem ?? "Saved as a brand kit you can change later."}
             </p>
             <span className="hidden items-center gap-1.5 text-[11px] text-white/35 sm:inline-flex">
@@ -502,7 +502,7 @@ function SlideRow<T extends string | boolean>({
       >
         <span
           aria-hidden="true"
-          className="absolute top-0.5 bottom-0.5 left-0.5 rounded-[7px] bg-white/[0.13] shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+          className="absolute top-0.5 bottom-0.5 left-0.5 rounded-[7px] bg-white/[0.13] shadow-[0_1px_2px_rgb(0_0_0_/_calc(0.3*var(--shade)))] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
           style={{ width: segment, transform: `translateX(${at * segment}px)` }}
         />
         {options.map((o) => (
@@ -664,7 +664,7 @@ function ReelCard({
   return (
     <figure aria-label="Preview of a reel in this style" className="flex w-[200px] flex-col gap-2 sm:w-[232px]">
       <div
-        className="relative flex aspect-[9/16] w-full flex-col overflow-hidden rounded-[18px] p-[18px] shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-colors duration-300"
+        className="relative flex aspect-[9/16] w-full flex-col overflow-hidden rounded-[18px] p-[18px] shadow-[0_0_0_1px_rgb(var(--hi)_/_0.08)] transition-colors duration-300"
         style={{ background: colors.ground, color: colors.text }}
       >
         <div className="flex h-5 items-center">

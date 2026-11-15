@@ -388,7 +388,7 @@ export function Dashboard({
           .filter((f) => (folder ? f.folder === folder.id : true) && (!q || f.title.toLowerCase().includes(q)))
           .sort(sort === "name" ? (a, b) => a.title.localeCompare(b.title) : (a, b) => b.updatedAt.localeCompare(a.updatedAt));
   const nextLayout = (
-    <div className="absolute inset-0 flex bg-[#080808]">
+    <div className="absolute inset-0 flex bg-app">
       <SideNav
         section={section}
         onSection={goSection}
@@ -411,7 +411,7 @@ export function Dashboard({
         recent={(films ?? []).slice().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 4)}
         onOpenFilm={onOpenFilm}
       />
-      <div className="relative my-2 me-2 min-w-0 flex-1 overflow-hidden rounded-[18px] bg-[#0e0e0e] shadow-[0_0_0_1px_rgba(255,255,255,0.05)]">
+      <div className="relative my-2 me-2 min-w-0 flex-1 overflow-hidden rounded-[18px] bg-panel shadow-[0_0_0_1px_rgb(var(--hi)_/_0.05)]">
         <div className="absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {section === "home" ? (
             <>
@@ -464,7 +464,7 @@ export function Dashboard({
                     <SortMenu sort={sort} onSort={setSort} />
                   </span>
                 </header>
-                {problem ? <p className="px-1 text-[12px] text-[#ff9592]">{problem}</p> : null}
+                {problem ? <p className="px-1 text-[12px] text-danger">{problem}</p> : null}
                 <Skeleton data={everyFilm} sample={SAMPLE_FILMS} id="studio-films-next" label="Loading your films">
                   {(list) =>
                     list.length > 0 ? (
@@ -715,7 +715,7 @@ function KitCard({ kit, onOpen }: { kit: BrandSummary; onOpen: () => void }) {
       className="flex w-full cursor-pointer flex-col gap-2 rounded-[14px] p-1.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring"
     >
       <span
-        className="flex aspect-[16/9] w-full flex-col overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]"
+        className="flex aspect-[16/9] w-full flex-col overflow-hidden rounded-[10px] shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)]"
         style={{ background: surface }}
         skullet-block=""
       >
@@ -841,7 +841,7 @@ function FilmCard({
         {stage ? (
           <FilmStage film={f} />
         ) : (
-          <span className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" skullet-block="">
+          <span className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-[10px] bg-well shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)]" skullet-block="">
             {f.poster ? (
               // eslint-disable-next-line @next/next/no-img-element -- a local still of the film
               <img src={f.poster} alt="" draggable={false} className="max-h-full max-w-full object-contain" />

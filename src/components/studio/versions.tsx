@@ -124,7 +124,7 @@ export function VersionsButton({
                 onGo={() => v.n !== null && void goBack(v.n)}
               />
             ))}
-            {error ? <p className="px-2.5 py-2 text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+            {error ? <p className="px-2.5 py-2 text-[12px] text-danger leading-relaxed">{error}</p> : null}
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>

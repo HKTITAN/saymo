@@ -47,7 +47,7 @@ export function TooltipPopup({
       >
         <TooltipPrimitive.Popup
           className={cn(
-            "relative flex h-(--popup-height,auto) w-(--popup-width,auto) origin-(--transform-origin) text-balance rounded-[8px] border border-white/[0.08] bg-[#1c1c1c] font-sans text-[11.5px] text-white/85 shadow-lg shadow-black/40 transition-[width,height,scale,opacity] duration-150 data-ending-style:scale-97 data-starting-style:scale-97 data-ending-style:opacity-0 data-starting-style:opacity-0 data-instant:duration-0",
+            "relative flex h-(--popup-height,auto) w-(--popup-width,auto) origin-(--transform-origin) text-balance rounded-[8px] border border-white/[0.08] bg-raised font-sans text-[11.5px] text-white/85 shadow-lg shadow-shade/40 transition-[width,height,scale,opacity] duration-150 data-ending-style:scale-97 data-starting-style:scale-97 data-ending-style:opacity-0 data-starting-style:opacity-0 data-instant:duration-0",
             className,
           )}
           data-slot="tooltip-popup"

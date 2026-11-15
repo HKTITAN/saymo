@@ -291,7 +291,7 @@ function FramingPad({
           grab.current = null;
         }}
         onKeyDown={keys}
-        className="absolute cursor-grab touch-none rounded-[3px] shadow-[0_0_0_999px_rgba(0,0,0,0.45)] outline-none ring-2 ring-white focus-visible:ring-ring active:cursor-grabbing"
+        className="absolute cursor-grab touch-none rounded-[3px] shadow-[0_0_0_999px_rgb(0_0_0_/_calc(0.45*var(--shade)))] outline-none ring-2 ring-white focus-visible:ring-ring active:cursor-grabbing"
         style={{ left: `${(x - vw / 2) * 100}%`, top: `${(y - vh / 2) * 100}%`, width: `${vw * 100}%`, height: `${vh * 100}%` }}
       />
     </div>
@@ -468,7 +468,7 @@ function CaptionsPanel({ id, ed }: { id: string; ed: EditState }) {
             {making}
           </p>
         ) : null}
-        {error ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+        {error ? <p className="px-1 text-[11.5px] text-danger leading-relaxed">{error}</p> : null}
         {note && !making ? <DialNote>{note}</DialNote> : null}
         {lines.length ? (
           <div className="flex flex-col gap-1">

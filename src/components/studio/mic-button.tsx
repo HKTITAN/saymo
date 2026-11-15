@@ -164,7 +164,7 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
             </button>
           )}
         </div>
-        {m?.error ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{m.error}</p> : null}
+        {m?.error ? <p className="px-1 text-[11.5px] text-danger leading-relaxed">{m.error}</p> : null}
       </>
     );
   };
@@ -225,7 +225,7 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
                 )}
               </div>
             ) : null}
-            {status?.setup.error ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{status.setup.error}</p> : null}
+            {status?.setup.error ? <p className="px-1 text-[11.5px] text-danger leading-relaxed">{status.setup.error}</p> : null}
             {status?.leftovers.length ? <DialNote>Kept, not written down yet.</DialNote> : null}
             {status?.leftovers.map((l) => (
               <div key={l.id} className={cn(ROW, "gap-2 ps-3 pe-1")}>
@@ -254,7 +254,7 @@ function MicMenu({ d, view }: { d: Dictation; view: DictationView }) {
                 </button>
               </div>
             ))}
-            {problem ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{problem}</p> : null}
+            {problem ? <p className="px-1 text-[11.5px] text-danger leading-relaxed">{problem}</p> : null}
             {/* The keys, as key caps: talk, stop, discard. */}
             <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1.5 px-3 pt-1 pb-2 text-[11.5px] text-white/45">
               <dt>Talk</dt>
@@ -343,7 +343,7 @@ export function RecordingBar({ d, view }: { d: Dictation; view: DictationView })
         </button>
       </Hint>
       <Hint label="Stop" keys={["↵"]}>
-        <button type="button" onClick={() => void d.stop()} className={cn(PILL_BUTTON, "h-7 bg-white px-2.5 text-[#141414] hover:bg-white/90")}>
+        <button type="button" onClick={() => void d.stop()} className={cn(PILL_BUTTON, "h-7 bg-white px-2.5 text-black hover:bg-white/90")}>
           Done
         </button>
       </Hint>
@@ -373,7 +373,7 @@ export function DictationNotice({ d, view }: { d: Dictation; view: DictationView
       ) : null}
       {n ? (
         <div className="flex flex-col gap-1 px-1.5" aria-live="polite">
-          <p className={cn("text-[11.5px] leading-relaxed", n.tone === "error" ? "text-[#ff9592]" : "text-white/55")}>{n.text}</p>
+          <p className={cn("text-[11.5px] leading-relaxed", n.tone === "error" ? "text-danger" : "text-white/55")}>{n.text}</p>
           <div className="flex gap-1">
             {n.setup ? (
               <button type="button" onClick={() => void d.setUp()} className={cn(PILL_BUTTON, "h-7 bg-white/[0.1] px-2.5 text-white/85 hover:bg-white/[0.15]")}>

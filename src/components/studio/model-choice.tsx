@@ -59,7 +59,7 @@ export function ModelChoice() {
           </div>
         </>
       )}
-      <DialNote>{error ? <span className="text-[#ff9592]">{error}</span> : codex ? "Codex picks its own model." : (model?.note ?? null)}</DialNote>
+      <DialNote>{error ? <span className="text-danger">{error}</span> : codex ? "Codex picks its own model." : (model?.note ?? null)}</DialNote>
     </div>
   );
 }

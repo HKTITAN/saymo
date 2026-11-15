@@ -84,7 +84,7 @@ export function TakesAway({
       aria-label="Three versions"
       tabIndex={-1}
       className={cn(
-        "fixed inset-0 z-40 overflow-hidden bg-[#0b0b0b] font-sans text-white outline-none transition-opacity duration-300 ease-out starting:opacity-0",
+        "fixed inset-0 z-40 overflow-hidden bg-stage font-sans text-white outline-none transition-opacity duration-300 ease-out starting:opacity-0",
         away === "leaving" && "pointer-events-none opacity-0",
       )}
     >
@@ -331,7 +331,7 @@ function TakesCanvas({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
-            backgroundImage: "radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1.2px)",
+            backgroundImage: "radial-gradient(rgb(var(--hi) / 0.07) 1px, transparent 1.2px)",
             backgroundSize: `${24 * view.k}px ${24 * view.k}px`,
             backgroundPosition: `${view.x}px ${view.y}px`,
           }}
@@ -441,7 +441,7 @@ function TakesCanvas({
         <p
           role="alert"
           data-canvas-ui
-          className={cn(CARD, "absolute top-[72px] left-1/2 -translate-x-1/2 rounded-full px-4 py-2 text-[12px] text-[#ff9592]")}
+          className={cn(CARD, "absolute top-[72px] left-1/2 -translate-x-1/2 rounded-full px-4 py-2 text-[12px] text-danger")}
         >
           {error}
         </p>
@@ -514,7 +514,7 @@ function TakeCard({
 
       <div
         className={cn(
-          "relative overflow-hidden rounded-[14px] bg-[#121212] ring-1 transition-[box-shadow] duration-150",
+          "relative overflow-hidden rounded-[14px] bg-well-deep ring-1 transition-[box-shadow] duration-150",
           ready && !busy ? "ring-white/[0.08] group-hover:ring-white/30" : "ring-white/[0.06]",
           opening && "ring-white/40",
         )}
@@ -588,7 +588,7 @@ function MoreCard({ left, w, h, onMore }: { left: number; w: number; h: number; 
 function Skeleton({ step }: { step: string }) {
   return (
     <div className="absolute inset-0" aria-label={`Being made: ${step}`} role="img">
-      <div className="absolute inset-0 animate-skeleton bg-[length:200%_100%] bg-[linear-gradient(100deg,rgba(255,255,255,0.025)_20%,rgba(255,255,255,0.075)_50%,rgba(255,255,255,0.025)_80%)] motion-reduce:animate-none" />
+      <div className="absolute inset-0 animate-skeleton bg-[length:200%_100%] bg-[linear-gradient(100deg,rgb(var(--hi)_/_0.025)_20%,rgb(var(--hi)_/_0.075)_50%,rgb(var(--hi)_/_0.025)_80%)] motion-reduce:animate-none" />
       <div className="absolute top-[18%] left-[9%] flex w-[56%] flex-col gap-2.5">
         <span className="h-3 w-[40%] rounded-full bg-white/[0.06]" />
         <span className="h-6 w-full rounded-[8px] bg-white/[0.06]" />

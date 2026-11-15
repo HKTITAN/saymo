@@ -130,7 +130,7 @@ export function KitDoc({
           </ol>
         </nav>
 
-        <article className="mx-auto w-full max-w-[880px] rounded-[20px] bg-[#161616] px-[clamp(20px,6vw,64px)] py-14 text-white/90 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_30px_80px_-30px_rgba(0,0,0,0.7)]">
+        <article className="mx-auto w-full max-w-[880px] rounded-[20px] bg-float px-[clamp(20px,6vw,64px)] py-14 text-white/90 shadow-[0_0_0_1px_rgb(var(--hi)_/_0.06),0_30px_80px_-30px_rgb(0_0_0_/_calc(0.7*var(--shade)))]">
           <header className="mx-auto flex max-w-[68ch] flex-col gap-3 pb-10">
             <h1 className="font-semibold text-[44px] leading-[1.05] tracking-[-0.02em]">{kit.name}</h1>
             {kit.source ? <p className="text-[14px] text-white/60 leading-relaxed">{kit.source}</p> : null}
@@ -156,10 +156,10 @@ export function KitDoc({
                     onCopy(r[role.key]);
                     setCopied(role.key);
                   }}
-                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgba(255,255,255,0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-[12px] bg-white/[0.04] text-left shadow-[0_0_0_1px_rgb(var(--hi)_/_0.07)] outline-none transition-shadow hover:shadow-[0_0_0_1px_rgb(var(--hi)_/_0.14)] focus-visible:ring-2 focus-visible:ring-ring"
                   aria-label={`${role.label} ${r[role.key]}, copy`}
                 >
-                  <span className="h-20 shadow-[inset_0_-1px_0_rgba(255,255,255,0.05)]" style={{ background: r[role.key] }} />
+                  <span className="h-20 shadow-[inset_0_-1px_0_rgb(var(--hi)_/_0.05)]" style={{ background: r[role.key] }} />
                   {/* Copy, in the swatch's top right corner, shown on hover. */}
                   <span
                     className={cn(
@@ -191,7 +191,7 @@ export function KitDoc({
                       <p className="text-[13px] text-white/60">
                         {ramp.name} <span className="text-white/35">· {ramp.steps.length} steps, light to dark</span>
                       </p>
-                      <div className="flex overflow-hidden rounded-[10px] shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
+                      <div className="flex overflow-hidden rounded-[10px] shadow-[0_0_0_1px_rgb(var(--hi)_/_0.07)]">
                         {ramp.steps.map((s, j) => (
                           <button
                             key={`${s.hex}-${j}`}
@@ -220,7 +220,7 @@ export function KitDoc({
             {kit.fonts.length ? (
               <div className="flex flex-col gap-4">
                 {kit.fonts.map((f, i) => (
-                  <figure key={`${f.file}-${f.role}-${i}`} className="flex flex-col gap-4 overflow-hidden rounded-[16px] bg-white/[0.04] p-6 text-white/90 shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
+                  <figure key={`${f.file}-${f.role}-${i}`} className="flex flex-col gap-4 overflow-hidden rounded-[16px] bg-white/[0.04] p-6 text-white/90 shadow-[0_0_0_1px_rgb(var(--hi)_/_0.07)]">
                     <figcaption className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px] text-white/45" style={{ fontFamily: "system-ui" }}>
                       <span className="font-medium">{f.family}</span>
                       <span>{f.role === "display" ? "Display" : f.role === "text" ? "Text" : "Mono"}</span>
@@ -246,7 +246,7 @@ export function KitDoc({
             {kit.logos.length ? (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
                 {kit.logos.map((l, i) => (
-                  <figure key={`${l.file}-${i}`} className="flex flex-col overflow-hidden rounded-[14px] bg-white/[0.04] shadow-[0_0_0_1px_rgba(255,255,255,0.07)]">
+                  <figure key={`${l.file}-${i}`} className="flex flex-col overflow-hidden rounded-[14px] bg-white/[0.04] shadow-[0_0_0_1px_rgb(var(--hi)_/_0.07)]">
                     <div className="grid h-36 grid-cols-2">
                       {(["light", "dark"] as const).map((ground) => (
                         <div
@@ -415,11 +415,11 @@ function EditTray({ children, note, onDone }: { children: ReactNode; note?: stri
     return () => window.removeEventListener("keydown", keys);
   }, []);
   return (
-    <div ref={tray} {...outside} className="flex flex-col gap-1.5 rounded-[14px] bg-[#161616] p-2.5 text-white animate-in fade-in slide-in-from-top-1 duration-200">
+    <div ref={tray} {...outside} className="flex flex-col gap-1.5 rounded-[14px] bg-float p-2.5 text-white animate-in fade-in slide-in-from-top-1 duration-200">
       {children}
       <div className="flex items-center gap-2 px-1 pt-1">
         {note ? <p className="me-auto text-[11.5px] text-white/45">{note}</p> : <span className="me-auto" />}
-        <button type="button" onClick={onDone} className="h-7 cursor-pointer rounded-full bg-white px-3 font-medium text-[12px] text-[#141414] outline-none hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring">
+        <button type="button" onClick={onDone} className="h-7 cursor-pointer rounded-full bg-white px-3 font-medium text-[12px] text-black outline-none hover:bg-white/90 focus-visible:ring-2 focus-visible:ring-ring">
           Done
         </button>
       </div>
@@ -441,7 +441,7 @@ function Arrival({ text, onDismiss, onCopy }: { text: string; onDismiss: () => v
   const found = pick("found") ?? (parts.length ? parts[0] : null);
   const guessed = pick("guessed");
   return (
-    <aside className="relative mt-3 flex flex-col gap-3 rounded-[14px] bg-white/[0.04] p-5 pe-12 shadow-[0_0_0_1px_rgba(255,255,255,0.07)] animate-in fade-in slide-in-from-top-1 duration-300" aria-label="What Claude did">
+    <aside className="relative mt-3 flex flex-col gap-3 rounded-[14px] bg-white/[0.04] p-5 pe-12 shadow-[0_0_0_1px_rgb(var(--hi)_/_0.07)] animate-in fade-in slide-in-from-top-1 duration-300" aria-label="What Claude did">
       {found ? (
         <div className="flex flex-col gap-1">
           <p className="font-medium text-[12px] text-white/90">What Claude found</p>
@@ -450,7 +450,7 @@ function Arrival({ text, onDismiss, onCopy }: { text: string; onDismiss: () => v
       ) : null}
       {guessed ? (
         <div className="flex flex-col gap-1">
-          <p className="font-medium text-[12px] text-[#FF8048]">What it guessed</p>
+          <p className="font-medium text-[12px] text-warm">What it guessed</p>
           <p className="text-[14px] text-white/60 leading-relaxed"><Inline text={guessed} onCopy={onCopy} /></p>
         </div>
       ) : null}
@@ -771,7 +771,7 @@ function Markdown({ blocks, onCopy }: { blocks: Block[]; onCopy: (hex: string) =
             );
           case "table":
             return (
-              <div key={key} className="overflow-x-auto rounded-[12px] shadow-[0_0_0_1px_rgba(255,255,255,0.09)] [scrollbar-width:none]">
+              <div key={key} className="overflow-x-auto rounded-[12px] shadow-[0_0_0_1px_rgb(var(--hi)_/_0.09)] [scrollbar-width:none]">
                 <table className="w-full border-collapse text-left text-[14px]">
                   <thead className="bg-white/[0.04]">
                     <tr>
@@ -837,7 +837,7 @@ function Inline({ text, onCopy }: { text: string; onCopy: (hex: string) => void 
         if (link) {
           const safe = /^https?:\/\//.test(link[2]);
           return safe ? (
-            <a key={i} href={link[2]} target="_blank" rel="noreferrer noopener" className="text-[#FF8048] underline decoration-[#FF8048]/40 underline-offset-2 hover:decoration-[#FF8048]">
+            <a key={i} href={link[2]} target="_blank" rel="noreferrer noopener" className="text-warm underline decoration-warm/40 underline-offset-2 hover:decoration-warm">
               {link[1]}
             </a>
           ) : (
@@ -858,7 +858,7 @@ function Swatch({ hex, onCopy }: { hex: string; onCopy: (hex: string) => void })
       title={`${hex}, click to copy`}
       className="inline cursor-pointer whitespace-nowrap rounded-[4px] bg-white/[0.06] px-[0.3em] py-[0.12em] align-baseline tabular-nums text-[0.85em] text-white/90 outline-none transition-colors [box-decoration-break:clone] hover:bg-white/[0.1] focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="me-[0.35em] inline-block size-[0.72em] rounded-[2px] align-[-0.04em] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]" style={{ background: hex }} aria-hidden="true" />
+      <span className="me-[0.35em] inline-block size-[0.72em] rounded-[2px] align-[-0.04em] shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.14)]" style={{ background: hex }} aria-hidden="true" />
       {hex}
     </button>
   );

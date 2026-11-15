@@ -16,7 +16,7 @@ const POPUP =
 
 export function Swatches({ colors, className }: { colors: string[]; className?: string }) {
   return (
-    <span className={cn("flex shrink-0 overflow-hidden rounded-[4px] shadow-[0_0_0_1px_rgba(255,255,255,0.12)]", className)} aria-hidden="true">
+    <span className={cn("flex shrink-0 overflow-hidden rounded-[4px] shadow-[0_0_0_1px_rgb(var(--hi)_/_0.12)]", className)} aria-hidden="true">
       {colors.map((c, i) => (
         <span key={`${c}-${i}`} className="h-full w-2.5" style={{ background: c }} />
       ))}

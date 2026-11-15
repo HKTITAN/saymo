@@ -62,7 +62,7 @@ export function AiSection() {
           ? "Uses your Claude plan or API key."
           : "Uses the AI you already pay for."}
       </DialNote>
-      {error ? <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+      {error ? <p className="rounded-[10px] bg-danger/10 px-3 py-2 text-[11.5px] text-danger leading-relaxed">{error}</p> : null}
       {status ? (
         status.providers.map((p) => (
           <Provider key={p.id} status={p} isDefault={status.providers.length > 1 && p.id === status.default} onStatus={setStatus} onError={setError} />
@@ -102,7 +102,7 @@ function Provider({
       <div className={cn(ROW, "gap-3 px-3")}>
         <span className={cn(LABEL, "text-white/85")}>{PROVIDERS[status.id].name}</span>
         {isDefault ? <span className="text-[11px] text-white/35">Default</span> : null}
-        <span className={cn("ms-auto flex items-center gap-1.5 truncate", ready ? "text-white/70" : "text-[#ff9a5c]")}>
+        <span className={cn("ms-auto flex items-center gap-1.5 truncate", ready ? "text-white/70" : "text-warm")}>
           <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", ready ? "bg-[#3dd68c]" : "bg-[#ff9a5c]")} />
           {stateWords(status)}
         </span>
@@ -243,7 +243,7 @@ function ApiKey({
               <DialButton onClick={() => setAsking(false)}>Cancel</DialButton>
               <DialButton
                 loading={busy}
-                className="bg-[#ff9592]/12 text-[#ff9592] hover:bg-[#ff9592]/20"
+                className="bg-danger/12 text-danger hover:bg-danger/20"
                 onClick={() => void act(() => aiApi.removeKey(), "Unable to remove the key. Try again.")}
               >
                 Remove key
@@ -336,7 +336,7 @@ export function SelectedAi({ provider, quiet = false }: { provider: ProviderId; 
   }, [load, provider]);
 
   const s = status?.providers.find((p) => p.id === provider);
-  if (error) return <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p>;
+  if (error) return <p className="px-1 text-[11.5px] text-danger leading-relaxed">{error}</p>;
   if (!s) {
     return (
       <p className="px-1 text-[11.5px]">
@@ -348,7 +348,7 @@ export function SelectedAi({ provider, quiet = false }: { provider: ProviderId; 
   return (
     <div className="flex flex-col gap-1.5">
       {/* Quiet: the card above already says whether it's ready. */}
-      <p className={cn("flex items-center gap-1.5 px-1 text-[11.5px]", ready ? "text-white/55" : "text-[#ff9a5c]", quiet && ready && "hidden")}>
+      <p className={cn("flex items-center gap-1.5 px-1 text-[11.5px]", ready ? "text-white/55" : "text-warm", quiet && ready && "hidden")}>
         <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", ready ? "bg-[#3dd68c]" : "bg-[#ff9a5c]")} />
         <span>
           {stateWords(s)}

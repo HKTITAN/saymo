@@ -47,7 +47,7 @@ const ROW =
 const ROW_ON = "bg-white/[0.08] text-white hover:bg-white/[0.08] [&>svg]:text-white/80";
 // A folder being named: the same row, its name typed in place, as in Finder.
 const NAMING_ROW =
-  "flex h-8 w-full items-center gap-2.5 rounded-[9px] bg-white/[0.07] px-2.5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)] [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-white/70";
+  "flex h-8 w-full items-center gap-2.5 rounded-[9px] bg-white/[0.07] px-2.5 shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.18)] [&>svg]:size-[15px] [&>svg]:shrink-0 [&>svg]:text-white/70";
 const NAMING_FIELD = "h-6 flex-1 rounded-none bg-transparent px-0 text-[12.5px] ring-0 focus:ring-0";
 
 // ─── The sidebar ─────────────────────────────────────────────────────────
@@ -452,7 +452,7 @@ function WidthHandle({ width, onWidth, onCollapse }: { width: number; onWidth: (
       <span
         aria-hidden="true"
         className={cn(
-          "my-auto flex h-7 w-[7px] flex-col items-center justify-center gap-[3px] rounded-full bg-[#2a2a2a] opacity-0 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
+          "my-auto flex h-7 w-[7px] flex-col items-center justify-center gap-[3px] rounded-full bg-knob opacity-0 shadow-[0_0_0_1px_rgb(var(--hi)_/_0.08)] transition-opacity duration-150 group-hover/edge:opacity-100 group-focus-visible/edge:opacity-100",
           drag && "opacity-100",
         )}
       >
@@ -463,7 +463,7 @@ function WidthHandle({ width, onWidth, onCollapse }: { width: number; onWidth: (
       {hint !== null && !drag ? (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute left-4 z-20 flex -translate-y-1/2 flex-col gap-0.5 whitespace-nowrap rounded-[9px] bg-popover px-2.5 py-1.5 text-[11.5px] leading-4 shadow-lg shadow-black/40 ring-1 ring-white/10 animate-in fade-in-0 duration-150"
+          className="pointer-events-none absolute left-4 z-20 flex -translate-y-1/2 flex-col gap-0.5 whitespace-nowrap rounded-[9px] bg-popover px-2.5 py-1.5 text-[11.5px] leading-4 shadow-lg shadow-shade/40 ring-1 ring-white/10 animate-in fade-in-0 duration-150"
           style={{ top: hint }}
         >
           <span>
@@ -672,7 +672,7 @@ export function Hero({
       {/* A library item dropped here comes along with the prompt. */}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: a drop target around the prompt, which is the keyboard way in */}
       <div
-        className={cn("mt-8 w-full rounded-[20px] transition-[box-shadow] duration-200", over && "shadow-[0_0_0_2px_rgba(255,255,255,0.35)]")}
+        className={cn("mt-8 w-full rounded-[20px] transition-[box-shadow] duration-200", over && "shadow-[0_0_0_2px_rgb(var(--hi)_/_0.35)]")}
         onDragOver={(e) => {
           if (!e.dataTransfer.types.includes(LIBRARY_DRAG)) return;
           e.preventDefault();
@@ -707,11 +707,11 @@ export function Hero({
           autoFocus={Boolean(initial)}
           maxRows={8}
           placeholder="A 6 second loop of lines rising like stairs"
-          className="min-h-[124px] justify-between rounded-[20px] bg-[#171717] p-2.5 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.07)] has-[:focus-visible]:bg-[#1a1a1a]"
+          className="min-h-[124px] justify-between rounded-[20px] bg-menu p-2.5 shadow-[0_24px_60px_-24px_rgb(0_0_0_/_calc(0.9*var(--shade))),0_0_0_1px_rgb(var(--hi)_/_0.07)] has-[:focus-visible]:bg-raised"
           tools={<SizePicker size={size} onSize={setSize} />}
         />
       </div>
-      {error ? <p className="mt-3 self-start px-1 text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+      {error ? <p className="mt-3 self-start px-1 text-[12px] text-danger leading-relaxed">{error}</p> : null}
 
       <div className="mt-12 grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
         {WAYS.map((w) => (
@@ -722,7 +722,7 @@ export function Hero({
             onClick={() => onWay(w.way)}
             className="group/doodle flex cursor-pointer flex-col gap-2 rounded-[14px] p-1.5 text-left outline-none transition-[background-color] duration-200 ease-out hover:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-45"
           >
-            <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-[#141414] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]">
+            <span className="relative block aspect-video w-full overflow-hidden rounded-[10px] bg-well shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.06)]">
               {w.art}
             </span>
             <span className="flex flex-col gap-0.5 px-1 pb-0.5">
@@ -767,7 +767,7 @@ function SizePicker({ size, onSize }: { size: Size; onSize: (s: Size) => void })
       {mark ? (
         <span
           aria-hidden="true"
-          className="absolute top-0.5 bottom-0.5 left-0 rounded-[7px] bg-white/[0.12] shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+          className="absolute top-0.5 bottom-0.5 left-0 rounded-[7px] bg-white/[0.12] shadow-[0_1px_2px_rgb(0_0_0_/_calc(0.3*var(--shade)))] transition-[transform,width] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
           style={{ width: mark.width, transform: `translateX(${mark.left}px)` }}
         />
       ) : null}
@@ -874,11 +874,11 @@ export function FilmStage({ film }: { film: FilmSummary }) {
   const height = byHeight ? FIT_H * 100 : ((FIT_W * STAGE) / ratio) * 100;
   return (
     <span
-      className="relative flex aspect-[16/11] w-full items-center justify-center overflow-hidden rounded-[12px] bg-[#141414] bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:14px_14px] transition-colors duration-300 group-hover/card:bg-[#181818]"
+      className="relative flex aspect-[16/11] w-full items-center justify-center overflow-hidden rounded-[12px] bg-well bg-[radial-gradient(rgb(var(--hi)_/_0.05)_1px,transparent_1px)] bg-[size:14px_14px] transition-colors duration-300 group-hover/card:bg-raised"
       skullet-block=""
     >
       <span
-        className="relative overflow-hidden rounded-[6px] bg-[#1d1d1d] shadow-[0_18px_40px_-14px_rgba(0,0,0,0.85),0_2px_8px_rgba(0,0,0,0.45)]"
+        className="relative overflow-hidden rounded-[6px] bg-raised shadow-[0_18px_40px_-14px_rgb(0_0_0_/_calc(0.85*var(--shade))),0_2px_8px_rgb(0_0_0_/_calc(0.45*var(--shade)))]"
         style={{ width: `${width}%`, height: `${height}%` }}
       >
         {film.poster ? (
@@ -925,7 +925,7 @@ export function EmptyStages() {
           return (
             <span
               key={`${w}x${h}`}
-              className="flex h-[92px] w-[128px] items-center justify-center rounded-[10px] bg-[#141414] bg-[radial-gradient(rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:12px_12px]"
+              className="flex h-[92px] w-[128px] items-center justify-center rounded-[10px] bg-well bg-[radial-gradient(rgb(var(--hi)_/_0.05)_1px,transparent_1px)] bg-[size:12px_12px]"
             >
               <span
                 className="rounded-[4px] border border-white/20 border-dashed"

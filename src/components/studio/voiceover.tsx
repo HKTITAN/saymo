@@ -116,7 +116,7 @@ export function VoiceoverButton({ id, onMade }: { id: string; onMade: () => void
                 Read it out
               </button>
             )}
-            {error ? <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+            {error ? <p className="px-1 text-[11.5px] text-danger leading-relaxed">{error}</p> : null}
           </Popover.Popup>
         </Popover.Positioner>
       </Popover.Portal>

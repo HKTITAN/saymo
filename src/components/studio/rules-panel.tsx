@@ -112,7 +112,7 @@ export function RulesPage() {
               </button>
             </p>
           ) : null}
-          {problem ? <p className="text-[12px] text-[#ff9592]">{problem}</p> : null}
+          {problem ? <p className="text-[12px] text-danger">{problem}</p> : null}
         </div>
       ) : null}
       {rules === null ? (
@@ -141,7 +141,7 @@ const ON_OFF = [
 function RuleCard({ rule: r, onChange, onRemove }: { rule: Rule; onChange: (part: Partial<Rule>) => void; onRemove: () => void }) {
   const name = r.title.trim() || "Untitled rule";
   return (
-    <li className="group/rule flex flex-col gap-1.5 rounded-[16px] bg-white/[0.025] p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]">
+    <li className="group/rule flex flex-col gap-1.5 rounded-[16px] bg-white/[0.025] p-2 shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.05)]">
       <div className="flex items-center gap-2 ps-1">
         <input
           data-rule-title={r.id}
@@ -156,7 +156,7 @@ function RuleCard({ rule: r, onChange, onRemove }: { rule: Rule; onChange: (part
         />
         <button
           type="button"
-          className={cn(ICON_BUTTON, "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-[#ff9592] focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5")}
+          className={cn(ICON_BUTTON, "size-7 opacity-0 hover:bg-[#e5484d]/12 hover:text-danger focus-visible:opacity-100 group-hover/rule:opacity-100 [&_svg]:size-3.5")}
           onClick={onRemove}
           aria-label={`Delete ${name}`}
         >
@@ -211,7 +211,7 @@ export function Slide<T extends string | boolean>({
     >
       <span
         aria-hidden="true"
-        className="absolute top-0.5 bottom-0.5 left-0.5 rounded-[7px] bg-white/[0.12] shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        className="absolute top-0.5 bottom-0.5 left-0.5 rounded-[7px] bg-white/[0.12] shadow-[0_1px_2px_rgb(0_0_0_/_calc(0.3*var(--shade)))] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
         style={{ width: segment, transform: `translateX(${at * segment}px)` }}
       />
       {options.map((o) => (

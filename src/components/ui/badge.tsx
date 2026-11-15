@@ -24,7 +24,7 @@ export const badgeVariants = cva(
       variant: {
         default: "bg-white/90 text-neutral-900 [button&,a&]:hover:bg-white",
         destructive: "bg-[#e5484d] text-white [button&,a&]:hover:bg-[#ec5d62]",
-        error: "bg-[#e5484d]/15 text-[#ff9592]",
+        error: "bg-[#e5484d]/15 text-danger",
         info: "bg-white/[0.08] text-white/80",
         outline:
           "border border-white/[0.10] text-white/65 [button&,a&]:hover:bg-white/[0.05]",

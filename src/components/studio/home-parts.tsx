@@ -210,7 +210,8 @@ const COVER: Record<FolderState, { skew: number; scale: number }> = {
   hover: { skew: 36, scale: 0.4 },
   over: { skew: 40, scale: 0.3 },
 };
-const PAGE_FILL = ["#3a3a3a", "#454545", "#505050"];
+// Greys from globals.css (--folder-*), so the folder turns light with the theme.
+const PAGE_FILL = ["var(--folder-page-1)", "var(--folder-page-2)", "var(--folder-page-3)"];
 const SPRING = "cubic-bezier(0.23, 1, 0.32, 1)";
 export type Page = { id: string; poster: string | null };
 function FolderArt({ pages, state }: { pages: Page[]; state: FolderState }) {
@@ -229,8 +230,8 @@ function FolderArt({ pages, state }: { pages: Page[]; state: FolderState }) {
           <rect width={PAGE.w} height={PAGE.h} rx={3.5} />
         </clipPath>
         <linearGradient id={`${id}-cover`} x1="0" y1="0" x2="0.3" y2="1">
-          <stop offset="0" stopColor="#3d3d3d" />
-          <stop offset="1" stopColor="#303030" />
+          <stop offset="0" style={{ stopColor: "var(--folder-cover-1)" }} />
+          <stop offset="1" style={{ stopColor: "var(--folder-cover-2)" }} />
         </linearGradient>
         <filter id={`${id}-soft`} x="-30%" y="-200%" width="160%" height="500%">
           <feGaussianBlur stdDeviation={2.6} />
@@ -238,11 +239,11 @@ function FolderArt({ pages, state }: { pages: Page[]; state: FolderState }) {
       </defs>
       <g transform="translate(1 9)">
         {/* One soft shadow on the ground. */}
-        <ellipse cx={50} cy={104} rx={38} ry={3.2} fill="rgb(0 0 0 / 0.55)" filter={`url(#${id}-soft)`} />
+        <ellipse cx={50} cy={104} rx={38} ry={3.2} style={{ fill: "rgb(0 0 0 / calc(0.55 * var(--shade)))" }} filter={`url(#${id}-soft)`} />
         {/* The back and its tab. */}
         <path
           d="M19 6.6 H73.7 Q78.7 6.6 78.7 11.6 V59.5 Q78.7 62.5 81 64 L82 64.7 Q84.3 66.2 84.3 69 V90.6 Q84.3 95.6 79.3 95.6 H19 Q14 95.6 14 90.6 V11.6 Q14 6.6 19 6.6 Z"
-          fill="#262626"
+          style={{ fill: "var(--folder-back)" }}
         />
         {/* The pages, fanned from the spine. */}
         {inside.map((f, i) => {
@@ -257,16 +258,16 @@ function FolderArt({ pages, state }: { pages: Page[]; state: FolderState }) {
                 ...move(i * 22),
               }}
             >
-              <rect width={PAGE.w} height={PAGE.h} rx={3.5} fill={PAGE_FILL[PAGE_FILL.length - inside.length + i]} />
+              <rect width={PAGE.w} height={PAGE.h} rx={3.5} style={{ fill: PAGE_FILL[PAGE_FILL.length - inside.length + i] }} />
               {f?.poster ? (
                 <image href={f.poster} width={PAGE.w} height={PAGE.h} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${id}-page)`} opacity={0.9} />
               ) : (
                 <>
-                  <rect x={7} y={8} width={20} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.18)" />
-                  <rect x={7} y={14} width={30} height={2.6} rx={1.3} fill="rgb(255 255 255 / 0.08)" />
+                  <rect x={7} y={8} width={20} height={2.6} rx={1.3} style={{ fill: "rgb(var(--hi) / 0.18)" }} />
+                  <rect x={7} y={14} width={30} height={2.6} rx={1.3} style={{ fill: "rgb(var(--hi) / 0.08)" }} />
                 </>
               )}
-              <rect x={0.3} y={0.3} width={PAGE.w - 0.6} height={PAGE.h - 0.6} rx={3.3} fill="none" stroke="rgb(255 255 255 / 0.06)" strokeWidth={0.6} />
+              <rect x={0.3} y={0.3} width={PAGE.w - 0.6} height={PAGE.h - 0.6} rx={3.3} fill="none" style={{ stroke: "rgb(var(--hi) / 0.06)" }} strokeWidth={0.6} />
             </g>
           );
         })}
@@ -279,7 +280,7 @@ function FolderArt({ pages, state }: { pages: Page[]; state: FolderState }) {
             ...move(0),
           }}
         >
-          <rect width={64.7} height={89} rx={5} fill={`url(#${id}-cover)`} stroke="rgb(255 255 255 / 0.07)" strokeWidth={0.6} />
+          <rect width={64.7} height={89} rx={5} fill={`url(#${id}-cover)`} style={{ stroke: "rgb(var(--hi) / 0.07)" }} strokeWidth={0.6} />
         </g>
       </g>
     </svg>
@@ -356,7 +357,7 @@ export const MENU_POPUP =
 
 export const ITEM =
   "flex min-h-9 w-full cursor-pointer items-center gap-2.5 rounded-[9px] px-2 pe-3 text-left text-[12.5px] text-white/80 outline-none transition-colors hover:bg-white/[0.07] hover:text-white focus-visible:bg-white/[0.07] disabled:cursor-default disabled:opacity-50 disabled:hover:bg-transparent [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-white/50";
-export const DANGER_ITEM = "text-[#ff9592] hover:bg-[#e5484d]/12 hover:text-[#ffaaa8] [&>svg]:text-[#ff9592]";
+export const DANGER_ITEM = "text-danger hover:bg-[#e5484d]/12 hover:text-danger [&>svg]:text-danger";
 
 // Asks before something can't be undone: what goes, what stays, two answers.
 export function Confirm({

@@ -313,7 +313,7 @@ export function PosterLines({ width, height }: { width: number; height: number }
   return (
     <span
       aria-hidden="true"
-      className="relative flex items-center justify-center overflow-hidden rounded-[6px] bg-white/[0.04] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+      className="relative flex items-center justify-center overflow-hidden rounded-[6px] bg-white/[0.04] shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.08)]"
       style={{
         width: wide ? "62%" : undefined,
         height: wide ? undefined : "74%",

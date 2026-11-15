@@ -36,7 +36,7 @@ export const buttonVariants = cva(
         destructive:
           "bg-[#e5484d] text-white hover:bg-[#ec5d62] data-pressed:bg-[#ec5d62] *:data-[slot=button-loading-indicator]:text-white",
         "destructive-outline":
-          "bg-white/[0.05] text-[#ff9592] hover:bg-[#e5484d]/15 data-pressed:bg-[#e5484d]/15 *:data-[slot=button-loading-indicator]:text-white",
+          "bg-white/[0.05] text-danger hover:bg-[#e5484d]/15 data-pressed:bg-[#e5484d]/15 *:data-[slot=button-loading-indicator]:text-white",
         ghost:
           "text-white/75 hover:bg-white/[0.06] hover:text-white data-pressed:bg-white/[0.06] *:data-[slot=button-loading-indicator]:text-white",
         link: "text-white/80 underline-offset-4 hover:text-white hover:underline *:data-[slot=button-loading-indicator]:text-white",

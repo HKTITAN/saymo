@@ -83,7 +83,7 @@ export function SoundWave({
     >
       <polygon
         points={`${top.join(" ")} ${width},${mid} ${bottom.join(" ")} 0,${mid}`}
-        fill={dim ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.38)"}
+        style={{ fill: dim ? "rgb(var(--hi) / 0.14)" : "rgb(var(--hi) / 0.38)" }}
       />
     </svg>
   );
@@ -95,7 +95,7 @@ export function SoundLine({ data }: { data: SoundLaneData }) {
   const failed = error ?? (status.state === "failed" ? status.message : null);
   if (failed) {
     return (
-      <span className="pointer-events-auto flex min-w-0 items-center gap-2 text-[11px] text-[#ff9592]/90">
+      <span className="pointer-events-auto flex min-w-0 items-center gap-2 text-[11px] text-danger/90">
         <span className="truncate">The sound couldn’t be made. {failed}</span>
         <button
           type="button"

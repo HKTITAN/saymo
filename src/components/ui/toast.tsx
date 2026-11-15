@@ -24,7 +24,7 @@ const TOAST_ICONS = {
 } as const;
 
 const ICON_TONE =
-  "size-4 in-data-[type=error]:text-[#ff9592] in-data-[type=info]:text-white/55 in-data-[type=loading]:size-3.5 in-data-[type=loading]:text-white/70 in-data-[type=success]:text-[#4cc38a] in-data-[type=warning]:text-[#f1a10d]";
+  "size-4 in-data-[type=error]:text-danger in-data-[type=info]:text-white/55 in-data-[type=loading]:size-3.5 in-data-[type=loading]:text-white/70 in-data-[type=success]:text-[#4cc38a] in-data-[type=warning]:text-[#f1a10d]";
 
 function ToastBody({
   Icon,
@@ -140,7 +140,7 @@ function Toasts({
             <Toast.Root
               key={toast.id}
               className={cn(
-                "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-[14px] border border-white/[0.07] bg-[color-mix(in_srgb,#1a1a1a,#000_calc(8%*max(0,var(--toast-index,0))))] font-sans text-white shadow-2xl shadow-black/50 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s,background-color_.5s] data-expanded:bg-[#1a1a1a]",
+                "absolute z-[calc(9999-var(--toast-index))] h-(--toast-calc-height) w-full select-none rounded-[14px] border border-white/[0.07] bg-[color-mix(in_srgb,var(--raised),var(--color-black)_calc(8%*max(0,var(--toast-index,0))))] font-sans text-white shadow-2xl shadow-shade/50 [transition:transform_.5s_cubic-bezier(.22,1,.36,1),opacity_.5s,height_.15s,background-color_.5s] data-expanded:bg-raised",
                 // Base positioning using data-position
                 "data-[position*=right]:right-0 data-[position*=right]:left-auto",
                 "data-[position*=left]:right-auto data-[position*=left]:left-0",
@@ -247,10 +247,10 @@ function AnchoredToasts({
             >
               <Toast.Root
                 className={cn(
-                  "relative text-balance border border-white/[0.07] bg-[#1a1a1a] font-sans text-white transition-[scale,opacity] data-ending-style:opacity-0 data-starting-style:opacity-0 motion-safe:data-ending-style:scale-97 motion-safe:data-starting-style:scale-97",
+                  "relative text-balance border border-white/[0.07] bg-raised font-sans text-white transition-[scale,opacity] data-ending-style:opacity-0 data-starting-style:opacity-0 motion-safe:data-ending-style:scale-97 motion-safe:data-starting-style:scale-97",
                   tooltipStyle
-                    ? "rounded-[8px] text-[11.5px] shadow-lg shadow-black/40"
-                    : "rounded-[14px] text-[12.5px] shadow-2xl shadow-black/50",
+                    ? "rounded-[8px] text-[11.5px] shadow-lg shadow-shade/40"
+                    : "rounded-[14px] text-[12.5px] shadow-2xl shadow-shade/50",
                   upsertReplayClassName(toast),
                 )}
                 {...toastData?.rootProps}

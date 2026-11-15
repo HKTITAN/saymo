@@ -133,7 +133,7 @@ function AboutPanel() {
         </p>
         {data && data.studio.edition !== EDITION ? (
           IS_PRODUCT ? (
-            <p className="rounded-[10px] bg-[#ff9a5c]/10 px-3 py-2 text-[11.5px] text-[#ff9a5c] leading-relaxed">
+            <p className="rounded-[10px] bg-warm/10 px-3 py-2 text-[11.5px] text-warm leading-relaxed">
               This list is for the {data.studio.edition} edition. To update it, run{" "}
               <span className="tabular-nums">STUDIO_EDITION={EDITION} npm run licences</span>.
             </p>
@@ -171,7 +171,7 @@ function AboutPanel() {
 
       <div className={cn("-mx-2 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 pb-1", NO_SCROLLBAR)}>
         {failed ? (
-          <p className="rounded-[10px] bg-[#ff9592]/10 px-3 py-2 text-[11.5px] text-[#ff9592] leading-relaxed">
+          <p className="rounded-[10px] bg-danger/10 px-3 py-2 text-[11.5px] text-danger leading-relaxed">
             Unable to load the licences. Run <span className="tabular-nums">npm run licences</span>, then reopen this panel.
           </p>
         ) : !data ? (

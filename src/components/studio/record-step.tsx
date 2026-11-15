@@ -438,7 +438,7 @@ export function RecordStep({
             : "Follows your voice, using the browser's speech service.";
 
   return (
-    <div className="absolute inset-0 bg-[#0b0b0b]">
+    <div className="absolute inset-0 bg-stage">
       {/* Top corners: back to the script, and close. */}
       <div className="absolute top-4 left-4 z-10">
         <button type="button" onClick={onBack} disabled={phase === "recording" || phase === "paused"} className={cn(CARD, PILL_BUTTON, "h-11 rounded-[14px] px-4 text-white/80 hover:text-white")}>
@@ -460,7 +460,7 @@ export function RecordStep({
       {/* The frame, centred, with the controls under it. */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 pt-20 pb-6 lg:pe-[300px] lg:ps-[300px]">
         <div
-          className="relative aspect-[9/16] h-[min(calc(100vh-200px),900px)] max-w-full overflow-hidden rounded-[18px] bg-[#111] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_30px_80px_-20px_rgba(0,0,0,0.8)]"
+          className="relative aspect-[9/16] h-[min(calc(100vh-200px),900px)] max-w-full overflow-hidden rounded-[18px] bg-well-deep shadow-[0_0_0_1px_rgb(var(--hi)_/_0.08),0_30px_80px_-20px_rgb(0_0_0_/_calc(0.8*var(--shade)))]"
           data-phase={phase}
         >
           {phase === "review" && take ? (
@@ -545,7 +545,7 @@ export function RecordStep({
                   {playing ? <PauseCircleIcon aria-hidden="true" /> : <PlayCircleIcon aria-hidden="true" />}
                 </button>
               </Hint>
-              <button type="button" className={cn(PILL_BUTTON, "h-10 rounded-[12px] bg-white px-4 text-[#141414] hover:bg-white/90")} onClick={() => onTake(take.file)}>
+              <button type="button" className={cn(PILL_BUTTON, "h-10 rounded-[12px] bg-white px-4 text-black hover:bg-white/90")} onClick={() => onTake(take.file)}>
                 Make the reel
               </button>
             </>
@@ -556,7 +556,7 @@ export function RecordStep({
                 disabled={!stream}
                 onClick={() => (phase === "live" ? startCountdown() : phase === "countdown" ? cancelCountdown() : stop())}
                 aria-label={phase === "recording" || phase === "paused" ? "Stop recording" : phase === "countdown" ? "Cancel the countdown" : "Start recording"}
-                className="group/rec flex size-14 cursor-pointer items-center justify-center rounded-full shadow-[inset_0_0_0_3px_rgba(255,255,255,0.85)] outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
+                className="group/rec flex size-14 cursor-pointer items-center justify-center rounded-full shadow-[inset_0_0_0_3px_rgb(var(--hi)_/_0.85)] outline-none transition-transform focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
               >
                 <span
                   aria-hidden="true"
@@ -589,7 +589,7 @@ export function RecordStep({
             </>
           )}
         </div>
-        {recordError ? <p className="text-[12px] text-[#ff9592]">{recordError}</p> : null}
+        {recordError ? <p className="text-[12px] text-danger">{recordError}</p> : null}
       </div>
 
       {/* Settings, floating at the side. */}
@@ -688,7 +688,7 @@ function Prompter({
   return (
     <div
       ref={area}
-      className="absolute inset-x-0 top-0 h-[46%] overflow-hidden bg-gradient-to-b from-black/80 via-black/60 to-transparent"
+      className="keep-colors absolute inset-x-0 top-0 h-[46%] overflow-hidden bg-gradient-to-b from-black/80 via-black/60 to-transparent"
       style={{ paddingInline: `${margin}%`, maskImage: "linear-gradient(to bottom, transparent 0, black 14%, black 72%, transparent 100%)" }}
     >
       <div className="relative pt-6 transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)]" style={{ transform: `translateY(${offset}px)` }}>

@@ -29,7 +29,7 @@ const NOTCHED: HudShape = {
 const NEUTRAL_SEND = ["Send_to_Claude", "Add_to_the_queue"]
   .map(
     (l) =>
-      `[&_button[aria-label='${l}']]:bg-white [&_button[aria-label='${l}']]:text-[#141414] [&_button[aria-label='${l}']:hover]:bg-white/90 [&_button[aria-label='${l}']:disabled]:bg-white/15 [&_button[aria-label='${l}']:disabled]:text-white/40`,
+      `[&_button[aria-label='${l}']]:bg-white [&_button[aria-label='${l}']]:text-black [&_button[aria-label='${l}']:hover]:bg-white/90 [&_button[aria-label='${l}']:disabled]:bg-white/15 [&_button[aria-label='${l}']:disabled]:text-white/40`,
   )
   .join(" ");
 const CUT_SEND =
@@ -42,8 +42,8 @@ function Sample({ shape, working, tabbed }: { shape: HudShape; working: boolean;
     <div className={cn("w-[340px]", CUT_SEND, NEUTRAL_SEND)}>
       <HudFrame
         shape={shape}
-        stroke={working ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.12)"}
-        mark={working ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.22)"}
+        stroke={working ? "rgb(var(--hi) / 0.55)" : "rgb(var(--hi) / 0.12)"}
+        mark={working ? "rgb(var(--hi) / 0.75)" : "rgb(var(--hi) / 0.22)"}
         label={
           <span className="flex items-center gap-1.5 text-[10.5px] text-white/55 uppercase tracking-[0.08em]">
             At <span className="text-white/85 tabular-nums">0:01.60</span>
@@ -74,7 +74,7 @@ function Sample({ shape, working, tabbed }: { shape: HudShape; working: boolean;
 
 export function PromptHudBench() {
   return (
-    <main className="min-h-dvh bg-[#0b0b0b] p-12 font-sans text-white antialiased">
+    <main className="min-h-dvh bg-stage p-12 font-sans text-white antialiased">
       <h1 className="mb-8 font-medium text-[15px] text-white/85">Prompt box, cut like hardware</h1>
       <div className="grid w-max grid-cols-2 gap-x-16 gap-y-14">
         {(
@@ -122,9 +122,9 @@ function ChatPanel({ working }: { working: boolean }) {
     <div className={cn("w-[340px]", CUT_SEND, NEUTRAL_SEND)}>
       <HudFrame
         shape={PANEL}
-        fill="#161616"
-        stroke={working ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.12)"}
-        mark={working ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.22)"}
+        fill="var(--float)"
+        stroke={working ? "rgb(var(--hi) / 0.55)" : "rgb(var(--hi) / 0.12)"}
+        mark={working ? "rgb(var(--hi) / 0.75)" : "rgb(var(--hi) / 0.22)"}
         label={<span className="font-medium text-[11px] text-white/80 uppercase tracking-[0.08em]">Claude</span>}
       >
         <div className="flex flex-col gap-3 px-4 pt-4 pb-1">

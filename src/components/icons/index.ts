@@ -10,6 +10,7 @@ export {
   ArrowUpRight as ExternalLinkSquareIcon,
   Bell as NotificationBellOnIcon,
   Bookmark as BookmarkIcon,
+  Moon as MoonIcon,
   Box as ThreeDObjectCubeIcon,
   Bulb as BulbOnIcon,
   Calendar as CalendarIcon,

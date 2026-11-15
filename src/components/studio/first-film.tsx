@@ -219,7 +219,7 @@ export function FirstFilm({
         )}
         </div>
         </Glide>
-        {error ? <p className="text-[12px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+        {error ? <p className="text-[12px] text-danger leading-relaxed">{error}</p> : null}
       </section>
     </div>
   );

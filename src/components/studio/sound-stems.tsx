@@ -339,7 +339,7 @@ function SpanPanel({ anchor, card, editor }: { anchor: RefObject<HTMLDivElement 
         </DialButton>
       ) : null}
       {editor.error ? (
-        <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed" aria-live="polite">
+        <p className="px-1 text-[11.5px] text-danger leading-relaxed" aria-live="polite">
           {editor.error}
         </p>
       ) : editor.mixing ? (

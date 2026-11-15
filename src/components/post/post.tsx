@@ -8,6 +8,7 @@ import type { PostContent } from "./content";
 import { EVENT_ICONS } from "./icons";
 import { drawPanel, type Look, MOTION_BY_ID, PANEL_H, PANEL_W, type MotionId } from "./lines";
 import { PALETTE } from "./palette";
+import { TeamSide } from "./team";
 
 // The post is laid out at its export size, 1920 x 1080, in post pixels.
 export const POST_W = 1920;
@@ -46,7 +47,7 @@ const asIs = (_part: PostPart, node: ReactNode) => node;
 // Ordinal endings after a number (20th, 21st) set small and raised, their
 // tops level with the figures. Tailwind's base styles already keep a <sup>
 // from opening up the line.
-function ordinals(text: string) {
+export function ordinals(text: string) {
   return text.split(/(?<=\d)(st|nd|rd|th)\b/).map((part, i) =>
     i % 2 ? (
       <sup key={`${i}-${part}`} style={{ fontSize: "0.6em", top: "-0.48em" }}>
@@ -131,7 +132,9 @@ export function Post({
   wrap = asIs,
   ref,
 }: PostProps) {
-  const shownLook: Look = look ?? "refined";
+  // The speaker post keeps its own softer landings ("refined"); a post can
+  // ask for Scenes as measured from the reference instead (the team post).
+  const shownLook: Look = look ?? content.look ?? "refined";
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const elapsed = useRef(0);
 
@@ -140,7 +143,12 @@ export function Post({
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
     ctx.setTransform(pixelScale, 0, 0, pixelScale, 0, 0);
-    drawPanel(ctx, motion, seconds, shownLook);
+    drawPanel(ctx, motion, seconds, shownLook, {
+      partners: content.partners,
+      flip: content.logoFlip,
+      colors: content.panelColors,
+      logoScale: content.logoScale,
+    });
   };
 
   // A moment set from outside is remembered, so a resize redraws it.
@@ -163,17 +171,16 @@ export function Post({
 
   // Each motion starts on its still frame, the same one the export opens on.
   useEffect(() => {
-    elapsed.current = MOTION_BY_ID[motion].still;
+    elapsed.current = content.videoStart ?? MOTION_BY_ID[motion].still;
     render(elapsed.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [motion]);
 
-  // A new look redraws the same moment, so Before and After compare frame
-  // for frame.
+  // A new look or new content redraws the same moment.
   useEffect(() => {
     render(elapsed.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shownLook]);
+  }, [shownLook, content]);
 
   useEffect(() => {
     if (!live || !playing) return;
@@ -188,21 +195,64 @@ export function Post({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // `content` too: switching posts must restart the loop, or it keeps
+    // drawing the panel with the previous post's settings.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, playing, motion, pixelScale, shownLook]);
+  }, [live, playing, motion, pixelScale, shownLook, content]);
+
+  // Centring: measure the three blocks on the stone side and slide them
+  // together so the widest one has equal room on both sides. Written to the
+  // DOM directly, once the fonts are in, so the export never sees a frame
+  // before it moves.
+  const blockRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const block = blockRef.current;
+    if (!block) return;
+    const centre = () => {
+      if (!content.centred) {
+        block.style.transform = "";
+        return;
+      }
+      const kids = [...block.children] as HTMLElement[];
+      const left = Math.min(...kids.map((k) => k.offsetLeft));
+      const right = Math.max(...kids.map((k) => k.offsetLeft + k.offsetWidth));
+      // The stone side is wider when the panel gives some of its width up.
+      const side = LEFT_W + (content.panelCut ?? 0);
+      const shift = (content.shift ?? 0) * side;
+      block.style.transform = `translateX(${(side - (right - left)) / 2 - left + shift}px)`;
+    };
+    centre();
+    document.fonts.ready.then(centre);
+    const watch = new ResizeObserver(centre);
+    for (const k of block.children) watch.observe(k);
+    return () => watch.disconnect();
+  }, [content]);
 
   const { title, speaker, event, skyline } = content;
+  // The panel can give up some of its left edge to the words: it slides
+  // under the left side, which grows by the same amount.
+  const cut = content.panelCut ?? 0;
   const titleSize = content.titleSize ?? HEADLINE.size;
   const headline = headlineBox(titleSize);
 
   return (
     <div
       className="relative overflow-hidden"
-      style={{ width: POST_W, height: POST_H, background: PALETTE.stone, fontFamily: "var(--font-post)" }}
+      style={{
+        width: POST_W,
+        height: POST_H,
+        background: content.team ? PALETTE.ink : PALETTE.stone,
+        fontFamily: "var(--font-post)",
+      }}
       data-post
     >
       {/* Left: headline, when and where, and the speaker on stone */}
-      <div className="absolute inset-y-0 left-0" style={{ width: LEFT_W }}>
+      <div className="absolute inset-y-0 left-0" style={{ width: LEFT_W + cut }}>
+        <div ref={blockRef} className="absolute inset-0">
+        {content.team ? (
+          <TeamSide team={content.team} width={LEFT_W + cut} />
+        ) : (
+        <>
         <h1
           className="absolute font-semibold"
           style={{
@@ -331,17 +381,21 @@ export function Post({
             </p>
           </div>
         </div>
+      </>
+        )}
+      </div>
+
       </div>
 
       {/* Right: the line field and the logo, both drawn on the canvas */}
       <div
         className="absolute inset-y-0 right-0 overflow-hidden"
-        style={{ width: PANEL_W, background: PALETTE.gap }}
+        style={{ width: PANEL_W - cut, background: PALETTE.gap }}
       >
         <canvas
           ref={canvasRef}
           className="absolute inset-0 block"
-          style={{ width: PANEL_W, height: PANEL_H }}
+          style={{ width: PANEL_W, height: PANEL_H, left: -cut }}
           role="img"
           aria-label="Aerchain"
         />
@@ -357,8 +411,12 @@ export function Post({
             alt={skyline.landmark}
             className="absolute block"
             style={{
-              left: (PANEL_W - (skyline.width ?? PANEL_W)) / 2,
+              // Centred on the part of the panel that shows.
+              left: (PANEL_W - (skyline.width ?? PANEL_W)) / 2 - cut / 2,
               bottom: 0,
+              // Its own size even where the panel is cut narrower; the base
+              // styles would otherwise shrink it to fit.
+              maxWidth: "none",
               transform: `translate(${skyline.place.x}px, ${-skyline.place.y}px) scale(${skyline.place.scale})`,
               transformOrigin: "50% 100%",
             }}

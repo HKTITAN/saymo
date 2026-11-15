@@ -35,7 +35,7 @@ export function SaveToLibrary({ save, label = "Save to library", className }: { 
         className={cn(
           "inline-flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[5px] text-white/50 outline-none transition-colors hover:bg-white/[0.1] hover:text-white focus-visible:ring-1 focus-visible:ring-white/40 disabled:cursor-default [&_svg]:size-3",
           state === "saving" && "animate-pulse",
-          problem && "text-[#ff9592]",
+          problem && "text-danger",
           className,
         )}
       >

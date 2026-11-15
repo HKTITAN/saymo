@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 // pill with its name; H hides them all.
 
 export const CARD =
-  "rounded-[16px] bg-[#161616]/80 text-[12px] text-white/90 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.07)] backdrop-blur-xl backdrop-saturate-150";
+  "rounded-[16px] bg-float/80 text-[12px] text-white/90 shadow-[0_12px_40px_-8px_rgb(0_0_0_/_calc(0.6*var(--shade))),0_0_0_1px_rgb(var(--hi)_/_0.07)] backdrop-blur-xl backdrop-saturate-150";
 
 // Small round button used in panel headers and toolbars.
 export const ICON_BUTTON =
@@ -65,7 +65,7 @@ export function DiscardAsk({ what, onKeep, onDiscard }: { what: string; onKeep: 
         // biome-ignore lint/a11y/noAutofocus: the one choice that needs a decision
         autoFocus
         onClick={onDiscard}
-        className={cn(PILL_BUTTON, "h-7 px-2.5 bg-[#ff9592]/15 text-[#ffb3b0] hover:bg-[#ff9592]/25")}
+        className={cn(PILL_BUTTON, "h-7 px-2.5 bg-danger/15 text-danger hover:bg-danger/25")}
       >
         Discard
       </button>

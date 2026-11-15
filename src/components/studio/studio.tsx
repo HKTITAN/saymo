@@ -29,6 +29,7 @@ import { MediaBin } from "./media-bin";
 import { Opening } from "./opening";
 import { clipNumber, defaults, Multitrack } from "./multitrack";
 import { turnPage } from "./page-turn";
+import { useStudioTheme } from "./theme";
 import { CARD, PANEL_MOTION, PILL_BUTTON } from "./panel";
 import { RenderControl } from "./render";
 import { SoundGroup } from "./sound-group";
@@ -110,6 +111,7 @@ const titleFromFile = (name: string) => {
 const COLUMN = 16 + 300 + 16;
 
 export function Studio() {
+  useStudioTheme();
   const id = useSyncExternalStore(subscribe, currentFilm, () => null);
   const kitId = useSyncExternalStore(subscribe, currentKit, () => null);
   const [films, setFilms] = useState<FilmSummary[] | null>(null);
@@ -223,12 +225,12 @@ export function Studio() {
   };
 
   // The home page draws its loading shapes; a film or kit waits for the list.
-  if (id === null || kitId === null || (films === null && (id || kitId))) return <div className="fixed inset-0 bg-[#0b0b0b]" />;
+  if (id === null || kitId === null || (films === null && (id || kitId))) return <div className="fixed inset-0 bg-stage" />;
 
   return (
     <SkeletonProvider>
     <TooltipProvider delay={400}>
-      <main className="fixed inset-0 overflow-hidden bg-[#0b0b0b] font-sans text-white antialiased">
+      <main className="fixed inset-0 overflow-hidden bg-stage font-sans text-white antialiased">
         {kitId ? (
           <KitPage
             key={kitId}
@@ -1291,7 +1293,7 @@ function FilmView({
           className={cn(CARD, "pointer-events-auto absolute z-30 flex max-w-[420px] -translate-x-1/2 items-center gap-2 py-2 ps-3 pe-1.5")}
           style={{ left: fit.x + fit.width / 2, top: insets.top }}
         >
-          <p className="text-[12px] text-[#ff9592]">{takes.error}</p>
+          <p className="text-[12px] text-danger">{takes.error}</p>
           <button type="button" className={cn(PILL_BUTTON, "h-7 px-2.5 text-white/65 hover:bg-white/[0.08]")} onClick={takes.clearError}>
             Dismiss
           </button>

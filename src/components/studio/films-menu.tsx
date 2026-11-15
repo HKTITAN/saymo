@@ -92,7 +92,7 @@ export function FilmsMenu({
                     </button>
                     <button
                       type="button"
-                      className={cn(ITEM, "text-[#ff9592] hover:bg-[#e5484d]/12 hover:text-[#ffaaa8] [&>svg]:text-[#ff9592]")}
+                      className={cn(ITEM, "text-danger hover:bg-[#e5484d]/12 hover:text-danger [&>svg]:text-danger")}
                       onClick={() => setView("delete")}
                     >
                       <DeleteDustbin01Icon aria-hidden="true" />

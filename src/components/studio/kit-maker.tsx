@@ -212,7 +212,7 @@ export function KitMaker({
                 </ul>
               ) : null}
               {links.map((l) => linkNote(l, figmaReady)).filter((n, i, all): n is string => Boolean(n) && all.indexOf(n) === i).map((note) => (
-                <p key={note} className="px-4 pb-2 text-[11.5px] text-[#f5c26b]/85 leading-relaxed">
+                <p key={note} className="px-4 pb-2 text-[11.5px] text-warn/85 leading-relaxed">
                   {note}
                 </p>
               ))}
@@ -287,7 +287,7 @@ export function KitMaker({
                   // biome-ignore lint/a11y/noAutofocus: the one choice that needs a decision
                   autoFocus
                   onClick={onClose}
-                  className={cn(PILL_BUTTON, "h-7 bg-[#ff9592]/15 text-[#ffb3b0] hover:bg-[#ff9592]/25")}
+                  className={cn(PILL_BUTTON, "h-7 bg-danger/15 text-danger hover:bg-danger/25")}
                 >
                   Discard
                 </button>
@@ -317,7 +317,7 @@ function Chip({ kind, name, preview, warn, onRemove }: { kind: string; name: str
         // eslint-disable-next-line @next/next/no-img-element -- a local preview of the dropped file
         <img src={preview} alt="" className="size-5 rounded-[4px] bg-white/10 object-cover" />
       ) : null}
-      <span className={cn("shrink-0 rounded-[5px] px-1.5 py-0.5 font-medium text-[10.5px]", warn ? "bg-[#f5c26b]/15 text-[#f5c26b]" : "bg-white/[0.08] text-white/65")}>
+      <span className={cn("shrink-0 rounded-[5px] px-1.5 py-0.5 font-medium text-[10.5px]", warn ? "bg-warn/15 text-warn" : "bg-white/[0.08] text-white/65")}>
         {kind}
       </span>
       <span className="min-w-0 truncate text-white/80">{name}</span>
@@ -505,7 +505,7 @@ function Building({
                 <span
                   className={cn(
                     "flex size-4 shrink-0 items-center justify-center rounded-full transition-[background-color,box-shadow] duration-300 [&_svg]:size-4",
-                    isDone ? "text-studio" : isNow ? "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.7)]" : "shadow-[inset_0_0_0_1.5px_rgba(255,255,255,0.15)]",
+                    isDone ? "text-studio" : isNow ? "shadow-[inset_0_0_0_1.5px_rgb(var(--hi)_/_0.7)]" : "shadow-[inset_0_0_0_1.5px_rgb(var(--hi)_/_0.15)]",
                   )}
                 >
                   {isDone ? <CheckTickCircleIcon aria-hidden="true" className="animate-in zoom-in-50 duration-300" /> : isNow ? <span className="size-1.5 animate-pulse rounded-full bg-white" /> : null}
@@ -519,7 +519,7 @@ function Building({
 
       {error ? (
         <div className="flex flex-wrap items-center gap-2">
-          <p className="me-auto text-[12.5px] text-[#ff9592] leading-relaxed">{error}</p>
+          <p className="me-auto text-[12.5px] text-danger leading-relaxed">{error}</p>
           <button type="button" onClick={onBack} className={cn(PILL_BUTTON, "text-white/70 hover:bg-white/[0.08] hover:text-white")}>
             Back to what I wrote
           </button>
@@ -558,12 +558,12 @@ function MiniBoard({ kit, first }: { kit: BrandKit | null; first: BrandKit | nul
   const ramps = kit?.colors.ramps.slice(0, 3) ?? [];
   const r = kit?.colors.roles;
   return (
-    <div className="flex flex-col gap-3 overflow-hidden rounded-[14px] p-4 transition-colors duration-500" style={{ background: coloured && r ? r.surface : "rgba(255,255,255,0.04)" }}>
+    <div className="flex flex-col gap-3 overflow-hidden rounded-[14px] p-4 transition-colors duration-500" style={{ background: coloured && r ? r.surface : "rgb(var(--hi) / 0.04)" }}>
       <div className="flex min-h-10 items-center justify-between gap-3">
         <span
           key={kit?.name}
           className="truncate text-[22px] leading-tight transition-colors duration-500 animate-in fade-in duration-300"
-          style={{ color: coloured && r ? r.ink : "rgba(255,255,255,0.85)", fontFamily: family ? `"${family}", system-ui` : undefined, fontWeight: 600 }}
+          style={{ color: coloured && r ? r.ink : "rgb(var(--hi) / 0.85)", fontFamily: family ? `"${family}", system-ui` : undefined, fontWeight: 600 }}
         >
           {kit && kit.name !== "New brand" ? kit.name : <span className="text-white/25">Name to come</span>}
         </span>
@@ -578,7 +578,7 @@ function MiniBoard({ kit, first }: { kit: BrandKit | null; first: BrandKit | nul
               <span
                 key={`${key}-${hex}`}
                 title={`${key} ${hex}`}
-                className="h-10 flex-1 rounded-[8px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)] animate-in fade-in zoom-in-75 fill-mode-both duration-300"
+                className="h-10 flex-1 rounded-[8px] shadow-[inset_0_0_0_1px_rgb(0_0_0_/_calc(0.08*var(--shade)))] animate-in fade-in zoom-in-75 fill-mode-both duration-300"
                 style={{ background: hex, animationDelay: `${i * 70}ms` }}
               />
             ))
@@ -595,7 +595,7 @@ function MiniBoard({ kit, first }: { kit: BrandKit | null; first: BrandKit | nul
           ))}
         </div>
       ) : null}
-      <p className="text-[11.5px] transition-colors duration-500" style={{ color: coloured && r ? r.muted : "rgba(255,255,255,0.35)" }}>
+      <p className="text-[11.5px] transition-colors duration-500" style={{ color: coloured && r ? r.muted : "rgb(var(--hi) / 0.35)" }}>
         {font ? (
           <span key={font.family} className="animate-in fade-in duration-500" style={{ fontFamily: family ? `"${family}", system-ui` : undefined }}>
             {font.family}

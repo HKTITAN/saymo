@@ -11,6 +11,8 @@ declare global {
       ready: boolean;
       motions: { id: MotionId; duration: number; still: number }[];
       renderAt: (seconds: number) => void;
+      // Where the video starts, if not on the still frame.
+      start: number | null;
     };
   }
 }
@@ -31,6 +33,7 @@ export function ExportStage({ motion, content }: { motion: MotionId; content?: P
         ready: true,
         motions: MOTIONS.map(({ id, duration, still }) => ({ id, duration, still })),
         renderAt: (s) => h.renderAt(s),
+        start: content?.videoStart ?? null,
       };
     });
     return () => {

@@ -290,7 +290,7 @@ export function ChatPanel({
         ))}
         {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
         {!turn.running && chat.carryOn ? <CarryOnNote carryOn={chat.carryOn} onCancel={() => void chat.cancelCarryOn()} /> : null}
-        {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
+        {turn.error ? <p className="text-[12.5px] text-danger leading-relaxed">{turn.error}</p> : null}
         {chat.queue.length ? (
           <Queue
             queue={chat.queue}
@@ -306,7 +306,7 @@ export function ChatPanel({
             onResume={chat.resume}
           />
         ) : null}
-        {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
+        {undoError ? <p className="text-[12.5px] text-danger leading-relaxed">{undoError}</p> : null}
         {rewriteNote && !turn.running ? <p className="text-[11.5px] text-white/40 leading-relaxed">{rewriteNote}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">

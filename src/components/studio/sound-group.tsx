@@ -63,7 +63,7 @@ export function SoundGroup({
           </span>
         </p>
       ) : failed ? (
-        <p className="px-1 text-[11.5px] text-[#ff9592] leading-relaxed">The sound couldn’t be made. {failed}</p>
+        <p className="px-1 text-[11.5px] text-danger leading-relaxed">The sound couldn’t be made. {failed}</p>
       ) : null}
       <DialButton loading={rendering} onClick={() => void sound.render()}>
         <RefreshIcon aria-hidden="true" />

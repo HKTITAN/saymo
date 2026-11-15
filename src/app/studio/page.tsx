@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Studio } from "@/components/studio/studio";
+import { THEME_SCRIPT } from "@/components/studio/theme-script";
 
 export const metadata: Metadata = {
   title: "Saymo",
@@ -7,5 +8,11 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <Studio />;
+  return (
+    <>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: a fixed script that sets the chosen theme before paint */}
+      <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      <Studio />
+    </>
+  );
 }

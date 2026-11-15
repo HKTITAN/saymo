@@ -180,7 +180,7 @@ export function ExportControl({ doc, flush }: { doc: PostDoc; flush: () => Promi
               <span
                 // Focusable, so the whole error can be read from the keyboard too.
                 tabIndex={0}
-                className="max-w-72 cursor-default truncate rounded-[4px] text-[11.5px] text-[#ff9592] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="max-w-72 cursor-default truncate rounded-[4px] text-[11.5px] text-danger outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             }
           >

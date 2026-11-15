@@ -170,7 +170,7 @@ export function PromptBox({
               key={a.key}
               className={cn(
                 "group/chip flex h-7 max-w-full items-center gap-1.5 rounded-[8px] bg-white/[0.07] ps-1 pe-0.5 text-[11.5px] text-white/80",
-                a.error && "bg-[#ff9592]/10 text-[#ff9592]",
+                a.error && "bg-danger/10 text-danger",
               )}
               title={a.error ?? a.name}
             >
@@ -217,7 +217,7 @@ export function PromptBox({
         </p>
       ) : null}
       {attachments?.notice ? (
-        <p className="px-1.5 text-[11.5px] text-[#ff9592] leading-relaxed" aria-live="polite">
+        <p className="px-1.5 text-[11.5px] text-danger leading-relaxed" aria-live="polite">
           {attachments.notice}
         </p>
       ) : null}
@@ -230,7 +230,7 @@ export function PromptBox({
               type="button"
               onClick={onClearChip}
               aria-label="Stop pointing at this"
-              className="inline-flex size-4 cursor-pointer items-center justify-center rounded-[4px] text-studio-soft/70 outline-none hover:bg-studio/20 hover:text-[#ffb27f] focus-visible:ring-1 focus-visible:ring-ring [&_svg]:size-3"
+              className="inline-flex size-4 cursor-pointer items-center justify-center rounded-[4px] text-studio-soft/70 outline-none hover:bg-studio/20 hover:text-warm focus-visible:ring-1 focus-visible:ring-ring [&_svg]:size-3"
             >
               <MultipleCrossCancelIcon aria-hidden="true" />
             </button>

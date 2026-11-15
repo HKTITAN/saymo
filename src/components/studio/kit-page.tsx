@@ -516,7 +516,7 @@ function TopBar({
           </button>
         </Hint>
       )}
-      <span className={cn("px-1 text-[11.5px]", save === "failed" ? "text-[#ff9592]" : "text-white/35")}>
+      <span className={cn("px-1 text-[11.5px]", save === "failed" ? "text-danger" : "text-white/35")}>
         {save === "saving" ? "Saving…" : save === "failed" ? "Not saved" : "Saved"}
       </span>
       <Popover.Root
@@ -571,7 +571,7 @@ function TopBar({
                   </a>
                   <button
                     type="button"
-                    className={cn(ITEM, "text-[#ff9592] hover:bg-[#e5484d]/12 hover:text-[#ffaaa8] [&>svg]:text-[#ff9592]")}
+                    className={cn(ITEM, "text-danger hover:bg-[#e5484d]/12 hover:text-danger [&>svg]:text-danger")}
                     onClick={() => setConfirm(true)}
                   >
                     <DeleteDustbin01Icon aria-hidden="true" />
@@ -656,7 +656,7 @@ function KitSettings({
                 Add a step
               </DialButton>
               <DialButton
-                className="text-[#ff9592]"
+                className="text-danger"
                 onClick={() => change("Removed a ramp", (k) => ({ ...k, colors: { ...k.colors, ramps: k.colors.ramps.filter((_, i) => i !== ri) } }))}
               >
                 Remove ramp
@@ -1116,7 +1116,7 @@ function KitChat({
             {turn.text ? <p className="whitespace-pre-wrap text-[12.5px] text-white/80 leading-relaxed">{turn.text}</p> : null}
           </div>
         ) : null}
-        {turn.error ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{turn.error}</p> : null}
+        {turn.error ? <p className="text-[12.5px] text-danger leading-relaxed">{turn.error}</p> : null}
         {undoNote ? <p className="text-[12.5px] text-white/50 leading-relaxed">{undoNote}</p> : null}
       </div>
       <div className="flex shrink-0 flex-col gap-1.5 px-2 pb-2">

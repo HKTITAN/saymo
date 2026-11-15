@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 // lit softly on hover, with small system type.
 
 const ITEM =
-  "flex min-h-8 cursor-default select-none items-center gap-2 rounded-[8px] px-2.5 py-1 text-[12.5px] text-white/80 outline-none transition-colors data-disabled:pointer-events-none data-highlighted:bg-white/[0.07] data-highlighted:text-white data-inset:ps-8 data-[variant=destructive]:text-[#ff9592] data-[variant=destructive]:data-highlighted:bg-[#e5484d]/15 data-disabled:opacity-50 [&>svg:not([class*='size-'])]:size-4 [&>svg]:pointer-events-none [&>svg]:shrink-0 [&>svg]:text-white/55";
+  "flex min-h-8 cursor-default select-none items-center gap-2 rounded-[8px] px-2.5 py-1 text-[12.5px] text-white/80 outline-none transition-colors data-disabled:pointer-events-none data-highlighted:bg-white/[0.07] data-highlighted:text-white data-inset:ps-8 data-[variant=destructive]:text-danger data-[variant=destructive]:data-highlighted:bg-[#e5484d]/15 data-disabled:opacity-50 [&>svg:not([class*='size-'])]:size-4 [&>svg]:pointer-events-none [&>svg]:shrink-0 [&>svg]:text-white/55";
 
 export const MenuCreateHandle: typeof MenuPrimitive.createHandle =
   MenuPrimitive.createHandle;
@@ -65,7 +65,7 @@ export function MenuPopup({
       >
         <MenuPrimitive.Popup
           className={cn(
-            "relative flex not-[class*='w-']:min-w-40 origin-(--transform-origin) rounded-[14px] border border-white/[0.07] bg-[#171717] shadow-2xl shadow-black/50 outline-none transition-[scale,opacity] duration-150 focus:outline-none data-ending-style:scale-97 data-starting-style:scale-97 data-ending-style:opacity-0 data-starting-style:opacity-0",
+            "relative flex not-[class*='w-']:min-w-40 origin-(--transform-origin) rounded-[14px] border border-white/[0.07] bg-menu shadow-2xl shadow-shade/50 outline-none transition-[scale,opacity] duration-150 focus:outline-none data-ending-style:scale-97 data-starting-style:scale-97 data-ending-style:opacity-0 data-starting-style:opacity-0",
             className,
           )}
           data-slot="menu-popup"

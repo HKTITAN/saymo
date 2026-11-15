@@ -235,7 +235,7 @@ function LibraryPicker({ attachments, onBack, onClose }: { attachments: Attachme
           </p>
         )}
       </div>
-      {problem ? <p className="px-1.5 text-[11.5px] text-[#ff9592] leading-relaxed">{problem}</p> : null}
+      {problem ? <p className="px-1.5 text-[11.5px] text-danger leading-relaxed">{problem}</p> : null}
     </div>
   );
 }

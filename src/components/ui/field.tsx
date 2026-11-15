@@ -67,7 +67,7 @@ export function FieldError({
 }: FieldPrimitive.Error.Props): React.ReactElement {
   return (
     <FieldPrimitive.Error
-      className={cn("px-1 text-[11.5px] text-[#ff9592] leading-relaxed", className)}
+      className={cn("px-1 text-[11.5px] text-danger leading-relaxed", className)}
       data-slot="field-error"
       {...props}
     />

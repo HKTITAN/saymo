@@ -98,7 +98,7 @@ export function ColorRow({ label, value, onChange }: { label: string; value: str
         <span className={LABEL}>{label}</span>
         <span className="ms-auto flex items-center gap-2">
           <span className={VALUE}>{hex}</span>
-          <span className="size-4 rounded-[5px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]" style={{ background: hex }} />
+          <span className="size-4 rounded-[5px] shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.15)]" style={{ background: hex }} />
         </span>
       </Popover.Trigger>
       <Popover.Portal>
@@ -143,7 +143,7 @@ export function ColorRow({ label, value, onChange }: { label: string; value: str
               }}
             >
               <span
-                className="pointer-events-none absolute size-3.5 -translate-x-1/2 translate-y-1/2 rounded-full shadow-[0_0_0_2px_#fff,0_0_0_3px_rgba(0,0,0,0.3)]"
+                className="pointer-events-none absolute size-3.5 -translate-x-1/2 translate-y-1/2 rounded-full shadow-[0_0_0_2px_#fff,0_0_0_3px_rgb(0_0_0_/_calc(0.3*var(--shade)))]"
                 style={{ left: `${hsv.s * 100}%`, bottom: `${hsv.v * 100}%`, background: hex }}
               />
             </div>
@@ -172,7 +172,7 @@ export function ColorRow({ label, value, onChange }: { label: string; value: str
               }}
             >
               <span
-                className="pointer-events-none absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_0_2px_#fff,0_0_0_3px_rgba(0,0,0,0.3)]"
+                className="pointer-events-none absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_0_2px_#fff,0_0_0_3px_rgb(0_0_0_/_calc(0.3*var(--shade)))]"
                 style={{ left: `${(hsv.h / 360) * 100}%`, background: `hsl(${hsv.h} 100% 50%)` }}
               />
             </div>
@@ -205,8 +205,8 @@ export function ColorRow({ label, value, onChange }: { label: string; value: str
                     onChange(color);
                   }}
                   className={cn(
-                    "size-6 cursor-pointer rounded-[7px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] outline-none transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring",
-                    color === hex && "ring-2 ring-white/70 ring-offset-1 ring-offset-[#1c1c1c]",
+                    "size-6 cursor-pointer rounded-[7px] shadow-[inset_0_0_0_1px_rgb(var(--hi)_/_0.14)] outline-none transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring",
+                    color === hex && "ring-2 ring-white/70 ring-offset-1 ring-offset-raised",
                   )}
                   style={{ background: color }}
                 />

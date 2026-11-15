@@ -78,7 +78,7 @@ export function ConnectionsButton() {
               </p>
             </div>
             {note ? (
-              <p className={cn("rounded-[10px] px-3 py-2 text-[11.5px] leading-relaxed", note.bad ? "bg-[#ff9592]/10 text-[#ff9592]" : "bg-white/[0.06] text-white/75")}>
+              <p className={cn("rounded-[10px] px-3 py-2 text-[11.5px] leading-relaxed", note.bad ? "bg-danger/10 text-danger" : "bg-white/[0.06] text-white/75")}>
                 {note.text}
               </p>
             ) : null}
@@ -141,7 +141,7 @@ function Disconnect({ label, consequence, onConfirm }: { label: string; conseque
         <DialButton onClick={() => setAsking(false)}>Cancel</DialButton>
         <DialButton
           loading={busy}
-          className="bg-[#ff9592]/12 text-[#ff9592] hover:bg-[#ff9592]/20"
+          className="bg-danger/12 text-danger hover:bg-danger/20"
           onClick={async () => {
             setBusy(true);
             await onConfirm().finally(() => setBusy(false));
@@ -471,7 +471,7 @@ export function SavedTo({ id, renderedAt }: { id: string; renderedAt: string | n
     <div className="mt-1 flex flex-col gap-1 border-white/[0.07] border-t px-1 pt-2 pb-0.5">
       <SaveLine label="Google Drive" saved="Saved to Drive" state={state.drive} onRetry={() => void save("drive")} />
       <SaveLine label="GitHub" saved="Source saved to GitHub" state={state.github} onRetry={() => void save("github")} />
-      {error ? <p className="px-1.5 text-[11.5px] text-[#ff9592] leading-relaxed">{error}</p> : null}
+      {error ? <p className="px-1.5 text-[11.5px] text-danger leading-relaxed">{error}</p> : null}
     </div>
   );
 }
@@ -494,7 +494,7 @@ function SaveLine({ label, saved, state, onRetry }: { label: string; saved: stri
         </>
       ) : (
         <>
-          <span className="min-w-0 flex-1 text-[#ff9592] leading-snug" title={state.message}>
+          <span className="min-w-0 flex-1 text-danger leading-snug" title={state.message}>
             {label}: {state.message}
           </span>
           <button type="button" onClick={onRetry} className={cn(LINK, "shrink-0")}>

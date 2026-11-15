@@ -537,7 +537,7 @@ export function InlineField({ part, children }: { part: TextPart; children: Reac
             aria-label="Selected words"
             className={cn(
               SURFACE,
-              "pointer-events-auto absolute z-30 -translate-x-1/2 -translate-y-[calc(100%_+_10px)] p-1 shadow-lg shadow-black/25",
+              "pointer-events-auto absolute z-30 -translate-x-1/2 -translate-y-[calc(100%_+_10px)] p-1 shadow-lg shadow-shade/25",
             )}
             style={{ visibility: "hidden" }}
           >

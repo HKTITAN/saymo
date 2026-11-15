@@ -11,7 +11,7 @@ export function Kbd({
   return (
     <kbd
       className={cn(
-        "pointer-events-none inline-flex h-[19px] min-w-[19px] select-none items-center justify-center gap-1 rounded-[6px] bg-[#2c2c2c] px-[5px] pb-px font-medium font-sans text-[10.5px] text-white/75 leading-none shadow-[inset_0_-2px_0_rgba(0,0,0,0.4),0_1px_1.5px_rgba(0,0,0,0.45)] [&_svg:not([class*='size-'])]:size-3",
+        "pointer-events-none inline-flex h-[19px] min-w-[19px] select-none items-center justify-center gap-1 rounded-[6px] bg-knob px-[5px] pb-px font-medium font-sans text-[10.5px] text-white/75 leading-none shadow-[inset_0_-2px_0_rgb(0_0_0_/_calc(0.4*var(--shade))),0_1px_1.5px_rgb(0_0_0_/_calc(0.45*var(--shade)))] [&_svg:not([class*='size-'])]:size-3",
         className,
       )}
       data-slot="kbd"

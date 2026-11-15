@@ -66,9 +66,9 @@ function ticks(shape: HudShape, w: number, h: number) {
 
 export function HudFrame({
   shape,
-  fill = "#191919",
-  stroke = "rgba(255,255,255,0.12)",
-  mark = "rgba(255,255,255,0.22)",
+  fill = "var(--raised)",
+  stroke = "rgb(var(--hi) / 0.12)",
+  mark = "rgb(var(--hi) / 0.22)",
   label,
   className,
   children,

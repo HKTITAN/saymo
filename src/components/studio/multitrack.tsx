@@ -729,7 +729,7 @@ export function Multitrack({
           <div className="relative" style={{ width }}>
             {/* Ruler */}
             <div
-              className="sticky top-0 z-10 cursor-ew-resize select-none bg-[#161616]"
+              className="sticky top-0 z-10 cursor-ew-resize select-none bg-float"
               style={{ height: RULER_H }}
               onPointerDown={scrubDown}
               onPointerMove={scrubMove}
@@ -881,7 +881,7 @@ export function Multitrack({
               <div className="pointer-events-none absolute top-0 bottom-0 z-20 w-px bg-studio" style={{ left: guide * scale }} />
             ) : null}
             <div
-              className="pointer-events-none absolute top-0 bottom-0 z-20 w-0.5 -translate-x-1/2 bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.3)]"
+              className="pointer-events-none absolute top-0 bottom-0 z-20 w-0.5 -translate-x-1/2 bg-white shadow-[0_0_0_2px_rgb(0_0_0_/_calc(0.3*var(--shade)))]"
               style={{ left: t * scale }}
             >
               <span className="absolute -top-px left-1/2 size-2.5 -translate-x-1/2 rotate-45 rounded-[2px] bg-white" />
@@ -918,7 +918,7 @@ function SaveNote({ state }: { state: EditState["save"] }) {
   const words = { saved: "Saved", saving: "Saving…", failed: "Not saved yet. Trying again" }[state];
   return (
     <span
-      className={cn("ms-1 text-[11px] transition-colors", state === "failed" ? "text-[#ff9592]" : "text-white/35")}
+      className={cn("ms-1 text-[11px] transition-colors", state === "failed" ? "text-danger" : "text-white/35")}
       aria-live="polite"
     >
       {words}
@@ -991,7 +991,7 @@ function ItemBlock({
     <div
       className={cn(
         "group absolute top-0.5 bottom-0.5 overflow-hidden rounded-[7px] outline-none",
-        item.type === "graphic" ? "bg-[#3a3a3a]" : track.kind === "audio" ? "bg-[#23302a]" : "bg-[#262626]",
+        item.type === "graphic" ? "bg-knob-hi" : track.kind === "audio" ? "bg-[#23302a]" : "bg-knob",
         selected ? "ring-2 ring-white ring-inset" : "ring-1 ring-white/10 ring-inset",
       )}
       style={{ left, width: w }}
@@ -1133,7 +1133,7 @@ function Wave({
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
     >
-      <polygon points={`0,${height} ${points.join(" ")} ${width},${height}`} fill="rgba(255,255,255,0.28)" />
+      <polygon points={`0,${height} ${points.join(" ")} ${width},${height}`} style={{ fill: "rgb(var(--hi) / 0.28)" }} />
     </svg>
   );
 }

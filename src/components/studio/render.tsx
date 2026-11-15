@@ -179,7 +179,7 @@ export function RenderControl({
               ) : null}
               {id ? <SavedTo id={id} renderedAt={status.state === "done" ? status.at : null} /> : null}
               {error || status.state === "failed" ? (
-                <p className="px-2.5 pt-1 pb-1.5 text-[11.5px] text-[#ff9592] leading-relaxed">
+                <p className="px-2.5 pt-1 pb-1.5 text-[11.5px] text-danger leading-relaxed">
                   {error ?? (status.state === "failed" ? status.message : null)}
                 </p>
               ) : null}

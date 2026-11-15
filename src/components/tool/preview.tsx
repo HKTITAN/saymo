@@ -65,7 +65,7 @@ export function Preview({ content, motion, handle, wrap, onPlace, postRef }: Pre
     <div ref={setStage} className="relative size-full min-h-0">
       {scale > 0 && (
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-2xl shadow-black/40"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-2xl shadow-shade/40"
           // --px is one screen pixel in the post's own pixels, for the
           // outlines drawn around words being edited.
           style={{ width: POST_W * scale, height: POST_H * scale, "--px": `${1 / scale}px` } as CSSProperties}

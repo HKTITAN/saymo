@@ -165,7 +165,7 @@ export function Timeline({
             );
           })}
         <div
-          className="pointer-events-none absolute inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_3px_rgba(0,0,0,0.25)]"
+          className="pointer-events-none absolute inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-white shadow-[0_0_0_3px_rgb(0_0_0_/_calc(0.25*var(--shade)))]"
           style={{ left: `${share * 100}%` }}
         />
       </div>
