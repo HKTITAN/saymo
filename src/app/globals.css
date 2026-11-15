@@ -3,10 +3,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* The studio's own accent: pink. bg-studio, text-studio-soft, ring-studio
+  /* The studio's own accent: a soft rose, oklch(0.72 0.15 355), chosen
+     2026-11-15 as calmer than the old neon #ff4fa3. bg-studio, text-studio-soft, ring-studio
      and so on. Aerchain orange stays in Aerchain artwork and brand kits. */
-  --color-studio: #ff4fa3;
-  --color-studio-hover: #ff6db4;
+  --color-studio: #ec79a9;
+  --color-studio-hover: #f589b6;
   --color-studio-soft: var(--studio-soft);
   /* The studio's surfaces and warm text, as tokens so the light theme can
      swap them (see html[data-theme="light"] below). */
@@ -281,7 +282,7 @@
   --card-idea: #1a1a1d;
   --knob: #262626;
   --knob-hi: #3a3a3a;
-  --studio-soft: #ff9fcd;
+  --studio-soft: #fab2cd;
   --danger: #ff9592;
   --warn: #febc2e;
   --warm: #ff9a5c;
@@ -309,7 +310,7 @@ html[data-theme="light"] {
   --card-idea: #ffffff;
   --knob: #d9d9d9;
   --knob-hi: #c2c2c2;
-  --studio-soft: #d61f78;
+  --studio-soft: #b14576;
   --danger: #cf2f37;
   --warn: #a86400;
   --warm: #c2470b;
@@ -743,10 +744,10 @@ main[data-arriving] .studio-panel {
    graphite, with one accent, the studio's pink, on the hood's half-disc,
    the SPIN button, the lever's ball, the reel symbols and the pop. */
 .slot-machine {
-  --slot-pink: var(--color-studio, #ff4fa3);
-  --slot-pink-light: var(--color-studio-soft, #ff9fcd);
-  --slot-pink-dark: #e0388f;
-  --slot-pink-deep: #b81f6e;
+  --slot-pink: var(--color-studio, #ec79a9);
+  --slot-pink-light: var(--color-studio-soft, #fab2cd);
+  --slot-pink-dark: #d06091;
+  --slot-pink-deep: #a4406d;
 }
 .slot-disc-text,
 .slot-button-text {

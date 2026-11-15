@@ -50,12 +50,12 @@ const tint = (rgb: string, hot: string, deep: string) => `
   );
 }
 `;
-const PINK = "255, 105, 180";
+const PINK = "236, 121, 169";
 // Pink all the way along, never white: a long tail that deepens to
 // magenta, the studio's pink in the middle and a lighter pink at the head.
 const CSS: Record<Tone, string> = {
-  work: tint(PINK, "255, 140, 200", "190, 40, 140"),
-  drop: tint(PINK, "255, 140, 200", "190, 40, 140"),
+  work: tint(PINK, "255, 163, 200", "177, 69, 118"),
+  drop: tint(PINK, "255, 163, 200", "177, 69, 118"),
 };
 
 // The library's md preset keeps its stroke faint (it leans on a coloured
@@ -67,8 +67,8 @@ const LAYERS: Record<Tone, Record<string, number>> = {
 };
 
 const STILL: Record<Tone, string> = {
-  work: "shadow-[inset_0_0_0_1px_rgba(255,105,180,0.55)]",
-  drop: "shadow-[inset_0_0_0_1px_rgba(255,105,180,0.7)]",
+  work: "shadow-[inset_0_0_0_1px_rgba(236,121,169,0.55)]",
+  drop: "shadow-[inset_0_0_0_1px_rgba(236,121,169,0.7)]",
 };
 
 export function EdgeBeam({ on, tone = "work" }: { on: boolean; tone?: Tone }) {
