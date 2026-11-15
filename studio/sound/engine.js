@@ -113,7 +113,8 @@ async function mix({ music, effects, duration, sampleRate, musicGain, effectsGai
     const src = new AudioBufferSourceNode(ctx, { buffer });
     const g = new GainNode(ctx, { gain });
     const ease = 0.25;
-    if (spans?.length && duck < 1) {
+    const ducked = Boolean(spans?.length && duck < 1);
+    if (ducked) {
       for (const s of spans) {
         const a = Math.max(0, s.start - ease);
         const b = Math.min(duration, s.end + ease);
@@ -126,7 +127,10 @@ async function mix({ music, effects, duration, sampleRate, musicGain, effectsGai
     if (fade > 0) {
       const from = Math.max(0, duration - fade);
       // From wherever the level is then (ducked or not) down to silence.
-      g.gain.cancelAndHoldAtTime(from);
+      // With no dips there's no automation to hold, so the ramp needs its
+      // own starting point, or it would fade from the film's first moment.
+      if (ducked) g.gain.cancelAndHoldAtTime(from);
+      else g.gain.setValueAtTime(gain, from);
       g.gain.linearRampToValueAtTime(0, duration);
     }
     src.connect(g).connect(ctx.destination);
