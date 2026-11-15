@@ -1,64 +1,61 @@
-// Every interface icon comes from Reicon (reicon.dev, MIT, outline weight), under the names the
-// studio already imported, so a swap is one line here. Filled variants live in filled.tsx; the
-// GitHub mark is GitHub's own (github.tsx).
-export {
-  AlertCircle as AlertCircleIcon,
-  AlertTriangle as AlertTriangleIcon,
-  ArrowDown as ArrowDownIcon,
-  ArrowLeft as ArrowLeftIcon,
-  ArrowUp as ArrowUpIcon,
-  ArrowUpRight as ExternalLinkSquareIcon,
-  Bell as NotificationBellOnIcon,
-  Bookmark as BookmarkIcon,
-  Moon as MoonIcon,
-  Box as ThreeDObjectCubeIcon,
-  Bulb as BulbOnIcon,
-  Calendar as CalendarIcon,
-  CheckCircle as CheckTickCircleIcon,
-  ChevronDown as ChevronDownIcon,
-  ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  ChevronUp as ChevronUpIcon,
-  Clock as ClockIcon,
-  Cloud as CloudIcon,
-  Code as CodeIcon,
-  Copy as CopyIcon,
-  Cpu as BotIcon,
-  CreditCard as CreditCardIcon,
-  Download as DownloadDownIcon,
-  Eye as EyeOnIcon,
-  EyeOff as EyeOffIcon,
-  File as FileIcon,
-  Filter as FilterHorizontalIcon,
-  Folder as FolderIcon,
-  Gear as Settings01Icon,
-  Grid as GridDashboard02Icon,
-  Home as HomeIcon,
-  Image as PhotoImageIcon,
-  ImagePlus as PhotoImagePlusIcon,
-  InfoCircle as InformationCircleIcon,
-  Key as KeyLeftIcon,
-  Layers as LayerThreeIcon,
-  Link as LinkChainHorizontalIcon,
-  Microphone as MicOnIcon,
-  Minus as MinusIcon,
-  MoreH as ThreeDotsMenuHorizontalIcon,
-  MusicNote as MusicBeamNoteIcon,
-  Paperclip as PaperclipVerticalIcon,
-  PauseCircle as PauseCircleIcon,
-  PenWriting as PencilEditIcon,
-  PlayCircle as PlayCircleIcon,
-  Plus as PlusIcon,
-  Refresh as RefreshIcon,
-  Search as SearchIcon,
-  SidebarLeft as SidebarMenuIcon,
-  Tag as TagIcon,
-  Trash as DeleteDustbin01Icon,
-  Upload as UploadUpIcon,
-  User as UserIcon,
-  Video as VideoCallIcon,
-  VolumeHigh as SpeakerOnIcon,
-  X as MultipleCrossCancelIcon,
-} from "reicon-react";
-export { GridDashboard02SolidIcon, PhoneSolidIcon, VideoCallSolidIcon } from "./filled";
-export { GithubIcon } from "./github";
+export { AlertCircleIcon } from "./alert-circle"
+export { AlertTriangleIcon } from "./alert-triangle"
+export { ArrowDownIcon } from "./arrow-down"
+export { ArrowLeftIcon } from "./arrow-left"
+export { ArrowUpIcon } from "./arrow-up"
+export { BookmarkIcon } from "./bookmark-default"
+export { BotIcon } from "./bot"
+export { BulbOnIcon } from "./bulb-on"
+export { CalendarIcon } from "./calendar-default"
+export { CheckTickCircleIcon } from "./check-tick-circle"
+export { ChevronDownIcon } from "./chevron-down"
+export { ChevronLeftIcon } from "./chevron-left"
+export { ChevronRightIcon } from "./chevron-right"
+export { ChevronUpIcon } from "./chevron-up"
+export { ClockIcon } from "./clock-default"
+export { CloudIcon } from "./cloud-default"
+export { CodeIcon } from "./code"
+export { CopyIcon } from "./copy-default"
+export { CreditCardIcon } from "./credit-card"
+export { DeleteDustbin01Icon } from "./delete-dustbin-01"
+export { DownloadDownIcon } from "./download-down"
+export { ExternalLinkSquareIcon } from "./external-link-square"
+export { EyeOffIcon } from "./eye-off"
+export { EyeOnIcon } from "./eye-on"
+export { FileIcon } from "./file-default"
+export { FilterHorizontalIcon } from "./filter-horizontal"
+export { FolderIcon } from "./folder-default"
+export { GithubIcon } from "./github"
+export { GridDashboard02Icon } from "./grid-dashboard-02"
+export { GridDashboard02SolidIcon } from "./grid-dashboard-02-solid"
+export { HomeIcon } from "./home-default"
+export { InformationCircleIcon } from "./information-circle"
+export { KeyLeftIcon } from "./key-left"
+export { LayerThreeIcon } from "./layer-three"
+export { LinkChainHorizontalIcon } from "./link-chain-horizontal"
+export { MicOnIcon } from "./mic-on"
+export { MinusIcon } from "./minus-default"
+export { MoonIcon } from "./moon"
+export { MultipleCrossCancelIcon } from "./multiple-cross-cancel-default"
+export { MusicBeamNoteIcon } from "./music-beam-note"
+export { NotificationBellOnIcon } from "./notification-bell-on"
+export { PaperclipVerticalIcon } from "./paperclip-vertical"
+export { PauseCircleIcon } from "./pause-circle"
+export { PencilEditIcon } from "./pencil-edit"
+export { PhoneSolidIcon } from "./phone-solid"
+export { PhotoImageIcon } from "./photo-image-default"
+export { PhotoImagePlusIcon } from "./photo-image-plus"
+export { PlayCircleIcon } from "./play-circle"
+export { PlusIcon } from "./plus-default"
+export { RefreshIcon } from "./refresh"
+export { SearchIcon } from "./search-default"
+export { Settings01Icon } from "./settings-01"
+export { SidebarMenuIcon } from "./sidebar-menu"
+export { SpeakerOnIcon } from "./speaker-on"
+export { TagIcon } from "./tag"
+export { ThreeDObjectCubeIcon } from "./3d-object-cube"
+export { ThreeDotsMenuHorizontalIcon } from "./three-dots-menu-horizontal"
+export { UploadUpIcon } from "./upload-up"
+export { UserIcon } from "./user-default"
+export { VideoCallIcon } from "./video-call-default"
+export { VideoCallSolidIcon } from "./video-call-default-solid"
