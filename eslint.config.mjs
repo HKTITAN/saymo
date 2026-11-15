@@ -14,6 +14,16 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Installed agent skills, with their own examples and scripts.
     ".claude/**",
+    // Libraries copied in as they ship, minified.
+    "**/vendor/**",
+    // Films, brand kits and the reference library live on each Mac; git
+    // ignores them, and their bundles are built output.
+    "films/**",
+    "brands/**",
+    "library/**",
+    // The engines' own installs and the Mac app's build.
+    "studio/**/node_modules/**",
+    "desktop/build/**",
   ]),
 ]);
 
