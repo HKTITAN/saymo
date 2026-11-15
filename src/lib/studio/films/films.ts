@@ -59,6 +59,9 @@ export async function listFilms(): Promise<FilmSummary[]> {
   // id yet; it shows up once it's ready.
   // Versions Claude is trying (takes.ts) belong to their film, not the list.
   const films = (await Promise.all(ids.map(readFilm))).filter((f): f is Film => typeof f?.id === "string" && !f.take);
+  // One film with a missing or odd date (one still being saved, say) must
+  // never hide the rest: it sorts last instead.
+  const dateOf = (f: Film) => (typeof f.updatedAt === "string" && !Number.isNaN(Date.parse(f.updatedAt)) ? f.updatedAt : typeof f.createdAt === "string" ? f.createdAt : new Date(0).toISOString());
   const summaries = await Promise.all(
     films.map(async (f) => ({
       id: f.id,
@@ -69,13 +72,13 @@ export async function listFilms(): Promise<FilmSummary[]> {
       width: f.width,
       height: f.height,
       duration: f.duration,
-      updatedAt: f.updatedAt,
+      updatedAt: dateOf(f),
       poster: (await exists(path.join(outDir(f.id), "poster.png")))
-        ? `/api/studio/films/${f.id}/out/poster.png?v=${Date.parse(f.updatedAt).toString(36)}`
+        ? `/api/studio/films/${f.id}/out/poster.png?v=${(Date.parse(dateOf(f)) || 0).toString(36)}`
         : null,
     })),
   );
-  return summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return summaries.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
 }
 
 // Eight lower-case letters and digits.
