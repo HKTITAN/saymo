@@ -144,9 +144,13 @@ async function voiceStem(film, clips) {
 // transcripts placed on the timeline). A motion film's speech is its
 // voiceover.
 async function videoContext(film, voice = null) {
-  if (film.kind !== "video") return { graphics: [], speech: voice?.spans ?? [] };
-  const edit = JSON.parse(await readFile(path.join(dir, "edit.json"), "utf8").catch(() => "null"));
-  if (!edit?.tracks) return { graphics: [], speech: [] };
+  if (film.kind !== "video") return { graphics: [], speech: voice?.spans ?? [], marks: [] };
+  // Words turned into seconds (anchors.ts): graphics on words, and the
+  // edit's own moments (`marks`), land where those words now play.
+  const { readResolvedEdit } = await import("../../src/lib/studio/films/edit-file.ts");
+  const resolved = await readResolvedEdit(dir);
+  const edit = resolved?.edit;
+  if (!edit?.tracks) return { graphics: [], speech: [], marks: [] };
   const graphics = [];
   for (const track of edit.tracks) {
     if (track.hidden) continue;
@@ -171,6 +175,7 @@ async function videoContext(film, voice = null) {
   return {
     graphics: graphics.sort((a, b) => a.start - b.start),
     speech: words.map((w) => ({ start: w.start, end: w.end })),
+    marks: resolved.marks,
   };
 }
 
@@ -186,7 +191,7 @@ async function renderInChrome(source, film, voice = null) {
         film: {
           duration: film.duration,
           fps: film.fps,
-          marks: film.marks ?? [],
+          marks: [...(film.marks ?? []), ...context.marks].sort((a, b) => a.t - b.t),
           params: Object.fromEntries((film.params ?? []).map((p) => [p.key, p.value])),
           ...context,
         },
@@ -577,7 +582,7 @@ async function main() {
   const silence = () => new Float32Array(Math.round(film.duration * RATE) * 2);
   const { results, context } = source
     ? await renderInChrome(source, film, voice)
-    : { results: [{ music: silence(), effects: silence(), report: { music: null, effects: null } }], context: { graphics: [], speech: voice?.spans ?? [] } };
+    : { results: [{ music: silence(), effects: silence(), report: { music: null, effects: null } }], context: { graphics: [], speech: voice?.spans ?? [], marks: [] } };
   const { music, effects, report } = results[0];
   const stems = STEMS.filter((s) => (s === "music" ? report.music : report.effects));
   const work = path.join(soundDir, ".work");
@@ -616,7 +621,7 @@ async function main() {
         ]
       : []),
     `Onsets (${onsets.length}), with the film mark each lands on:`,
-    ...describeOnsets(onsets, [...(film.marks ?? []), ...context.graphics.map((g) => ({ t: g.start, label: `${g.graphic} appears`, after: Math.min(0.8, g.duration) }))]),
+    ...describeOnsets(onsets, [...(film.marks ?? []), ...context.marks, ...context.graphics.map((g) => ({ t: g.start, label: `${g.graphic} appears`, after: Math.min(0.8, g.duration) }))]),
     ...(context.graphics.length ? [`Graphics: ${context.graphics.map((g) => `${g.graphic} ${g.start.toFixed(2)} to ${(g.start + g.duration).toFixed(2)} s`).join(", ")}.`] : []),
     ...(voice
       ? [`Voiceover: ${clips.length} clip${clips.length === 1 ? "" : "s"} from sound/voice.json, ${voice.spans.map((v) => `${v.start.toFixed(2)} to ${v.end.toFixed(2)} s`).join(", ")}; the music dips under them.`]

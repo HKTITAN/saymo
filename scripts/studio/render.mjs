@@ -570,7 +570,12 @@ async function renderFilm(id, size = null) {
   if (film.kind === "video") {
     // The edit and its files, served to the engine from here: the originals
     // (photos as their web-ready copy), never the preview copies.
-    edit = JSON.parse(await readFile(path.join(src, "edit.json"), "utf8"));
+    // Words turned into seconds (anchors.ts), as the stage plays it. The
+    // transcripts stay in the film's own media folder.
+    const { readTranscripts } = await import("../../src/lib/studio/films/edit-file.ts");
+    const { resolveEdit } = await import("../../src/lib/studio/films/anchors.ts");
+    const raw = JSON.parse(await readFile(path.join(src, "edit.json"), "utf8"));
+    edit = resolveEdit(raw, await readTranscripts(dir, raw)).edit;
     media = {};
     for (const mid of await readdir(path.join(dir, "media")).catch(() => [])) {
       const info = JSON.parse(await readFile(path.join(dir, "media", mid, "media.json"), "utf8").catch(() => "null"));

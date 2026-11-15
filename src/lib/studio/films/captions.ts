@@ -60,14 +60,14 @@ export function captionWords(edit: Edit, transcripts: Record<string, Word[] | un
       if (item.type !== "clip" || (item.volume ?? 1) <= 0) continue;
       const words = transcripts[item.media];
       if (!words?.length) continue;
-      for (const w of words) {
+      words.forEach((w, i) => {
         const middle = (w.start + w.end) / 2;
-        if (middle < item.from || middle >= item.to) continue;
+        if (middle < item.from || middle >= item.to) return;
         const start = filmTime(item, Math.max(w.start, item.from));
         const end = filmTime(item, Math.min(w.end, item.to));
-        if (start === null || end === null) continue;
-        placed.push({ text: w.text, start: round(start), end: round(Math.max(end, start + 0.02)), confidence: w.confidence, track: index });
-      }
+        if (start === null || end === null) return;
+        placed.push({ text: w.text, start: round(start), end: round(Math.max(end, start + 0.02)), confidence: w.confidence, ref: `${item.media}:${i}`, track: index });
+      });
     }
   });
   placed.sort((a, b) => a.start - b.start || b.track - a.track);
@@ -76,7 +76,7 @@ export function captionWords(edit: Edit, transcripts: Record<string, Word[] | un
     const prev = out.at(-1) as (Word & { track?: number }) | undefined;
     // Overlapping speech from a lower track is dropped.
     if (prev && w.start < prev.end - 0.05) continue;
-    out.push({ text: w.text, start: w.start, end: w.end, ...(w.confidence !== undefined ? { confidence: w.confidence } : {}) });
+    out.push({ text: w.text, start: w.start, end: w.end, ...(w.confidence !== undefined ? { confidence: w.confidence } : {}), ...(w.ref ? { ref: w.ref } : {}) });
   }
   return out;
 }

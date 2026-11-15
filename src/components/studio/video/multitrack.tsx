@@ -322,7 +322,8 @@ export function Multitrack({
               .filter((v) => (v.item.id === item.id ? toTrack : v.track) === tr.id)
               .map((v) => {
                 const live = cur.tracks.flatMap((x) => x.items).find((i) => i.id === v.item.id) ?? v.item;
-                return { ...live, start: Math.max(0, v.item.start + shift) };
+                // A graphic moved by hand stops following its words.
+                return { ...unpinned(live), start: Math.max(0, v.item.start + shift) };
               });
             return { ...tr, items: [...kept, ...landing].sort((a, b) => a.start - b.start) };
           }),
@@ -350,7 +351,7 @@ export function Multitrack({
         change((cur) => mapOne(cur, item.id, { start, from }), { record: false });
       } else {
         start = Math.max(0, start);
-        change((cur) => mapOne(cur, item.id, { start, duration: end - start }), { record: false });
+        change((cur) => mapOne(cur, item.id, { start, duration: end - start, at: undefined }), { record: false });
       }
     } else {
       let end = endOf(item) + ds;
@@ -363,7 +364,7 @@ export function Multitrack({
         const to = Math.min(sourceLength, item.from + (end - item.start) * speed);
         change((cur) => mapOne(cur, item.id, { to }), { record: false });
       } else {
-        change((cur) => mapOne(cur, item.id, { duration: end - item.start }), { record: false });
+        change((cur) => mapOne(cur, item.id, { duration: end - item.start, until: undefined }), { record: false });
       }
     }
   };
@@ -892,6 +893,15 @@ export function Multitrack({
     </section>
   );
 }
+
+// A graphic without its word anchors (anchors.ts), placed by its seconds.
+const unpinned = (item: Item): Item => {
+  if (item.type !== "graphic" || (!item.at && !item.until)) return item;
+  const rest: Graphic = { ...item };
+  delete rest.at;
+  delete rest.until;
+  return rest;
+};
 
 const mapOne = (edit: Edit, id: string, patch: Partial<Clip> | Partial<Graphic>): Edit => ({
   ...edit,

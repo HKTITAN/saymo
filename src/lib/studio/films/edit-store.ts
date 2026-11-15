@@ -1,25 +1,26 @@
-import { readFile, rename, writeFile } from "node:fs/promises";
+import { rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Param } from "./contract";
-import { type Clip, cleanBox, type Edit, editEnd, type Graphic, type Track, type Word } from "./edit";
+import { resolveEdit } from "./anchors";
+import { type Anchor, type CaptionFix, type Clip, cleanBox, type Edit, type EditMark, editEnd, type Graphic, type Track, type Word } from "./edit";
+import { readResolvedEdit, readTranscripts } from "./edit-file";
 import { filmDir, readFilm, withFilm, writeFilm } from "./films";
 import { graphicNames } from "./graphics";
 import { listMedia } from "./media";
 
 // A video film's edit.json: read, checked and saved. Saving also keeps
-// film.json's length in step with where the edit ends.
+// film.json's length in step with where the edit ends. Both reading and
+// saving turn words into seconds (anchors.ts), so the file always holds the
+// seconds its anchors resolve to, even right after Claude wrote it.
 
 const editFile = (id: string) => path.join(filmDir(id), "edit.json");
 
 export async function readEdit(id: string): Promise<Edit | null> {
-  try {
-    return JSON.parse(await readFile(editFile(id), "utf8")) as Edit;
-  } catch {
-    return null;
-  }
+  return (await readResolvedEdit(filmDir(id)))?.edit ?? null;
 }
 
-export async function saveEdit(id: string, edit: Edit) {
+export async function saveEdit(id: string, raw: Edit) {
+  const edit = resolveEdit(raw, await readTranscripts(filmDir(id), raw)).edit;
   return withFilm(id, async () => {
     const film = await readFilm(id);
     if (!film) return null;
@@ -38,11 +39,31 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 const num = (v: unknown, min = -Infinity, max = Infinity) => typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
 const optNum = (v: unknown, min: number, max: number) => v === undefined || num(v, min, max);
 const ID = /^[A-Za-z0-9_-]{1,40}$/;
+const WORD_REF = /^[A-Za-z0-9_-]{1,40}:\d{1,7}$/;
+
+// A word anchor as edit.ts has it, or null if it isn't one.
+function cleanAnchor(raw: unknown): Anchor | null {
+  if (!isObject(raw) || typeof raw.word !== "string" || !WORD_REF.test(raw.word)) return null;
+  const a: Anchor = { word: raw.word };
+  if (raw.edge !== undefined) {
+    if (raw.edge !== "start" && raw.edge !== "end") return null;
+    a.edge = raw.edge;
+  }
+  if (raw.offset !== undefined) {
+    if (!num(raw.offset, -60, 60)) return null;
+    a.offset = raw.offset as number;
+  }
+  if (raw.clip !== undefined) {
+    if (typeof raw.clip !== "string" || !ID.test(raw.clip)) return null;
+    a.clip = raw.clip;
+  }
+  return a;
+}
 const TRACK_KINDS = ["video", "graphics", "audio"];
 const LONGEST = 4 * 60 * 60; // four hours
 
 export async function checkEdit(id: string, body: unknown): Promise<Edit | string> {
-  if (!isObject(body) || body.version !== 1 || !Array.isArray(body.tracks)) return "That isn't an edit the studio can read.";
+  if (!isObject(body) || (body.version !== 1 && body.version !== 2) || !Array.isArray(body.tracks)) return "That isn't an edit the studio can read.";
   const media = new Map((await listMedia(id)).map((m) => [m.id, m]));
   const graphics = new Set(await graphicNames(id));
   const ids = new Set<string>();
@@ -106,7 +127,14 @@ export async function checkEdit(id: string, body: unknown): Promise<Edit | strin
             else if (typeof v === "boolean" || num(v)) values[k] = v as number | boolean;
           }
         }
-        items.push({ id: it.id, type: "graphic", graphic: it.graphic, start: it.start as number, duration: it.duration as number, values });
+        const g: Graphic = { id: it.id, type: "graphic", graphic: it.graphic, start: it.start as number, duration: it.duration as number, values };
+        for (const k of ["at", "until"] as const) {
+          if (it[k] === undefined) continue;
+          const anchor = cleanAnchor(it[k]);
+          if (!anchor) return "A graphic is fixed to a word the studio can't read.";
+          g[k] = anchor;
+        }
+        items.push(g);
       } else return "The timeline holds clips and graphics only.";
     }
     const track: Track = { id: raw.id, kind: raw.kind as Track["kind"], name: typeof raw.name === "string" ? raw.name.slice(0, 60) : "Track", items };
@@ -133,5 +161,35 @@ export async function checkEdit(id: string, body: unknown): Promise<Edit | strin
   const position = c.position === "middle" ? "middle" : "bottom";
   const background = typeof body.background === "string" && /^#[0-9a-f]{6}$/i.test(body.background) ? body.background.toUpperCase() : "#141414";
   const tag = typeof c.tag === "string" ? c.tag.replace(/\s+/g, " ").trim().slice(0, 60) : "";
-  return { version: 1, tracks, captions: { on: c.on === true, style, words, position, ...(tag ? { tag } : {}) }, background };
+  let fixes: Record<string, CaptionFix> | undefined;
+  if (c.fixes !== undefined) {
+    if (!isObject(c.fixes) || Object.keys(c.fixes).length > 200000) return "The caption fixes aren't readable.";
+    fixes = {};
+    for (const [ref, raw] of Object.entries(c.fixes)) {
+      if (!WORD_REF.test(ref) || !isObject(raw)) return "One of the caption fixes isn't readable.";
+      const fix: CaptionFix = {};
+      if (typeof raw.text === "string") fix.text = raw.text.slice(0, 80);
+      if (typeof raw.hit === "boolean") fix.hit = raw.hit;
+      if (raw.hidden === true) fix.hidden = true;
+      fixes[ref] = fix;
+    }
+  }
+  let marks: EditMark[] | undefined;
+  if (body.marks !== undefined) {
+    if (!Array.isArray(body.marks) || body.marks.length > 200) return "The edit's moments aren't readable (up to 200).";
+    marks = [];
+    for (const raw of body.marks) {
+      const at = isObject(raw) ? cleanAnchor(raw.at) : null;
+      if (!isObject(raw) || typeof raw.label !== "string" || !raw.label.trim() || !at) return "One of the edit's moments isn't readable.";
+      marks.push({ label: raw.label.replace(/\s+/g, " ").trim().slice(0, 60), at });
+    }
+  }
+  const anchored = Boolean(fixes || marks || tracks.some((t) => t.items.some((i) => i.type === "graphic" && (i.at || i.until))));
+  return {
+    version: anchored ? 2 : 1,
+    tracks,
+    captions: { on: c.on === true, style, words, position, ...(tag ? { tag } : {}), ...(fixes ? { fixes } : {}) },
+    background,
+    ...(marks ? { marks } : {}),
+  };
 }

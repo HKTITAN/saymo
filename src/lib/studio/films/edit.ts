@@ -45,7 +45,31 @@ export type Media = {
 
 // A spoken word with its time in the SOURCE file.
 // `hit`: a key word, shown in colour by the serif captions.
-export type Word = { text: string; start: number; end: number; confidence?: number; hit?: boolean };
+// `ref`: on caption words, the transcript word it came from (WordRef).
+export type Word = { text: string; start: number; end: number; confidence?: number; hit?: boolean; ref?: WordRef };
+
+// ─── Words as anchors (anchors.ts) ──────────────────────────────────────────
+
+// A word's address: "<mediaId>:<index>", its place in that media's
+// transcript.json. Transcripts are in source time and don't change when the
+// edit does, so the address survives cuts, moves and speed changes.
+export type WordRef = string;
+
+// A moment fixed to a word: an edge of the word, plus an offset in seconds
+// (negative is before it). `clip` pins it to one clip when the same footage
+// plays twice; otherwise the topmost, earliest clip that plays the word wins.
+export type Anchor = {
+  word: WordRef;
+  edge?: "start" | "end"; // default "start"
+  offset?: number; // default 0
+  clip?: string;
+};
+
+// A fix to one caption word, kept by its WordRef so it survives every cut.
+export type CaptionFix = { text?: string; hit?: boolean; hidden?: boolean };
+
+// A named moment the sound design lands on, fixed to a word.
+export type EditMark = { label: string; at: Anchor };
 
 // ─── The edit ───────────────────────────────────────────────────────────────
 
@@ -110,6 +134,9 @@ export type Graphic = {
   start: number;
   duration: number;
   values: Record<string, Param["value"]>; // the graphic's params
+  // Fixed to words (anchors.ts fills in start and duration from them).
+  at?: Anchor; // where it starts
+  until?: Anchor; // where it ends; without it, it lasts `duration` from `at`
 };
 
 export type TrackKind = "video" | "graphics" | "audio";
@@ -128,7 +155,8 @@ export type Track = {
 export type CaptionStyle = "words" | "lines" | "karaoke" | "serif";
 
 export type Edit = {
-  version: 1;
+  // 1: everything in seconds. 2: items may hang on words (anchors.ts).
+  version: 1 | 2;
   tracks: Track[]; // drawn bottom to top: tracks[0] is underneath
   captions: {
     on: boolean;
@@ -138,8 +166,12 @@ export type Edit = {
     words: Word[];
     position: "bottom" | "middle";
     tag?: string; // a small series line under the captions: "Product tips | 1/10"
+    // Fixes to single words by WordRef. When present, `words` is rebuilt
+    // from the transcripts with these applied, so fixes outlive cuts.
+    fixes?: Record<WordRef, CaptionFix>;
   };
   background: string; // what shows where nothing covers the frame
+  marks?: EditMark[]; // named moments for the sound design, fixed to words
 };
 
 // films/<id>/edit.json for a video film. film.json's duration follows the

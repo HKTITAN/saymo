@@ -314,7 +314,7 @@ function GraphicPanel({ ed, graphic }: { ed: EditState; graphic: Graphic }) {
           step={0.1}
           format={(v) => `${v.toFixed(1)} s`}
           onChange={(v) =>
-            ed.change((e) => updateItem(e, graphic.id, { duration: v }), {
+            ed.change((e) => updateItem(e, graphic.id, { duration: v, until: undefined }), {
               label: `Length ${v.toFixed(1)} s`,
               group: `length-${graphic.id}`,
             })

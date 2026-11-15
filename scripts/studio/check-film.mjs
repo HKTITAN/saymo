@@ -17,6 +17,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseWordRef, resolveEdit } from "../../src/lib/studio/films/anchors.ts";
+import { readTranscriptsSync } from "../../src/lib/studio/films/edit-file.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const dir = process.cwd();
@@ -30,6 +32,8 @@ if (path.dirname(dir) !== path.join(ROOT, "films") || !existsSync(path.join(dir,
   fail("Run this from a film's folder (films/<id>/).");
 }
 const film = JSON.parse(readFileSync(path.join(dir, "film.json"), "utf8"));
+// What moved because its word was cut (checkEdit fills it in).
+let editNotes = [];
 
 const run = (cmd, args, opts = {}) =>
   new Promise((resolve) => {
@@ -67,6 +71,8 @@ if (film.kind === "video") {
     process.exit(1);
   }
   console.log("The edit is sound: every clip fits its footage, nothing overlaps, graphics and captions check out.");
+  // What moved because its word was cut: mention it to the person.
+  for (const note of editNotes) console.log(`Note: ${note}`);
   // The film's own graphics must bundle, as must its component if it has one.
   const graphicsDir = path.join(dir, "graphics");
   const own = existsSync(graphicsDir) ? readdirSync(graphicsDir).filter((f) => /\.jsx?$/.test(f)) : [];
@@ -241,7 +247,43 @@ function checkEdit() {
   const isNum = (v) => typeof v === "number" && Number.isFinite(v);
   const t = (v) => (isNum(v) ? `${v.toFixed(2)} s` : String(v));
 
-  if (edit.version !== 1) say('edit.json needs "version": 1.');
+  if (edit.version !== 1 && edit.version !== 2) say('edit.json needs "version": 2 (or 1 for an edit with nothing fixed to words).');
+  // Words fixed to things: check every anchor points at a real word, then
+  // check the edit with its anchors turned into seconds, as it plays.
+  if (Array.isArray(edit.tracks)) {
+    const transcripts = readTranscriptsSync(dir, edit);
+    const anchorProblem = (a, what) => {
+      const ref = a && typeof a === "object" && typeof a.word === "string" ? parseWordRef(a.word) : null;
+      if (!ref) return say(`${what}: "word" must be "<media id>:<word number>", like "${[...mediaIndex().keys()][0] ?? "abcd1234"}:12".`);
+      if (a.edge !== undefined && a.edge !== "start" && a.edge !== "end") say(`${what}: "edge" is "start" or "end".`);
+      if (a.offset !== undefined && (!isNum(a.offset) || Math.abs(a.offset) > 60)) say(`${what}: "offset" is seconds from the word, -60 to 60.`);
+      const words = transcripts[ref.media];
+      if (!words) say(`${what}: "${ref.media}" has no transcript yet, or no clip plays it. Word anchors need a transcribed clip in the edit.`);
+      else if (!words[ref.index]) say(`${what}: "${ref.media}" has ${words.length} words (0 to ${words.length - 1}), so word ${ref.index} doesn't exist.`);
+    };
+    for (const track of edit.tracks) {
+      for (const item of track?.items ?? []) {
+        if (item?.type !== "graphic") continue;
+        if (item.at !== undefined) anchorProblem(item.at, `graphic "${item.id}" "at"`);
+        if (item.until !== undefined) anchorProblem(item.until, `graphic "${item.id}" "until"`);
+      }
+    }
+    if (edit.marks !== undefined) {
+      if (!Array.isArray(edit.marks)) say('"marks" must be a list of { "label", "at": { "word" } }.');
+      else for (const [i, m] of edit.marks.entries()) {
+        if (typeof m?.label !== "string" || !m.label.trim()) say(`mark ${i + 1} needs a "label".`);
+        anchorProblem(m?.at, `mark ${i + 1} ("${m?.label ?? "?"}")`);
+      }
+    }
+    if (edit.captions?.fixes !== undefined) {
+      if (!edit.captions.fixes || typeof edit.captions.fixes !== "object") say('captions "fixes" must be an object of { "<media id>:<word number>": { "text", "hit", "hidden" } }.');
+      else for (const ref of Object.keys(edit.captions.fixes)) anchorProblem({ word: ref }, `caption fix "${ref}"`);
+    }
+    if (problems.length) return problems;
+    const resolved = resolveEdit(edit, transcripts);
+    edit = resolved.edit;
+    editNotes = resolved.notes;
+  }
   if (typeof edit.background !== "string" || !/^#[0-9a-f]{6}$/i.test(edit.background)) say('"background" must be a colour like "#141414".');
   if (!Array.isArray(edit.tracks)) return [...problems, '"tracks" must be a list of tracks.'];
 
@@ -340,7 +382,7 @@ function checkEdit() {
   if (!c || typeof c !== "object") say('"captions" is missing: { "on": false, "style": "lines", "words": [], "position": "bottom" }.');
   else {
     if (typeof c.on !== "boolean") say('captions "on" must be true or false.');
-    if (!["words", "lines", "karaoke"].includes(c.style)) say('captions "style" must be "words", "lines" or "karaoke".');
+    if (!["words", "lines", "karaoke", "serif"].includes(c.style)) say('captions "style" must be "words", "lines", "karaoke" or "serif".');
     if (!["bottom", "middle"].includes(c.position)) say('captions "position" must be "bottom" or "middle".');
     if (!Array.isArray(c.words)) say('captions "words" must be a list.');
     else {

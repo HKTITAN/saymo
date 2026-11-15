@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { readResolvedEdit } from "../films/edit-file";
 import { bridgeScript, STAGE_STYLE } from "./bridge";
 import { IS_PRODUCT } from "../server/edition";
 import type { Film } from "../films/contract";
@@ -61,9 +62,8 @@ export async function stagePage(film: Film): Promise<string> {
 // A video film's stage starts with its edit (edit.json) and the preview
 // copies of its files; the studio then sends the edit live as it changes.
 async function videoGlobals(film: Film) {
-  const edit = await readFile(path.join(filmDir(film.id), "edit.json"), "utf8")
-    .then((t) => JSON.parse(t))
-    .catch(() => null);
+  // Words turned into seconds (anchors.ts), as renders draw it.
+  const edit = (await readResolvedEdit(filmDir(film.id)))?.edit ?? null;
   return `<script>window.__filmId=${scriptJson(film.id)};window.__edit=${scriptJson(edit)};window.__media=${scriptJson(await previewMedia(film.id))};</script>`;
 }
 

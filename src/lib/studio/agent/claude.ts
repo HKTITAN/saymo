@@ -11,7 +11,8 @@ import { claudeEnvFor, keyProblem } from "./providers";
 import { attachmentNote } from "../input/attachments";
 import { listenCommand, referenceSoundNote, refAudioDenies } from "../sound/listen";
 import { atPlayhead } from "../films/captions";
-import type { Clip, Edit, Graphic } from "../films/edit";
+import type { Anchor, Clip, Edit, Graphic } from "../films/edit";
+import { readResolvedEdit } from "../films/edit-file";
 import { brandDir, DEFAULT_BRAND, isBrandId } from "../brands/brand-tokens";
 import { filmDir, pruneVersions, readFilm, recordVersion, ROOT, snapshotFilm, wentBackTo, withFilm, writeFilm } from "../films/films";
 import { readRules, rulesNote } from "./rules";
@@ -636,12 +637,12 @@ const voiceTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/voice.
 // A short picture of a video film's edit, sent with each message, so "the
 // second clip" or "the lower third" makes sense.
 async function editSummary(id: string, t: number): Promise<string> {
-  let edit: Edit;
-  try {
-    edit = JSON.parse(await readFile(path.join(filmDir(id), "edit.json"), "utf8")) as Edit;
-  } catch {
-    return "edit.json is missing or unreadable";
-  }
+  // Words turned into seconds (anchors.ts), so the times here are where
+  // things actually play.
+  const resolved = await readResolvedEdit(filmDir(id));
+  if (!resolved) return "edit.json is missing or unreadable";
+  const edit: Edit = resolved.edit;
+  const on = (a: Anchor | undefined) => (a ? `${a.edge === "end" ? "end of " : ""}word ${a.word}${a.offset ? ` ${a.offset > 0 ? "+" : ""}${a.offset} s` : ""}` : null);
   const length = (item: Clip | Graphic) => (item.type === "clip" ? (item.to - item.from) / (item.speed ?? 1) : item.duration);
   const span = (item: Clip | Graphic) => `${item.start.toFixed(2)}-${(item.start + length(item)).toFixed(2)} s`;
   let end = 0;
@@ -652,7 +653,7 @@ async function editSummary(id: string, t: number): Promise<string> {
     const shown = items.slice(0, 25).map((item) =>
       item.type === "clip"
         ? `${item.id}: ${item.media} source ${item.from.toFixed(2)}-${item.to.toFixed(2)} at ${span(item)}`
-        : `${item.id}: ${item.graphic} at ${span(item)}`,
+        : `${item.id}: ${item.graphic} at ${span(item)}${item.at || item.until ? ` (on ${[on(item.at), on(item.until) ? `until ${on(item.until)}` : null].filter(Boolean).join(", ")})` : ""}`,
     );
     const more = items.length > 25 ? `; and ${items.length - 25} more` : "";
     const flags = [track.muted ? "muted" : null, track.hidden ? "hidden" : null].filter(Boolean).join(", ");
@@ -667,7 +668,10 @@ async function editSummary(id: string, t: number): Promise<string> {
   );
   lines.push(`at the playhead (${t.toFixed(2)} s): ${under.join("; ") || "nothing, a gap"}`);
   const c = edit.captions;
-  lines.push(`captions ${c?.on ? `on (${c.style}, ${c.position})` : "off"}, ${c?.words?.length ?? 0} words. The edit ends at ${end.toFixed(2)} s.`);
+  lines.push(`captions ${c?.on ? `on (${c.style}, ${c.position})` : "off"}, ${c?.words?.length ?? 0} words${c?.fixes ? `, ${Object.keys(c.fixes).length} fixed by word` : ""}. The edit ends at ${end.toFixed(2)} s.`);
+  if (resolved.marks.length) lines.push(`moments for the sound: ${resolved.marks.map((m) => `"${m.label}" ${m.t.toFixed(2)} s`).join(", ")}`);
+  // What moved because its word was cut: tell the person in plain words.
+  if (resolved.notes.length) lines.push(`moved since the last cut: ${resolved.notes.join(" ")}`);
   return lines.join("\n");
 }
 
