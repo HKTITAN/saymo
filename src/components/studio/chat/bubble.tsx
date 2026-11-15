@@ -64,6 +64,18 @@ export function Bubble({
   }
   top = Math.min(Math.max(16, top), vh - 150);
 
+  // Dragged by its edges (anything that isn't a field or a button) out of
+  // the way of what it covers; a new pick puts it back under that.
+  const [moved, setMoved] = useState({ x: 0, y: 0 });
+  const [movedFor, setMovedFor] = useState(pinned);
+  if (pinned !== movedFor) {
+    setMovedFor(pinned);
+    setMoved({ x: 0, y: 0 });
+  }
+  const drag = useRef<{ x: number; y: number; from: { x: number; y: number } } | null>(null);
+  const placedLeft = Math.min(Math.max(16, left + moved.x), vw - W - 16);
+  const placedTop = Math.min(Math.max(16, top + moved.y), vh - 150);
+
   const files = useAttachments(`/api/studio/films/${filmId}/attachments`, { audio: true });
 
   // Closing would lose an unsent prompt or file, so it asks once first.
@@ -123,8 +135,26 @@ export function Bubble({
       role="dialog"
       aria-label="Ask Claude about this"
       {...outside}
-      className={cn(CARD, "pointer-events-auto absolute z-30 flex flex-col gap-1.5 p-1.5 motion-safe:animate-[bubble-in_180ms_cubic-bezier(0.23,1,0.32,1)]")}
-      style={{ left, top, width: W, transformOrigin: "top center" }}
+      onPointerDown={(e) => {
+        if (e.button !== 0 || (e.target as HTMLElement).closest("textarea, input, button, a, [role=button], [contenteditable]")) return;
+        drag.current = { x: e.clientX, y: e.clientY, from: moved };
+        e.currentTarget.setPointerCapture(e.pointerId);
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (d) setMoved({ x: d.from.x + e.clientX - d.x, y: d.from.y + e.clientY - d.y });
+      }}
+      onPointerUp={() => {
+        drag.current = null;
+      }}
+      onPointerCancel={() => {
+        drag.current = null;
+      }}
+      className={cn(
+        CARD,
+        "pointer-events-auto absolute z-30 flex cursor-grab touch-none select-none flex-col gap-1.5 p-1.5 active:cursor-grabbing motion-safe:animate-[bubble-in_180ms_cubic-bezier(0.23,1,0.32,1)] [&_button]:cursor-pointer [&_textarea]:cursor-text [&_textarea]:select-text",
+      )}
+      style={{ left: placedLeft, top: placedTop, width: W, transformOrigin: "top center" }}
     >
       <PromptBox
         inputRef={input}
