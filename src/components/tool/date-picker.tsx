@@ -5,7 +5,7 @@ import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useId, u
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import type { DatePick } from "@/lib/tool/doc";
 import { cn } from "@/lib/utils";
-import { DialButton, DialNote, LABEL, ROW_BUTTON, SURFACE, VALUE } from "./dial";
+import { DialButton, DialNote, LABEL, ROW_BUTTON, SURFACE, VALUE } from "../ui/dial";
 
 // The date and the time, picked from our own calendar and time lists. What
 // is picked writes the post's two date lines (see dates.ts), which can

@@ -7,8 +7,8 @@
 // renderer get exactly the same frame for the same time:
 //
 //   const sphere = sphereCarousel(document.getElementById("sphere"), {
-//     items: [{ src: "assets/logo-1.png" }, { text: "Sourcing" }, ...],
-//     center: { text: "SpendOS" },
+//     items: [{ src: "assets/logo-1.png" }, { text: "Ideas" }, ...],
+//     center: { text: "Saymo" },
 //   });
 //   const tl = filmTimeline(sequence, { duration: FILM.duration, parts: [sphere] });
 //

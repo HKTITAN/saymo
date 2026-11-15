@@ -1,6 +1,6 @@
-import { failed, originOf, safeReturn } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { googleSignInUrl } from "@/lib/studio/google";
+import { failed, originOf, safeReturn } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { googleSignInUrl } from "@/lib/studio/connect/google";
 
 // One click: sends the browser to Google to pick an account and allow the
 // studio its own folder. ?returnTo=/studio?film=… is where it comes back.

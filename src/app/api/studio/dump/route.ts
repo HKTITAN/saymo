@@ -1,5 +1,5 @@
-import { readDump, writeDump } from "@/lib/studio/brain-dump";
-import { allowed, refused } from "@/lib/studio/films";
+import { readDump, writeDump } from "@/lib/studio/library/brain-dump";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // The Ideas page's brain dump (brain-dump.ts). GET: { text }. PUT { text }:
 // the whole page as it is now; answers with it as saved.

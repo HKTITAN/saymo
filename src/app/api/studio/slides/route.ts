@@ -3,10 +3,10 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { allowed, refused } from "@/lib/studio/films";
-import { addToImport, importDir, newImport, readImport, SlidesError } from "@/lib/studio/slides";
-import { extOf, isImageFile, isSlideFile, MAX_DECK_BYTES, MAX_IMAGE_BYTES, type SlidesEvent } from "@/lib/studio/slides-shared";
-import { eventStream } from "@/lib/studio/sse";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { addToImport, importDir, newImport, readImport, SlidesError } from "@/lib/studio/input/slides";
+import { extOf, isImageFile, isSlideFile, MAX_DECK_BYTES, MAX_IMAGE_BYTES, type SlidesEvent } from "@/lib/studio/input/slides-shared";
+import { eventStream } from "@/lib/studio/server/sse";
 
 // "Turn slides into a video", step 1: one file (a deck or a picture) at a
 // time becomes slides. The body is the file, its name in `x-file-name`

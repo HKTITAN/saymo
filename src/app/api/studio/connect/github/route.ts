@@ -1,6 +1,6 @@
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { disconnectGithub } from "@/lib/studio/github";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { disconnectGithub } from "@/lib/studio/connect/github";
 
 export async function DELETE(request: Request) {
   if (!allowed(request)) return refused();

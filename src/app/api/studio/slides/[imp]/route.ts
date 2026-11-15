@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { dropImport, readImport } from "@/lib/studio/slides";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { dropImport, readImport } from "@/lib/studio/input/slides";
 
 // The slides brought in so far, and throwing them away (closing the card
 // without making a film).

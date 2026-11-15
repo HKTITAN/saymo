@@ -1,5 +1,3 @@
-import type { PartnerId } from "./partner-paths";
-
 // What a speaker post shows. The original post's words live in
 // src/content/post.ts; each post made in the tool lives in posts/<id>/.
 export type PostContent = {
@@ -37,16 +35,13 @@ export type PostContent = {
     // it from its foot.
     place: { x: number; y: number; scale: number };
   } | null;
-  // Partner logos in a row to the right of the Aerchain wordmark, left to
-  // right; the whole row ends at the right margin. Left out, the wordmark stands alone.
-  partners?: readonly PartnerId[];
   // Centres the headline, the when and where, and the speaker as one block
   // across the stone side, instead of setting them at the left margin.
   centred?: boolean;
   // Moves the centred block sideways, as a share of the stone side's width:
   // -0.05 is 5% to the left.
   shift?: number;
-  // The orange "ai" in the wordmark turns over when the colour behind it
+  // The orange "o" in the wordmark turns over when the colour behind it
   // changes. False keeps it still; it only changes colour.
   logoFlip?: boolean;
   // "no-black" moves the panel between orange and stone only (stone comes in
@@ -64,18 +59,6 @@ export type PostContent = {
   // Post pixels the line panel gives up on its left, to widen the words'
   // side.
   panelCut?: number;
-  // Set, the left side shows a team instead of the speaker: a
-  // heading, two columns of people (square photo, name, role) and the
-  // details along the foot, one under each column.
-  team?: {
-    heading: string;
-    members: readonly {
-      name: string;
-      role: string;
-      photo: { x1: string; x2: string } | null;
-    }[];
-    details: readonly string[];
-  };
   // How Scenes moves: "refined" (the default, softer landings) or
   // "reference" (as measured from the reference video).
   look?: "reference" | "refined";

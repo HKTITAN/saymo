@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import type { Crop, PostDoc } from "@/lib/tool/doc";
-import { DialButton, DialSlider, DialToggle } from "./dial";
+import { DialButton, DialSlider, DialToggle } from "../ui/dial";
 import { DropZone, FileInput } from "./drop-zone";
 
 type Source = NonNullable<NonNullable<PostDoc["photo"]>["source"]>;

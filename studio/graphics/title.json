@@ -2,8 +2,8 @@
   "label": "Title card",
   "duration": 4,
   "params": [
-    { "key": "title", "label": "Title", "type": "text", "value": "Procurement, rebuilt" },
-    { "key": "kicker", "label": "Small line above", "type": "text", "value": "SpendOS" },
+    { "key": "title", "label": "Title", "type": "text", "value": "Motion, made simple" },
+    { "key": "kicker", "label": "Small line above", "type": "text", "value": "Saymo" },
     { "key": "ground", "label": "Background", "type": "choice", "value": "Black", "options": ["Black", "Stone"] }
   ]
 }

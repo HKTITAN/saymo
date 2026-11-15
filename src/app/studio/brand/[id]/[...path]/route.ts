@@ -1,7 +1,7 @@
-import { isBrandId } from "@/lib/studio/brand-tokens";
-import { kitDir, readBrand } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
-import { inside, serveFile } from "@/lib/studio/serve";
+import { isBrandId } from "@/lib/studio/brands/brand-tokens";
+import { kitDir, readBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { inside, serveFile } from "@/lib/studio/server/serve";
 
 // A kit's fonts, logos and guideline files, for stage pages and the kit page.
 export async function GET(request: Request, ctx: RouteContext<"/studio/brand/[id]/[...path]">) {

@@ -1,11 +1,11 @@
 import { connection } from "next/server";
-import { DEFAULT_PROVIDER, isProviderId } from "@/lib/studio/ai-types";
-import { IS_PRODUCT } from "@/lib/studio/edition";
-import { isRunning, readChat, runAutoTurn, runTurn, stopTurn } from "@/lib/studio/claude";
-import { readCarryOn, restoreCarryOns } from "@/lib/studio/carry-on";
-import type { ChatContext, ChatEvent, ChatRequest } from "@/lib/studio/contract";
-import { checkAttachments } from "@/lib/studio/attachments";
-import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films";
+import { DEFAULT_PROVIDER, isProviderId } from "@/lib/studio/agent/ai-types";
+import { IS_PRODUCT } from "@/lib/studio/server/edition";
+import { isRunning, readChat, runAutoTurn, runTurn, stopTurn } from "@/lib/studio/agent/claude";
+import { readCarryOn, restoreCarryOns } from "@/lib/studio/agent/carry-on";
+import type { ChatContext, ChatEvent, ChatRequest } from "@/lib/studio/films/contract";
+import { checkAttachments } from "@/lib/studio/input/attachments";
+import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films/films";
 
 // The film's conversation with Claude. POST sends one message and streams
 // back what happens (text/event-stream, one ChatEvent per `data:` line);

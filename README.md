@@ -1,6 +1,6 @@
 # Saymo
 
-Aerchain's in-house tool for motion graphics and video. Bring in footage or start from a blank film, then change it by talking to Claude, by pointing at the part you mean, or by moving the controls yourself. Every film follows a brand kit, has its own sound design, and renders to a crisp video.
+An open-source motion editor for motion graphics and video. Bring in footage or start from a blank film, then change it by talking to Claude, by pointing at the part you mean, or by moving the controls yourself. Every film follows a brand kit, has its own sound design, and renders to a crisp video.
 
 It runs on your own Mac, with your own Claude sign-in.
 
@@ -8,9 +8,9 @@ It runs on your own Mac, with your own Claude sign-in.
 
 | Part | Address | What it's for |
 | --- | --- | --- |
-| **Studio** | `/studio` | Make motion graphics and edit videos with Claude. Films, brand kits, sound and renders live here. |
-| **Post tool** | `/tool` | Make speaker posts without code: change the words, photo and landmark, then download the 4K video. |
-| **Speaker post** | `/` | The original animated post the tool is built on. |
+| **Studio** | `/studio` (and `/`) | Make motion graphics and edit videos with Claude. Films, brand kits, sound and renders live here. |
+| **Post tool** | `/tool` | A sample template: make animated speaker posts without code by changing the words, photo and landmark, then download the 4K video. |
+| **Sample post** | `/post` | The animated speaker post the tool starts from, filled with sample words. |
 
 ## Set up
 
@@ -21,7 +21,7 @@ npm run setup
 npm run dev
 ```
 
-Open http://localhost:3200/studio. Setup installs the video tools, the app and each engine. Add `-- --with-rust` to also set up the Rust engine. [docs/setup.md](docs/setup.md) covers the details, the optional keys and what to do if something goes wrong.
+Open http://localhost:3200. Setup installs the video tools, the app and each engine. Add `-- --with-rust` to also set up the Rust engine. [docs/setup.md](docs/setup.md) covers the details, the optional keys and what to do if something goes wrong.
 
 The server only answers this Mac, and Claude in the studio can only change the film you're working on.
 
@@ -37,23 +37,50 @@ Press H to hide every panel, and Space to play.
 
 ## Brand kits
 
-Each film follows a brand kit: colours, fonts, logos and the rules for look, motion, sound and words. Aerchain's full kit comes built in. Make a kit from a brand's guideline, links and files, or import one another studio exported.
+Each film follows a brand kit: colours, fonts, logos and the rules for look, motion, sound and words. The clean kit (black on white, Geist, one accent at most) comes built in and is the default. Make a kit from a brand's guideline, links and files, start a personal style in two minutes, or import a kit another studio exported.
 
 ## Where things are
 
 ```
-src/app/            pages and routes: studio, post tool, the post, their APIs
-src/components/     the interface: studio/, tool/, post/, shared ui/ and icons/
-src/lib/studio/     the studio's server side: films, Claude, renders, brands, sound
-src/lib/tool/       the post tool's server side
-studio/             under the hood: engines, starters, graphics, brand kits
-  remotion/  hyperframes/  fframes/  sound/   each engine, with its own packages
-  starters/          what a new film is copied from
-  graphics/  kit/    the branded graphics and the shared drawing kit
-  brands/aerchain/   Aerchain's brand kit
-scripts/            setup, exports, renders, transcription, voiceovers
-.claude/skills/     what Claude in the studio knows: the engines, motion, the Aerchain look
-docs/               the details
+src/
+  app/                pages and API routes: studio, post tool, sample post
+  components/
+    studio/           the studio's interface, one folder per area:
+      api/            the page's calls to the studio's routes
+      home/  film/  video/  chat/  sound/  brand/  library/  settings/  flows/
+      ui/             the studio's own panels, switches and decorations
+    tool/  post/      the post tool and the sample post
+    ui/               shared controls (the DialKit rows, buttons, menus)
+    icons/            PikaIcons, written by `npx pikaicons add`
+  lib/
+    studio/           the studio's server side, one folder per area:
+      agent/          Claude and Codex turns, the AI providers, standing rules
+      films/          films, the contract, edits, takes, renders, footage
+      stage/          the page each film plays in, and the bridge to it
+      brands/         brand kits and personal style
+      sound/          scores, mixes, voiceovers, reference sounds
+      input/          dictation, attachments, slides, scripts
+      library/        the reference library and ideas
+      connect/        Google Drive, GitHub and cloud folders
+      server/         local API token, edition, streaming, file serving
+    tool/             the post tool's server side
+  content/            the sample post's words
+studio/               under the hood, used by the engines (not bundled by Next)
+  remotion/  hyperframes/  sound/   each engine, with its own packages
+  starters/           what a new film is copied from (html, react, rust, video)
+  graphics/  kit/     the graphics library and the shared drawing kit
+  effects/            ready-made effects for HTML films
+  brands/clean/       the built-in brand kit
+  fonts/              open fonts films can use
+scripts/
+  studio/             renders, checks, sound, transcription, the CLI and MCP server
+  post/               the sample post's export, photo, landmark and wordmark
+  native/             Swift helpers built on first use (Vision, PDFKit)
+  setup.sh  licences.mjs
+desktop/              the native Mac app (Swift)
+.claude/skills/       what Claude in the studio knows: saymo-film, saymo-sound-design,
+                      saymo-video-edit, plus the engines' and craft skills
+docs/                 guides; docs/research/ holds dated research notes
 ```
 
 Your films, posts and brand kits stay on your Mac (`films/`, `posts/`, `brands/`). Git ignores them, and so do keys in `.env.local`.
@@ -66,17 +93,23 @@ Your films, posts and brand kits stay on your Mac (`films/`, `posts/`, `brands/`
 - [Use the studio from other apps](docs/mcp.md): Claude Desktop, Claude Code, Cursor (MCP) and the command line
 - [Shortcuts and Raycast](docs/shortcuts.md): start a film from a link
 - [Security](docs/security.md): who the studio answers, and the local API token
-- [The post tool](docs/post-tool.md)
-- [The speaker post](docs/speaker-post.md): the original post and its export
+- [The post tool](docs/post-tool.md) and [the sample post](docs/speaker-post.md)
+- [Roadmap](docs/roadmap.md)
+
+## Contributing
+
+Run `npx tsc --noEmit`, `npm run lint` and `npm run build` before sending a change, and `node scripts/studio/parts-check.mjs` after touching `studio/effects/` or the starters. House rules for the interface, copy and icons are in [CLAUDE.md](CLAUDE.md).
 
 ## Licences
 
-The studio is for in-house use at Aerchain. It builds on:
+Saymo's own licence is still to be chosen. It builds on:
 
 - HyperFrames (Apache 2.0)
 - fframes (MIT)
 - Tone.js (MIT)
 - skullet (MIT)
-- Bricolage Grotesque (OFL)
-- Strudel (AGPL 3.0), in-house only: it plays the music of films made before the studio's own music bed. The product edition leaves it out (see docs/launch).
-- Remotion: free for individuals, companies of up to 3 people and evaluation. Aerchain needs a company licence before using React films for real work.
+- Bricolage Grotesque and Geist (OFL)
+- Strudel (AGPL 3.0), in the in-house edition only: it plays the music of films made before the studio's own music bed. The product edition (`STUDIO_EDITION=product`) leaves it out; see [docs/research/licences.md](docs/research/licences.md).
+- Remotion: free for individuals, companies of up to 3 people and evaluation; larger companies need a Remotion company licence to use React films.
+
+Every package's licence is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) (`npm run licences` writes it).

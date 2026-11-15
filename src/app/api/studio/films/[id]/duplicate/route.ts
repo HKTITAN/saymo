@@ -1,4 +1,4 @@
-import { allowed, duplicateFilm, refused } from "@/lib/studio/films";
+import { allowed, duplicateFilm, refused } from "@/lib/studio/films/films";
 
 // A copy of the film, without its renders, history or chat.
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/films/[id]/duplicate">) {

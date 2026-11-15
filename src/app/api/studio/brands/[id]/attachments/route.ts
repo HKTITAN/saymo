@@ -1,6 +1,6 @@
-import { AttachmentError, saveAttachment } from "@/lib/studio/attachments";
-import { kitDir, readBrand } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
+import { AttachmentError, saveAttachment } from "@/lib/studio/input/attachments";
+import { kitDir, readBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // A file attached to a prompt in the kit's chat, saved in the kit's guide/
 // with the rest of what it was made from. The body is the file, its name in

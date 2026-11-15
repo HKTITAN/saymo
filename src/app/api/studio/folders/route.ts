@@ -1,5 +1,5 @@
-import { allowed, createFolder, listFolders, refused } from "@/lib/studio/films";
-import { folderName } from "@/lib/studio/validate";
+import { allowed, createFolder, listFolders, refused } from "@/lib/studio/films/films";
+import { folderName } from "@/lib/studio/films/validate";
 
 // The folders on the studio's home page.
 export async function GET(request: Request) {

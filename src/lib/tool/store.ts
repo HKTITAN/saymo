@@ -1,7 +1,6 @@
 import { randomBytes } from "node:crypto";
-import { copyFile, cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import sharp from "sharp";
 import { MOTION_BY_ID } from "@/components/post/lines";
 import { post } from "@/content/post";
 import type { DocEdit, PostDoc } from "./doc";
@@ -70,22 +69,14 @@ export async function listDocs(): Promise<PostDoc[]> {
 const newId = () =>
   Array.from(randomBytes(8), (b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
 
-// The original post, src/content/post.ts, as the tool's first post. It
-// points at the original's own photo tiles and landmark files, so it looks
-// exactly like the original until something is changed.
+// The sample post, src/content/post.ts, as the tool's first post. It points
+// at the sample's landmark files and has no photo yet, so it looks exactly
+// like the sample until something is changed.
 async function seed() {
   const id = newId();
   await mkdir(postDir(id), { recursive: true });
   const now = new Date().toISOString();
   const [date, location] = post.event;
-  // The original photo is kept too, so the crop can still change.
-  const original = path.join(process.cwd(), "assets/speakers/darshan-kadam.png");
-  const { width = 0, height = 0 } = await sharp(original).metadata();
-  await copyFile(original, path.join(postDir(id), "photo-source.png"));
-  await sharp(original)
-    .resize({ width: 720, height: 720, fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 85 })
-    .toFile(path.join(postDir(id), "photo-preview.jpg"));
   const doc: PostDoc = {
     id,
     createdAt: now,
@@ -95,12 +86,7 @@ async function seed() {
     speaker: { name: post.speaker.name, role: post.speaker.role, company: post.speaker.company },
     date: { lines: [date.lines[0], date.lines[1]], pick: null },
     location: { lines: [location.lines[0], location.lines[1]], orange: location.accent.split(" ") },
-    photo: {
-      ...post.speaker.photo,
-      source: { width, height, preview: fileUrl(id, "photo-preview.jpg") },
-      crop: { x: 23, y: 10, size: 331 },
-      plain: false,
-    },
+    photo: null,
     image: {
       name: post.skyline.landmark,
       x1: post.skyline.x1,

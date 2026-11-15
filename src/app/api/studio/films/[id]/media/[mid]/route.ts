@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { deleteMedia, readMedia } from "@/lib/studio/media";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { deleteMedia, readMedia } from "@/lib/studio/films/media";
 
 // One file's record.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/films/[id]/media/[mid]">) {

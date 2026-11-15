@@ -1,7 +1,7 @@
 import { stat } from "node:fs/promises";
 import path from "node:path";
-import { allowed, outDir, readFilm, refused } from "@/lib/studio/films";
-import { serveFile } from "@/lib/studio/serve";
+import { allowed, outDir, readFilm, refused } from "@/lib/studio/films/films";
+import { serveFile } from "@/lib/studio/server/serve";
 
 const FILES = new Set(["draft.mp4", "4k.mp4", "1080p.mp4", "poster.png"]);
 

@@ -3,6 +3,6 @@
   "duration": 6,
   "params": [
     { "key": "quote", "label": "Quote", "type": "text", "value": "We stopped chasing approvals. The approvals started finding us." },
-    { "key": "who", "label": "Who said it", "type": "text", "value": "Darshan Kadam, Aerchain" }
+    { "key": "who", "label": "Who said it", "type": "text", "value": "Alex Morgan, Head of Product" }
   ]
 }

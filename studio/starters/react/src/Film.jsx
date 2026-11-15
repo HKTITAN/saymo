@@ -15,9 +15,9 @@ import { useBrandFont, usePalette, useTexture } from "studio-kit";
 //   5.00  all black again: it loops
 
 // The film's brand kit (studio-kit): its display face (Remotion waits for
-// it before a frame is drawn), its colours and its line texture, an 8px
-// line on a 12px pitch for Aerchain, each colour a flat field with a
-// slightly darker partner in the gaps.
+// it before a frame is drawn), its colours and its line texture when it
+// has one (an 8px line on a 12px pitch, say, each colour a flat field with
+// a slightly darker partner in the gaps).
 
 const darker = (hex, k = 0.895) => {
   const n = parseInt(hex.slice(1), 16);
@@ -31,7 +31,7 @@ const landing = (p) => {
   return 0.5 * q + 2 * q * q - 1.5 * q ** 3;
 };
 
-export default function Film({ figure = 40, unit = "%", label = "faster sourcing", accent = "#F55A00" }) {
+export default function Film({ figure = 40, unit = "%", label = "faster renders", accent = "#F55A00" }) {
   const FAMILY = useBrandFont();
   const palette = usePalette();
   const { pitch: PITCH, stroke: STROKE } = useTexture();

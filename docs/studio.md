@@ -7,21 +7,21 @@ What's under the hood of `/studio`: brand kits, the three motion engines, sound 
 A film is a folder in `films/<id>/` with a `film.json` (its size, length, settings and named moments) beside its source. There are two kinds:
 
 - **Motion films** are written in one of the engines below. Claude writes and edits them; the panel changes their settings.
-- **Video edits** (`kind: "video"`) cut footage on a timeline. Their `edit.json` holds the tracks: clips from the footage, graphics, music and captions (the contract is `src/lib/studio/edit.ts`). They play and render through Remotion.
+- **Video edits** (`kind: "video"`) cut footage on a timeline. Their `edit.json` holds the tracks: clips from the footage, graphics, music and captions (the contract is `src/lib/studio/films/edit.ts`). They play and render through Remotion.
 
 Every Claude turn first copies the film into `.history/`, so Undo can put it back.
 
 ## Video editing
 
 - **Footage:** dropped files stream to `films/<id>/media/<mid>/`. The studio makes a smooth preview copy, a strip of frames and the sound's shape for the timeline. Renders always use the originals.
-- **Captions:** speech is transcribed on this Mac with whisper.cpp (the large-v3-turbo model), tuned for Indian English and taught words like Aerchain and SpendOS. Captions come in three styles.
+- **Captions:** speech is transcribed on this Mac with whisper.cpp (the large-v3-turbo model), tuned for Indian English; `STUDIO_WHISPER_PROMPT` teaches it your brand and product names. Captions come in three styles.
 - **Voiceovers:** the microphone in the Media panel reads typed words in one of the Mac's own voices: Rishi (the default), Tara and Aman in Indian English, Lekha in Hindi. The result lands in the film like any sound file.
 - **Graphics:** lower third, title, end card, logo and quote, from `studio/graphics/`. They draw in the film's brand kit.
-- **Claude as editor:** Claude can read what's said, find pauses, scene changes and the speaker's face, and look at frames, through `scripts/studio/media-tool.mjs`. The `aerchain-video-edit` skill teaches it to cut talking heads, pace for each platform, caption and reframe.
+- **Claude as editor:** Claude can read what's said, find pauses, scene changes and the speaker's face, and look at frames, through `scripts/studio/media-tool.mjs`. The `saymo-video-edit` skill teaches it to cut talking heads, pace for each platform, caption and reframe.
 
 ## Claude in the studio
 
-Each prompt runs `claude -p` on your own sign-in, at high effort, inside the film's folder (`src/lib/studio/claude.ts`). It is told the moment the playhead is on and whatever you pointed at. It may only:
+Each prompt runs `claude -p` on your own sign-in, at high effort, inside the film's folder (`src/lib/studio/agent/claude.ts`). It is told the moment the playhead is on and whatever you pointed at. It may only:
 
 - read the project's code, skills and the film;
 - edit the film's own files;
@@ -35,11 +35,11 @@ Footage, keys and other films are off limits, and there is no web access except 
 what makes a film look, move and sound like its brand: colour roles and
 ramps, fonts, logos for light and dark grounds, a line texture, rules
 (look, motion, sound, words) and a longer guideline for Claude
-(`src/lib/studio/brand.ts`).
+(`src/lib/studio/brands/brand.ts`).
 
-- Aerchain's full kit ships in `studio/brands/aerchain/` (from the Framer
-  guideline /home-ets, the wordmark and the post's tuned film colours) and
-  is copied into `brands/aerchain/` the first time the studio needs it.
+- The clean kit ships in `studio/brands/clean/` (white, near-black ink,
+  Geist, one accent at most) and is copied into `brands/clean/` the first
+  time the studio needs it. A film without a kit of its own uses it.
   Kits made in the studio live in `brands/<id>/`, which git ignores, as
   they may belong to clients.
 - A kit's page (`/studio?brand=<id>`) shows it as a specimen board, with
@@ -52,7 +52,7 @@ ramps, fonts, logos for light and dark grounds, a line texture, rules
   `useBrand()`, `usePalette()`, `useTexture()`, `useBrandFont()` and
   `<BrandLogo>` from `studio-kit` for React films, `brand.json` for Rust
   films. The graphics library draws with them, so a lower third or end
-  card takes the film's brand. Aerchain films draw exactly as before.
+  card takes the film's brand.
 
 ## Motion engines (under the studio)
 
@@ -65,7 +65,7 @@ from), and the studio drives and renders it:
 | --- | --- | --- | --- |
 | `html`: `index.html`, moved by a Motion sequence wrapped by `filmTimeline()` at `window.__timelines.main` (GSAP in films made before Motion, in-house only) | [HyperFrames](https://hyperframes.heygen.com) 0.8.227 (`studio/hyperframes`) | Most films: instant to preview, any web type, CSS and SVG, and the one Claude writes best. The default | Apache 2.0, free |
 | `react`: `src/Film.jsx`, a component drawn from `useCurrentFrame()` | [Remotion](https://www.remotion.dev) 4.0.539 (`studio/remotion`) | Films driven by data, captions, audio and video clips | Free for individuals, companies of up to 3 people, and evaluation. **Aerchain needs a company licence before using it for real work** (remotion.pro) |
-| `rust`: a Cargo crate drawing SVG per frame | [fframes](https://fframes.studio) 1.3.0 (`studio/fframes`) | Heavy generative scenes; renders 4K in seconds on the GPU | MIT, free |
+| `rust`: a Cargo crate drawing SVG per frame | [fframes](https://fframes.studio) 1.3.0 (`studio/starters/rust`) | Heavy generative scenes; renders 4K in seconds on the GPU | MIT, free |
 
 How the studio uses them:
 
@@ -75,7 +75,7 @@ How the studio uses them:
   speed or figure) and named moments (`marks`) in its `film.json`.
 - **The stage** (`/studio/stage/<id>`) plays one film at its own pixel size
   in an iframe; the studio owns time and sends `studio:seek` on every frame
-  (the message contract is in `src/lib/studio/contract.ts`). Under the hood:
+  (the message contract is in `src/lib/studio/films/contract.ts`). Under the hood:
   an HTML film runs as it is, with `window.__film` and `window.__params` set
   before its scripts and its timeline seeked; a React film runs in the
   Remotion Player (bundled by esbuild in well under a second, rebuilt when
@@ -84,7 +84,7 @@ How the studio uses them:
   the element under the pointer (an id or `data-hf-id` in HTML, a
   `data-part` in React) for the chat.
 - **Rendering**: `node scripts/studio/render.mjs --film <id> [--draft]` (the
-  studio queues them, one at a time, in `src/lib/studio/render.ts`). A
+  studio queues them, one at a time, in `src/lib/studio/films/render.ts`). A
   draft writes `films/<id>/out/draft.mp4` at the film's own size; a final
   writes `4k.mp4` (twice its size) and `1080p.mp4` (its own size). Both make
   `poster.png` at the film's "Cover" mark. For a final, each engine hands
@@ -166,7 +166,7 @@ Google Chrome.
 ### Sound design
 
 Every film can have a sound track, composed as code in
-`films/<id>/sound/score.js` (the contract is `src/lib/studio/sound.ts`):
+`films/<id>/sound/score.js` (the contract is `src/lib/studio/sound/sound.ts`):
 
 - **Music** as a music bed (`studio/sound/bed.js`, the studio's own code
   played with Tone.js): named parts, each a loop of notes with a synth or
@@ -187,10 +187,10 @@ work). `--check` renders twice and fails if the score isn't repeatable.
 The studio renders a film's sound when it is made, after a Claude turn that
 changed it, and a moment after its length, values or (for a video film) its
 edit change; it waits its turn with video renders (one heavy job at a time,
-`src/lib/studio/heavy.ts`). Every render mixes the sound in at the film's
+`src/lib/studio/server/heavy.ts`). Every render mixes the sound in at the film's
 `sound.volume`; in a video film it goes under the footage's own sound, and
 its music dips under speech by itself. Starters come with a score; the
-**aerchain-sound-design** skill teaches Claude the Aerchain sonic language.
+**saymo-sound-design** skill teaches Claude the Saymo sonic language.
 
 Set up once: `npm ci --prefix studio/sound`. Films scored before the music
 bed have [Strudel](https://strudel.cc) code as their music. In-house they
@@ -202,10 +202,6 @@ two sound. The product edition (`STUDIO_EDITION=product`) never installs or
 bundles Strudel. Licences: the bed and Tone.js are MIT or our own; Strudel
 is **AGPL-3.0**, which is why it stays in-house. The rendered audio is ours
 to use anywhere.
-
-The first experiments are still here: `studio/compositions.json` lists the
-same 4 second "Aerchain bands" film made in each engine, rendered with
-`node scripts/studio/render.mjs <id> [--draft]` into `studio/out/`.
 
 The studio's chat gets the engines' own skills, installed in `.claude/skills`:
 Remotion's (`remotion-dev/skills`), HyperFrames' (`heygen-com/hyperframes`),

@@ -1,6 +1,6 @@
-import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films";
-import { inside, serveFile } from "@/lib/studio/serve";
-import { stageBundle } from "@/lib/studio/stage";
+import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films/films";
+import { inside, serveFile } from "@/lib/studio/server/serve";
+import { stageBundle } from "@/lib/studio/stage/stage";
 
 // The film's own files, for its stage page (fonts, images, scripts), and
 // __stage.js, a React film's Player bundle.

@@ -1,7 +1,7 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { BrandLogo, clamp01, landing } from "studio-kit";
 
-// LOGO IN THE CORNER: the Aerchain wordmark held in a corner over footage.
+// LOGO IN THE CORNER: the brand's logo held in a corner over footage.
 //   0.00  it slides in a little from the right and fades up
 //   end-0.5  it fades out
 export default function Logo({ values, duration }) {

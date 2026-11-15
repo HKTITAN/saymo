@@ -1,9 +1,9 @@
 import { connection } from "next/server";
-import { isBrandRunning, linksFor, readBrandChat, runBrandTurn, stopBrandTurn } from "@/lib/studio/brand-claude";
-import { checkAttachments } from "@/lib/studio/attachments";
-import { kitDir, readBrand } from "@/lib/studio/brands";
-import type { ChatEvent } from "@/lib/studio/contract";
-import { allowed, refused } from "@/lib/studio/films";
+import { isBrandRunning, linksFor, readBrandChat, runBrandTurn, stopBrandTurn } from "@/lib/studio/brands/brand-claude";
+import { checkAttachments } from "@/lib/studio/input/attachments";
+import { kitDir, readBrand } from "@/lib/studio/brands/brands";
+import type { ChatEvent } from "@/lib/studio/films/contract";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // Claude building or tidying the kit. POST streams the turn (a ChatEvent per
 // `data:` line; `done` carries the kit); DELETE stops it; GET is the history.

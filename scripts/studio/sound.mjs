@@ -1,5 +1,5 @@
 // Renders a film's sound design: films/<id>/sound/score.js (the music bed
-// and Tone.js effects; see src/lib/studio/sound.ts) into sound/sound.wav,
+// and Tone.js effects; see src/lib/studio/sound/sound.ts) into sound/sound.wav,
 // exactly as long as the film, 48 kHz stereo, at about -16 LUFS with the
 // peaks kept under -1.5 dBTP. Also writes sound/peaks.json (100 a second,
 // for the timeline) and sound/status.json.
@@ -165,7 +165,7 @@ async function videoContext(film, voice = null) {
         ) ?? undefined;
       }
     }
-    const { captionWords } = await import("../../src/lib/studio/captions.ts");
+    const { captionWords } = await import("../../src/lib/studio/films/captions.ts");
     words = captionWords(edit, transcripts);
   }
   return {

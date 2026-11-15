@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { EFFECTS } from "@/lib/studio/effects";
-import { allowed, refused, ROOT } from "@/lib/studio/films";
+import { EFFECTS } from "@/lib/studio/films/effects";
+import { allowed, refused, ROOT } from "@/lib/studio/films/films";
 
 // An effect's preview, for its tile on the Effects page: a page that loads
 // the effect's parts (studio/starters/html/assets/parts) and its scene

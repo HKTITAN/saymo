@@ -1,5 +1,5 @@
-import { allowed, readFilm, refused } from "@/lib/studio/films";
-import { pickTake } from "@/lib/studio/takes";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
+import { pickTake } from "@/lib/studio/films/takes";
 
 // Keeps one of the three versions: the film becomes it, as one step.
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/films/[id]/takes/pick">) {

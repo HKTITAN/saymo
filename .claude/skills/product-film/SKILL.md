@@ -66,4 +66,4 @@ Borrowed from github.com/Rieranthony/product-film-skill (MIT, by Anthony Riera; 
 - **Engine:** use it for react (Remotion) films. Its rules on story, magic moves, camera, cursors, punchlines and proof scenes also guide html films.
 - **The kit:** copy only the helpers a film needs from `templates/kit/` (camera, spring, move, cursor, cursor-path, punchlines, time, debug) into the film's own `src/` and import them from there. Never edit this skill's files.
 - **Scripts:** in a studio turn you can't run `npx`, `uv`, installs or its render script. Check and render with the commands in your instructions instead; for music sync use the stopmotion-video skill's rules and the film's score.
-- **Design:** "their design wins" means the film's brand kit (Aerchain: the aerchain-film skill's look) and the studio rules in your turn message. Skip its interview when the request already says what the film is for.
+- **Design:** "their design wins" means the film's brand kit (the saymo-film skill's look) and the studio rules in your turn message. Skip its interview when the request already says what the film is for.

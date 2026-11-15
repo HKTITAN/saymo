@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-// The bare post at its export size, for scripts/export.mjs to step through
+// The bare post at its export size, for scripts/post/export.mjs to step through
 // frame by frame with window.__post.
 export function ExportStage({ motion, content }: { motion: MotionId; content?: PostContent }) {
   const handle = useRef<PostHandle>(null);

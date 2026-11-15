@@ -1,5 +1,5 @@
-import { isRunning, noteUndo } from "@/lib/studio/claude";
-import { allowed, readFilm, refused, restoreLast, withFilm } from "@/lib/studio/films";
+import { isRunning, noteUndo } from "@/lib/studio/agent/claude";
+import { allowed, readFilm, refused, restoreLast, withFilm } from "@/lib/studio/films/films";
 
 // Puts the film back as it was before Claude's last turn.
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/films/[id]/undo">) {

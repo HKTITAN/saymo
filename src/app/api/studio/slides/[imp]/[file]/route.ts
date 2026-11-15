@@ -1,6 +1,6 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { inside, serveFile } from "@/lib/studio/serve";
-import { importDir, isImportId } from "@/lib/studio/slides";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { inside, serveFile } from "@/lib/studio/server/serve";
+import { importDir, isImportId } from "@/lib/studio/input/slides";
 
 // A slide's picture, for the strip of thumbnails.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/slides/[imp]/[file]">) {

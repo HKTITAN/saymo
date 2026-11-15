@@ -1,12 +1,11 @@
 // The right-hand panel of the post: a field of horizontal scanlines drawn in
-// the rhythm of the Aerchain line texture (a line, then a thin darker gap),
-// with the Aerchain wordmark on top. Every line is straight and runs off the
+// a steady rhythm (a line, then a thin darker gap),
+// with the wordmark on top. Every line is straight and runs off the
 // right edge; colour only ever arrives from the right, so all motion happens
 // along the lines, never across them.
 
 import { PALETTE } from "./palette";
 import { WORDMARK } from "./wordmark-paths";
-import { ET_RED, PARTNERS, type PartnerId } from "./partner-paths";
 
 export const PANEL_W = 920;
 export const PANEL_H = 1080;
@@ -18,7 +17,7 @@ const BAND = 9; // lines per band (108px)
 const BANDS = ROWS / BAND; // 10 bands
 
 // What one stretch of a line looks like: its lit stroke and the thin gap
-// around it. As in the Aerchain texture, the gap is a shade darker than the
+// around it. The gap is a shade darker than the
 // line, so every colour reads as a flat field with fine lines through it.
 type Fill = { lit: string; gap: string };
 const BLACK: Fill = { lit: PALETTE.sky, gap: PALETTE.gap };
@@ -322,19 +321,18 @@ export const MOTION_BY_ID = Object.fromEntries(MOTIONS.map((m) => [m.id, m])) as
 // ---------------------------------------------------------------------------
 // The wordmark, top right. It is drawn line by line: wherever a wipe has
 // reached, the letters take the colours for the new background, so the logo
-// changes exactly with the panel behind it. The orange "ai" flips edge-on
+// changes exactly with the panel behind it. The orange "o" flips edge-on
 // whenever the colour behind it changes, and swaps colour while it is thin.
 
-const LOGO_W = 250;
+const LOGO_W = 152;
 const LOGO_X = PANEL_W - 72 - LOGO_W;
 const LOGO_Y = 72;
 const LOGO_SCALE = LOGO_W / WORDMARK.width;
 const LOGO_H = WORDMARK.height * LOGO_SCALE;
-// The "ai" sits at x 136.7 to 172.4 of the 201-wide wordmark.
-const MARK_X = LOGO_X + ((136.7 + 172.4) / 2) * LOGO_SCALE;
+const MARK_X = LOGO_X + ((WORDMARK.mark.from + WORDMARK.mark.to) / 2) * LOGO_SCALE;
 const MARK_Y = LOGO_Y + LOGO_H / 2;
 const MARK_LINE = Math.floor(MARK_Y / PITCH);
-const FLIP = 0.36; // seconds for the "ai" to turn over
+const FLIP = 0.36; // seconds for the "o" to turn over
 
 // Original colours on stone, all black on orange, reversed on black.
 function logoColors(behind: Fill) {
@@ -347,8 +345,8 @@ function logoColors(behind: Fill) {
 let paths: { letters: Path2D[]; mark: Path2D[] } | null = null;
 const getPaths = () =>
   (paths ??= {
-    letters: WORDMARK.letters.map((d) => new Path2D(d)),
-    mark: WORDMARK.mark.map((d) => new Path2D(d)),
+    letters: WORDMARK.letterPaths.map((d) => new Path2D(d)),
+    mark: WORDMARK.markPaths.map((d) => new Path2D(d)),
   });
 
 // The visible runs of colour along one line, left to right.
@@ -367,7 +365,7 @@ function runs(s: LineState): [number, number, Fill][] {
 const colorAt = (s: LineState, x: number) =>
   runs(s).find(([a, b]) => x >= a && x < b)?.[2] ?? s.base;
 
-// Moments in the loop when the colour behind the "ai" changes.
+// Moments in the loop when the colour behind the "o" changes.
 const flipTimes = new Map<string, number[]>();
 function flipsFor(m: Motion, look: Look, markX: number) {
   const key = `${m.id}:${look}:${markX}`;
@@ -431,7 +429,7 @@ function drawLogo(
     }
   }
 
-  // The "ai": flat, or mid-flip around a change of colour behind it.
+  // The "o": flat, or mid-flip around a change of colour behind it.
   let turn = 1;
   for (const at of flip ? flipsFor(m, look, markX) : []) {
     const d = wrap(t - at + m.duration / 2, m.duration) - m.duration / 2;
@@ -448,142 +446,6 @@ function drawLogo(
   ctx.fillStyle = logoColors(colorAt(lines[MARK_LINE], markX)).mark;
   for (const p of mark) ctx.fill(p);
   ctx.restore();
-}
-
-// ---------------------------------------------------------------------------
-// Partner logos, in a row to the right of the wordmark, each behind a thin
-// divider and centred on the wordmark's middle. Like the wordmark's letters
-// they are painted one line-high slice at a time, so they take the same
-// colour as the letters wherever a wipe has reached. Every logo stands at
-// the wordmark's own height, so the row reads as one size. The ET square
-// keeps its red whatever is behind it.
-const PARTNER_H: Record<PartnerId, number> = { et: LOGO_H, cpo26: LOGO_H };
-const DIVIDER = { gap: 28, width: 1.5, height: 40, alpha: 0.45 };
-
-type Placed = {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  paint: (ctx: CanvasRenderingContext2D) => void;
-  // Painted once, in its own colours, after the sliced pass.
-  fixed?: (ctx: CanvasRenderingContext2D) => void;
-};
-
-const partnerPaths = new Map<PartnerId, Path2D[]>();
-const getPartner = (id: PartnerId) => {
-  let p = partnerPaths.get(id);
-  if (!p) partnerPaths.set(id, (p = PARTNERS[id].paths.map((d) => new Path2D(d))));
-  return p;
-};
-
-const partnerW = (id: PartnerId) => (PARTNERS[id].width * PARTNER_H[id]) / PARTNERS[id].height;
-
-// Where the wordmark starts so the whole row (wordmark, then each partner
-// behind a divider) ends at the right margin, as the wordmark alone did.
-export const logoXFor = (ids: readonly PartnerId[]) =>
-  LOGO_X - ids.reduce((sum, id) => sum + 2 * DIVIDER.gap + DIVIDER.width + partnerW(id), 0);
-
-// Left to right from the wordmark: divider, logo, divider, logo.
-function placePartners(ids: readonly PartnerId[], logoX: number): Placed[] {
-  const mid = LOGO_Y + LOGO_H / 2;
-  const out: Placed[] = [];
-  let left = logoX + LOGO_W;
-  for (const id of ids) {
-    const x = left + DIVIDER.gap;
-    out.push({
-      x,
-      y: mid - DIVIDER.height / 2,
-      w: DIVIDER.width,
-      h: DIVIDER.height,
-      paint: (ctx) => {
-        ctx.globalAlpha = DIVIDER.alpha;
-        ctx.fillRect(x, mid - DIVIDER.height / 2, DIVIDER.width, DIVIDER.height);
-      },
-    });
-    const logo = PARTNERS[id];
-    const h = PARTNER_H[id];
-    const s = h / logo.height;
-    const w = logo.width * s;
-    const lx = x + DIVIDER.width + DIVIDER.gap;
-    const ly = mid - h / 2;
-    out.push({
-      x: lx,
-      y: ly,
-      w,
-      h,
-      paint: (ctx) => {
-        ctx.translate(lx, ly);
-        ctx.scale(s, s);
-        // A square with its own colours is left to the fixed pass.
-        if (logo.box) {
-          ctx.beginPath();
-          ctx.rect(logo.box[0] + logo.box[2], 0, logo.width, logo.height);
-          ctx.clip();
-        }
-        ctx.transform(...logo.matrix);
-        for (const p of getPartner(id)) ctx.fill(p);
-      },
-      fixed: logo.box
-        ? (ctx) => {
-            const [bx, by, bw, bh] = logo.box!;
-            ctx.translate(lx, ly);
-            ctx.scale(s, s);
-            // White behind, inset so no white shows round the edge, then
-            // the traced square with "ET" cut out of it, in red.
-            const inset = bw * 0.1;
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fillRect(bx + inset, by + inset, bw - 2 * inset, bh - 2 * inset);
-            ctx.beginPath();
-            ctx.rect(bx - 20, 0, bw + 40, logo.height);
-            ctx.clip();
-            ctx.transform(...logo.matrix);
-            ctx.fillStyle = ET_RED;
-            for (const p of getPartner(id)) ctx.fill(p);
-          }
-        : undefined,
-    });
-    left = lx + w;
-  }
-  return out;
-}
-
-function drawPartners(
-  ctx: CanvasRenderingContext2D,
-  ids: readonly PartnerId[],
-  lines: LineState[],
-  snap: Snap,
-  logoX: number,
-  zoom: number,
-) {
-  const base = ctx.getTransform();
-  for (const item of placePartners(ids, logoX)) {
-    const first = Math.floor(item.y / PITCH);
-    const last = Math.ceil((item.y + item.h) / PITCH);
-    for (let r = first; r < last; r++) {
-      const top = snap(r * PITCH);
-      const bottom = snap((r + 1) * PITCH);
-      for (const [a, b, color] of runs(lines[r])) {
-        if (b <= item.x || a >= item.x + item.w) continue;
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(snap(a), top, snap(b) - snap(a), bottom - top);
-        ctx.clip();
-        ctx.setTransform(base);
-        zoomRow(ctx, zoom);
-        ctx.fillStyle = logoColors(color).letters;
-        item.paint(ctx);
-        ctx.restore();
-      }
-    }
-    if (item.fixed) {
-      ctx.save();
-      ctx.setTransform(base);
-      zoomRow(ctx, zoom);
-      item.fixed(ctx);
-      ctx.restore();
-    }
-  }
 }
 
 // The logo row can be drawn smaller, shrunk towards its top right corner so
@@ -640,12 +502,10 @@ export function drawPanel(
   seconds: number,
   look: Look = "reference",
   {
-    partners = [],
     flip = true,
     colors = "all",
     logoScale = 1,
   }: {
-    partners?: readonly PartnerId[];
     flip?: boolean;
     colors?: "all" | "no-black" | "no-orange" | "orange-low" | "orange-once";
     logoScale?: number;
@@ -687,7 +547,5 @@ export function drawPanel(
       ctx.fillRect(a, litTop, PANEL_W - a, litBottom - litTop);
     }
   }
-  const logoX = logoXFor(partners);
-  drawLogo(ctx, m, t, lines, snap, look, logoX, flip, logoScale);
-  if (partners.length) drawPartners(ctx, partners, lines, snap, logoX, logoScale);
+  drawLogo(ctx, m, t, lines, snap, look, LOGO_X, flip, logoScale);
 }

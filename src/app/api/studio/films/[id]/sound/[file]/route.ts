@@ -1,7 +1,7 @@
 import path from "node:path";
-import { allowed, readFilm, refused } from "@/lib/studio/films";
-import { serveFile } from "@/lib/studio/serve";
-import { soundDir } from "@/lib/studio/sound-render";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
+import { serveFile } from "@/lib/studio/server/serve";
+import { soundDir } from "@/lib/studio/sound/sound-render";
 
 const FILES = new Set(["sound.wav", "peaks.json", "music-peaks.json", "effects-peaks.json", "voice-peaks.json"]);
 

@@ -17,7 +17,7 @@ import { PALETTE } from "@/components/post/palette";
 import { type PostPart, WORD } from "@/components/post/post";
 import { orangeOf, type PostDoc } from "@/lib/tool/doc";
 import { cn } from "@/lib/utils";
-import { SURFACE } from "./dial";
+import { SURFACE } from "../ui/dial";
 import { fitHeadline } from "./fit";
 
 // The post's words, edited where they stand. Clicking any text on the post

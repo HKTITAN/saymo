@@ -1,8 +1,8 @@
-import { DEFAULT_PROVIDER, isProviderId } from "@/lib/studio/ai-types";
-import { checkAttachments } from "@/lib/studio/attachments";
-import type { ChatContext } from "@/lib/studio/contract";
-import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films";
-import { discardTakes, readTakes, startTakes } from "@/lib/studio/takes";
+import { DEFAULT_PROVIDER, isProviderId } from "@/lib/studio/agent/ai-types";
+import { checkAttachments } from "@/lib/studio/input/attachments";
+import type { ChatContext } from "@/lib/studio/films/contract";
+import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films/films";
+import { discardTakes, readTakes, startTakes } from "@/lib/studio/films/takes";
 
 // Three versions of one prompt, made at once (takes.ts). GET says how they're
 // going, POST starts them, DELETE stops them and throws them away.

@@ -1,7 +1,7 @@
-import { aiChoice, saveAiChoice } from "@/lib/studio/ai-env";
-import { isEffort, isModelId, isProviderId } from "@/lib/studio/ai-types";
-import { allowed, refused } from "@/lib/studio/films";
-import { forgetStatus } from "@/lib/studio/providers";
+import { aiChoice, saveAiChoice } from "@/lib/studio/agent/ai-env";
+import { isEffort, isModelId, isProviderId } from "@/lib/studio/agent/ai-types";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { forgetStatus } from "@/lib/studio/agent/providers";
 
 // Which AI every prompt goes to, and the Claude model and effort it uses
 // (ai-types.ts). GET says what's in use; PUT {model, effort, provider}

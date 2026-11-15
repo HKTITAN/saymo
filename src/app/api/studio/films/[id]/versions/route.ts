@@ -1,4 +1,4 @@
-import { allowed, listVersions, readFilm, refused } from "@/lib/studio/films";
+import { allowed, listVersions, readFilm, refused } from "@/lib/studio/films/films";
 
 // The film's versions, newest first: now, then the film after each prompt.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/films/[id]/versions">) {

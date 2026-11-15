@@ -1,5 +1,5 @@
 {
-  "name": "aerchain-studio-sound",
+  "name": "saymo-sound",
   "private": true,
   "type": "module",
   "description": "The studio's sound design engine: Tone.js (MIT), bundled for an offline render in headless Chrome. Old Strudel scores need the in-house add-on in ./strudel.",

@@ -1,5 +1,5 @@
-import { readBrand, saveBrandFile, withBrand } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
+import { readBrand, saveBrandFile, withBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // A font, logo or guideline file, sorted into fonts/, logos/ or guide/.
 // The name comes in `x-file-name` (URL-encoded); the body is the file;

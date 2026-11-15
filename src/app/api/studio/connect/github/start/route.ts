@@ -1,6 +1,6 @@
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { cancelGithubSignIn, startGithub } from "@/lib/studio/github";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { cancelGithubSignIn, startGithub } from "@/lib/studio/connect/github";
 
 // One click: signs in with a code on github.com, or with this Mac's GitHub
 // CLI when the studio has no GitHub OAuth App.

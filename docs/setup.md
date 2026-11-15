@@ -27,7 +27,7 @@ Then pick the AI in any prompt box with the small picker next to Point. More in 
 
 ### The product edition
 
-With `STUDIO_EDITION=product` in `.env.local` (see [launch/README.md](launch/README.md)), Claude with an API key is the only AI: there's no Claude plan or Codex option anywhere. Every Claude request (a film's chat, the kit maker, the script writer) uses the saved key, and Claude Code runs with a settings folder of the studio's own (`.studio/claude`), so a Claude sign-in on the Mac is never used. Until a key is saved, each of them says where to paste one. To keep the key in a file of your own instead, set `STUDIO_ANTHROPIC_KEY_FILE` to that file's path (the key alone, or JSON with a `key`).
+With `STUDIO_EDITION=product` in `.env.local` (see [research/ai-providers.md](research/ai-providers.md)), Claude with an API key is the only AI: there's no Claude plan or Codex option anywhere. Every Claude request (a film's chat, the kit maker, the script writer) uses the saved key, and Claude Code runs with a settings folder of the studio's own (`.studio/claude`), so a Claude sign-in on the Mac is never used. Until a key is saved, each of them says where to paste one. To keep the key in a file of your own instead, set `STUDIO_ANTHROPIC_KEY_FILE` to that file's path (the key alone, or JSON with a `key`).
 
 ## Install
 

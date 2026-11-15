@@ -29,7 +29,7 @@ const server = new McpServer(
   { name: "saymo", title: "Saymo", version: "1.0.0" },
   {
     instructions:
-      "Makes and changes Aerchain films in Saymo, the motion studio running on this Mac. Each film has an 8-character id; list_films finds them. " +
+      "Makes and changes films in Saymo, the motion studio running on this Mac. Each film has an 8-character id; list_films finds them. " +
       "change_film and create_film with a prompt run one Claude turn in the studio, which can take a few minutes. " +
       "render_film makes the video files. open_in_studio gives the link to watch a film in the studio. " +
       "list_library lists saved references (pictures, clips, sounds, PDFs, notes, links); pass their ids to change_film as library to send them with the prompt.",
@@ -101,7 +101,7 @@ server.registerTool(
       prompt: z.string().max(8000).optional().describe("What the film should be, in plain words. Leave out for a blank film."),
       format: z.enum(Object.keys(FORMATS)).default("16:9").describe("16:9 wide, 1:1 square, 4:5 portrait or 9:16 story"),
       kind: z.enum(["motion", "video"]).default("motion").describe("motion (made from a description) or video (an edit of footage)"),
-      brand: z.string().optional().describe("A brand kit's name or id. Leave out for Aerchain."),
+      brand: z.string().optional().describe("A brand kit's name or id. Leave out for the clean default."),
     },
     annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
   },

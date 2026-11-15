@@ -1,7 +1,7 @@
 import { connection } from "next/server";
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { aiStatus } from "@/lib/studio/providers";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { aiStatus } from "@/lib/studio/agent/providers";
 
 // Which AIs can make a film's changes on this Mac, and how to set each one
 // up. Never a key or token: only states, plan names and set-up steps.

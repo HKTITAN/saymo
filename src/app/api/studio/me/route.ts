@@ -3,8 +3,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { userInfo } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
-import { EDITION } from "@/lib/studio/edition";
-import { allowed, refused, ROOT } from "@/lib/studio/films";
+import { EDITION } from "@/lib/studio/server/edition";
+import { allowed, refused, ROOT } from "@/lib/studio/films/films";
 
 // Who's using the studio, for the account panel at the foot of the sidebar:
 // their name, the edition and the studio's version. The name is the one

@@ -14,9 +14,7 @@
 //     out/wide-16x9.mp4, square-1x1, portrait-4x5 and story-9x16 (each with
 //     a still beside it), at the film's own pixel density. film.json is
 //     left as it is. Motion films only (HTML and React).
-//
-//   node scripts/studio/render.mjs <id> [--draft]
-//     A sample from studio/compositions.json into studio/out/.
+
 //
 // A VIDEO film (an edit of footage, kind "video") renders from the original
 // files with its sound, and a final is only drawn at twice its size when
@@ -54,8 +52,8 @@ import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/pro
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { fontFaces, kitForFilm, tokensForRender } from "../../src/lib/studio/brand-tokens.ts";
-import { brandScript, paramValues, prepareHtml } from "../../src/lib/studio/inject.ts";
+import { fontFaces, kitForFilm, tokensForRender } from "../../src/lib/studio/brands/brand-tokens.ts";
+import { brandScript, paramValues, prepareHtml } from "../../src/lib/studio/stage/inject.ts";
 import { describe, machine, workersFor } from "./machine.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -67,7 +65,7 @@ const CARGO_TARGET = path.join(ROOT, "node_modules/.cache/studio-cargo");
 const PIPELINE = "4"; // 3: a data-rate ceiling phones can decode; 4: tagged sRGB, so it looks as previewed
 
 // Into video: BT.709, limited range, 4:2:0, tagged so the orange plays back
-// as the same orange everywhere (as scripts/export.mjs does).
+// as the same orange everywhere (as scripts/post/export.mjs does).
 //
 // What you see is what you get: the frames are sRGB, as the studio's
 // preview is, so the file says so. Tagged with BT.709's own transfer curve,
@@ -179,7 +177,7 @@ const pngsIn = async (dir) =>
 // Each renders a job's frames into `work` and says where they are:
 // { pngs: [paths] } or { video: path } (lossless), or { encoded: path } (a
 // finished H.264 file). A job is
-// { dir, width, height, fps, duration, scale, params, workers, composition? },
+// { dir, width, height, fps, duration, scale, params, workers },
 // where width and height are the film's own size and scale is 1 or 2. Each
 // reports its own 0..1 to `onProgress`.
 
@@ -263,32 +261,23 @@ const ENGINES = {
     };
     // Remotion opens this many Chrome tabs (film-frames.mjs reads it).
     const env = { STUDIO_CONCURRENCY: String(job.workers) };
-    if (job.composition) {
-      // A sample: its own entry and composition id.
-      await run(process.execPath, ["scripts/frames.mjs", job.composition, frames, "--scale", String(job.scale)], {
-        cwd: path.join(ROOT, "studio/remotion"),
-        env,
-        onLine,
-      });
-    } else {
-      const spec = path.join(work, "spec.json");
-      await writeFile(
-        spec,
-        JSON.stringify({
-          width: job.width,
-          height: job.height,
-          fps: job.fps,
-          duration: job.duration,
-          params: job.params,
-          video: job.footage ? { output: path.join(work, "film.mp4"), draft } : null,
-        }),
-      );
-      await run(process.execPath, ["scripts/film-frames.mjs", job.dir, frames, spec, "--scale", String(job.scale)], {
-        cwd: path.join(ROOT, "studio/remotion"),
-        env,
-        onLine,
-      });
-    }
+    const spec = path.join(work, "spec.json");
+    await writeFile(
+      spec,
+      JSON.stringify({
+        width: job.width,
+        height: job.height,
+        fps: job.fps,
+        duration: job.duration,
+        params: job.params,
+        video: job.footage ? { output: path.join(work, "film.mp4"), draft } : null,
+      }),
+    );
+    await run(process.execPath, ["scripts/film-frames.mjs", job.dir, frames, spec, "--scale", String(job.scale)], {
+      cwd: path.join(ROOT, "studio/remotion"),
+      env,
+      onLine,
+    });
     if (job.footage) return { encoded: path.join(work, "film.mp4") };
     return { pngs: await pngsIn(frames) };
   },
@@ -305,7 +294,7 @@ const ENGINES = {
       ],
       {
         cwd: job.dir,
-        env: job.composition ? {} : { CARGO_TARGET_DIR: CARGO_TARGET },
+        env: { CARGO_TARGET_DIR: CARGO_TARGET },
         onLine: (line) => {
           const p = json(line);
           if (p?.event === "progress") onProgress(p.done / p.total);
@@ -511,7 +500,7 @@ async function lock(file) {
 }
 
 const ENGINE_OF = { html: "hyperframes", react: "remotion", rust: "fframes" };
-// The edition (src/lib/studio/edition.ts): the studio hands its environment
+// The edition (src/lib/studio/server/edition.ts): the studio hands its environment
 // to this script, so STUDIO_EDITION is the same here.
 const PRODUCT = process.env.STUDIO_EDITION === "product";
 const GSAP_SCRIPT = /<script[^>]+src=["'][^"']*gsap[^"']*["']/i;
@@ -557,7 +546,7 @@ async function renderFilm(id, size = null) {
   const brand = kit ? await tokensForRender(ROOT, kit, film.engine === "react" ? path.join(src, "public") : src) : null;
   if (film.engine === "html") {
     const index = path.join(src, "index.html");
-    // The product edition doesn't include GSAP (docs/launch/gsap-to-motion.md):
+    // The product edition doesn't include GSAP (docs/research/gsap-to-motion.md):
     // only films moved by Motion render there.
     if (PRODUCT && GSAP_SCRIPT.test(await readFile(index, "utf8"))) {
       throw new Error("This film moves with GSAP, which this edition of the studio doesn't include. Ask Claude to move it to Motion.");
@@ -906,53 +895,13 @@ function serveMedia(root) {
   });
 }
 
-// ─── A sample from studio/compositions.json ─────────────────────────────────
-
-async function renderSample(id) {
-  const OUT = path.join(ROOT, "studio/out");
-  const manifest = JSON.parse(await readFile(path.join(ROOT, "studio/compositions.json"), "utf8"));
-  const entry = manifest.find((c) => c.id === id);
-  if (!entry) {
-    console.error(
-      `usage: node scripts/studio/render.mjs --film <id> [--draft]\n       node scripts/studio/render.mjs <sample> [--draft]\nsamples: ${manifest.map((c) => c.id).join(", ")}`,
-    );
-    process.exit(1);
-  }
-  const work = path.join(OUT, ".work", id);
-  await rm(work, { recursive: true, force: true });
-  await mkdir(work, { recursive: true });
-  progress(0);
-  const m = await machine();
-  // The samples are 1920x1080 at 60 fps; a final is drawn at 4K.
-  const job = {
-    dir: path.join(ROOT, entry.dir),
-    width: 1920,
-    height: 1080,
-    fps: 60,
-    duration: entry.duration,
-    scale: draft ? 1 : 2,
-    composition: entry.composition ?? entry.id,
-  };
-  job.workers = workersFor(m, job.scale);
-  const share = shares(m, { engine: entry.engine, scale: job.scale });
-  const source = await ENGINES[entry.engine](job, work, m, step(0, share.drawn));
-  const files = draft
-    ? [{ path: path.join(OUT, `${id}-draft.mp4`), big: true }]
-    : [
-        { path: path.join(OUT, `${id}-4k.mp4`), big: true },
-        { path: path.join(OUT, `${id}-1080p.mp4`), big: false },
-      ];
-  if (source.encoded) await finishEncoded(source.encoded, job, files, m, step(share.drawn, 1));
-  else await encode(source, job, files, m, step(share.drawn, 1));
-  await rm(work, { recursive: true, force: true });
-  progress(1);
-  for (const f of files) console.log(`wrote ${path.relative(ROOT, f.path)}`);
-}
-
 if (filmId && everySize) {
   for (const [i, size] of EVERY_SIZE.entries()) {
     band = [i / EVERY_SIZE.length, (i + 1) / EVERY_SIZE.length];
     await renderFilm(filmId, size);
   }
 } else if (filmId) await renderFilm(filmId);
-else await renderSample(args.find((a) => !a.startsWith("--")));
+else {
+  console.error("usage: node scripts/studio/render.mjs --film <id> [--draft | --sizes]");
+  process.exit(1);
+}

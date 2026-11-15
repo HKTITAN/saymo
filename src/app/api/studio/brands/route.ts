@@ -1,12 +1,12 @@
-import { createBrand, listBrands } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
+import { createBrand, listBrands } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 export async function GET(request: Request) {
   if (!allowed(request)) return refused();
   return Response.json(await listBrands());
 }
 
-// A new kit, empty but for Aerchain's shape.
+// A new kit: plain greys and one accent, nothing else.
 export async function POST(request: Request) {
   if (!allowed(request)) return refused();
   const body = (await request.json().catch(() => null)) as { name?: unknown } | null;

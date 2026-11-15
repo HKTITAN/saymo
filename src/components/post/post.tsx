@@ -8,14 +8,13 @@ import type { PostContent } from "./content";
 import { EVENT_ICONS } from "./icons";
 import { drawPanel, type Look, MOTION_BY_ID, PANEL_H, PANEL_W, type MotionId } from "./lines";
 import { PALETTE } from "./palette";
-import { TeamSide } from "./team";
 
 // The post is laid out at its export size, 1920 x 1080, in post pixels.
 export const POST_W = 1920;
 export const POST_H = 1080;
 export const LEFT_W = POST_W - PANEL_W; // 1000
 export const MARGIN = 72;
-export const PHOTO = 240; // the speaker's square photo, as scripts/photo.mjs makes it
+export const PHOTO = 240; // the speaker's square photo, as scripts/post/photo.mjs makes it
 // The headline: nudged so the letter stems line up with the photo's left
 // edge and the cap height lines up with the top of the logo. The nudges are
 // measured at 86px and scale with a headline the tool has shrunk to fit.
@@ -133,7 +132,7 @@ export function Post({
   ref,
 }: PostProps) {
   // The speaker post keeps its own softer landings ("refined"); a post can
-  // ask for Scenes as measured from the reference instead (the team post).
+  // ask for Scenes as measured from the reference instead.
   const shownLook: Look = look ?? content.look ?? "refined";
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const elapsed = useRef(0);
@@ -144,7 +143,6 @@ export function Post({
     if (!canvas || !ctx) return;
     ctx.setTransform(pixelScale, 0, 0, pixelScale, 0, 0);
     drawPanel(ctx, motion, seconds, shownLook, {
-      partners: content.partners,
       flip: content.logoFlip,
       colors: content.panelColors,
       logoScale: content.logoScale,
@@ -241,7 +239,7 @@ export function Post({
       style={{
         width: POST_W,
         height: POST_H,
-        background: content.team ? PALETTE.ink : PALETTE.stone,
+        background: PALETTE.stone,
         fontFamily: "var(--font-post)",
       }}
       data-post
@@ -249,9 +247,6 @@ export function Post({
       {/* Left: headline, when and where, and the speaker on stone */}
       <div className="absolute inset-y-0 left-0" style={{ width: LEFT_W + cut }}>
         <div ref={blockRef} className="absolute inset-0">
-        {content.team ? (
-          <TeamSide team={content.team} width={LEFT_W + cut} />
-        ) : (
         <>
         <h1
           className="absolute font-semibold"
@@ -382,7 +377,6 @@ export function Post({
           </div>
         </div>
       </>
-        )}
       </div>
 
       </div>
@@ -397,7 +391,7 @@ export function Post({
           className="absolute inset-0 block"
           style={{ width: PANEL_W, height: PANEL_H, left: -cut }}
           role="img"
-          aria-label="Aerchain"
+          aria-label="Saymo"
         />
         {/* The landmark stands centred on the bottom edge, in front of the
             lines. */}

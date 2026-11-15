@@ -1,8 +1,8 @@
 import { copyFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { checkKit, createBrand, kitDir, MAX_FILE, saveBrandFile, withBrand, writeBrand } from "@/lib/studio/brands";
-import { allowed, refused, ROOT } from "@/lib/studio/films";
-import { checkStyle, type FacePick, type KitFont, kitOf, SHIPPED_FONTS } from "@/lib/studio/personal-style";
+import { checkKit, createBrand, kitDir, MAX_FILE, saveBrandFile, withBrand, writeBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused, ROOT } from "@/lib/studio/films/films";
+import { checkStyle, type FacePick, type KitFont, kitOf, SHIPPED_FONTS } from "@/lib/studio/brands/personal-style";
 
 // A personal style (personal-style.ts) made into an ordinary kit, in one go:
 // a blank kit as "New kit" makes, the chosen fonts (copied from

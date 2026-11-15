@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Studio } from "@/components/studio/studio";
-import { THEME_SCRIPT } from "@/components/studio/theme-script";
+import { THEME_SCRIPT } from "@/components/studio/ui/theme-script";
 
 export const metadata: Metadata = {
   title: "Saymo",
-  description: "Make Aerchain films by asking Claude, pointing at the film and tuning its settings",
+  description: "Make motion graphics and edit videos by asking Claude, pointing at the film and tuning its settings",
 };
 
 export default function Page() {

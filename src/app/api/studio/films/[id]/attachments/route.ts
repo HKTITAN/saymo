@@ -1,5 +1,5 @@
-import { AttachmentError, saveAttachment } from "@/lib/studio/attachments";
-import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films";
+import { AttachmentError, saveAttachment } from "@/lib/studio/input/attachments";
+import { allowed, filmDir, readFilm, refused } from "@/lib/studio/films/films";
 
 // A file attached to a prompt, saved in the film's refs/ for Claude to read.
 // The body is the file, its name in `x-file-name` (URL-encoded).

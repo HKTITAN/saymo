@@ -53,9 +53,9 @@ Saymo already shares a lot of that thinking (a locked-down Claude, one live "wha
 
 | Where | What |
 |---|---|
-| `src/lib/studio/claude.ts`, `claudeArgs` | Claude may Read stills of the **footage** (`films/.work/<id>/frames`, made by `media-tool frames`), run the checker, and run a draft render. It can't open an mp4, so the draft render gives it nothing to look at. |
+| `src/lib/studio/agent/claude.ts`, `claudeArgs` | Claude may Read stills of the **footage** (`films/.work/<id>/frames`, made by `media-tool frames`), run the checker, and run a draft render. It can't open an mp4, so the draft render gives it nothing to look at. |
 | `scripts/studio/check-film.mjs` | HTML films: `hyperframes check` (lint, runtime, layout, contrast) and a 3D layer budget. React films: the component bundles. Rust: the crate builds. All text, no pictures. |
-| `.claude/skills/aerchain-video-edit/SKILL.md`, reel step 8 and the popout and fade layouts | Asks Claude to "look at `frames` from a draft" and "check a draft frame there". There is no command that makes stills of the composed edit, so it can't. |
+| `.claude/skills/saymo-video-edit/SKILL.md`, reel step 8 and the popout and fade layouts | Asks Claude to "look at `frames` from a draft" and "check a draft frame there". There is no command that makes stills of the composed edit, so it can't. |
 
 **The gap.** On a motion film, Claude never sees a single picture of what it made. It checks that the code runs and the layout measures pass, then reports "the title now slides in from the left" without having seen it. On a video edit, it sees the raw footage but never the result: graphics over the speaker, captions on the seam, a popout's head crossing the line.
 
@@ -65,8 +65,8 @@ Saymo already shares a lot of that thinking (a locked-down Claude, one live "wha
   - HTML films: wraps the local HyperFrames CLI's `snapshot` command, which is already installed in `studio/hyperframes` (v0.8.227 lists `snapshot` and `compare`). React and video films: renders stills from the stage bundle. Rust films: pulls frames from the draft video.
   - Returns **one contact sheet** (up to 12 frames, about 480 px each, time and mark label burned in) saved to `films/.work/<id>/stills/`, and prints the path to Read.
   - `--marks` takes one frame at each mark in film.json. `--before <n>` adds a second row with the same moments from the snapshot taken before this turn. `--sizes` shows one moment at 16:9, 1:1, 4:5 and 9:16, to catch what "Every size" would cut off.
-- `src/lib/studio/claude.ts`: allow `Bash(<look-film> *)` and `Read(films/.work/<id>/stills/**)`, add a step label ("Looking at the film"), add one line to the system prompt and to `codexInstructions`.
-- `.claude/skills/aerchain-film/SKILL.md` "Before you finish": look at the film at its marks after any visual change. `aerchain-video-edit` step 8 and the layout checks point at the new command instead of "a draft".
+- `src/lib/studio/agent/claude.ts`: allow `Bash(<look-film> *)` and `Read(films/.work/<id>/stills/**)`, add a step label ("Looking at the film"), add one line to the system prompt and to `codexInstructions`.
+- `.claude/skills/saymo-film/SKILL.md` "Before you finish": look at the film at its marks after any visual change. `saymo-video-edit` step 8 and the layout checks point at the new command instead of "a draft".
 
 **What the person sees.** A new step on the live line, "Looking at the film", and fewer follow-up prompts like "the headline is cut off" or "the logo sits on the speaker's face". Optional later: show the contact sheet in the chat under Claude's reply as a receipt.
 
@@ -94,9 +94,9 @@ Saymo already shares a lot of that thinking (a locked-down Claude, one live "wha
 
 | Where | What |
 |---|---|
-| `src/lib/studio/films.ts`, `snapshotFilm` | The whole film is copied before every turn (last 30 kept). |
-| `src/lib/studio/contract.ts`, `Version` | Versions are labelled by prompt ("After: <prompt>"). |
-| `src/lib/studio/claude.ts`, `noteUndo` | Undo puts back the whole last turn. |
+| `src/lib/studio/films/films.ts`, `snapshotFilm` | The whole film is copied before every turn (last 30 kept). |
+| `src/lib/studio/films/contract.ts`, `Version` | Versions are labelled by prompt ("After: <prompt>"). |
+| `src/lib/studio/agent/claude.ts`, `noteUndo` | Undo puts back the whole last turn. |
 | `systemPrompt` and `userMessage` in `claude.ts` | The reply is at most two sentences, under 35 words. There is no list of what changed. |
 | `ChatEvent` in `contract.ts` | A turn reports `changed` files, not changes a person would recognise. |
 
@@ -144,8 +144,8 @@ Step C, Before and After (M):
 
 | Where | What |
 |---|---|
-| `src/lib/studio/edit.ts`, `Clip` | Claude writes source seconds (`from`, `to`) by hand. |
-| `aerchain-video-edit/SKILL.md`, "Cutting talking heads" | Hand rules: start 0.1 s before the first word, end 0.15 to 0.25 s after the last, never clip a word, cut pauses over about 0.7 s. |
+| `src/lib/studio/films/edit.ts`, `Clip` | Claude writes source seconds (`from`, `to`) by hand. |
+| `saymo-video-edit/SKILL.md`, "Cutting talking heads" | Hand rules: start 0.1 s before the first word, end 0.15 to 0.25 s after the last, never clip a word, cut pauses over about 0.7 s. |
 | `scripts/studio/media-tool.mjs` | `words` gives timed lines in source seconds; `silences` gives quiet stretches. Each media item also has `peaks.json` at 100 values a second. |
 | Same skill: "Read the transcript again over the new timings with `words`" | `words` reads the source, not the edit, so Claude has to do the timeline arithmetic in its head to check its own cuts. |
 | `check-film.mjs`, `checkEdit` | Checks shape, overlaps and that clips fit their footage. Nothing checks whether an edge cuts a word. |
@@ -158,7 +158,7 @@ Step C, Before and After (M):
 - New `media-tool keep <media> <#from>-<#to> [...] [--leave 0.25]`: returns ready-to-paste clips whose edges sit on measured quiet (transcript plus `peaks.json`), each moved edge listed with how far and why.
 - New `media-tool played`: reads edit.json and prints what the viewer hears, on the film's clock, with a `‖` at each join and the words either side. It flags a word cut short at an edge, the same word twice across a join, a leftover gap over 0.7 s, and sound at speaking level with no word ("something is said here that the transcript missed").
 - `check-film.mjs`: an audible clip edge inside a sounding word is an error that names the nearest quiet second. Report, never fix silently.
-- `aerchain-video-edit/SKILL.md`: swap the lead-in and tail arithmetic for "use `keep`, then read `played`". Keep the taste (what to cut, what to keep, pacing by platform).
+- `saymo-video-edit/SKILL.md`: swap the lead-in and tail arithmetic for "use `keep`, then read `played`". Keep the taste (what to cut, what to keep, pacing by platform).
 
 **What the person sees.** Fewer clipped words and doubled words in first cuts, and Claude's reply can say "took out 14 s of pauses" with numbers it measured.
 
@@ -185,8 +185,8 @@ Step C, Before and After (M):
 
 | Where | What |
 |---|---|
-| `src/lib/studio/rules.ts` | `studio/rules.json`, up to 40 rules (title, body, scope, on), in git and shared by the team. |
-| `src/components/studio/rules-panel.tsx` | Edited by hand on the home page. |
+| `src/lib/studio/agent/rules.ts` | `studio/rules.json`, up to 40 rules (title, body, scope, on), in git and shared by the team. |
+| `src/components/studio/settings/rules-panel.tsx` | Edited by hand on the home page. |
 | `rulesNote` in `rules.ts` | Every turn carries the rules that apply to the film's kind. |
 
 **The gap.** People say "never bounce the logo" or "always end on the wordmark" in prompts all the time. Today that stays in one film's chat. The Rules page only grows when someone remembers to go and type it.
@@ -223,7 +223,7 @@ Step C, Before and After (M):
 | Where | What |
 |---|---|
 | `claude.ts` header comment, `docs/security.md` | The permission model is documented well. |
-| `aerchain-film/SKILL.md` (166 lines), `aerchain-video-edit/SKILL.md` (204 lines) | Taste mixed with mechanics: edit.json's shape, every part's options, the media tool's commands. |
+| `saymo-film/SKILL.md` (166 lines), `saymo-video-edit/SKILL.md` (204 lines) | Taste mixed with mechanics: edit.json's shape, every part's options, the media tool's commands. |
 | `systemPrompt` and `userMessage` in `claude.ts` | Reply rules said twice. This one is deliberate (a resumed session keeps its first system prompt), but nothing records why for the next contributor. |
 | `claudeArgs` and `brand-claude.ts` | `TodoWrite` is in the tool list of every turn, though the chat only shows the latest step. |
 
@@ -232,7 +232,7 @@ Step C, Before and After (M):
 **Design for Saymo**
 
 - New `docs/AI-AGENTS.md` for Saymo: the three layers in Saymo's terms (Claude or Codex decides the look; Saymo measures, guards permissions, versions and shows); where each kind of text lives (system prompt, per-turn message, skills, command `--help` output); rules with dates; the checklists, adapted to "adding a command Claude may run".
-- Split the parts catalogue out of `aerchain-film` into its own skill, read only when a part is used. Move media-tool and edit.json mechanics into the tools' own usage output.
+- Split the parts catalogue out of `saymo-film` into its own skill, read only when a part is used. Move media-tool and edit.json mechanics into the tools' own usage output.
 - Measure, then likely drop, `TodoWrite`: Scarlet turned its harness to-do tool off after measuring a median of about 15 s extra per request (comment in `capabilities.ts`, 2026-11-08) once its chat stopped showing plans. Run 10 turns with and without in Saymo before deciding.
 
 | Effort | Risk | Helps |
@@ -252,7 +252,7 @@ Step C, Before and After (M):
 | `README.md` | "Requested edits go on the working timeline. Suggestions wait for you to apply them." |
 | `AGENTS.md` | A suggestion opens in the same card: Scarlet's words, Before, Revise, Apply. |
 
-**What Saymo does today.** Try 3 (`src/lib/studio/takes.ts`) makes three alternatives, but only when asked. Otherwise Claude may "offer one alternative" in words (`systemPrompt` in `claude.ts`), and trying it means typing it again.
+**What Saymo does today.** Try 3 (`src/lib/studio/films/takes.ts`) makes three alternatives, but only when asked. Otherwise Claude may "offer one alternative" in words (`systemPrompt` in `claude.ts`), and trying it means typing it again.
 
 **The gap.** Claude's good extra ideas end up as a sentence that's easy to miss and costs a retype.
 
@@ -311,7 +311,7 @@ Step C, Before and After (M):
 
 **What Scarlet does.** `packages/timeline/src/otio.ts` writes OpenTimelineIO JSON in the subset Resolve imports: timeline, video tracks bottom up then audio, clips pointing at the original files, gaps, markers with colours, and captions as markers because Resolve has no OTIO subtitle import. The `export_otio` tool and the Export dialog offer it next to MP4.
 
-**What Saymo does today.** Renders MP4 only (`src/lib/studio/render.ts`, `RenderQuality`).
+**What Saymo does today.** Renders MP4 only (`src/lib/studio/films/render.ts`, `RenderQuality`).
 
 **The gap.** A designer can't hand a cut to an editor to finish in Resolve.
 
@@ -344,8 +344,8 @@ Step C, Before and After (M):
 | Idea | Scarlet evidence | Why later |
 |---|---|---|
 | Render only the changed seconds | `packages/timeline/src/cutReview.ts` plays 2 s before and 3 s after a cut (at most 12 s); `packages/render/src/segments.ts` caches rendered segments by what's in them, so unchanged stretches are reused. | Saymo's stage plays HTML and React films live, so previews are already instant. Only Rust drafts and final renders are slow. Revisit for final renders of video edits. |
-| Notes pinned to a moment | `notes_list`, `note_reply`, `note_resolve` in `server.ts` | Matches "Review links" in `docs/later.md` (item 9). Use this note model when that's built. |
-| A skill from an approved change | `skill_from_change` in `prompt.ts` and `docs/skills-and-tools.md` | Matches "Make another like this one" in `docs/later.md` (item 4). |
+| Notes pinned to a moment | `notes_list`, `note_reply`, `note_resolve` in `server.ts` | Matches "Review links" in `docs/roadmap.md` (item 9). Use this note model when that's built. |
+| A skill from an approved change | `skill_from_change` in `prompt.ts` and `docs/skills-and-tools.md` | Matches "Make another like this one" in `docs/roadmap.md` (item 4). |
 
 ## What not to borrow, and why
 
@@ -365,7 +365,7 @@ Step C, Before and After (M):
 
 **Phase 1: Claude checks its own work (about a week)**
 
-1. Idea 5: write `docs/AI-AGENTS.md`, split the parts catalogue out of `aerchain-film`, measure `TodoWrite`.
+1. Idea 5: write `docs/AI-AGENTS.md`, split the parts catalogue out of `saymo-film`, measure `TodoWrite`.
 2. Idea 1: `look-film.mjs` with `--marks` and `--before`, allowed in `claude.ts`, named in both skills' "Before you finish".
 3. Idea 3: word numbers in `words`, the `played` read-back, and the checker error for edges inside words. Add `keep` once `played` shows where cuts go wrong.
 
@@ -386,7 +386,7 @@ Step C, Before and After (M):
 1. **Scarlet's per-edit Undo is not a code revert.** It is a new request to the agent to "put back just that edit", shown as "Undo" in the chat (`AGENTS.md`). That is what makes per-change undo possible for Saymo's motion films, which are code rather than a list of operations.
 2. **Scarlet switched its plan display off after measuring it.** The harness to-do tool cost a median of about 15 s per request, so it is off for every AI (`capabilities.ts`, rule 15). Saymo still passes `TodoWrite` on every turn and in the kit maker.
 3. **The learning check is guarded twice.** Its quotes must appear in the skill word for word or they are sent back, and the save that follows may only insert the approved rule and remove the quoted passages (`requireApprovedLearningEdit` in `learnings.ts`). Saymo can skip the second guard because its rules are list items.
-4. **Rule 17 is about ownership as much as loading.** Shipped skills are copied into the user's library once; an untouched copy gets updates, an edited copy is the user's and is never changed or merged. Saymo has the opposite problem on its list: "skill updates overwrite the 'In Saymo' notes" (`docs/later.md`, item 15). Keeping Saymo's notes in a separate file next to each borrowed skill, or tracking whether a copy was edited, would solve it the same way.
+4. **Rule 17 is about ownership as much as loading.** Shipped skills are copied into the user's library once; an untouched copy gets updates, an edited copy is the user's and is never changed or merged. Saymo has the opposite problem on its list: "skill updates overwrite the 'In Saymo' notes" (`docs/roadmap.md`, item 15). Keeping Saymo's notes in a separate file next to each borrowed skill, or tracking whether a copy was edited, would solve it the same way.
 5. **Saymo's skills ask for checks Claude can't do.** The video-edit skill says to look at frames from a draft, but no allowed command produces them (idea 1).
 6. **The HyperFrames CLI Saymo already ships has `snapshot` and `compare`.** Idea 1 is mostly wiring, not new rendering code, for HTML films.
 7. **Scarlet measures speed as "request to the first moment you can judge"** and stores it on each change (`briefToPlayableMs`), not only render time.

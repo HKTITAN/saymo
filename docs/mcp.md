@@ -56,7 +56,7 @@ In a JSON config, add `"env": { "SAYMO_URL": "http://127.0.0.1:3333" }` beside `
 | Tool | What it does |
 | --- | --- |
 | `list_films` | Every film, most recently edited first: id, title, kind, format, length, brand and its studio link. |
-| `create_film` | Makes a film. `prompt` (what it should be), `format` (`16:9`, `1:1`, `4:5` or `9:16`), `kind` (`motion` or `video`), `brand` (a kit's name or id; Aerchain if left out). With a prompt, Claude makes the first version and its reply comes back when it's done. |
+| `create_film` | Makes a film. `prompt` (what it should be), `format` (`16:9`, `1:1`, `4:5` or `9:16`), `kind` (`motion` or `video`), `brand` (a kit's name or id; the clean kit if left out). With a prompt, Claude makes the first version and its reply comes back when it's done. |
 | `change_film` | Asks the film's Claude for a change, like the studio's chat. `id`, `prompt`, `at` (seconds into the film, like the playhead) and `library` (ids of library items to attach). Returns Claude's reply when the change is done. |
 | `render_film` | Makes the videos. `quality` is `draft` (quick, the film's own size) or `final` (4K and the film's own size). Returns the files' paths on this Mac when done. |
 | `get_film` | One film: title, format, length, brand, its settings and its latest render. |
@@ -116,4 +116,4 @@ Send the token as a Bearer header from a program on this Mac (not a web page):
 curl -H "Authorization: Bearer $(cat .studio/api-token)" http://127.0.0.1:3200/api/studio/films
 ```
 
-The routes are listed in `src/lib/studio/contract.ts`. They're the studio's own and can change between versions; the MCP tools and the command line are the stable way in.
+The routes are listed in `src/lib/studio/films/contract.ts`. They're the studio's own and can change between versions; the MCP tools and the command line are the stable way in.

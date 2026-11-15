@@ -1,6 +1,6 @@
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { pollGithub } from "@/lib/studio/github";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { pollGithub } from "@/lib/studio/connect/github";
 
 // Has the code been entered on github.com yet?
 export async function POST(request: Request) {

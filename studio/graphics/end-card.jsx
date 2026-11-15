@@ -1,10 +1,10 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { BrandLogo, clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
-// END CARD: the Aerchain wordmark to close a film.
+// END CARD: the brand's logo to close a film.
 //   0.00  the ground sweeps in from the right, bottom line first
-//   0.45  the wordmark rises in, its "ai" in orange (orange once)
-//   0.70  the line under it (aerchain.io) follows
+//   0.45  the logo rises in
+//   0.70  the line under it (a web address) follows
 //   it holds to the end; nothing leaves, as the film ends here
 export default function EndCard({ values }) {
   const FONT = useBrandFont();

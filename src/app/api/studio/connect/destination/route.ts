@@ -1,6 +1,6 @@
-import { failed } from "@/lib/studio/connect-http";
-import { chooseFolder, destinationsStatus, pickDestination, stopDestination } from "@/lib/studio/destinations";
-import { allowed, refused } from "@/lib/studio/films";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { chooseFolder, destinationsStatus, pickDestination, stopDestination } from "@/lib/studio/connect/destinations";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // Where finished films are copied on this Mac (destinations.ts). GET: the
 // cloud folders found and the one in use. PUT { path }: use one of them.

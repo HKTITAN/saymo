@@ -33,7 +33,7 @@ export default function Title({ values, duration }) {
   const steps = [0, 1, 2, 3].map((i) => {
     const width = Math.round(W * (0.26 - i * 0.05));
     return (
-      <LineBlock key={i} x={W - width} y={rows * pitch - stepH * (i + 1)} width={width} height={stepH} color={PALETTE.orange.lit} enter={0.6 + i * 0.07} leave={leave + 0.05} travel={0.5} pitch={pitch} stroke={stroke} />
+      <LineBlock key={i} x={W - width} y={rows * pitch - stepH * (i + 1)} width={width} height={stepH} color={PALETTE.accent.lit} enter={0.6 + i * 0.07} leave={leave + 0.05} travel={0.5} pitch={pitch} stroke={stroke} />
     );
   });
 

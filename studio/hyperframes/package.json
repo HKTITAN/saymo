@@ -1,11 +1,8 @@
 {
-  "name": "aerchain-studio-hyperframes",
+  "name": "saymo-hyperframes",
   "private": true,
   "type": "module",
   "scripts": {
-    "preview": "hyperframes preview aerchain-bands --port 3205",
-    "check": "hyperframes check aerchain-bands",
-    "render": "node ../../scripts/studio/render.mjs aerchain-bands-hyperframes",
     "telemetry:off": "hyperframes telemetry disable"
   },
   "devDependencies": {

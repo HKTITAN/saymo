@@ -1,5 +1,5 @@
-import { allowed, readFilm, refused } from "@/lib/studio/films";
-import { importMedia, listMedia, MediaError } from "@/lib/studio/media";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
+import { importMedia, listMedia, MediaError } from "@/lib/studio/films/media";
 
 // A video film's files (footage, photos, sound), in the order they came in.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/films/[id]/media">) {

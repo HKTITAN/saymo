@@ -1,7 +1,7 @@
 // The sound of the swelling accent field: a low pad that breathes with the
 // wave rolling through the lines, air arriving from the right with the
 // accent, one bright note as it lands, and the air leaving with the black.
-// Music as a music bed, hits in Tone.js (src/lib/studio/sound.ts).
+// Music as a music bed, hits in Tone.js (src/lib/studio/sound/sound.ts).
 
 export default {
   // A slow chord on soft sawtooths, its filter opening and closing like

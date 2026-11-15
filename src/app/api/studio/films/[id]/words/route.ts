@@ -1,5 +1,5 @@
-import { isRunning } from "@/lib/studio/claude";
-import { allowed, readFilm, refused, replaceWords } from "@/lib/studio/films";
+import { isRunning } from "@/lib/studio/agent/claude";
+import { allowed, readFilm, refused, replaceWords } from "@/lib/studio/films/films";
 
 // Words retyped on the film that aren't a text param: swapped in the film's
 // files when they appear there once; otherwise the studio asks Claude.

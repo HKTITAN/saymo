@@ -1,11 +1,7 @@
 {
-  "name": "aerchain-studio-remotion",
+  "name": "saymo-remotion",
   "private": true,
   "type": "module",
-  "scripts": {
-    "studio": "remotion studio src/index.js --port 3206",
-    "render": "node ../../scripts/studio/render.mjs aerchain-bands-remotion"
-  },
   "dependencies": {
     "@remotion/bundler": "4.0.542",
     "@remotion/cli": "4.0.542",

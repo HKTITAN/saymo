@@ -3,7 +3,7 @@ import graphics from "studio-graphics";
 import { Captions, useBrandFont, usePalette } from "studio-kit";
 
 // A VIDEO FILM: an edit of footage, played from edit.json (see
-// src/lib/studio/edit.ts for its shape). The studio gives it two props:
+// src/lib/studio/films/edit.ts for its shape). The studio gives it two props:
 //   edit   the timeline: tracks of clips and graphics, and captions
 //   media  { [media id]: { src, kind, width, height } }: where each file is.
 //          The stage gets the smooth preview copies, a render the originals.

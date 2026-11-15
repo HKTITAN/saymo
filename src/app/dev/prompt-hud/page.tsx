@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { PromptHudBench } from "@/components/studio/prompt-hud-bench";
+import { PromptHudBench } from "@/components/studio/chat/prompt-hud-bench";
 
 // A bench for the prompt box cut like hardware. Development only.
 export default function Page() {

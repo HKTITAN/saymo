@@ -12,8 +12,8 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "Speaker post",
-  description: "Aerchain speaker post: Darshan Kadam on SpendOS",
+  title: "Saymo",
+  description: "An open-source motion editor: make motion graphics and edit videos by talking to Claude.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

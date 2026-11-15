@@ -19,7 +19,7 @@ save fails.
    `GOOGLE_CLIENT_SECRET`, then restart the studio.
 
 Then anyone at the studio clicks Connect Google Drive. The studio asks only
-for `drive.file`, so it sees just the "Aerchain Studio" folder it makes
+for `drive.file`, so it sees just the "Saymo" folder it makes
 (one folder per film inside), nothing else in that Drive. Several Drives
 can be linked; one is in use at a time. A new render replaces the film's
 files in place, so shared links keep working and Drive keeps the old
@@ -30,7 +30,7 @@ login`). For anyone to sign in with their own account instead, make a
 GitHub OAuth App with the device flow turned on and put its client ID in
 `.env.local` as `GITHUB_CLIENT_ID` (add `GITHUB_CLIENT_SECRET` too if
 Disconnect should also revoke the sign-in at GitHub). Then pick or name a
-repository (default `aerchain-motion-library`); a new one is made private.
+repository (default `saymo-film-library`); a new one is made private.
 Its layout, written into its own README:
 
 ```

@@ -4,7 +4,6 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { MOTION_BY_ID } from "@/components/post/lines";
 import { post } from "@/content/post";
-import { TEAM_SLUG } from "@/content/team-slug";
 
 // Hands the 4K video of one motion to the browser as a download. The files
 // are made by `npm run export` and live in export/. While an export is still
@@ -24,11 +23,7 @@ export async function GET(req: Request, ctx: RouteContext<"/download/[motion]">)
     return new Response(null, { status: 404 });
   }
 
-  // `?post=team` hands out the team post's video instead.
-  const isTeam = new URL(req.url).searchParams.get("post") === "team";
-  const name = isTeam
-    ? `aerchain-team-${TEAM_SLUG}-${motion}-4k.mp4`
-    : `aerchain-speaker-${post.slug}-${motion}-4k.mp4`;
+  const name = `speaker-post-${post.slug}-${motion}-4k.mp4`;
   const file = path.join(EXPORT_DIR, name);
   const part = `${file}.part`;
 

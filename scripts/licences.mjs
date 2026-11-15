@@ -44,7 +44,7 @@ const NODE_ROOTS = [".", "studio/remotion", "studio/hyperframes", "studio/sound"
 
 // What the product doesn't ship, so its notices leave it out. The Strudel
 // family is the AGPL music engine the product replaces with Tone.js; GSAP
-// is the animation library product films don't use (docs/launch). They stay
+// is the animation library product films don't use (docs/research/licences.md). They stay
 // in the in-house edition, where old films still play with them. A name
 // ending in "/" means every package in that scope.
 const PRODUCT_LEAVES_OUT = ["@strudel/", "@kabelsalat/", "superdough", "supradough", "gsap"];

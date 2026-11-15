@@ -2,7 +2,7 @@
 // bar, a fine digital tick for each step of the count (fast, then slowing
 // as it eases in), one bright note when the figure settles, and the air
 // leaving with the black. A quiet pulse runs under it all.
-// Music as a music bed, hits in Tone.js (src/lib/studio/sound.ts).
+// Music as a music bed, hits in Tone.js (src/lib/studio/sound/sound.ts).
 
 export default {
   music: {

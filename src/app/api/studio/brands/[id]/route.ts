@@ -1,5 +1,5 @@
-import { checkKit, deleteBrand, readBrand, withBrand, writeBrand } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
+import { checkKit, deleteBrand, readBrand, withBrand, writeBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 const missing = () => Response.json({ error: "That kit no longer exists." }, { status: 404 });
 

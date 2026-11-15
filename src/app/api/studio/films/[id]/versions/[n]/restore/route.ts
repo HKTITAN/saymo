@@ -1,5 +1,5 @@
-import { isRunning, noteWentBack } from "@/lib/studio/claude";
-import { allowed, readFilm, refused, restoreVersion, withFilm } from "@/lib/studio/films";
+import { isRunning, noteWentBack } from "@/lib/studio/agent/claude";
+import { allowed, readFilm, refused, restoreVersion, withFilm } from "@/lib/studio/films/films";
 
 // Puts the film back as it was in version n. The film as it was is kept
 // first as a new version, so going back never loses anything.

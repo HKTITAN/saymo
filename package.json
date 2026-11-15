@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/export.mjs",
+    "export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/post/export.mjs",
     "setup": "bash scripts/setup.sh",
     "licences": "node scripts/licences.mjs",
     "studio": "node scripts/studio/cli.mjs"

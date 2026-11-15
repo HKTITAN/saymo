@@ -1,6 +1,6 @@
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { aiStatus, removeApiKey, saveApiKey } from "@/lib/studio/providers";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { aiStatus, removeApiKey, saveApiKey } from "@/lib/studio/agent/providers";
 
 // The Anthropic API key, for teammates without a Claude plan. It's saved on
 // this Mac only (.studio/connections/anthropic.json, mode 600) and never

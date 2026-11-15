@@ -49,7 +49,7 @@ next-env.d.ts
 # motion engines (studio/): renders, installs and build output
 /studio/out/
 /studio/**/node_modules/
-/studio/fframes/**/target/
+/studio/starters/rust/target/
 /studio/hyperframes/**/.hyperframes/
 /studio/hyperframes/**/renders/
 
@@ -66,3 +66,7 @@ next-env.d.ts
 
 # the reference library: saved images, clips, sounds and notes
 /library
+
+# local code-search index
+/.tldr/
+/.tldrignore

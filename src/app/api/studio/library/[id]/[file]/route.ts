@@ -1,7 +1,7 @@
 import path from "node:path";
-import { allowed, refused } from "@/lib/studio/films";
-import { itemDir, readItem, servable, textFor } from "@/lib/studio/references";
-import { serveFile } from "@/lib/studio/serve";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { itemDir, readItem, servable, textFor } from "@/lib/studio/library/references";
+import { serveFile } from "@/lib/studio/server/serve";
 
 const TYPES: Record<string, string> = { ".pdf": "application/pdf", ".md": "text/markdown; charset=utf-8", ".heic": "image/heic", ".heif": "image/heif", ".tif": "image/tiff", ".tiff": "image/tiff", ".bmp": "image/bmp", ".m4v": "video/mp4", ".csv": "text/csv; charset=utf-8" };
 

@@ -32,7 +32,7 @@ export default function Quote({ values, duration }) {
     <div style={{ position: "absolute", inset: 0 }}>
       <svg width={W} height={H} style={{ position: "absolute", inset: 0 }}>
         <LineBlock x={0} y={0} width={W} height={rows * pitch} color={PALETTE.black.lit} enter={0} leave={leave + 0.1} travel={0.6} lag={0.004} pitch={pitch} stroke={stroke} />
-        <LineBlock x={margin - Math.round(40 * u)} y={Math.round(top / pitch) * pitch} width={pitch} height={barH} color={PALETTE.orange.lit} enter={0.3} leave={leave} travel={0.4} lag={0.01} pitch={pitch} stroke={stroke} />
+        <LineBlock x={margin - Math.round(40 * u)} y={Math.round(top / pitch) * pitch} width={pitch} height={barH} color={PALETTE.accent.lit} enter={0.3} leave={leave} travel={0.4} lag={0.01} pitch={pitch} stroke={stroke} />
       </svg>
       <div style={{ position: "absolute", left: margin, right: margin, top, fontFamily: FONT, color: PALETTE.stone }}>
         <div data-part="quote" style={{ fontSize: Math.round((H > W ? 64 : 72) * u), fontWeight: 500, fontVariationSettings: '"opsz" 72', letterSpacing: "-0.01em", lineHeight: 1.12, ...rise(0.45) }}>

@@ -1,5 +1,5 @@
-import { importBrand } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
+import { importBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // A kit .zip that another studio exported.
 export async function POST(request: Request) {

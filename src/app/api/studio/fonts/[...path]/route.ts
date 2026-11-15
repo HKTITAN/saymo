@@ -1,7 +1,7 @@
 import path from "node:path";
-import { allowed, refused, ROOT } from "@/lib/studio/films";
-import { SHIPPED_FONTS } from "@/lib/studio/personal-style";
-import { inside, serveFile } from "@/lib/studio/serve";
+import { allowed, refused, ROOT } from "@/lib/studio/films/films";
+import { SHIPPED_FONTS } from "@/lib/studio/brands/personal-style";
+import { inside, serveFile } from "@/lib/studio/server/serve";
 
 // The OFL fonts the studio ships (studio/fonts/<id>/), so the personal style
 // form can show each name in its own face. Only the listed font files.

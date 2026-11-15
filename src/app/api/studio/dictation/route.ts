@@ -1,6 +1,6 @@
-import { DictationError, discardKept, removeExtra, retryKept, startExtra, startSetup, status, stopExtra, takePiece } from "@/lib/studio/dictation";
-import { type DictationErrorCode, isAccuracy, isExtra, isLanguage, isScript, MAX_PIECE_BYTES, RECORDING_ID } from "@/lib/studio/dictation-shared";
-import { allowed, refused } from "@/lib/studio/films";
+import { DictationError, discardKept, removeExtra, retryKept, startExtra, startSetup, status, stopExtra, takePiece } from "@/lib/studio/input/dictation";
+import { type DictationErrorCode, isAccuracy, isExtra, isLanguage, isScript, MAX_PIECE_BYTES, RECORDING_ID } from "@/lib/studio/input/dictation-shared";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // Talking into a prompt box (dictation.ts).
 //  GET  what's set up, and recordings kept because they weren't written down

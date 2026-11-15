@@ -1,7 +1,7 @@
-import { originOf, safeReturn } from "@/lib/studio/connect-http";
-import { ConnectError } from "@/lib/studio/connect-store";
-import { allowed, refused } from "@/lib/studio/films";
-import { finishGoogleSignIn } from "@/lib/studio/google";
+import { originOf, safeReturn } from "@/lib/studio/connect/connect-http";
+import { ConnectError } from "@/lib/studio/connect/connect-store";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { finishGoogleSignIn } from "@/lib/studio/connect/google";
 
 // Where Google sends the browser back. The `state` must match a sign-in
 // this studio started, or nothing happens.

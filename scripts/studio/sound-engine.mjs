@@ -10,7 +10,7 @@
 //              edition is in-house (the default) and studio/sound/strudel
 //              is installed; otherwise the product build is used.
 //
-// The edition comes from STUDIO_EDITION, as in src/lib/studio/edition.ts.
+// The edition comes from STUDIO_EDITION, as in src/lib/studio/server/edition.ts.
 
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";

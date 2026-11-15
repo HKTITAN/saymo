@@ -1,5 +1,5 @@
-// Black, orange and stone. The orange is the one in the Aerchain wordmark;
-// the two darks are sampled from the Aerchain line texture. Each colour on
+// Black, orange and stone: the orange is the wordmark's accent and
+// the two darks set the line texture. Each colour on
 // the right-hand panel has a slightly darker partner for the lines through it.
 export const PALETTE = {
   stone: "#E9E5DD", // left panel

@@ -3,11 +3,11 @@
 //   react the component bundles (catches typos and missing imports)
 //   rust  the crate builds, offline, inside a sandbox
 //   video (a react film of kind "video"): edit.json against
-//         src/lib/studio/edit.ts and the footage, then the film's own
+//         src/lib/studio/films/edit.ts and the footage, then the film's own
 //         graphics and component bundle
 //
 // This is the one command the studio's Claude may run to check its work
-// (see src/lib/studio/claude.ts), so it takes no arguments: it always
+// (see src/lib/studio/agent/claude.ts), so it takes no arguments: it always
 // checks the film it is run from, and nothing else.
 //
 // usage (from films/<id>/): node <project>/scripts/studio/check-film.mjs
@@ -79,7 +79,7 @@ if (film.kind === "video") {
 if (film.engine === "html") {
   // Films move with Motion, wrapped by filmTimeline() so the studio can seek
   // them (assets/timeline.js). GSAP is only for films made before Motion, and
-  // only in the in-house edition (docs/launch/gsap-to-motion.md).
+  // only in the in-house edition (docs/research/gsap-to-motion.md).
   const html = readFileSync(path.join(dir, "index.html"), "utf8");
   if (process.env.STUDIO_EDITION === "product" && /<script[^>]+src=["'][^"']*gsap[^"']*["']/i.test(html)) {
     fail("index.html loads GSAP, which this edition of the studio doesn't include. Move the film to Motion (assets/vendor/motion.js with assets/timeline.js).");
@@ -143,7 +143,7 @@ fail(`Unknown engine "${film.engine}" in film.json.`);
 // Everything turned in 3D (a matrix3d transform) gets its own layer on the
 // graphics card, at its full size. Too many big ones at the same moment and
 // the card runs out of memory: the film goes blank and the whole studio
-// window flickers (the SpendOS funnel had 30 full-frame planes at once).
+// window flickers (one film had 30 full-frame planes at once).
 // So: step through the film and add up, at each moment, the area of every
 // visible 3D layer, in frames. Above the budget, say when and where.
 
@@ -226,7 +226,7 @@ async function checkLayers() {
 
 // ─── Video films: the edit ──────────────────────────────────────────────────
 //
-// Mirrors src/lib/studio/edit.ts. Every problem is a sentence Claude can
+// Mirrors src/lib/studio/films/edit.ts. Every problem is a sentence Claude can
 // act on, naming the item by its id and where it sits.
 
 function checkEdit() {

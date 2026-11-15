@@ -41,7 +41,7 @@ export default function LowerThird({ values, duration }) {
     <div style={{ position: "absolute", inset: 0 }}>
       <svg width={W} height={H} style={{ position: "absolute", inset: 0 }}>
         <LineBlock x={x} y={y} width={width} height={height} color={PALETTE.stone} enter={0} leave={leave + 0.15} travel={0.55} pitch={pitch} stroke={Math.round(pitch * 0.67)} />
-        <LineBlock x={x} y={y} width={edge} height={height} color={PALETTE.orange.lit} enter={0.55} leave={leave} travel={0.35} pitch={pitch} stroke={Math.round(pitch * 0.67)} />
+        <LineBlock x={x} y={y} width={edge} height={height} color={PALETTE.accent.lit} enter={0.55} leave={leave} travel={0.35} pitch={pitch} stroke={Math.round(pitch * 0.67)} />
       </svg>
       <div style={{ position: "absolute", left: x + edge + padX, top: y + Math.round(20 * u), fontFamily: FONT, color: PALETTE.ink, whiteSpace: "nowrap" }}>
         <div data-part="name" style={{ fontSize: nameSize, fontWeight: 600, fontVariationSettings: '"opsz" 48', letterSpacing: "-0.01em", lineHeight: 1.1, ...words(0.35) }}>

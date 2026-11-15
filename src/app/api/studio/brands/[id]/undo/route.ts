@@ -1,5 +1,5 @@
-import { isBrandRunning, undoBrand } from "@/lib/studio/brand-claude";
-import { allowed, refused } from "@/lib/studio/films";
+import { isBrandRunning, undoBrand } from "@/lib/studio/brands/brand-claude";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // Puts the kit back as it was before Claude's last turn.
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/brands/[id]/undo">) {

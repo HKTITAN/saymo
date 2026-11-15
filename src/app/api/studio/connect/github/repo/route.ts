@@ -1,6 +1,6 @@
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { chooseRepo } from "@/lib/studio/github";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { chooseRepo } from "@/lib/studio/connect/github";
 
 // { owner, name }: uses that private repository for the film library, or
 // makes it (private) if it doesn't exist.

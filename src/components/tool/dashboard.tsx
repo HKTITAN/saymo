@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton, SkeletonProvider } from "@/components/skeleton";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
-import { RenameField } from "./rename";
+import { RenameField } from "../ui/rename";
 import { toastManager } from "@/components/ui/toast";
 import { motionOf, type PostDoc, type PostSummary, postName, toContent } from "@/lib/tool/doc";
 import { api } from "./api";
@@ -33,7 +33,7 @@ const SAMPLE_DOC: PostDoc = {
   id: "sample00",
   createdAt: "",
   updatedAt: "",
-  title: ["SpendOS: the operating", "system for procurement"],
+  title: ["Motion by talking:", "a new way to make films"],
   titleSize: 86,
   speaker: { name: "Speaker name", role: "Role", company: "Company" },
   date: { lines: ["Tuesday & Wednesday,", "20th & 21st October 2026"], pick: null },
@@ -149,8 +149,8 @@ export function Dashboard() {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <Link href="/" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-            Original post
+          <Link href="/post" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            Sample post
           </Link>
           {addPost}
         </div>

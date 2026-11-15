@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { startCutout } from "@/lib/studio/media";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { startCutout } from "@/lib/studio/films/media";
 
 // Starts cutting the person out of a video (cutout.webm: them on a
 // see-through background, sound kept), for layouts where they stand in

@@ -1,6 +1,6 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { brandFile } from "@/lib/studio/references";
-import { serveFile } from "@/lib/studio/serve";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { brandFile } from "@/lib/studio/library/references";
+import { serveFile } from "@/lib/studio/server/serve";
 
 // A brand kit's file as the library uses it: its rules written out
 // (rules.md), a logo drawn as a PNG (?as=png) so Claude can look at it, or

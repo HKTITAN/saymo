@@ -1,5 +1,5 @@
 {
-  "name": "aerchain-studio-sound-strudel",
+  "name": "saymo-sound-strudel",
   "private": true,
   "type": "module",
   "description": "In-house only: plays the music of films scored in Strudel, before the studio's own music bed. AGPL-3.0, so the product edition never installs or loads it.",

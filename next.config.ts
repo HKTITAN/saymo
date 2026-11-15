@@ -5,7 +5,12 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // The Next.js badge would land on top of the post in exported frames.
   devIndicators: false,
-  // The edition (src/lib/studio/edition.ts), for the page as well as the
+  // Saymo opens on the studio. The sample speaker post lives at /post and
+  // the post tool at /tool.
+  async redirects() {
+    return [{ source: "/", destination: "/studio", permanent: false }];
+  },
+  // The edition (src/lib/studio/server/edition.ts), for the page as well as the
   // server: the product edition hides the AIs it doesn't offer.
   env: {
     STUDIO_EDITION: process.env.STUDIO_EDITION === "product" ? "product" : "in-house",

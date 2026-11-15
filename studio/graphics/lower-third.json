@@ -2,8 +2,8 @@
   "label": "Lower third",
   "duration": 5,
   "params": [
-    { "key": "name", "label": "Name", "type": "text", "value": "Darshan Kadam" },
-    { "key": "role", "label": "Role", "type": "text", "value": "Head of Product, Aerchain" },
+    { "key": "name", "label": "Name", "type": "text", "value": "Alex Morgan" },
+    { "key": "role", "label": "Role", "type": "text", "value": "Head of Product" },
     { "key": "side", "label": "Side", "type": "choice", "value": "Left", "options": ["Left", "Right"] }
   ]
 }

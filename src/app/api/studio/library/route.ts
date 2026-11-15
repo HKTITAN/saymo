@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { addFromFilm, addLink, addNote, addUpload, LibraryError, listLibrary, toEntry } from "@/lib/studio/references";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { addFromFilm, addLink, addNote, addUpload, LibraryError, listLibrary, toEntry } from "@/lib/studio/library/references";
 
 // The reference library (references-shared.ts): everything in it, and
 // adding to it. A file comes as the body with its name in x-file-name; a

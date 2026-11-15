@@ -1,5 +1,5 @@
-import { allowed, deleteFolder, refused, renameFolder } from "@/lib/studio/films";
-import { folderName } from "@/lib/studio/validate";
+import { allowed, deleteFolder, refused, renameFolder } from "@/lib/studio/films/films";
+import { folderName } from "@/lib/studio/films/validate";
 
 const missing = () => Response.json({ error: "That folder no longer exists." }, { status: 404 });
 

@@ -1,0 +1,11 @@
+# GitHub's Languages bar counts only Saymo's own code.
+
+# Agent skills bundled for the studio's chat (mostly third party)
+.claude/** linguist-vendored
+
+# Browser libraries copied into the starters
+**/vendor/** linguist-vendored
+
+# Generated files
+THIRD-PARTY-NOTICES.md linguist-generated
+public/licences.json linguist-generated

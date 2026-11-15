@@ -5,7 +5,7 @@ import path from "node:path";
 import type { ExportStatus } from "./doc";
 import { postDir } from "./store";
 
-// Runs `scripts/export.mjs --post <id>` for the tool, one post at a time:
+// Runs `scripts/post/export.mjs --post <id>` for the tool, one post at a time:
 // each export drives Chrome and ffmpeg at 4K, and two at once would only
 // slow both down. Posts asked for meanwhile wait in line.
 
@@ -34,7 +34,7 @@ function next() {
   const log = openSync(path.join(dir, "log.txt"), "w");
   const child = spawn(
     process.execPath,
-    ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", "scripts/export.mjs", "--post", id],
+    ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", "scripts/post/export.mjs", "--post", id],
     { cwd: process.cwd(), stdio: ["ignore", log, log] },
   );
   let ended = false;

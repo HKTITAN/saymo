@@ -19,7 +19,7 @@ include!(concat!(env!("OUT_DIR"), "/film.rs"));
 // Grotesque (OFL.txt), the speaker post's typeface.
 include_media_dir!(pub struct FilmMedia, "media");
 
-// The Aerchain line texture: an 8px line on a 12px pitch, each colour a flat
+// The line texture: an 8px line on a 12px pitch, each colour a flat
 // field with a slightly darker partner in the gaps.
 const PITCH: f32 = 12.0;
 const STROKE: f32 = 8.0;

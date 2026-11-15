@@ -1,7 +1,7 @@
 import path from "node:path";
-import { allowed, refused } from "@/lib/studio/films";
-import { mediaDir, readMedia } from "@/lib/studio/media";
-import { serveFile } from "@/lib/studio/serve";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { mediaDir, readMedia } from "@/lib/studio/films/media";
+import { serveFile } from "@/lib/studio/server/serve";
 
 // What the studio made from a file: its preview copy (with byte ranges, so
 // the stage can seek in it), its timeline strip, loudness and words.

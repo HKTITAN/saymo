@@ -7,8 +7,8 @@ import sharp from "sharp";
 import type { Crop } from "./doc";
 import { type Face, findFace, removeBackground } from "./vision";
 
-// The tool's photo and image treatments, the same looks as scripts/photo.mjs
-// and scripts/skyline.mjs, made on upload instead of on the command line.
+// The tool's photo and image treatments, the same looks as scripts/post/photo.mjs
+// and scripts/post/skyline.mjs, made on upload instead of on the command line.
 
 const run = promisify(execFile);
 
@@ -105,7 +105,7 @@ export async function bakePhoto(dir: string, crop: Crop, plain: boolean) {
   for (const scale of [1, 2]) {
     const size = TILE * scale;
     // A light blur before shrinking keeps a photo's fine dot screen from
-    // beating against the pixel grid (moire), as in scripts/photo.mjs.
+    // beating against the pixel grid (moire), as in scripts/post/photo.mjs.
     const sigma = box.width / size > 1 ? 0.55 * (box.width / size) : 0;
     let img = sharp(flat).extract(box).greyscale();
     if (sigma > 0.3) img = img.blur(sigma);
@@ -209,7 +209,7 @@ function keyScreen(rgba: Buffer, W: number, H: number) {
   return true;
 }
 
-// A flat background, as in scripts/skyline.mjs: its colour is read from the
+// A flat background, as in scripts/post/skyline.mjs: its colour is read from the
 // top-left pixel, and every large patch within a hair of it is cleared
 // (sky enclosed between buildings included). Only counts when that clears
 // at least a tenth of the photo.

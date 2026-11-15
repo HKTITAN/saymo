@@ -1,8 +1,8 @@
 import { realpathSync } from "node:fs";
 import path from "node:path";
 import { connection } from "next/server";
-import { ensureToken, type OutsideApps, replaceToken } from "@/lib/studio/api-token";
-import { fromPage, refused } from "@/lib/studio/films";
+import { ensureToken, type OutsideApps, replaceToken } from "@/lib/studio/server/api-token";
+import { fromPage, refused } from "@/lib/studio/films/films";
 
 // The local API token and what other apps need to use the studio, for the
 // "Use the studio from other apps" section. Only the studio page itself can

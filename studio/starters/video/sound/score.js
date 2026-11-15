@@ -3,7 +3,7 @@
 // it arrives, a soft tick when it lands, and air out as it leaves. The end
 // card gets one bright note. Ask Claude for music under the speech; it dips
 // on its own while someone talks.
-// Hits in Tone.js (src/lib/studio/sound.ts).
+// Hits in Tone.js (src/lib/studio/sound/sound.ts).
 
 export default {
   async effects({ Tone, at, graphics, duration }) {

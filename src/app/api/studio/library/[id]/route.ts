@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { toEntry, trashItem, updateItem } from "@/lib/studio/references";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { toEntry, trashItem, updateItem } from "@/lib/studio/library/references";
 
 const missing = () => Response.json({ error: "That item isn't in the library any more." }, { status: 404 });
 

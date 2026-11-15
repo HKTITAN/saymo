@@ -1,5 +1,5 @@
-import { allowed, readFilm, refused } from "@/lib/studio/films";
-import { stagePage } from "@/lib/studio/stage";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
+import { stagePage } from "@/lib/studio/stage/stage";
 
 // The stage: the film alone at its own pixel size, for the studio to play
 // in an iframe (see contract.ts, "The stage").

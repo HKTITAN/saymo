@@ -1,12 +1,12 @@
 // Everything that changes from one speaker post to the next lives here.
 // To make the next post: swap the title lines and the speaker, then run
-// `node scripts/photo.mjs ...` for the new photo (see README).
+// `node scripts/post/photo.mjs ...` for the new photo (see README).
 
 export const post = {
   // Each entry is one line of the headline, broken where it reads best, in
   // sentence case: capitals only for names and the first word after the colon.
   // All in SemiBold: the first line at full strength, the others at 60%.
-  title: ["SpendOS:", "A New Balance Between", "Procurement Autonomy", "and Human Judgment"],
+  title: ["Motion by talking:", "How a Small Team", "Ships Launch Films", "Every Week"],
   // 20% under the standard 86px, so the longer headline sits back.
   titleSize: 68.8,
   // The headline, when and where, and speaker sit at the left margin (72),
@@ -14,9 +14,7 @@ export const post = {
   // bottom, so the stone side has one even margin on three sides.
   centred: false,
   shift: 0,
-  // Shown right of the Aerchain wordmark, left to right.
-  partners: ["et", "cpo26"],
-  // The "ai" in the wordmark stays still instead of turning over.
+  // The "o" in the wordmark stays still instead of turning over.
   logoFlip: false,
   // Orange comes in once a loop (orange rise, black sweep, stone burst,
   // black back), and the video starts on black, just before the rise.
@@ -26,18 +24,17 @@ export const post = {
   panelCut: 92,
   logoScale: 0.92,
   speaker: {
-    name: "Darshan Kadam",
-    role: "Principal Advisor, AI Procurement Strategy",
-    company: "Aerchain",
-    photo: {
-      x1: "/speakers/darshan-kadam-240.png",
-      x2: "/speakers/darshan-kadam-480.png",
-    },
+    name: "Alex Morgan",
+    role: "Head of Design",
+    company: "Studio North",
+    // A square photo at 1x and 2x (make them with `node scripts/post/photo.mjs`);
+    // null leaves an empty tile.
+    photo: null,
   },
   // When and where, above the speaker: each with an icon, a small label and
   // two lines, written as they should read. `accent` is set in orange.
   event: [
-    { id: "date", label: "Date", lines: ["25th November,", "2026"] },
+    { id: "date", label: "Date", lines: ["12th March,", "2027"] },
     {
       id: "location",
       label: "Location",
@@ -46,7 +43,7 @@ export const post = {
     },
   ],
   // The landmark stands at the foot of the line panel. Make its files with
-  // `node scripts/skyline.mjs ...` (see README).
+  // `node scripts/post/skyline.mjs ...` (see README).
   skyline: {
     landmark: "India Gate",
     x1: "/places/new-delhi-920.png",
@@ -57,7 +54,7 @@ export const post = {
     place: { x: 0, y: 0, scale: 1 },
   },
   // Used for the exported file names.
-  slug: "darshan-kadam",
+  slug: "alex-morgan",
 } as const;
 
 export type Post = typeof post;

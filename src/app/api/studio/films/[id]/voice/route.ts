@@ -1,6 +1,6 @@
-import { allowed, readFilm, refused } from "@/lib/studio/films";
-import { MediaError } from "@/lib/studio/media";
-import { makeVoiceover } from "@/lib/studio/voice";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
+import { MediaError } from "@/lib/studio/films/media";
+import { makeVoiceover } from "@/lib/studio/sound/voice";
 
 // Reads words out in one of the Mac's voices and brings the result into the
 // film as a sound file: { text, voice?, rate?, name? } → Media ("importing").

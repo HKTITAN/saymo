@@ -1,6 +1,6 @@
 # Security
 
-The studio runs on this Mac only. Claude, inside the studio, can edit a film's files and run a few of the studio's tools, so every route under `/api/studio` checks who is asking before it does anything (`allowed()` in `src/lib/studio/films.ts`). The table below is each way in, what it must do, and how it was checked.
+The studio runs on this Mac only. Claude, inside the studio, can edit a film's files and run a few of the studio's tools, so every route under `/api/studio` checks who is asking before it does anything (`allowed()` in `src/lib/studio/films/films.ts`). The table below is each way in, what it must do, and how it was checked.
 
 ## Boundaries
 

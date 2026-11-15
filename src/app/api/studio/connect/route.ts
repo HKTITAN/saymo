@@ -1,6 +1,6 @@
-import { connectionsStatus } from "@/lib/studio/connect";
-import { failed, originOf } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
+import { connectionsStatus } from "@/lib/studio/connect/connect";
+import { failed, originOf } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // Which Drives and which GitHub library this studio saves to. Never any
 // token: only names, addresses and settings.

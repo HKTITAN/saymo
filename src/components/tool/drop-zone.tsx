@@ -3,7 +3,7 @@
 import { type Ref, useRef, useState } from "react";
 import { PhotoImagePlusIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
-import { DialButton } from "./dial";
+import { DialButton } from "../ui/dial";
 
 export const ACCEPT = "image/png,image/jpeg,image/webp,image/heic,image/heif,image/avif";
 

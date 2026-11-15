@@ -2,7 +2,7 @@
 // the headline rises, filtered air that travels in from the right with the
 // accent, one bright note when it lands, and the air drawing back out as
 // black returns. Music as a music bed, hits in Tone.js
-// (src/lib/studio/sound.ts).
+// (src/lib/studio/sound/sound.ts).
 
 export default {
   // Two seconds a bar: a sub pulse on the beat and a few quiet, high

@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { DEFAULT_VOICE, installedVoices, RATE, VOICES } from "@/lib/studio/voice";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { DEFAULT_VOICE, installedVoices, RATE, VOICES } from "@/lib/studio/sound/voice";
 
 // The voices a voiceover can use, Indian first, and which are on this Mac.
 export async function GET(request: Request) {

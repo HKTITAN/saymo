@@ -249,9 +249,9 @@ async function probeImage(file) {
   return p.width ? p : null;
 }
 
-// The Mac's own face finder (scripts/vision.swift), compiled once.
+// The Mac's own face finder (scripts/native/vision.swift), compiled once.
 async function vision() {
-  const source = path.join(ROOT, "scripts/vision.swift");
+  const source = path.join(ROOT, "scripts/native/vision.swift");
   const binary = path.join(ROOT, "node_modules/.cache/speaker-post/vision");
   if (existsSync(binary) && statSync(binary).mtimeMs >= statSync(source).mtimeMs) return binary;
   try {

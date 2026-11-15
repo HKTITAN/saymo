@@ -98,9 +98,9 @@
       const H = FILM.height;
 
       // The film's brand kit (window.__brand): its ground, type and line
-      // texture. Without one, Aerchain's.
+      // texture. Without one, the clean look's black and white.
       const BRAND = window.__brand;
-      const ROLES = Object.assign({ background: "#141414", surface: "#E9E5DD", ink: "#141414", line: "#1E1E1E" }, BRAND?.colors?.roles);
+      const ROLES = Object.assign({ background: "#FFFFFF", surface: "#F4F4F4", ink: "#0A0A0A", line: "#EBEBEB" }, BRAND?.colors?.roles);
       const DISPLAY = (BRAND?.fonts?.find((f) => f.role === "display") ?? BRAND?.fonts?.[0])?.family ?? "Bricolage Grotesque";
       document.body.style.background = ROLES.background;
       // The headline in whichever of the kit's ink and surface stands out more
@@ -121,11 +121,11 @@
       headlineEl.style.color = contrast(ROLES.ink, ROLES.background) >= contrast(ROLES.surface, ROLES.background) ? ROLES.ink : ROLES.surface;
       headlineEl.style.fontFamily = `"${DISPLAY}", sans-serif`;
 
-      // The line texture is a kit's own (Aerchain's: an 8px line on a 12px
+      // The line texture is a kit's own (for example an 8px line on a 12px
       // pitch, each colour a flat field with a slightly darker partner in the
       // gaps). A kit without one, like the clean default, gets flat colour:
       // the same staircase as solid shapes on a plain ground, no lines.
-      const LINES = !BRAND || Boolean(BRAND.texture);
+      const LINES = Boolean(BRAND?.texture);
       const STROKE = LINES ? (BRAND?.texture?.stroke ?? 8) : 12;
       const PITCH = BRAND?.texture ? BRAND.texture.stroke + BRAND.texture.gap : 12;
       const BAND = 9; // lines per band; the staircase moves band by band

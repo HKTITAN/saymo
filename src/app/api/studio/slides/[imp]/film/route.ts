@@ -1,8 +1,8 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { dropImport, readImport, SlidesError } from "@/lib/studio/slides";
-import { checkOptions, makeSlideFilm } from "@/lib/studio/slides-film";
-import type { SlidesEvent } from "@/lib/studio/slides-shared";
-import { eventStream } from "@/lib/studio/sse";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { dropImport, readImport, SlidesError } from "@/lib/studio/input/slides";
+import { checkOptions, makeSlideFilm } from "@/lib/studio/input/slides-film";
+import type { SlidesEvent } from "@/lib/studio/input/slides-shared";
+import { eventStream } from "@/lib/studio/server/sse";
 
 // "Turn slides into a video", step 2: the motion film made from the slides
 // kept, in her order, with the options she chose. Streams SlidesEvents;

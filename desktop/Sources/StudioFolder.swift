@@ -10,7 +10,7 @@ enum StudioFolder {
         guard let data = try? Data(contentsOf: pkg),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               ["saymo", "motion-studio"].contains(json["name"] as? String ?? "") else { return false }
-        return FileManager.default.fileExists(atPath: "\(path)/src/lib/studio/films.ts")
+        return FileManager.default.fileExists(atPath: "\(path)/src/lib/studio/films/films.ts")
     }
 
     // The folder the app was built from (scripts/build.sh writes it into the

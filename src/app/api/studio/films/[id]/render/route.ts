@@ -1,5 +1,5 @@
-import { allowed, readFilm, refused } from "@/lib/studio/films";
-import { ensureDraft, renderStatus, startRender } from "@/lib/studio/render";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
+import { ensureDraft, renderStatus, startRender } from "@/lib/studio/films/render";
 
 const missing = () => Response.json({ error: "That film no longer exists." }, { status: 404 });
 

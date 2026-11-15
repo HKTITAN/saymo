@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { startTranscription } from "@/lib/studio/media";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { startTranscription } from "@/lib/studio/films/media";
 
 // Starts listening to what's said in a file (its words and their times go
 // to transcript.json). Answers with the record, `transcribing` set; poll

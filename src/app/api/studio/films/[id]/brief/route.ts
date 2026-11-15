@@ -1,5 +1,5 @@
-import { cleanBrief, readBrief, writeBrief } from "@/lib/studio/brief";
-import { allowed, isId, refused } from "@/lib/studio/films";
+import { cleanBrief, readBrief, writeBrief } from "@/lib/studio/agent/brief";
+import { allowed, isId, refused } from "@/lib/studio/films/films";
 
 // The film's blank-page brief (brief.ts). GET: the brief, or null. PUT: the
 // brief as the person left it (a call flipped, or made).

@@ -38,7 +38,7 @@ Commands
   new "<prompt>"                Make a new film; Claude makes the first version
       --format 16:9|1:1|4:5|9:16  Its shape (default 16:9)
       --video                     A video edit instead of motion graphics
-      --brand <name or id>        A brand kit (default Aerchain)
+      --brand <name or id>        A brand kit (default Clean)
   change <id> "<prompt>"        Ask the film's Claude for a change
       --at <seconds>              The moment in the film it's about
       --library <ids>             Library items to send with it, comma-separated

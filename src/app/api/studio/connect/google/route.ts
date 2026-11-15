@@ -1,6 +1,6 @@
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, refused } from "@/lib/studio/films";
-import { disconnectGoogle, rootFolder, setGoogle } from "@/lib/studio/google";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { disconnectGoogle, rootFolder, setGoogle } from "@/lib/studio/connect/google";
 
 // { active?: email, autoDrafts?: boolean, folderName?: string }
 export async function PATCH(request: Request) {

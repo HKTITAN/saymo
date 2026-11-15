@@ -1,9 +1,9 @@
-import { restoreCarryOns } from "@/lib/studio/carry-on";
-import { runAutoTurn } from "@/lib/studio/claude";
-import { allowed, createFilm, listFilms, refused } from "@/lib/studio/films";
-import { nameOldFilms } from "@/lib/studio/naming";
-import { startSound } from "@/lib/studio/sound-render";
-import { newFilm } from "@/lib/studio/validate";
+import { restoreCarryOns } from "@/lib/studio/agent/carry-on";
+import { runAutoTurn } from "@/lib/studio/agent/claude";
+import { allowed, createFilm, listFilms, refused } from "@/lib/studio/films/films";
+import { nameOldFilms } from "@/lib/studio/agent/naming";
+import { startSound } from "@/lib/studio/sound/sound-render";
+import { newFilm } from "@/lib/studio/films/validate";
 
 // The studio's films, newest first.
 export async function GET(request: Request) {

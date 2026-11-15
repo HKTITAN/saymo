@@ -3,13 +3,13 @@ import { mkdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
-// Runs scripts/vision.swift: background removal and face finding with the
+// Runs scripts/native/vision.swift: background removal and face finding with the
 // Mac's own Vision framework. The helper is compiled once, on first use,
 // into node_modules/.cache. Where Swift is missing every job reports
 // "unavailable" and the tool carries on without it.
 
 const run = promisify(execFile);
-const SOURCE = path.join(process.cwd(), "scripts/vision.swift");
+const SOURCE = path.join(process.cwd(), "scripts/native/vision.swift");
 const BINARY = path.join(process.cwd(), "node_modules/.cache/speaker-post/vision");
 
 const g = globalThis as { __visionBuild?: Promise<string | null> };

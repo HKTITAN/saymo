@@ -11,31 +11,21 @@
 //   landing(p)               the house ease: sets off, then settles
 //   LineBlock                a block of the line texture that arrives from
 //                            the right, line by line, and leaves the way it came
-//   Wordmark                 the Aerchain wordmark (letters + orange "ai")
 //   Captions                 captions in three styles (edit.ts CaptionStyle)
 //
 // The brand comes from the page (window.__brand on the stage) or the
-// render's input props (`brand`); without either it is Aerchain's.
-// PALETTE, PITCH, STROKE and FONT are Aerchain's fixed values, kept for
-// films written before brand kits.
+// render's input props (`brand`); without either it is the clean kit
+// (studio/brands/clean). PITCH, STROKE and FONT are the fallbacks for a kit
+// that leaves them out.
 
 import { loadFont } from "@remotion/fonts";
 import { getInputProps, Img, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
-import AERCHAIN_KIT from "../brands/aerchain/brand.json";
-import { WORDMARK } from "../../src/components/post/wordmark-paths.ts";
-import { captionLines } from "../../src/lib/studio/captions.ts";
+import CLEAN_KIT from "../brands/clean/brand.json";
+import { captionLines } from "../../src/lib/studio/films/captions.ts";
 
-export const PALETTE = {
-  stone: "#E9E5DD",
-  ink: "#141414",
-  muted: "#6B665E",
-  black: { lit: "#1E1E1E", gap: "#141414" },
-  orange: { lit: "#F55A00", gap: "#DB5000" },
-  stoneField: { lit: "#D3CCBF", gap: "#C2BAAC" },
-};
 export const PITCH = 12;
 export const STROKE = 8;
-export const FONT = "Bricolage Grotesque";
+export const FONT = "Geist";
 
 // A colour's slightly darker partner, for the gaps between its lines.
 export const darker = (hex, k = 0.895) => {
@@ -46,14 +36,14 @@ export const darker = (hex, k = 0.895) => {
 
 // ─── The brand ──────────────────────────────────────────────────────────────
 
-// Aerchain's kit, its files found in the film's own public/ folder.
-const AERCHAIN = {
-  id: AERCHAIN_KIT.id,
-  name: AERCHAIN_KIT.name,
-  colors: AERCHAIN_KIT.colors,
-  texture: AERCHAIN_KIT.texture,
-  fonts: AERCHAIN_KIT.fonts.map((f) => ({ ...f, url: f.file })),
-  logos: AERCHAIN_KIT.logos.map((l) => ({ ...l, url: l.file })),
+// The clean kit, its files found in the film's own public/ folder.
+const CLEAN = {
+  id: CLEAN_KIT.id,
+  name: CLEAN_KIT.name,
+  colors: CLEAN_KIT.colors,
+  texture: CLEAN_KIT.texture,
+  fonts: CLEAN_KIT.fonts.map((f) => ({ ...f, url: f.file })),
+  logos: CLEAN_KIT.logos.map((l) => ({ ...l, url: l.file })),
 };
 
 export function currentBrand() {
@@ -62,7 +52,7 @@ export function currentBrand() {
     const props = getInputProps();
     if (props && props.brand) return props.brand;
   } catch {}
-  return AERCHAIN;
+  return CLEAN;
 }
 // The brand never changes while a film plays, so this needs no state.
 export const useBrand = currentBrand;
@@ -72,7 +62,7 @@ export const useBrand = currentBrand;
 export const brandUrl = (url) => (/^(https?:|data:|\/)/.test(url) ? url : staticFile(url));
 
 // A colour as a line field: the exact pair the brand gives, else the colour
-// with a step darker gap. Lines are a kit's own texture (Aerchain's): a kit
+// with a step darker gap. Lines are a kit's own texture: a kit
 // without a texture, like the clean default, gets flat colour, the line and
 // its gap the same, so nothing reads as lines.
 export const fieldOf = (brand, hex) => {
@@ -106,7 +96,6 @@ export function paletteOf(brand) {
     black: brand.texture ? { lit: r.line, gap: r.background } : { lit: r.background, gap: r.background },
     // Type on the ground: whichever of ink and surface stands out more on it.
     text: contrast(r.ink, r.background) >= contrast(r.surface, r.background) ? r.ink : r.surface,
-    orange: accent,
     accent,
     stoneField: fieldOf(brand, r.surface),
     background: r.background,
@@ -140,14 +129,9 @@ export function useTextFont() {
 }
 
 // The brand's logo, `height` pixels tall, for a light or dark ground.
-// Aerchain's is drawn from its paths, so its letters can take any colour
-// (`letters`) while the "ai" stays orange.
+// `letters` colours the name when the kit has no logo for that ground.
 export function BrandLogo({ height = 40, ground = "light", letters, style }) {
   const brand = currentBrand();
-  if (brand.id === "aerchain") {
-    const P = paletteOf(brand);
-    return <Wordmark height={height} letters={letters ?? (ground === "dark" ? P.stone : P.ink)} style={style} />;
-  }
   const fits = (l) => l.on === ground || l.on === "any";
   const logo = brand.logos.find((l) => fits(l) && l.kind !== "mark") ?? brand.logos.find(fits);
   if (logo) return <Img src={brandUrl(logo.url)} style={{ height, width: "auto", display: "block", ...style }} />;
@@ -205,28 +189,12 @@ export function LineBlock({ x, y, width, height, color, enter = 0, leave = Infin
   return <>{runs}</>;
 }
 
-// The Aerchain wordmark at `height` pixels tall. `letters` colours the
-// letters; the "ai" mark stays orange unless `mark` says otherwise.
-export function Wordmark({ height = 40, letters = PALETTE.ink, mark = PALETTE.orange.lit, style }) {
-  const width = (WORDMARK.width / WORDMARK.height) * height;
-  return (
-    <svg viewBox={`0 0 ${WORDMARK.width} ${WORDMARK.height}`} width={width} height={height} style={{ display: "block", ...style }} aria-label="Aerchain">
-      {WORDMARK.letters.map((d, i) => (
-        <path key={`l${i}`} d={d} fill={letters} />
-      ))}
-      {WORDMARK.mark.map((d, i) => (
-        <path key={`m${i}`} d={d} fill={mark} />
-      ))}
-    </svg>
-  );
-}
-export const WORDMARK_RATIO = WORDMARK.width / WORDMARK.height;
 
 // Captions on the film. `words` are on the film's timeline (edit.json's
 // captions.words). Styles:
 //   lines    a line at a time
 //   words    one word at a time, big
-//   karaoke  a line at a time, the word being said in orange
+//   karaoke  a line at a time, the word being said in the accent
 // The serif captions' face: Apple's New York where the Mac has it.
 const SERIF = '"New York", "Iowan Old Style", Georgia, serif';
 
@@ -314,7 +282,7 @@ export function Captions({ words = [], style = "lines", position = "bottom", tag
               fontSize: Math.round(104 * u),
               lineHeight: 1.05,
               letterSpacing: "-0.02em",
-              color: w.hit ? P.orange.lit : "#ffffff",
+              color: w.hit ? P.accent.lit : "#ffffff",
               textShadow: `0 ${Math.round(4 * u)}px ${Math.round(28 * u)}px rgba(0,0,0,0.5)`,
             }}
           >
@@ -335,7 +303,7 @@ export function Captions({ words = [], style = "lines", position = "bottom", tag
   return withTag(box(
     <span style={{ fontSize: size }}>
       {line.words.map((w, i) => (
-        <span key={i} style={{ color: style === "karaoke" && t >= w.start && t < w.end + 0.05 ? P.orange.lit : undefined }}>
+        <span key={i} style={{ color: style === "karaoke" && t >= w.start && t < w.end + 0.05 ? P.accent.lit : undefined }}>
           {i ? " " : ""}
           {w.text}
         </span>

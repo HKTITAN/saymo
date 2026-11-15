@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { listGraphics } from "@/lib/studio/graphics";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { listGraphics } from "@/lib/studio/films/graphics";
 
 // The motion graphics a video film can place: the studio's library, plus a
 // film's own with ?film=<id>.

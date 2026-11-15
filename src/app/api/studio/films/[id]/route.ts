@@ -1,7 +1,7 @@
-import { readBrand } from "@/lib/studio/brands";
-import { allowed, deleteFilm, editFilm, listFolders, readFilm, refused } from "@/lib/studio/films";
-import { soundLater } from "@/lib/studio/sound-render";
-import { filmEdit } from "@/lib/studio/validate";
+import { readBrand } from "@/lib/studio/brands/brands";
+import { allowed, deleteFilm, editFilm, listFolders, readFilm, refused } from "@/lib/studio/films/films";
+import { soundLater } from "@/lib/studio/sound/sound-render";
+import { filmEdit } from "@/lib/studio/films/validate";
 
 const missing = () => Response.json({ error: "That film no longer exists." }, { status: 404 });
 

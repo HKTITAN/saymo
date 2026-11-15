@@ -1,6 +1,6 @@
-import { checkEdit, readEdit, saveEdit } from "@/lib/studio/edit-store";
-import { allowed, readFilm, refused } from "@/lib/studio/films";
-import { soundLater } from "@/lib/studio/sound-render";
+import { checkEdit, readEdit, saveEdit } from "@/lib/studio/films/edit-store";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
+import { soundLater } from "@/lib/studio/sound/sound-render";
 
 // A video film's edit (edit.ts): its tracks, clips, graphics and captions.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/films/[id]/edit">) {

@@ -33,9 +33,9 @@ const MODEL = process.env.STUDIO_WHISPER_MODEL || "large-v3-turbo";
 // English captions. STUDIO_WHISPER_LANGUAGE=auto lets whisper decide.
 const LANGUAGE = process.env.STUDIO_WHISPER_LANGUAGE === "auto" ? null : process.env.STUDIO_WHISPER_LANGUAGE || "en";
 
-// A hint of the words Aerchain's films use most; STUDIO_WHISPER_PROMPT
-// replaces it.
-const VOCABULARY = "Aerchain, SpendOS, Aiera, procurement, sourcing, RFP, CPO.";
+// A hint of words whisper should spell right; STUDIO_WHISPER_PROMPT
+// replaces it (put your brand and product names there).
+const VOCABULARY = "Saymo, motion design, title, logo, caption.";
 
 const say = (text) => console.log(`step ${text}`);
 const fail = (text) => {

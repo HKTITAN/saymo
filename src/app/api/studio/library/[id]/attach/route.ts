@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { attachToFilm, LibraryError } from "@/lib/studio/references";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { attachToFilm, LibraryError } from "@/lib/studio/library/references";
 
 // Copies an item into a film's refs/ as attachments, for apps outside the
 // browser (the MCP server and the command line). The studio page fetches

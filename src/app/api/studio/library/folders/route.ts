@@ -1,6 +1,6 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { createLibraryFolder, listLibraryFolders } from "@/lib/studio/references";
-import { folderName } from "@/lib/studio/validate";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { createLibraryFolder, listLibraryFolders } from "@/lib/studio/library/references";
+import { folderName } from "@/lib/studio/films/validate";
 
 // The library's own folders (films have theirs in films/folders.json).
 export async function GET(request: Request) {

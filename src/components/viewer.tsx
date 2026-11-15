@@ -6,10 +6,8 @@ import { DownloadDownIcon, PauseCircleIcon, PlayCircleIcon } from "@/components/
 import { MOTION_BY_ID, MOTIONS, type MotionId } from "@/components/post/lines";
 import { Post, POST_H, POST_W } from "@/components/post/post";
 import { post } from "@/content/post";
-import { team } from "@/content/team";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Toolbar,
   ToolbarButton,
@@ -23,24 +21,6 @@ const isMotion = (v: string | null): v is MotionId => !!v && Object.hasOwn(MOTIO
 
 const noSubscribe = () => () => {};
 
-// The shared toggles are drawn for the dark tool; on the viewer's white page
-// they take these light colours instead.
-const LIGHT_GROUP = "bg-black/[0.05]";
-const LIGHT_ITEM =
-  "px-2.5 text-neutral-500 hover:text-neutral-800 not-data-pressed:hover:bg-black/[0.04] data-pressed:bg-white data-pressed:text-neutral-900 data-pressed:shadow-xs";
-
-// The posts: the speaker post, and the team post beside it. `?post=team`
-// opens the team post.
-const POSTS = [
-  { id: "speaker", label: "Speaker post", content: post },
-  { id: "team", label: "Team post", content: team },
-] as const;
-type PostId = (typeof POSTS)[number]["id"];
-const postFrom = (search: string): PostId => {
-  const id = new URLSearchParams(search).get("post");
-  return POSTS.find((p) => p.id === id)?.id ?? "speaker";
-};
-
 export function Viewer() {
   // Read on the client only; the server renders nothing and the page
   // appears once the browser knows which mode it is in.
@@ -51,19 +31,17 @@ export function Viewer() {
   );
   if (search === null) return null;
 
-  // `?export=1&motion=scenes` renders the bare post for scripts/export.mjs.
+  // `?export=1&motion=scenes` renders the bare post for scripts/post/export.mjs.
   const params = new URLSearchParams(search);
   if (params.has("export")) {
     const motion = params.get("motion");
-    const content = POSTS.find((p) => p.id === postFrom(search))!.content;
-    return <ExportStage motion={isMotion(motion) ? motion : MOTIONS[0].id} content={content} />;
+    return <ExportStage motion={isMotion(motion) ? motion : MOTIONS[0].id} content={post} />;
   }
-  return <Showcase initial={postFrom(search)} />;
+  return <Showcase />;
 }
 
-function Showcase({ initial }: { initial: PostId }) {
+function Showcase() {
   const motion = MOTIONS[0].id;
-  const [which, setWhich] = useState<PostId>(initial);
   // The viewer is light, so the posts are judged on white. The rest of the
   // app (the tool, the studio) stays dark.
   useEffect(() => {
@@ -71,14 +49,6 @@ function Showcase({ initial }: { initial: PostId }) {
     root.classList.remove("dark");
     return () => root.classList.add("dark");
   }, []);
-  const shown = POSTS.find((p) => p.id === which)!;
-  // Kept in the address, so a reload stays on the same post.
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    if (which !== "speaker") url.searchParams.set("post", which);
-    else url.searchParams.delete("post");
-    window.history.replaceState(null, "", url);
-  }, [which]);
   // Starts paused for people who ask their system for less motion. This
   // component only ever renders in the browser, so `window` is safe here.
   const [playing, setPlaying] = useState(
@@ -126,7 +96,7 @@ function Showcase({ initial }: { initial: PostId }) {
 
   // Whether the 4K video for the post on screen is ready, checked every two
   // seconds so the button turns into a link the moment an export finishes.
-  const downloadHref = `/download/${motion}${which === "speaker" ? "" : `?post=${which}`}`;
+  const downloadHref = `/download/${motion}`;
   const [video, setVideo] = useState<{ state: string; percent: number | null }>({
     state: "ready",
     percent: null,
@@ -134,7 +104,7 @@ function Showcase({ initial }: { initial: PostId }) {
   useEffect(() => {
     let alive = true;
     const check = () =>
-      fetch(`${downloadHref}${downloadHref.includes("?") ? "&" : "?"}status`)
+      fetch(`${downloadHref}?status`)
         .then((r) => r.json())
         .then((s) => alive && setVideo(s))
         .catch(() => {});
@@ -151,24 +121,9 @@ function Showcase({ initial }: { initial: PostId }) {
       <main className="flex h-dvh flex-col bg-white font-sans text-neutral-900">
         <header className="flex items-center justify-between gap-6 px-6 pt-5 pb-4">
           <div className="flex min-w-0 items-center gap-3">
-            <ToggleGroup
-              size="sm"
-              variant="outline"
-              className={LIGHT_GROUP}
-              value={[which]}
-              onValueChange={(v) => {
-                const id = POSTS.find((p) => p.id === v[0])?.id;
-                if (id) setWhich(id);
-              }}
-            >
-              {POSTS.map((p) => (
-                <ToggleGroupItem key={p.id} value={p.id} className={LIGHT_ITEM}>
-                  {p.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+            <p className="font-medium text-[13px]">Sample post</p>
             <p className="truncate text-[12px] text-neutral-500">
-              {which === "speaker" ? `${post.speaker.name} on SpendOS` : "Meet the team, New Delhi"}
+              {post.speaker.name}, {post.speaker.role}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-4">
@@ -191,7 +146,7 @@ function Showcase({ initial }: { initial: PostId }) {
                 motion={motion}
                 playing={playing}
                 pixelScale={fit.scale * fit.dpr}
-                content={shown.content}
+                content={post}
               />
             </div>
           </div>

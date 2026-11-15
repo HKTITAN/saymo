@@ -9,13 +9,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { toastManager } from "@/components/ui/toast";
-import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON, Panel } from "@/components/studio/panel";
+import { CARD, Hint, ICON_BUTTON, PANEL_MOTION, PILL_BUTTON, Panel } from "@/components/studio/ui/panel";
 import { dateLines } from "@/lib/tool/dates";
 import { cn } from "@/lib/utils";
 import { type Crop, type DatePick, type DocEdit, motionOf, type PostDoc, postName, toContent, toEdit } from "@/lib/tool/doc";
 import { api, type Problem, ProblemError } from "./api";
 import { createPickerHandle, DateIconTrigger, DatePicker, TimePicker } from "./date-picker";
-import { DialGroup, DialNote } from "./dial";
+import { DialGroup, DialNote } from "../ui/dial";
 import { ExportControl } from "./export-control";
 import { layoutProblems } from "./fit";
 import { ImageField } from "./image-field";
@@ -23,7 +23,7 @@ import { EditingContext, InlineField, tidy, titleLines, useInlineEditing } from 
 import { MotionPicker } from "./motion-picker";
 import { openPost } from "./nav";
 import { PhotoField } from "./photo-field";
-import { RenameField } from "./rename";
+import { RenameField } from "../ui/rename";
 import { Preview } from "./preview";
 import { Timeline } from "./timeline";
 

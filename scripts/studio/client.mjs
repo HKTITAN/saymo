@@ -5,7 +5,7 @@
 //
 // Every request carries the local API token from .studio/api-token (or
 // SAYMO_TOKEN). If the file is missing it is made here, the same way
-// the studio makes it (src/lib/studio/api-token.ts): random, mode 600. The
+// the studio makes it (src/lib/studio/server/api-token.ts): random, mode 600. The
 // token is never printed or logged.
 //
 // SAYMO_URL points at another studio, e.g. http://127.0.0.1:3333.

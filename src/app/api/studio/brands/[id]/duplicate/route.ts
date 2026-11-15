@@ -1,5 +1,5 @@
-import { duplicateBrand } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
+import { duplicateBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/brands/[id]/duplicate">) {
   if (!allowed(request)) return refused();

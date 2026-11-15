@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { restoreItem, toEntry } from "@/lib/studio/references";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { restoreItem, toEntry } from "@/lib/studio/library/references";
 
 // Brings a deleted item back from the trash (deleted items wait a day).
 export async function POST(request: Request, ctx: RouteContext<"/api/studio/library/[id]/restore">) {

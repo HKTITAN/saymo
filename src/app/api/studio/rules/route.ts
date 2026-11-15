@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { clean, readRules, type Rule, writeRules } from "@/lib/studio/rules";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { clean, readRules, type Rule, writeRules } from "@/lib/studio/agent/rules";
 
 // The studio's standing rules, read on the home page and in every film turn.
 export async function GET(request: Request) {

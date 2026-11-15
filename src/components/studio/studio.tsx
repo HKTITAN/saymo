@@ -4,49 +4,49 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { EyeOnIcon, RefreshIcon, UploadUpIcon } from "@/components/icons";
 import { Kbd } from "@/components/ui/kbd";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { BrandSummary } from "@/lib/studio/brand";
-import type { Brief } from "@/lib/studio/brief";
-import type { Attachment, Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/contract";
-import { STUDIO_HEADERS } from "@/lib/studio/contract";
-import type { FilmSound } from "@/lib/studio/sound";
-import { editEnd, type GraphicInfo, type Media } from "@/lib/studio/edit";
+import type { BrandSummary } from "@/lib/studio/brands/brand";
+import type { Brief } from "@/lib/studio/agent/brief";
+import type { Attachment, Film, FilmSummary, Param, Picked, StageOutbound } from "@/lib/studio/films/contract";
+import { STUDIO_HEADERS } from "@/lib/studio/films/contract";
+import type { FilmSound } from "@/lib/studio/sound/sound";
+import { editEnd, type GraphicInfo, type Media } from "@/lib/studio/films/edit";
 import { cn } from "@/lib/utils";
-import { api, StudioError } from "./api";
-import { BriefCard } from "./brief-card";
-import { Bubble, PickOutline } from "./bubble";
-import { ChatPanel } from "./chat";
-import { createClock, useClock } from "./clock";
-import { EditInspector } from "./edit-inspector";
-import { addGraphic, addMedia, endOf, type Item } from "./edit-ops";
-import { FilmsMenu } from "./films-menu";
-import { brandApi } from "./brand-api";
+import { api, StudioError } from "./api/studio";
+import { BriefCard } from "./film/brief-card";
+import { Bubble, PickOutline } from "./chat/bubble";
+import { ChatPanel } from "./chat/chat";
+import { createClock, useClock } from "./film/clock";
+import { EditInspector } from "./video/edit-inspector";
+import { addGraphic, addMedia, endOf, type Item } from "./video/edit-ops";
+import { FilmsMenu } from "./home/films-menu";
+import { brandApi } from "./api/brand";
 import { SkeletonProvider } from "@/components/skeleton";
-import { Dashboard } from "./dashboard";
-import { undoKey, useHistory } from "./history";
-import { Inspector, type Values } from "./inspector";
-import { KitPage } from "./kit-page";
-import { MediaBin } from "./media-bin";
-import { Opening } from "./opening";
-import { clipNumber, defaults, Multitrack } from "./multitrack";
-import { turnPage } from "./page-turn";
-import { useStudioTheme } from "./theme";
-import { CARD, PANEL_MOTION, PILL_BUTTON } from "./panel";
-import { RenderControl } from "./render";
-import { SoundGroup } from "./sound-group";
-import { type SoundLaneData, showLane, showStems, stemLanes } from "./sound-lane";
-import { soundApi, soundOf } from "./sound-api";
-import { createBridge, type Insets, Stage, type StageStatus, useFit } from "./stage";
-import { Timeline } from "./timeline";
-import { attachFiles } from "./use-attachments";
-import { useChat } from "./use-chat";
-import { useEdit } from "./use-edit";
-import { useSound } from "./use-sound";
-import { DEFAULT_BRAND } from "@/lib/studio/brand";
-import { useSoundEdit } from "./use-sound-edit";
-import { useTakes } from "./takes";
-import { type Away, TakesAway } from "./takes-canvas";
-import { isMediaFile } from "./video-api";
-import { type Pinned, type SoundPin, soundChipLabel, tryAnotherPrompt } from "./words";
+import { Dashboard } from "./home/dashboard";
+import { undoKey, useHistory } from "./film/history";
+import { Inspector, type Values } from "./film/inspector";
+import { KitPage } from "./brand/kit-page";
+import { MediaBin } from "./video/media-bin";
+import { Opening } from "./home/opening";
+import { clipNumber, defaults, Multitrack } from "./video/multitrack";
+import { turnPage } from "./home/page-turn";
+import { useStudioTheme } from "./ui/theme";
+import { CARD, PANEL_MOTION, PILL_BUTTON } from "./ui/panel";
+import { RenderControl } from "./film/render";
+import { SoundGroup } from "./sound/sound-group";
+import { type SoundLaneData, showLane, showStems, stemLanes } from "./sound/sound-lane";
+import { soundApi, soundOf } from "./api/sound";
+import { createBridge, type Insets, Stage, type StageStatus, useFit } from "./film/stage";
+import { Timeline } from "./film/timeline";
+import { attachFiles } from "./chat/use-attachments";
+import { useChat } from "./chat/use-chat";
+import { useEdit } from "./video/use-edit";
+import { useSound } from "./sound/use-sound";
+import { DEFAULT_BRAND } from "@/lib/studio/brands/brand";
+import { useSoundEdit } from "./sound/use-sound-edit";
+import { useTakes } from "./chat/takes";
+import { type Away, TakesAway } from "./chat/takes-canvas";
+import { isMediaFile } from "./api/video";
+import { type Pinned, type SoundPin, soundChipLabel, tryAnotherPrompt } from "./film/words";
 
 // Saymo, the motion studio: the film fills the window and every panel floats over
 // it. The engines that make the film stay out of sight; you work by asking
@@ -96,8 +96,8 @@ const titleFrom = (prompt: string) => {
   return first ? first.charAt(0).toUpperCase() + first.slice(1) : "Untitled film";
 };
 
-// A video film is named after its first file: "Interview with Darshan.mov"
-// becomes "Interview with Darshan".
+// A video film is named after its first file: "Interview with Alex.mov"
+// becomes "Interview with Alex".
 // Words typed on the film travel from the stage handler to where they are
 // saved and undone.
 const WORDS_EVENT = "studio:words";

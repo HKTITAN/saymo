@@ -1,7 +1,7 @@
 import { readFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { exportBrand, readBrand } from "@/lib/studio/brands";
-import { allowed, refused } from "@/lib/studio/films";
+import { exportBrand, readBrand } from "@/lib/studio/brands/brands";
+import { allowed, refused } from "@/lib/studio/films/films";
 
 // The kit as a .zip, to share or import into another studio.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/brands/[id]/export">) {

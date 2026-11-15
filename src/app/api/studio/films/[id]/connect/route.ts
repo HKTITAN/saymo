@@ -1,6 +1,6 @@
-import { filmConnections, saveFilmNow } from "@/lib/studio/connect";
-import { failed } from "@/lib/studio/connect-http";
-import { allowed, readFilm, refused } from "@/lib/studio/films";
+import { filmConnections, saveFilmNow } from "@/lib/studio/connect/connect";
+import { failed } from "@/lib/studio/connect/connect-http";
+import { allowed, readFilm, refused } from "@/lib/studio/films/films";
 
 // Where this film's last render and source were saved.
 export async function GET(request: Request, ctx: RouteContext<"/api/studio/films/[id]/connect">) {

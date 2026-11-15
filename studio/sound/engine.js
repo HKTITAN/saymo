@@ -61,7 +61,7 @@ async function renderStrudel(code, start, duration, sampleRate) {
   const strudel = globalThis.__strudelMusic;
   if (!strudel) {
     throw new Error(
-      "This score's music is Strudel code, which this build of the studio doesn't play. Write the music as a music bed instead (the aerchain-sound-design skill shows how); in-house, node scripts/studio/convert-score.mjs <film-id> converts it.",
+      "This score's music is Strudel code, which this build of the studio doesn't play. Write the music as a music bed instead (the saymo-sound-design skill shows how); in-house, node scripts/studio/convert-score.mjs <film-id> converts it.",
     );
   }
   const r = await strudel.render(code, start, duration, sampleRate, { settled });

@@ -1,6 +1,6 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { deleteLibraryFolder, renameLibraryFolder } from "@/lib/studio/references";
-import { folderName } from "@/lib/studio/validate";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { deleteLibraryFolder, renameLibraryFolder } from "@/lib/studio/library/references";
+import { folderName } from "@/lib/studio/films/validate";
 
 const missing = () => Response.json({ error: "That folder no longer exists." }, { status: 404 });
 

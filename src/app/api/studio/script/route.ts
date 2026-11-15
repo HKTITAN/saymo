@@ -1,6 +1,6 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { LENGTHS, MAX_IDEA, type ScriptEvent } from "@/lib/studio/script";
-import { writeScript } from "@/lib/studio/script-claude";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { LENGTHS, MAX_IDEA, type ScriptEvent } from "@/lib/studio/input/script";
+import { writeScript } from "@/lib/studio/input/script-claude";
 
 // Writes a script and storyboard from a topic or a pasted script. POST
 // { idea, seconds, keep } streams ScriptEvents back (text/event-stream, one

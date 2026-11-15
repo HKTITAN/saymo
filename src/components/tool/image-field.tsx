@@ -7,7 +7,7 @@ import { PALETTE } from "@/components/post/palette";
 import type { Placement, PostDoc, Take } from "@/lib/tool/doc";
 import { cn } from "@/lib/utils";
 import type { Problem } from "./api";
-import { DialButton, DialNote, DialSlider, DialText } from "./dial";
+import { DialButton, DialNote, DialSlider, DialText } from "../ui/dial";
 import { DropZone, FileInput } from "./drop-zone";
 
 // The landmark on the right: make one with AI, upload one, name it and

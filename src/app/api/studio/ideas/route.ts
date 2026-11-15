@@ -1,5 +1,5 @@
-import { allowed, refused } from "@/lib/studio/films";
-import { cleanIdeas, readIdeas, writeIdeas } from "@/lib/studio/ideas";
+import { allowed, refused } from "@/lib/studio/films/films";
+import { cleanIdeas, readIdeas, writeIdeas } from "@/lib/studio/library/ideas";
 
 // The Ideas page's list (ideas.ts). GET: every idea. PUT [ideas]: the whole
 // list as it is now (it's small); answers with it as saved.
