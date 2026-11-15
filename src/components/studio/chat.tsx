@@ -2,7 +2,7 @@
 
 import { type RefObject, useCallback, useEffect, useId, useRef, useState } from "react";
 import { type Clock, formatTime, useClock } from "./clock";
-import { MultipleCrossCancelIcon } from "@/components/icons";
+import { MultipleCrossCancelIcon, PencilEditIcon } from "@/components/icons";
 import { Skeleton } from "@/components/skeleton";
 import type { ChatContext, ChatMessage } from "@/lib/studio/contract";
 import { asksForThree } from "@/lib/studio/takes-shared";
@@ -69,6 +69,8 @@ export function ChatPanel({
 }) {
   const [draft, setDraft] = useState("");
   const [undoError, setUndoError] = useState<string | null>(null);
+  // After rewriting a prompt that had no saved version before it.
+  const [rewriteNote, setRewriteNote] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const { messages, turn } = chat;
   const claudeTurns = messages.filter((m) => m.role === "claude").length;
@@ -257,7 +259,34 @@ export function ChatPanel({
           </div>
         ) : null}
         {messages.map((m, i) => (
-          <Message key={`${m.at}-${i}`} message={m} filmId={filmId} soundLength={soundLength} video={video} />
+          <Message
+            key={`${m.at}-${i}`}
+            message={m}
+            filmId={filmId}
+            soundLength={soundLength}
+            video={video}
+            rewrite={
+              m.role === "you" && !m.auto
+                ? {
+                    editing: chat.editing === m.at,
+                    running: turn.running,
+                    disabled: chat.undoing || chat.restoring || (chat.editing !== null && chat.editing !== m.at),
+                    onStart: () => chat.setEditing(m.at),
+                    onCancel: () => chat.setEditing(null),
+                    onSave: (words) => {
+                      chat.setEditing(null);
+                      setUndoError(null);
+                      setRewriteNote(null);
+                      void chat.rewrite(m, words).then((note) => {
+                        if (!note) return;
+                        if (note.startsWith("There was no saved version")) setRewriteNote(note);
+                        else setUndoError(note);
+                      });
+                    },
+                  }
+                : undefined
+            }
+          />
         ))}
         {turn.running ? <Live text={turn.text} steps={turn.steps} resumed={turn.resumed} /> : null}
         {!turn.running && chat.carryOn ? <CarryOnNote carryOn={chat.carryOn} onCancel={() => void chat.cancelCarryOn()} /> : null}
@@ -267,11 +296,18 @@ export function ChatPanel({
             queue={chat.queue}
             paused={chat.paused && !turn.running}
             onRemove={chat.removeQueued}
+            editing={chat.editing}
+            onEdit={chat.setEditing}
+            onSave={(key, words) => {
+              chat.editQueued(key, words);
+              chat.setEditing(null);
+            }}
             onClear={chat.clearQueue}
             onResume={chat.resume}
           />
         ) : null}
         {undoError ? <p className="text-[12.5px] text-[#ff9592] leading-relaxed">{undoError}</p> : null}
+        {rewriteNote && !turn.running ? <p className="text-[11.5px] text-white/40 leading-relaxed">{rewriteNote}</p> : null}
       </div>
       <div className="shrink-0 px-2 pb-2">
         <PromptBox
@@ -343,7 +379,28 @@ function CarryOnNote({ carryOn, onCancel }: { carryOn: { reason: "time" | "limit
   );
 }
 
-function Message({ message, filmId, soundLength, video }: { message: ChatMessage; filmId: string; soundLength?: number; video?: boolean }) {
+type Rewrite = {
+  editing: boolean;
+  running: boolean;
+  disabled: boolean;
+  onStart: () => void;
+  onCancel: () => void;
+  onSave: (words: string) => void;
+};
+
+function Message({
+  message,
+  filmId,
+  soundLength,
+  video,
+  rewrite,
+}: {
+  message: ChatMessage;
+  filmId: string;
+  soundLength?: number;
+  video?: boolean;
+  rewrite?: Rewrite;
+}) {
   if (message.role === "you" && message.auto) {
     return <p className="text-center text-[11.5px] text-white/35">The studio carried on by itself</p>;
   }
@@ -363,9 +420,28 @@ function Message({ message, filmId, soundLength, video }: { message: ChatMessage
             At {formatTime(message.context.t)}
           </span>
         ) : null}
-        <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed">
-          {message.text}
-        </p>
+        {rewrite?.editing ? (
+          <EditPrompt
+            text={message.text}
+            label={rewrite.running ? "Stop and run this" : "Run this instead"}
+            onSave={rewrite.onSave}
+            onCancel={rewrite.onCancel}
+          />
+        ) : (
+          <div className="group/you flex items-start justify-end gap-1.5">
+            {rewrite ? <EditButton label="Rewrite this prompt" disabled={rewrite.disabled} onClick={rewrite.onStart} group="you" /> : null}
+            <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed">
+              {message.text}
+            </p>
+          </div>
+        )}
+        {rewrite?.editing ? (
+          <p className="text-[11px] text-white/40">
+            {rewrite.running
+              ? "Claude stops, the film goes back to just before this prompt, and this runs instead. What you have now stays in History."
+              : "The film goes back to just before this prompt, and this runs instead. What you have now stays in History."}
+          </p>
+        ) : null}
         <SentFiles files={message.context?.attachments ?? []} urlOf={(path) => `/studio/stage/${filmId}/${path}`} />
       </div>
     );
@@ -462,10 +538,16 @@ function Queue({
   onRemove,
   onClear,
   onResume,
+  editing,
+  onEdit,
+  onSave,
 }: {
   queue: ChatState["queue"];
   paused: boolean;
   onRemove: (key: string) => void;
+  editing: string | null;
+  onEdit: (key: string | null) => void;
+  onSave: (key: string, words: string) => void;
   onClear: () => void;
   onResume: () => void;
 }) {
@@ -482,9 +564,13 @@ function Queue({
           Clear
         </button>
       </p>
-      {queue.map((q, i) => (
+      {queue.map((q, i) =>
+        editing === q.key ? (
+          <EditPrompt key={q.key} text={q.prompt} label="Save" onSave={(words) => onSave(q.key, words)} onCancel={() => onEdit(null)} />
+        ) : (
         <div key={q.key} className="group/q flex items-start justify-end gap-1.5">
           <span className="pt-2 text-[10.5px] text-white/30 tabular-nums">{i + 1}</span>
+          <EditButton label={`Edit waiting prompt ${i + 1}`} disabled={editing !== null} onClick={() => onEdit(q.key)} group="q" />
           <p className="whitespace-pre-wrap rounded-[12px] rounded-br-[4px] border border-white/[0.1] border-dashed px-3 py-2 text-[12.5px] text-white/55 leading-relaxed">
             {q.prompt}
             {q.context.attachments?.length ? (
@@ -502,7 +588,85 @@ function Queue({
             <MultipleCrossCancelIcon aria-hidden="true" />
           </button>
         </div>
-      ))}
+        ),
+      )}
+    </div>
+  );
+}
+
+// The pencil beside a prompt, shown on hover (or keyboard focus).
+function EditButton({ label, disabled, onClick, group }: { label: string; disabled: boolean; onClick: () => void; group: "q" | "you" }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={cn(
+        "mt-1.5 inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-[7px] text-white/35 opacity-0 outline-none transition-opacity hover:bg-white/[0.08] hover:text-white focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring disabled:hidden [&_svg]:size-3.5",
+        group === "q" ? "group-hover/q:opacity-100" : "group-hover/you:opacity-100",
+      )}
+    >
+      <PencilEditIcon aria-hidden="true" />
+    </button>
+  );
+}
+
+// A prompt being rewritten in place: Return saves, Shift Return adds a
+// line, Escape lets it go unchanged.
+function EditPrompt({ text, label, onSave, onCancel }: { text: string; label: string; onSave: (words: string) => void; onCancel: () => void }) {
+  const [value, setValue] = useState(text);
+  const box = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, []);
+  // Grows with the words, like the bubble it replaces.
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+  const words = value.trim();
+  return (
+    <div className="flex w-full flex-col items-end gap-1.5 ps-8">
+      <textarea
+        ref={box}
+        value={value}
+        rows={1}
+        aria-label="Prompt"
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          } else if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+            e.preventDefault();
+            if (words) onSave(words);
+          }
+        }}
+        className="w-full resize-none overflow-hidden rounded-[12px] rounded-br-[4px] bg-white/[0.09] px-3 py-2 text-[12.5px] text-white/90 leading-relaxed outline-none ring-1 ring-white/15 [scrollbar-width:none] focus-visible:ring-white/25"
+      />
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="h-7 cursor-pointer rounded-[8px] px-2.5 text-[12px] text-white/55 outline-none transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          disabled={!words}
+          onClick={() => onSave(words)}
+          className="h-7 cursor-pointer rounded-[8px] bg-white/[0.12] px-2.5 text-[12px] text-white outline-none transition-colors hover:bg-white/[0.18] focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-40"
+        >
+          {label}
+        </button>
+      </div>
     </div>
   );
 }

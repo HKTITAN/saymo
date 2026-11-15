@@ -252,6 +252,9 @@ export type Version = {
   prompt: string | null; // the prompt that made it, in full
   t: number | null; // where the playhead was when that was asked
   current?: true;
+  // The prompt asked right after this snapshot was taken, and when: going
+  // back to this version is going back to just before that prompt.
+  next?: { prompt: string; at: string };
 };
 
 // "sizes": the film in every size (16:9, 1:1, 4:5, 9:16), each laid out

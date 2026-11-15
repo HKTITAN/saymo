@@ -370,6 +370,7 @@ export async function listVersions(id: string, film: Film): Promise<Version[]> {
       label: guess?.label ?? row?.label ?? "An earlier version",
       prompt: row?.made?.prompt ?? guess?.prompt ?? null,
       t: row?.made?.t ?? guess?.t ?? null,
+      ...(row && !row.back ? { next: { prompt: row.prompt, at: row.at } } : {}),
     });
   }
   // Now is the film after the newest row's prompt (or going back), or

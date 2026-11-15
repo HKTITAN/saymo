@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_PROVIDER, type ProviderId } from "@/lib/studio/ai-types";
-import type { ChatContext, ChatMessage, Film } from "@/lib/studio/contract";
+import type { ChatContext, ChatMessage, Film, Version } from "@/lib/studio/contract";
 import { useAiChoice } from "./ai-api";
 import { api, chat, StudioError } from "./api";
 
@@ -17,6 +17,10 @@ import { api, chat, StudioError } from "./api";
 // Prompts sent while Claude works wait in a queue and run one by one, each
 // with the moment and the part they were sent with. Stop halts the current
 // turn and pauses the queue; the queue survives a reload (this browser only).
+// A waiting prompt can be rewritten in place, and so can any prompt you
+// sent (rewrite): Claude stops if it's still working, the film goes back to
+// the version saved just before that prompt, and the new words run from the
+// same moment. While a prompt is being rewritten, the queue holds still.
 
 export type Turn = {
   running: boolean;
@@ -56,6 +60,9 @@ export function useChat(
   const [restoring, setRestoring] = useState(false);
   const [queue, setQueue] = useState<Queued[]>([]);
   const [paused, setPaused] = useState(false);
+  // What's being rewritten: a waiting prompt's key, a sent prompt's `at`,
+  // or null. Nothing in the queue starts meanwhile.
+  const [editing, setEditing] = useState<string | null>(null);
   // When the studio will carry on by itself (after the 15-minute cap or a
   // usage limit), and why.
   const [carryOn, setCarryOn] = useState<{ reason: "time" | "limit"; at: string } | null>(null);
@@ -209,11 +216,16 @@ export function useChat(
   // When a turn ends, the next queued prompt starts on its own, on the AI
   // it was sent to.
   useEffect(() => {
-    if (busy || paused || abort.current || !queue.length) return;
+    if (busy || paused || editing || abort.current || !queue.length) return;
     const [next, ...rest] = queue;
     setQueue(rest);
     void run(next.prompt, next.context, next.provider);
-  }, [busy, paused, queue, run]);
+  }, [busy, paused, editing, queue, run]);
+
+  const editQueued = useCallback((key: string, prompt: string) => {
+    const words = prompt.trim();
+    if (words) setQueue((q) => q.map((x) => (x.key === key ? { ...x, prompt: words } : x)));
+  }, []);
 
   const removeQueued = useCallback((key: string) => setQueue((q) => q.filter((x) => x.key !== key)), []);
   const clearQueue = useCallback(() => {
@@ -252,6 +264,7 @@ export function useChat(
     }
   }, [id]);
 
+
   // Goes back to an earlier version of the film (the film as it was is kept
   // as a version too). Returns an error to show, or null.
   const restore = useCallback(
@@ -271,6 +284,42 @@ export function useChat(
       }
     },
     [id],
+  );
+
+  // Runs new words in place of a prompt you sent. Returns a note to show
+  // (a problem, or that there was no version to go back to), or null.
+  const rewrite = useCallback(
+    async (sent: ChatMessage, prompt: string) => {
+      const words = prompt.trim();
+      if (!words || sent.role !== "you") return null;
+      // Still running: stop it, and wait until the studio has let go of the film.
+      if (abort.current || turn.running) {
+        await stop();
+        for (let i = 0; i < 60; i++) {
+          const h = abort.current ? null : await api.history(id).catch(() => null);
+          if (!abort.current && h && !h.running) break;
+          await new Promise((r) => setTimeout(r, 250));
+        }
+      }
+      // The version saved just before that prompt (each Claude turn saves
+      // one as it starts; the newest 30 are kept).
+      const versions = await api.versions(id).catch(() => [] as Version[]);
+      const sentAt = Date.parse(sent.at);
+      const before = versions.find((v) => v.n !== null && v.next?.prompt === sent.text && Math.abs(Date.parse(v.next.at) - sentAt) < 120_000);
+      const t = sent.context?.t ?? 0;
+      let note: string | null = null;
+      if (before?.n != null) {
+        const problem = await restore(before.n, t);
+        if (problem) return problem;
+      } else {
+        note = "There was no saved version from before that prompt, so this ran on the film as it is now.";
+      }
+      const started = run(words, sent.context ?? { t, pick: null }, sent.provider ?? provider);
+      setPaused(false);
+      await started;
+      return note;
+    },
+    [id, turn.running, stop, restore, run, provider],
   );
 
   // The chat as the server has it now (after picking one of three
@@ -294,6 +343,10 @@ export function useChat(
     queue,
     paused,
     removeQueued,
+    editQueued,
+    editing,
+    setEditing,
+    rewrite,
     clearQueue,
     resume,
     provider,
