@@ -64,7 +64,7 @@ Done on 2026-11-16: the original in-house brand kit, its skills and its wording 
 
 ## Running the check again
 
-`npm run licences` writes the full list, with each licence text, to `THIRD-PARTY-NOTICES.md` and `public/licences.json` (see [setup.md](../setup.md)). For a quick look at just the packages whose licence isn't plainly permissive, run this from the repo root: After a product setup (`npm run setup -- --product`) there's no `studio/sound/strudel/node_modules`, so no AGPL package should be listed.
+`npm run licences` writes the full list, with each licence text, to `docs/THIRD-PARTY-NOTICES.md` and `public/licences.json` (see [setup.md](../setup.md)). For a quick look at just the packages whose licence isn't plainly permissive, run this from the repo root: After a product setup (`npm run setup -- --product`) there's no `studio/sound/strudel/node_modules`, so no AGPL package should be listed.
 
 ```bash
 node --input-type=module -e '

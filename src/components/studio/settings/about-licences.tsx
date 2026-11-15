@@ -12,7 +12,7 @@ import { Hint, ICON_BUTTON } from "../ui/panel";
 // "About and licences": the studio's version, then everything in it made by
 // others, grouped by licence, with a search. Each row opens its licence
 // text. The list is public/licences.json, made by `npm run licences`
-// (scripts/licences.mjs) along with THIRD-PARTY-NOTICES.md. It is
+// (scripts/licences.mjs) along with docs/THIRD-PARTY-NOTICES.md. It is
 // shown in both editions (in-house, it says the list is the product's). Esc or a
 // press outside closes it.
 

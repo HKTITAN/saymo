@@ -206,13 +206,14 @@ scripts/
 desktop/              the native Mac app (Swift)
 .claude/skills/       what Claude in the studio knows: saymo-film, saymo-sound-design,
                       saymo-video-edit, plus the engines' and craft skills
-docs/                 guides; docs/research/ holds dated research notes
+docs/                 guides, plans and dated research notes, and the licence notices
+.github/              how to contribute, issue templates and the checks every change runs
 ```
 
 
 ## Contributing
 
-Run `npx tsc --noEmit`, `npm run lint` and `npm run build` before sending a change, `node scripts/studio/parts-check.mjs` after touching `studio/effects/` or the starters, and `node scripts/studio/edit-check.mjs` after touching how video edits are timed. House rules for the interface, copy and icons are in [CLAUDE.md](CLAUDE.md).
+See [CONTRIBUTING](.github/CONTRIBUTING.md) for the checks to run and where code goes. House rules for the interface, copy and icons are in [CLAUDE.md](CLAUDE.md).
 
 ## Licences
 
@@ -226,4 +227,4 @@ Saymo's own licence is still to be chosen. It builds on:
 - Strudel (AGPL 3.0), in the in-house edition only: it plays the music of films made before the studio's own music bed. The product edition (`STUDIO_EDITION=product`) leaves it out; see [docs/research/licences.md](docs/research/licences.md).
 - Remotion: free for individuals, companies of up to 3 people and evaluation; larger companies need a Remotion company licence to use React films.
 
-Every package's licence is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) (`npm run licences` writes it).
+Every package's licence is in [docs/THIRD-PARTY-NOTICES.md](docs/THIRD-PARTY-NOTICES.md) (`npm run licences` writes it).

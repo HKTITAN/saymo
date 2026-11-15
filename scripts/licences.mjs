@@ -2,7 +2,7 @@
 // Lists everything the studio ships that someone else made, with its
 // licence, and writes two files from it:
 //
-//  - THIRD-PARTY-NOTICES.md at the repo root: each package's name, version,
+//  - docs/THIRD-PARTY-NOTICES.md: each package's name, version,
 //    licence and copyright line, then the licence text, grouped by licence.
 //    A licence text that many packages share (MIT's, say) is printed once,
 //    under the list of every package that uses it.
@@ -512,7 +512,7 @@ writeFileSync(
   `${JSON.stringify({ studio, total: rows.length, leftOut: [...skipped].sort(), groups, texts: textsById })}\n`,
 );
 
-// ─── THIRD-PARTY-NOTICES.md ─────────────────────────────────────────────────
+// ─── docs/THIRD-PARTY-NOTICES.md ───────────────────────────────────────────
 
 const fence = (text) => `\`\`\`text\n${text.replace(/```/g, "'''")}\n\`\`\``;
 const KIND_WORDS = { npm: "", crate: " (Rust crate)", model: " (model)", program: " (program)", font: " (font)", icons: " (icons)", artwork: " (artwork)", skill: " (Claude skill)", vendored: " (copied in)" };
@@ -549,7 +549,7 @@ for (const g of groups) {
     }
   }
 }
-writeFileSync(path.join(ROOT, "THIRD-PARTY-NOTICES.md"), `${out.join("\n").trimEnd()}\n`);
+writeFileSync(path.join(ROOT, "docs/THIRD-PARTY-NOTICES.md"), `${out.join("\n").trimEnd()}\n`);
 
 // ─── What happened ──────────────────────────────────────────────────────────
 
@@ -562,4 +562,4 @@ say("");
 const width = Math.max(...groups.map((g) => g.licence.length));
 for (const g of groups) say(`${g.licence.padEnd(width)}  ${g.count}`);
 say("");
-say(`Wrote THIRD-PARTY-NOTICES.md and public/licences.json (${texts.size} distinct licence texts).`);
+say(`Wrote docs/THIRD-PARTY-NOTICES.md and public/licences.json (${texts.size} distinct licence texts).`);

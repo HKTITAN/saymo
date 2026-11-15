@@ -1,0 +1,29 @@
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Types
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      - name: Word-based editing
+        run: node scripts/studio/edit-check.mjs
+      - name: Sketch on the frame
+        run: node scripts/studio/sketch-check.mjs
+      - name: Effects
+        run: node scripts/studio/parts-check.mjs

@@ -7,5 +7,5 @@
 **/vendor/** linguist-vendored
 
 # Generated files
-THIRD-PARTY-NOTICES.md linguist-generated
+docs/THIRD-PARTY-NOTICES.md linguist-generated
 public/licences.json linguist-generated

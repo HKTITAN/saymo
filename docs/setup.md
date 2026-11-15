@@ -110,4 +110,4 @@ npm run licences                           # for the edition you run
 STUDIO_EDITION=product npm run licences    # what the product ships
 ```
 
-Run it after adding or updating packages. It lists everything the studio uses that someone else made (the app's and engines' packages, the Rust crates, the speech models, the font, the icons and the borrowed skills) and writes `THIRD-PARTY-NOTICES.md` and `public/licences.json`, which the product edition shows under About and licences on the home page. The product's list leaves out what it doesn't ship (the Strudel music engine and GSAP). Never edit either file by hand.
+Run it after adding or updating packages. It lists everything the studio uses that someone else made (the app's and engines' packages, the Rust crates, the speech models, the font, the icons and the borrowed skills) and writes `docs/THIRD-PARTY-NOTICES.md` and `public/licences.json`, which the product edition shows under About and licences on the home page. The product's list leaves out what it doesn't ship (the Strudel music engine and GSAP). Never edit either file by hand.
