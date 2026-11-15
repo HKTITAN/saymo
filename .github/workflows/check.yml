@@ -15,8 +15,10 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # Next writes the route types (RouteContext, LayoutProps) first; a fresh
+      # checkout has none until then.
       - name: Types
-        run: npx tsc --noEmit
+        run: npm run typecheck
       - name: Lint
         run: npm run lint
       - name: Build

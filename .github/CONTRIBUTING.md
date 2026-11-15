@@ -7,7 +7,7 @@ Thanks for helping. Saymo is a motion editor that runs on your own Mac, so you'l
 Run these from the repo root. Every pull request runs them too.
 
 ```bash
-npx tsc --noEmit
+npm run typecheck
 npm run lint
 npm run build
 node scripts/studio/edit-check.mjs     # after touching how video edits are timed or cut
