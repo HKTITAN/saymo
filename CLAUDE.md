@@ -32,7 +32,7 @@ goes into tracked files; sample content stays generic.
 - The post's own icons (date and location) are part of the artwork; leave
   them be.
 
-## The interface (the tool, the studio)
+## The interface (the studio)
 
 - Type: the system font (`font-sans`) for everything, numbers too (with
   `tabular-nums` where they should line up). No mono font anywhere in the
@@ -62,6 +62,6 @@ locked icon, use a free one the error suggests, or ask the owner to run
 
 ## Working here
 
-- Dev server: `npm run dev` on port 3200. Posts made in the tool live in
-  `posts/` (git ignores it); secrets in `.env.local` (also ignored).
+- Dev server: `npm run dev` on port 3200. Secrets go in `.env.local` (git
+  ignores it).
 - Re-export after a change to an export, and say what was verified.

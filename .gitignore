@@ -43,7 +43,7 @@ next-env.d.ts
 # rendered posts
 /export
 
-# posts made in the tool, with their uploads and videos
+# posts from the old post tool, if any are left on this Mac
 /posts
 
 # motion engines (studio/): renders, installs and build output

@@ -3,7 +3,7 @@ import { Viewer } from "@/components/viewer";
 
 export const metadata: Metadata = {
   title: "Sample post",
-  description: "The sample speaker post the post tool is built on",
+  description: "An animated speaker post, made in code"
 };
 
 export default function Page() {

@@ -50,7 +50,6 @@ Optional keys go in `.env.local`, one per line. Git never commits this file; nev
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Saving renders to Google Drive. One-time Google Cloud setup: [connections.md](connections.md) |
 | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | Signing in to GitHub with your own account (otherwise your `gh` sign-in is used) |
 | `FIGMA_TOKEN` | Reading Figma links when making a brand kit |
-| `AI_GATEWAY_API_KEY` | Making landmarks with AI in the post tool |
 
 Restart `npm run dev` after changing `.env.local`.
 

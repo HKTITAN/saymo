@@ -145,15 +145,14 @@ Then restart `npm run dev`.
 
 ## Where your work lives
 
-Everything you make stays in the Saymo folder on your Mac: films in `films/`, brand kits in `brands/`, speaker posts in `posts/`, saved references in `library/` and sign-ins in `.studio/`. Git ignores all of them, and keys in `.env.local`, so `git pull` never touches your work. Back up those folders to keep your films.
+Everything you make stays in the Saymo folder on your Mac: films in `films/`, brand kits in `brands/`, saved references in `library/` and sign-ins in `.studio/`. Git ignores all of them, and keys in `.env.local`, so `git pull` never touches your work. Back up those folders to keep your films.
 
 ## Also in the box
 
 | Part | Address | What it's for |
 | --- | --- | --- |
 | **Studio** | `/studio` | Make motion graphics and edit videos with Claude |
-| **Post tool** | `/tool` | A sample template: animated speaker posts made without code, downloaded as 4K video |
-| **Sample post** | `/post` | The animated post the tool starts from |
+| **Sample post** | `/post` | An animated speaker post, made in code, that exports as 4K video |
 
 ## Docs
 
@@ -163,20 +162,20 @@ Everything you make stays in the Saymo folder on your Mac: films in `films/`, br
 - [Use Saymo from other apps](docs/mcp.md): Claude Desktop, Claude Code, Cursor and the terminal
 - [Shortcuts and Raycast](docs/shortcuts.md): start a film from a link
 - [Security](docs/security.md): what the studio answers and what Claude can touch
-- [The post tool](docs/post-tool.md) and [the sample post](docs/speaker-post.md)
+- [The sample post](docs/speaker-post.md)
 - [Roadmap](docs/roadmap.md)
 
 ## How the code is organised
 
 ```
 src/
-  app/                pages and API routes: studio, post tool, sample post
+  app/                pages and API routes: the studio and the sample post
   components/
     studio/           the studio's interface, one folder per area:
       api/            the page's calls to the studio's routes
       home/  film/  video/  chat/  sound/  brand/  library/  settings/  flows/
       ui/             the studio's own panels, switches and decorations
-    tool/  post/      the post tool and the sample post
+    post/             the sample post
     ui/               shared controls (the DialKit rows, buttons, menus)
     icons/            PikaIcons, written by `npx pikaicons add`
   lib/
@@ -190,7 +189,6 @@ src/
       library/        the reference library and ideas
       connect/        Google Drive, GitHub and cloud folders
       server/         local API token, edition, streaming, file serving
-    tool/             the post tool's server side
   content/            the sample post's words
 studio/               under the hood, used by the engines (not bundled by Next)
   remotion/  hyperframes/  sound/   each engine, with its own packages

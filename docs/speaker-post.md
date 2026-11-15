@@ -2,8 +2,7 @@
 
 An animated speaker post in black, orange and stone: the headline and speaker
 on stone at the left, and on the right a field of scanlines that moves behind
-a landmark. It's the template the [post tool](post-tool.md) starts from, filled
-with sample words.
+a landmark, filled with sample words.
 
 ## See it
 
@@ -48,9 +47,7 @@ Every frame is rendered one by one at 4K, so the videos are smooth and loop
 cleanly; the 1080p files are the same frames at half size. A full export takes
 about ten minutes and uses Google Chrome.
 
-## Make a post by hand
-
-The tool does all of this without the command line. By hand:
+## Make your own post
 
 1. Make the square photo tile (the numbers are the crop's left, top and size in
    the original photo's pixels):

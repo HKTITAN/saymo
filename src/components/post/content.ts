@@ -1,5 +1,5 @@
 // What a speaker post shows. The original post's words live in
-// src/content/post.ts; each post made in the tool lives in posts/<id>/.
+// src/content/post.ts.
 export type PostContent = {
   // Each entry is one line of the headline, broken where it reads best.
   title: readonly string[];
