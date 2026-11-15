@@ -231,7 +231,7 @@ export function KitDoc({
                       Aa Bb Cc 0123
                     </span>
                     <span className="max-w-[34ch] text-[22px] leading-snug" style={{ fontFamily: family(f) }}>
-                      Every rate, risk and approval, scattered, until one moment resolves them.
+                      Every idea starts as a sketch, then finds its shape in motion.
                     </span>
                   </figure>
                 ))}

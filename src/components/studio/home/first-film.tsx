@@ -205,7 +205,7 @@ export function FirstFilm({
               running={busy}
               autoFocus
               maxRows={5}
-              placeholder="A 6 second loop of orange lines rising like stairs"
+              placeholder="A 6 second launch teaser for a note-taking app"
             />
             <button
               type="button"

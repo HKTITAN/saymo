@@ -6,12 +6,12 @@ import { Kbd } from "@/components/ui/kbd";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-// Floating panels: rounded dark cards over the film, with a soft shadow and
+// Floating panels: rounded dark cards over the film, with a fine edge, a faint shadow and
 // a little blur so the film shows faintly through. Each folds down to a
 // pill with its name; H hides them all.
 
 export const CARD =
-  "rounded-[16px] bg-float/80 text-[12px] text-white/90 shadow-[0_12px_40px_-8px_rgb(0_0_0_/_calc(0.6*var(--shade))),0_0_0_1px_rgb(var(--hi)_/_0.07)] backdrop-blur-xl backdrop-saturate-150";
+  "rounded-[16px] bg-float/80 text-[12px] text-white/90 shadow-[0_4px_14px_-6px_rgb(0_0_0_/_calc(0.22*var(--shade))),0_0_0_1px_rgb(var(--hi)_/_0.08)] backdrop-blur-xl backdrop-saturate-150";
 
 // Small round button used in panel headers and toolbars.
 export const ICON_BUTTON =

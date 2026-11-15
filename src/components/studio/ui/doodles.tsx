@@ -293,16 +293,24 @@ export function KitsDoodle({ className }: { className?: string }) {
   );
 }
 
-// Beside the studio's name: a small rounded frame with a play mark that
-// nudges forward on hover.
+// Saymo's mark, beside its name: a rounded tile with a speech bubble cut
+// out of it, and a play button inside the bubble (say + motion). Not shown
+// for now. The play button nudges forward on hover.
+export const BUBBLE =
+  "M7 4.5h6.2a3.2 3.2 0 0 1 3.2 3.2v3.7a3.2 3.2 0 0 1-3.2 3.2H9.2L6.1 16.6c-.4.3-.9 0-.9-.5v-1.9a3.2 3.2 0 0 1-1.6-2.8V7.7A3.2 3.2 0 0 1 6.8 4.5Z";
+export const PLAY = "M9 7.4c0-.5.5-.8.9-.5l3 1.8c.4.3.4.8 0 1.1l-3 1.8c-.4.3-.9 0-.9-.5Z";
+
 export function StudioMark({ className }: { className?: string }) {
+  const id = useId();
   return (
-    <Doodle viewBox="0 0 20 16" className={cn("h-4 w-5", className)}>
-      <rect x={1} y={1} width={18} height={14} rx={4} fill={SOFT} stroke="currentColor" strokeWidth={1.4} className="text-white/60" />
-      <g className={cn(MOVE, "motion-safe:group-hover/doodle:translate-x-[1.5px]")}>
-        <path d="M8.2 5.3 Q7.6 5 7.6 5.7 V10.3 Q7.6 11 8.2 10.7 L12.4 8.5 Q13 8 12.4 7.5 Z" fill="currentColor" className="text-white/85" />
-      </g>
-    </Doodle>
+    <svg viewBox="0 0 20 20" aria-hidden="true" className={cn("size-[18px] shrink-0 text-white/90", className)}>
+      <mask id={id}>
+        <rect width={20} height={20} fill="#fff" />
+        <path d={BUBBLE} fill="#000" />
+        <path d={PLAY} fill="#fff" className={cn(MOVE, "motion-safe:group-hover/doodle:translate-x-[0.8px]")} />
+      </mask>
+      <rect width={20} height={20} rx={6} fill="currentColor" mask={`url(#${id})`} />
+    </svg>
   );
 }
 

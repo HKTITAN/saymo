@@ -1,9 +1,9 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
-// QUOTE: a pull quote over a black line field.
+// QUOTE: a pull quote over a dark line field.
 //   0.00  the black ground sweeps in from the right
-//   0.30  an orange bar climbs in down the quote's left (orange once)
+//   0.30  an accent bar climbs in down the quote's left (accent once)
 //   0.45  the quote rises in, then who said it
 //   end-0.6  the words fade and the lines leave the way they came
 export default function Quote({ values, duration }) {

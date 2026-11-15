@@ -2,7 +2,7 @@
 // Claude composes as code and the studio renders to audio. Music is a
 // music bed (studio/sound/bed.js: named parts, each a loop of notes with a
 // sound, envelope, filters, room and echo); effects that must land on
-// exact moments (a whoosh as orange arrives, a tick per bar) are drawn with
+// exact moments (a whoosh as the title arrives, a tick per bar) are drawn with
 // Tone.js. Both are rendered offline in headless Chrome to one WAV the
 // length of the film, which the studio plays in sync and every render
 // mixes in. Same contract for the engine, the interface and Claude.

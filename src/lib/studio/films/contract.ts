@@ -40,7 +40,7 @@ export type Param = {
   options?: string[]; // for "choice"
 };
 
-// A named moment on the timeline ("Orange rises").
+// A named moment on the timeline ("Title rises").
 export type Mark = { t: number; label: string };
 
 // films/<id>/film.json. The folder holds everything else the film needs.

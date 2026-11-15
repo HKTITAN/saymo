@@ -282,7 +282,7 @@ function ScriptStep({
           running={false}
           autoFocus
           maxRows={10}
-          placeholder="Why approvals cost teams a day a week"
+          placeholder="Three habits that make a small team ship faster"
         />
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Segmented
@@ -443,7 +443,7 @@ function ScriptStep({
   );
 }
 
-const SAMPLE_BEAT: Beat = { line: "Most procurement teams still chase approvals by email.", visual: "An inbox stacking up with approval requests" };
+const SAMPLE_BEAT: Beat = { line: "Most teams lose an hour a day to status updates.", visual: "A calendar filling up with meetings" };
 
 const Seconds = ({ n }: { n: number }) => (
   <>

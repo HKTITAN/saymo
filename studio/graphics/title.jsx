@@ -2,10 +2,10 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
 // TITLE CARD: a full-frame card that opens a film or a chapter.
-//   0.00  the ground (black or stone lines) sweeps in from the right,
+//   0.00  the ground (dark or light lines) sweeps in from the right,
 //         bottom line first
 //   0.35  the small line, then the title, rise in
-//   0.60  a short orange staircase climbs in at the bottom right (orange once)
+//   0.60  a short accent staircase climbs in at the bottom right (accent once)
 //   end-0.6  the words fade and the lines leave the way they came
 export default function Title({ values, duration }) {
   const FONT = useBrandFont();
@@ -16,7 +16,7 @@ export default function Title({ values, duration }) {
   const u = Math.min(W, H) / 1080;
   const t = frame / fps;
   const leave = Math.max(1.2, duration - 0.6);
-  const stone = values.ground === "Stone";
+  const stone = values.ground === "Light" || values.ground === "Stone"; // "Stone" in films made before the rename
   const pitch = Math.max(6, Math.round(PITCH * u));
   const stroke = Math.round(pitch * 0.67);
   const rows = Math.ceil(H / pitch);
@@ -28,7 +28,7 @@ export default function Title({ values, duration }) {
     return { opacity: p * (1 - out), transform: `translateY(${(1 - p) * 18 * u}px)` };
   };
 
-  // The orange steps: four, each a step higher and a step shorter.
+  // The accent steps: four, each a step higher and a step shorter.
   const stepH = pitch * 4;
   const steps = [0, 1, 2, 3].map((i) => {
     const width = Math.round(W * (0.26 - i * 0.05));

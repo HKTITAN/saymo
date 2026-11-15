@@ -4,6 +4,6 @@
   "params": [
     { "key": "title", "label": "Title", "type": "text", "value": "Motion, made simple" },
     { "key": "kicker", "label": "Small line above", "type": "text", "value": "Saymo" },
-    { "key": "ground", "label": "Background", "type": "choice", "value": "Black", "options": ["Black", "Stone"] }
+    { "key": "ground", "label": "Background", "type": "choice", "value": "Dark", "options": ["Dark", "Light"] }
   ]
 }

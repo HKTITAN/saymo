@@ -14,7 +14,7 @@ export default function EndCard({ values }) {
   const { fps, width: W, height: H } = useVideoConfig();
   const u = Math.min(W, H) / 1080;
   const t = frame / fps;
-  const stone = values.ground === "Stone";
+  const stone = values.ground === "Light" || values.ground === "Stone"; // "Stone" in films made before the rename
   const pitch = Math.max(6, Math.round(PITCH * u));
   const rows = Math.ceil(H / pitch);
   const markH = Math.round(64 * u);

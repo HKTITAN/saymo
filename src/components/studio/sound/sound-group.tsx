@@ -8,7 +8,7 @@ import type { SoundState } from "./use-sound";
 // renders, how loud, a mute just for listening while you work, a fresh
 // render of the score, and quick requests that go to Claude like any prompt.
 
-const IDEAS = ["Calmer", "More punch on the orange"];
+const IDEAS = ["Calmer", "More punch on the reveal"];
 
 export function SoundGroup({
   sound,

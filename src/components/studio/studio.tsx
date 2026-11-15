@@ -89,7 +89,7 @@ function openFilm(id: string | null, replace = false) {
   navigate(id ? `/studio?film=${id}` : "/studio", replace);
 }
 
-// A title from the first words of a prompt: "A 6 second loop: orange…"
+// A title from the first words of a prompt: "A 6 second launch teaser…"
 // becomes "A 6 second loop".
 const titleFrom = (prompt: string) => {
   const first = prompt.split(/[.:;,\n]/)[0].trim().split(/\s+/).slice(0, 6).join(" ");

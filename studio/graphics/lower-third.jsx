@@ -1,10 +1,10 @@
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import { clamp01, landing, LineBlock, useBrandFont, usePalette, useTexture } from "studio-kit";
 
-// LOWER THIRD: a speaker's name and role over a stone panel.
-//   0.00  the stone panel arrives from the right, line by line, bottom first
+// LOWER THIRD: a speaker's name and role over a light panel.
+//   0.00  the light panel arrives from the right, line by line, bottom first
 //   0.35  the name rises in, then the role
-//   0.55  a short orange edge lands on the panel's left (orange once)
+//   0.55  a short accent edge lands on the panel's left (accent once)
 //   end-0.6  the words fade, the lines leave the way they came
 // Props: values (name, role, side), duration (seconds on the film).
 export default function LowerThird({ values, duration }) {

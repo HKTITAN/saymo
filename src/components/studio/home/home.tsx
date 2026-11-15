@@ -24,7 +24,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { type FilmSummary, type Folder, SIZES } from "@/lib/studio/films/contract";
 import { LIBRARY_DRAG } from "@/lib/studio/library/references-shared";
 import { cn } from "@/lib/utils";
-import { ReelDoodle, ScriptDoodle, SlidesDoodle, StudioMark, VideoDoodle } from "../ui/doodles";
+import { ReelDoodle, ScriptDoodle, SlidesDoodle, VideoDoodle } from "../ui/doodles";
 import { FolderMenu, ITEM, MENU_POPUP, useSpringOpen } from "./home-parts";
 import { AccountRow } from "../settings/account-panel";
 import { cachedLibrary, filesFor } from "../api/library";
@@ -131,8 +131,7 @@ export function SideNav({
           )}
           aria-hidden={collapsed}
         >
-          <StudioMark />
-          <span className="truncate whitespace-nowrap font-medium text-[13px] text-white/90">Saymo</span>
+          <span className="truncate whitespace-nowrap font-semibold text-[14px] text-white/95 tracking-[-0.01em]">Saymo</span>
         </span>
         {/* Out of sight once folded (the twin in the page's corner takes over). */}
         {collapsed && !gliding ? null : <SideToggle open={!collapsed} onToggle={() => fold(!collapsed)} />}
@@ -706,8 +705,8 @@ export function Hero({
           held={over}
           autoFocus={Boolean(initial)}
           maxRows={8}
-          placeholder="A 6 second loop of lines rising like stairs"
-          className="min-h-[124px] justify-between rounded-[20px] bg-menu p-2.5 shadow-[0_24px_60px_-24px_rgb(0_0_0_/_calc(0.9*var(--shade))),0_0_0_1px_rgb(var(--hi)_/_0.07)] has-[:focus-visible]:bg-raised"
+          placeholder="A 6 second launch teaser for a note-taking app"
+          className="min-h-[124px] justify-between rounded-[20px] bg-menu p-2.5 shadow-[0_6px_16px_-8px_rgb(0_0_0_/_calc(0.25*var(--shade))),0_0_0_1px_rgb(var(--hi)_/_0.08)] has-[:focus-visible]:bg-raised"
           tools={<SizePicker size={size} onSize={setSize} />}
         />
       </div>

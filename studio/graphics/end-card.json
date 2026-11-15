@@ -3,6 +3,6 @@
   "duration": 4,
   "params": [
     { "key": "line", "label": "Line under the logo", "type": "text", "value": "example.com" },
-    { "key": "ground", "label": "Background", "type": "choice", "value": "Black", "options": ["Black", "Stone"] }
+    { "key": "ground", "label": "Background", "type": "choice", "value": "Dark", "options": ["Dark", "Light"] }
   ]
 }
