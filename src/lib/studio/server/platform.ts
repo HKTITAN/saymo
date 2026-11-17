@@ -118,8 +118,31 @@ const locked = new Set<string>();
 // This Windows account as icacls names it (DOMAIN\user), from Windows
 // itself rather than the environment, which can name it differently.
 let account: string | undefined;
-const windowsAccount = () =>
+export const windowsAccount = () =>
   (account ??= spawnSync("whoami", [], { encoding: "utf8", windowsHide: true }).stdout?.trim() || process.env.USERNAME || "");
+const icacls = (file: string, ...args: string[]) => spawnSync("icacls", [file, ...args], { encoding: "utf8", windowsHide: true });
+
+// Who is on a file's access list (DOMAIN\name each), or null if icacls
+// can't read it. The first line starts with the path, so it's cut at the
+// column the next lines line up to.
+function accessEntries(file: string): string[] | null {
+  const r = icacls(file);
+  if (r.status !== 0) return null;
+  const lines = r.stdout.split(/\r?\n/).filter((l) => l.includes(":("));
+  const column = lines.length > 1 ? lines[1].length - lines[1].trimStart().length : file.length + 1;
+  return lines.map((l, i) => (i === 0 ? l.slice(column) : l).trim()).map((l) => l.slice(0, l.indexOf(":(")));
+}
+const meOrSystem = (who: string) => who.toLowerCase() === windowsAccount().toLowerCase() || who.toLowerCase().endsWith("\\system");
+
+// Whether anyone but this user (and the system) is on a file's list.
+export const othersCanOpen = (file: string) => accessEntries(file)?.some((who) => !meOrSystem(who)) ?? true;
+
+// Who can open a file, as icacls lists them (for messages).
+export const accessList = (file: string) => {
+  const r = icacls(file);
+  return `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() || `icacls exited ${r.status}; account ${windowsAccount()}`;
+};
+
 export function privateDir(dir: string) {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   if (!IS_WINDOWS) {
@@ -129,10 +152,21 @@ export function privateDir(dir: string) {
     return;
   }
   if (locked.has(dir)) return;
-  // What's already inside follows the folder's new list (it inherits it).
-  const r = spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { encoding: "utf8", windowsHide: true });
   // Never carry on with tokens in a folder others can open.
-  if (r.status !== 0) throw new Error(`Couldn't make ${dir} private to this user: ${(r.stderr || r.stdout || "").trim()}`);
+  const fail = (why: string) => {
+    throw new Error(`Couldn't make ${dir} private to this user: ${why.trim()}`);
+  };
+  // What's already inside follows the folder's new list (it inherits it).
+  const r = icacls(dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F");
+  if (r.status !== 0) fail(r.stderr || r.stdout || "");
+  // A folder made from an administrator's terminal gets a list of its own
+  // (Administrators on it) rather than an inherited one; those go too.
+  for (const who of accessEntries(dir) ?? []) {
+    if (meOrSystem(who)) continue;
+    const removed = icacls(dir, "/remove:g", who);
+    if (removed.status !== 0) fail(removed.stderr || removed.stdout || "");
+  }
+  if (othersCanOpen(dir)) fail(accessList(dir));
   locked.add(dir);
 }
 

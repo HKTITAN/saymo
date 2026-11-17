@@ -2,9 +2,10 @@
 // program an engine's package ships, and how to stop a process tree.
 // (src/lib/studio/server/platform.ts does the same for the studio itself.)
 
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { accessList as studioAccessList, othersCanOpen, privateDir } from "../../src/lib/studio/server/platform.ts";
 
 export const IS_MAC = process.platform === "darwin";
 export const IS_WINDOWS = process.platform === "win32";
@@ -33,47 +34,21 @@ export function killTree(pid) {
   } catch {}
 }
 
-// This Windows account as icacls names it (DOMAIN\user), from Windows
-// itself rather than the environment, which can name it differently.
-let account;
-export const windowsAccount = () =>
-  (account ??= spawnSync("whoami", [], { encoding: "utf8", windowsHide: true }).stdout?.trim() || process.env.USERNAME || "");
-
-// .studio/ private to this user on Windows, where file modes do nothing
-// (src/lib/studio/server/platform.ts says more).
-export function ownerOnly(dir) {
-  if (!IS_WINDOWS) return;
-  const r = spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { encoding: "utf8", windowsHide: true });
-  if (r.status !== 0) throw new Error(`Couldn't make ${dir} private to this user: ${(r.stderr || r.stdout || "").trim()}`);
-}
+// .studio/ private to this user: the studio's own privateDir (mode 700 on
+// the Mac, an access list of this user and the system on Windows), so the
+// scripts and the studio can't drift apart.
+export const ownerOnly = (dir) => privateDir(dir);
 
 // `detached` gives a child its own process group on the Mac; on Windows it
 // would open a console window of its own instead.
 export const OWN_GROUP = { detached: !IS_WINDOWS, windowsHide: true };
 
 // Who can open a file on Windows, as icacls lists them (for messages).
-export const accessList = (file) => {
-  if (!IS_WINDOWS) return "";
-  const r = spawnSync("icacls", [file], { encoding: "utf8", windowsHide: true });
-  return `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() || `icacls exited ${r.status} (${r.error?.message ?? "no output"}); account ${windowsAccount()}`;
-};
+export const accessList = (file) => (IS_WINDOWS ? studioAccessList(file) : "");
 
 // Whether anyone but this user (and the system) can open the file. On
 // Windows that's its access list; elsewhere its mode.
-export function othersCanRead(file, mode) {
-  if (!IS_WINDOWS) return (mode & 0o077) !== 0;
-  const r = spawnSync("icacls", [file], { encoding: "utf8", windowsHide: true });
-  if (r.status !== 0) return true;
-  const me = windowsAccount().toLowerCase();
-  return r.stdout
-    .split(/\r?\n/)
-    .map((l) => l.replace(file, "").trim())
-    .filter((l) => l.includes(":("))
-    .some((l) => {
-      const who = l.slice(0, l.indexOf(":(")).toLowerCase();
-      return who !== me && who !== "nt authority\\system";
-    });
-}
+export const othersCanRead = (file, mode) => (IS_WINDOWS ? othersCanOpen(file) : (mode & 0o077) !== 0);
 
 // Adds a folder to the end of this process's PATH (Windows separates them
 // with ';').

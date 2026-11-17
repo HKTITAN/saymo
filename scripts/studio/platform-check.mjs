@@ -5,7 +5,7 @@
 //   node scripts/studio/platform-check.mjs
 
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -78,6 +78,16 @@ await check("privateDir keeps a folder to this user", () => {
   ownerOnly(dir);
   expect(!othersCanRead(dir, statSync(dir).mode), `someone else can open it:\n${accessList(dir)}`);
   expect(!othersCanRead(file, statSync(file).mode), `someone else can open a file in it:\n${accessList(file)}`);
+});
+
+await check("privateDir also clears a list of its own (made from an admin terminal)", () => {
+  if (!IS_WINDOWS) return "skip";
+  const dir = path.join(work, "own-list");
+  mkdirSync(dir);
+  // Administrators and Users written on the folder itself, not inherited.
+  spawnSync("icacls", [dir, "/grant", "*S-1-5-32-544:(OI)(CI)F", "*S-1-5-32-545:(OI)(CI)RX"], { stdio: "ignore" });
+  privateDir(dir);
+  expect(!othersCanRead(dir, 0), `someone else can open it:\n${accessList(dir)}`);
 });
 
 await check("Claude's permission rules and commands use paths it matches", () => {
