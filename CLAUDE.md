@@ -60,6 +60,16 @@ Free icons work without signing in; search marks the rest "locked". For a
 locked icon, use a free one the error suggests, or ask the owner to run
 `npx pikaicons login`. Never ask for the key.
 
+## Mac and Windows
+
+Saymo runs on both, and every change must work on both. Put what differs in
+`src/lib/studio/server/platform.ts` or `scripts/studio/platform.mjs` (Windows
+twins of Mac tools go in `scripts/native/`), never in the code that uses it.
+`npm run lint` enforces this and CI runs every check on macOS and Windows;
+`node scripts/studio/platform-check.mjs` checks the computer you're on. To
+check the studio's pages by hand on either, agent-browser
+(https://agent-browser.dev) drives Chrome the same way on both.
+
 ## Working here
 
 - Dev server: `npm run dev` on port 3200. Secrets go in `.env.local` (git

@@ -7,7 +7,13 @@ on:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    # Saymo runs on the Mac and on Windows, so every change is checked on
+    # both: a change that works on one only fails here.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,6 +29,8 @@ jobs:
         run: npm run lint
       - name: Build
         run: npm run build
+      - name: Mac and Windows
+        run: node scripts/studio/platform-check.mjs
       - name: Word-based editing
         run: node scripts/studio/edit-check.mjs
       - name: Sketch on the frame
