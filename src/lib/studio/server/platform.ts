@@ -106,6 +106,11 @@ export function commandOf(pid: number): Promise<string> {
 // access list is cut to this user and the system (what's inside follows it).
 // Every private folder is made with privateDir, never mkdir and chmod.
 const locked = new Set<string>();
+// This Windows account as icacls names it (DOMAIN\user), from Windows
+// itself rather than the environment, which can name it differently.
+let account: string | undefined;
+const windowsAccount = () =>
+  (account ??= spawnSync("whoami", [], { encoding: "utf8", windowsHide: true }).stdout?.trim() || process.env.USERNAME || "");
 export function privateDir(dir: string) {
   mkdirSync(dir, { recursive: true, mode: 0o700 });
   if (!IS_WINDOWS) {
@@ -115,8 +120,7 @@ export function privateDir(dir: string) {
     return;
   }
   if (locked.has(dir)) return;
-  const me = process.env.USERDOMAIN ? `${process.env.USERDOMAIN}\\${process.env.USERNAME}` : process.env.USERNAME;
-  const r = spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${me}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { stdio: "ignore", windowsHide: true });
+  const r = spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { stdio: "ignore", windowsHide: true });
   if (r.status === 0) locked.add(dir);
 }
 

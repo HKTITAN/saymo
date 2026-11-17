@@ -33,13 +33,21 @@ export function killTree(pid) {
   } catch {}
 }
 
+// This Windows account as icacls names it (DOMAIN\user), from Windows
+// itself rather than the environment, which can name it differently.
+let account;
+export const windowsAccount = () =>
+  (account ??= spawnSync("whoami", [], { encoding: "utf8", windowsHide: true }).stdout?.trim() || process.env.USERNAME || "");
+
 // .studio/ private to this user on Windows, where file modes do nothing
 // (src/lib/studio/server/platform.ts says more).
 export function ownerOnly(dir) {
   if (!IS_WINDOWS) return;
-  const me = process.env.USERDOMAIN ? `${process.env.USERDOMAIN}\\${process.env.USERNAME}` : process.env.USERNAME;
-  spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${me}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { stdio: "ignore", windowsHide: true });
+  spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { stdio: "ignore", windowsHide: true });
 }
+
+// Who can open a file on Windows, as icacls lists them (for messages).
+export const accessList = (file) => (IS_WINDOWS ? spawnSync("icacls", [file], { encoding: "utf8", windowsHide: true }).stdout?.trim() ?? "" : "");
 
 // Whether anyone but this user (and the system) can open the file. On
 // Windows that's its access list; elsewhere its mode.
@@ -47,14 +55,14 @@ export function othersCanRead(file, mode) {
   if (!IS_WINDOWS) return (mode & 0o077) !== 0;
   const r = spawnSync("icacls", [file], { encoding: "utf8", windowsHide: true });
   if (r.status !== 0) return true;
-  const me = (process.env.USERNAME ?? "").toLowerCase();
+  const me = windowsAccount().toLowerCase();
   return r.stdout
     .split(/\r?\n/)
     .map((l) => l.replace(file, "").trim())
     .filter((l) => l.includes(":("))
     .some((l) => {
       const who = l.slice(0, l.indexOf(":(")).toLowerCase();
-      return !who.endsWith(`\\${me}`) && who !== me && who !== "nt authority\\system";
+      return who !== me && who !== "nt authority\\system";
     });
 }
 

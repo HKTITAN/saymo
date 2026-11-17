@@ -9,7 +9,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { killTree, othersCanRead, ownerOnly, packageBin } from "./platform.mjs";
+import { accessList, killTree, othersCanRead, ownerOnly, packageBin } from "./platform.mjs";
 import { machine } from "./machine.mjs";
 import { IS_WINDOWS, launcher, minimalEnv, OWN_GROUP, privateDir, rulePath, shellPath, which } from "../../src/lib/studio/server/platform.ts";
 
@@ -76,7 +76,7 @@ await check("privateDir keeps a folder to this user", () => {
   const file = path.join(dir, "secret.json");
   writeFileSync(file, "{}", { mode: 0o600 });
   ownerOnly(dir);
-  expect(!othersCanRead(file, 0o600), "someone else can open a file in it");
+  expect(!othersCanRead(file, 0o600), `someone else can open a file in it:\n${accessList(file)}`);
 });
 
 await check("Claude's permission rules and commands use paths it matches", () => {
