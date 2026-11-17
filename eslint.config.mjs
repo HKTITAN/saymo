@@ -1,12 +1,13 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import globals from "globals";
 
 // Saymo runs on the Mac and on Windows. What differs between them lives in
 // two places only (src/lib/studio/server/platform.ts for the studio,
 // scripts/studio/platform.mjs for the scripts), so a change made for one
 // works on the other. These catch code that would work on one of them only.
-const MAC_ONLY_PROGRAMS = "sips|textutil|qlmanage|osascript|say|swiftc|sandbox-exec|otool|codesign|install_name_tool|sysctl|defaults|open|lsof|xcrun|brew";
+const MAC_ONLY_PROGRAMS = "sips|textutil|qlmanage|osascript|say|swiftc|sandbox-exec|otool|codesign|install_name_tool|sysctl|defaults|open|lsof|xcrun|brew|ditto|zipinfo|mdls|mdfind|pbcopy|pbpaste|afplay|afconvert|hdiutil|plutil|security|launchctl";
 const bothPlatforms = [
   {
     selector: "MemberExpression[object.name='process'][property.name='platform']",
@@ -14,7 +15,7 @@ const bothPlatforms = [
       "Use IS_MAC or IS_WINDOWS from src/lib/studio/server/platform.ts (scripts: scripts/studio/platform.mjs), or better a helper there, so the Mac and Windows stay in one place.",
   },
   {
-    selector: "Property[key.name='detached'][value.value=true]",
+    selector: "Property[key.name='detached']",
     message: "Spread OWN_GROUP from the platform module instead (a process group on the Mac, no console window on Windows), and stop it with killTree.",
   },
   {
@@ -55,6 +56,13 @@ const eslintConfig = defineConfig([
     files: ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "studio/*/scripts/**/*.mjs"],
     ignores: ["src/lib/studio/server/platform.ts", "scripts/studio/platform.mjs"],
     rules: { "no-restricted-syntax": ["error", ...bothPlatforms] },
+  },
+  // TypeScript checks names in src/; the plain-JS scripts get the same from
+  // no-undef, so a helper used without its import fails here, not at runtime.
+  {
+    files: ["scripts/**/*.mjs", "studio/*/scripts/**/*.mjs"],
+    languageOptions: { globals: globals.node },
+    rules: { "no-undef": "error" },
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([

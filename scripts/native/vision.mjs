@@ -69,6 +69,8 @@ async function model(name) {
     if (hash.digest("hex") !== m.sha256) throw new Error(`${m.file} didn't download correctly`);
     await rename(part, to);
   } catch (error) {
+    // fail() exits at once, so the part is cleared first.
+    await rm(part, { force: true });
     fail(`The ${name} model couldn't be fetched (it needs the internet once): ${error.message}`);
   } finally {
     await rm(part, { force: true });
@@ -271,7 +273,9 @@ const PAGE = `(async () => {
       const m = r.confidenceMasks[r.confidenceMasks.length - 1];
       const mask = crisp(m.getAsFloat32Array(), m.width, m.height, image.width, image.height);
       r.close();
-      return png(grey(mask, image.width, image.height), image.width, image.height);
+      const { width, height } = image;
+      image.close();
+      return png(grey(mask, width, height), width, height);
     },
   };
 })()`;
@@ -325,7 +329,10 @@ if (job === "face") {
   const frames = await mkdtemp(path.join(tmpdir(), "studio-vision-"));
   try {
     await run("ffmpeg", ["-v", "error", "-i", input, "-map", "0:v:0", "-fps_mode", "passthrough", "-q:v", "2", path.join(frames, "f%05d.jpg")]);
-    const files = (await readdir(frames)).filter((f) => f.endsWith(".jpg")).sort().map((f) => path.join(frames, f));
+    const files = (await readdir(frames))
+      .filter((f) => f.endsWith(".jpg"))
+      .sort((a, b) => a.localeCompare(b, "en", { numeric: true }))
+      .map((f) => path.join(frames, f));
     if (!files.length) fail(`no frames in ${input}`);
     const probe = JSON.parse(await run("ffprobe", ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=avg_frame_rate", "-of", "json", input]));
     const [n, d] = String(probe.streams?.[0]?.avg_frame_rate ?? "30/1").split("/").map(Number);

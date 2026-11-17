@@ -653,6 +653,7 @@ async function languagesOf(wav: string, stretches: { start: number; end: number 
       const child = spawn(program("whisper-cli"), ["-m", LANGUAGE_ID.file, "-l", "auto", "-dl", "-t", "4", ...files.flatMap((f) => ["-f", f])], {
         cwd: HOME,
         stdio: ["ignore", "pipe", "pipe"],
+        windowsHide: true,
       });
       let text = "";
       child.stdout.on("data", (c) => (text += c));

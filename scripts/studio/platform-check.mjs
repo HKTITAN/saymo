@@ -5,7 +5,7 @@
 //   node scripts/studio/platform-check.mjs
 
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,8 +18,8 @@ const work = mkdtempSync(path.join(tmpdir(), "saymo-platform-"));
 let failed = 0;
 const check = async (name, fn) => {
   try {
-    await fn();
-    console.log(`ok    ${name}`);
+    const result = await fn();
+    console.log(`${result === "skip" ? "skip" : "ok  "}  ${name}`);
   } catch (error) {
     failed++;
     console.log(`FAIL  ${name}: ${error.message}`);
@@ -48,7 +48,7 @@ await check("packageBin starts next with node", () => {
 });
 
 await check("launcher runs an npm .cmd through node", () => {
-  if (!IS_WINDOWS) return;
+  if (!IS_WINDOWS) return "skip";
   const dir = path.join(work, "shim");
   privateDir(dir);
   writeFileSync(path.join(dir, "hello.js"), 'console.log("hi")');
@@ -76,7 +76,8 @@ await check("privateDir keeps a folder to this user", () => {
   const file = path.join(dir, "secret.json");
   writeFileSync(file, "{}", { mode: 0o600 });
   ownerOnly(dir);
-  expect(!othersCanRead(file, 0o600), `someone else can open a file in it:\n${accessList(file)}`);
+  expect(!othersCanRead(dir, statSync(dir).mode), `someone else can open it:\n${accessList(dir)}`);
+  expect(!othersCanRead(file, statSync(file).mode), `someone else can open a file in it:\n${accessList(file)}`);
 });
 
 await check("Claude's permission rules and commands use paths it matches", () => {

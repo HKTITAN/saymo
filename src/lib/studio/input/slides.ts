@@ -590,11 +590,11 @@ function withImport<T>(id: string, job: () => Promise<T>): Promise<T> {
 async function pictureSlide(file: string, out: string) {
   if (!IS_MAC) {
     let source = file;
-    if (/\.(heic|heif)$/i.test(file)) {
-      source = `${out}.heic.jpg`;
-      await heicToJpeg(file, source);
-    }
     try {
+      if (/\.(heic|heif)$/i.test(file)) {
+        source = `${out}.heic.jpg`;
+        await heicToJpeg(file, source);
+      }
       const image = sharp(source, { animated: false }).rotate();
       const width = (await image.metadata()).autoOrient?.width ?? 0;
       if (!width) throw new SlidesError(`${path.basename(file)} isn't a picture this computer can open.`);

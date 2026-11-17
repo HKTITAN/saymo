@@ -11,10 +11,15 @@ const MAX_ENTRIES = 20_000;
 
 export type Zip = {
   names: string[];
+  list: () => ZipEntry[];
   has: (name: string) => boolean;
   read: (name: string) => Buffer | null;
   text: (name: string) => string | null;
 };
+
+// One file in a zip, as its listing gives it: `link` is a symbolic link
+// (Unix mode bits in the external attributes).
+export type ZipEntry = { name: string; size: number; link: boolean };
 
 export class ZipError extends Error {}
 
@@ -32,7 +37,7 @@ export function openZip(data: Buffer): Zip {
   const count = data.readUInt16LE(end + 10);
   let at = data.readUInt32LE(end + 16);
   if (count > MAX_ENTRIES) throw new ZipError("This file holds too many parts.");
-  const entries = new Map<string, { method: number; size: number; packed: number; local: number }>();
+  const entries = new Map<string, { method: number; size: number; packed: number; local: number; link: boolean }>();
   for (let n = 0; n < count; n++) {
     if (at + 46 > data.length || data.readUInt32LE(at) !== 0x02014b50) throw new ZipError("This zip is damaged.");
     const method = data.readUInt16LE(at + 10);
@@ -42,8 +47,9 @@ export function openZip(data: Buffer): Zip {
     const extra = data.readUInt16LE(at + 30);
     const comment = data.readUInt16LE(at + 32);
     const local = data.readUInt32LE(at + 42);
+    const link = ((data.readUInt32LE(at + 38) >>> 16) & 0o170000) === 0o120000;
     const name = data.subarray(at + 46, at + 46 + nameLength).toString("utf8");
-    entries.set(name, { method, size, packed, local });
+    entries.set(name, { method, size, packed, local, link });
     at += 46 + nameLength + extra + comment;
   }
 
@@ -64,6 +70,7 @@ export function openZip(data: Buffer): Zip {
 
   return {
     names: [...entries.keys()],
+    list: () => [...entries].map(([name, e]) => ({ name, size: e.size, link: e.link })),
     has: (name) => entries.has(name),
     read,
     text: (name) => read(name)?.toString("utf8") ?? null,

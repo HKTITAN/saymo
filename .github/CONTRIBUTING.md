@@ -18,7 +18,7 @@ node scripts/studio/parts-check.mjs    # after touching studio/effects or the st
 
 ## Mac and Windows
 
-Every change has to work on both, and CI checks each pull request on both. What differs between them lives in two files: `src/lib/studio/server/platform.ts` (the studio) and `scripts/studio/platform.mjs` (the scripts), with the Windows twins of Mac tools in `scripts/native/`. Lint stops code that branches on `process.platform`, starts a process group, splits the PATH, or calls a Mac-only program outside them. A Mac-only call is allowed only with a comment naming its Windows twin.
+Every change has to work on both, and CI checks each pull request on both. The building blocks that differ (finding programs, stopping them, private folders, paths in Claude's rules and commands, the OS check itself) live in two files: `src/lib/studio/server/platform.ts` (the studio) and `scripts/studio/platform.mjs` (the scripts). A feature can still do different things on each (Keynote on the Mac, PowerPoint on Windows), using `IS_MAC` and `IS_WINDOWS` from them, with the Windows twins of Mac tools in `scripts/native/`. Lint catches the common slips: reading `process.platform`, starting a process group, reading the PATH, building Claude's rules or commands by hand, `import()` of a path, and calling a known Mac-only program. A Mac-only call is allowed only with a comment naming its Windows twin. Lint can't catch everything, so run the studio on the system you changed, and `platform-check` when you touch the platform files.
 
 ## Where things go
 

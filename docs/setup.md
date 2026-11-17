@@ -47,7 +47,7 @@ Setup installs ffmpeg and poppler with winget instead of Homebrew. Everything th
 | The Mac's voices (Rishi, Tara, Aman, Lekha) | Windows' voices: Ravi, Heera, Hemant, Kalpana. Add them in Settings, Time & language, Speech |
 | Vision: background remover, face finder, cutouts | MediaPipe in Chrome (its models download once) |
 | Keynote and the Mac's text recognition, for slides | PowerPoint (or LibreOffice) and Windows' own text recognition |
-| Finder's folder picker, iCloud and CloudStorage folders | Windows' folder picker, OneDrive, Google Drive's drive, Dropbox and iCloud Drive folders |
+| Finder's folder picker, iCloud and CloudStorage folders | Windows' folder picker, and the OneDrive, Dropbox and iCloud Drive folders and Google Drive's My Drive (on the drive letter Google Drive for desktop adds) |
 | `.studio/` private by file mode | `.studio/` private by its access list (only you and the system) |
 
 Keynote files need a PDF export on Windows. To keep the studio from opening PowerPoint, add `STUDIO_POWERPOINT=off` to `.env.local`; `STUDIO_WHISPER_GPU=off` uses the CPU build of whisper even on an NVIDIA card.

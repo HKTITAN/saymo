@@ -25,7 +25,7 @@ export async function heicToJpeg(input: string, output: string) {
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
 const decode = (s: string) =>
   s.replace(/&(#x[0-9a-f]+|#\d+|\w+);/gi, (m, e: string) =>
-    e[0] === "#" ? String.fromCodePoint(e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : (ENTITIES[e] ?? m),
+    e[0] === "#" ? String.fromCodePoint(e[1].toLowerCase() === "x" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : (Object.hasOwn(ENTITIES, e) ? ENTITIES[e] : m),
   );
 
 // A Word file's words, one paragraph a line, read from the document inside
@@ -38,8 +38,8 @@ export async function docxText(file: string): Promise<string> {
     .map((p) =>
       decode(
         p
-          .replace(/<w:tab\/>/g, "<w:t>\t</w:t>")
-          .replace(/<w:(br|cr)\/>/g, "<w:t>\n</w:t>")
+          .replace(/<w:tab\b[^>]*\/>/g, "<w:t>\t</w:t>")
+          .replace(/<w:(br|cr)\b[^>]*\/>/g, "<w:t>\n</w:t>")
           .replace(/<w:t(?:\s[^>]*)?>([^<]*)<\/w:t>/g, "\u0000$1\u0000")
           .split("\u0000")
           .filter((_, i) => i % 2 === 1)

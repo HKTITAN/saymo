@@ -17,7 +17,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { IS_MAC, packageBin } from "./platform.mjs";
+import { IS_MAC, IS_WINDOWS, packageBin } from "./platform.mjs";
 import { parseWordRef, resolveEdit } from "../../src/lib/studio/films/anchors.ts";
 import { readTranscriptsSync } from "../../src/lib/studio/films/edit-file.ts";
 
@@ -139,9 +139,11 @@ if (film.engine === "rust") {
   const cargo = existsSync(path.join(cargoHome, "bin/cargo")) ? path.join(cargoHome, "bin/cargo") : "cargo";
   const build = ["build", "--release", "--offline", "--quiet"];
   const env = { ...process.env, CARGO_TARGET_DIR: target };
-  // Windows has no sandbox-exec. The checks above still hold there (only
-  // the studio's build.rs, no proc-macros, no network), which is how a
-  // render builds the film on the Mac too.
+  // Windows has no sandbox-exec. There the checks above still hold (only
+  // the studio's build.rs, no proc-macros, crates already downloaded), as
+  // when a render builds the film on the Mac; nothing stops the network.
+  // Anywhere else, no build without a sandbox.
+  if (!IS_MAC && !IS_WINDOWS) fail("Rust films are built only on the Mac and Windows.");
   // eslint-disable-next-line no-restricted-syntax -- Mac's sandbox; Windows builds with the checks above
   process.exit(IS_MAC ? await run("sandbox-exec", ["-p", profile, cargo, ...build], { env }) : await run(cargo, build, { env }));
 }

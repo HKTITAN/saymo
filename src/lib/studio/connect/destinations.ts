@@ -49,7 +49,7 @@ async function windowsDestinations(): Promise<Destination[]> {
     const account = path.basename(dir).replace(/^OneDrive\s*-?\s*/, "") || null;
     found.push({ service: "onedrive", label: "OneDrive", account, path: dir });
   }
-  for (const letter of "DEFGHIJKLMNOPQRSTUVWXYZ") {
+  for (const letter of "CDEFGHIJKLMNOPQRSTUVWXYZ") {
     const myDrive = `${letter}:\\My Drive`;
     if (await isDir(myDrive)) found.push({ service: "google-drive", label: "Google Drive", account: null, path: myDrive });
   }
@@ -122,7 +122,9 @@ export async function chooseFolder() {
         })
       : // eslint-disable-next-line no-restricted-syntax -- Mac's Finder picker; Windows: choose-folder.ps1 above
         await run("osascript", ["-e", "activate", "-e", `POSIX path of (choose folder with prompt "${prompt}")`], { timeout: 10 * 60_000 });
-    picked = stdout.trim().replace(/[\\/]$/, "");
+    picked = stdout.trim();
+    // C:\ stays a drive root; any other folder loses its trailing slash.
+    if (!/^[A-Za-z]:[\\/]$/.test(picked)) picked = picked.replace(/[\\/]$/, "");
   } catch {
     return; // closed with Cancel
   }

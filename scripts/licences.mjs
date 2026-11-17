@@ -360,7 +360,7 @@ const EXTRAS = [
     copyright: ["Copyright 2023 The MediaPipe Authors"],
     author: "Google",
     url: "https://ai.google.dev/edge/mediapipe/solutions/vision/image_segmenter",
-    note: "Windows only: downloaded on first use of the background remover, face finder and cutouts.",
+    note: "Off the Mac (Windows): downloaded on first use of the background remover, face finder and cutouts.",
   },
   {
     name: "Silero VAD (voice detector)",

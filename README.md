@@ -4,7 +4,7 @@ Saymo is an open-source motion editor for the Mac and Windows. You make motion g
 
 ## How it runs
 
-Saymo runs on your own Mac or Windows PC, in your browser at http://localhost:3200, and only answers that computer. It uses the computer's own tools (Chrome to draw frames, its hardware video encoder, the Mac's Vision or MediaPipe for cutouts, the computer's own voices) and your own Claude account. Your films are stored on your computer rather than in a cloud service; Claude reads what it needs from them to make each change.
+Saymo runs on your own Mac or Windows PC, in your browser at http://localhost:3200, and only answers that computer. It uses the computer's own tools (Chrome to draw frames, its hardware video encoder, Vision on a Mac or MediaPipe on Windows for cutouts, the computer's own voices) and your own Claude account. Your films are stored on your computer rather than in a cloud service; Claude reads what it needs from them to make each change.
 
 ## Coming later
 
@@ -40,7 +40,7 @@ Every film gets its own sound design, and Claude composes it as code instead of 
 ## What you need
 
 - A Mac running macOS 14 or newer (Apple silicon renders fastest), with [Homebrew](https://brew.sh) and Apple's command line tools (`xcode-select --install`)
-- Or a PC running Windows 10 or 11 (an NVIDIA card renders and transcribes fastest), with winget (built into Windows 11)
+- Or a PC running Windows 10 or 11 (an NVIDIA card renders and transcribes fastest), with winget (built into Windows 11; on Windows 10, install App Installer from the Microsoft Store)
 - [Node.js](https://nodejs.org) 22 or newer
 - [Google Chrome](https://www.google.com/chrome/), which draws the frames of every render
 - [Claude Code](https://claude.com/claude-code), signed in with your Claude plan or an API key
@@ -64,14 +64,14 @@ claude
 
 ### Or let your coding agent set it up
 
-Paste this into Claude Code, Codex, Cursor or any coding agent that can run commands on your Mac:
+Paste this into Claude Code, Codex, Cursor or any coding agent that can run commands on your computer:
 
 ```text
-Set up Saymo, an open-source motion editor, on this Mac and start it.
+Set up Saymo, an open-source motion editor, on this computer and start it.
 
 1. Clone https://github.com/sethihq/saymo into ~/saymo (or pull it if it's already there) and work in that folder.
 2. Read README.md and docs/setup.md first.
-3. Check what this Mac has: macOS 14 or newer, Homebrew, Node.js 22 or newer, Google Chrome, Apple's command line tools (xcode-select -p) and Claude Code (claude --version). Tell me what's missing and how to install it. Ask me before installing anything that needs my password or an app download, such as Homebrew, Node, Chrome or the command line tools.
+3. Check what this computer has. On a Mac: macOS 14 or newer, Homebrew, Apple's command line tools (xcode-select -p). On Windows: Windows 10 or 11 and winget (winget --version). On both: Node.js 22 or newer, Google Chrome and Claude Code (claude --version). Tell me what's missing and how to install it. Ask me before installing anything that needs my password or an app download, such as Homebrew, winget, Node, Chrome or the command line tools.
 4. Run npm run setup. If it stops, read what it says, fix that one thing, and run it again.
 5. If Claude Code isn't signed in, tell me to run claude in a terminal and sign in, then wait for me.
 6. Run npm run dev in the background, wait until http://localhost:3200/studio answers, and open http://localhost:3200 in my browser.
@@ -145,7 +145,7 @@ Then restart `npm run dev`.
 
 ## Where your work lives
 
-Everything you make stays in the Saymo folder on your Mac: films in `films/`, brand kits in `brands/`, saved references in `library/` and sign-ins in `.studio/`. Git ignores all of them, and keys in `.env.local`, so `git pull` never touches your work. Back up those folders to keep your films.
+Everything you make stays in the Saymo folder on your computer: films in `films/`, brand kits in `brands/`, saved references in `library/` and sign-ins in `.studio/`. Git ignores all of them, and keys in `.env.local`, so `git pull` never touches your work. Back up those folders to keep your films.
 
 ## Also in the box
 

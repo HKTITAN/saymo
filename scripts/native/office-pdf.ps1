@@ -17,12 +17,20 @@ param(
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-$wasOpen = [bool](Get-Process -Name POWERPNT -ErrorAction SilentlyContinue)
-$app = New-Object -ComObject PowerPoint.Application
+# The paths first, so a bad one fails before PowerPoint starts.
 $deckFile = (Resolve-Path -LiteralPath $Deck).Path
 $pdfFile = [System.IO.Path]::GetFullPath($Pdf)
+$wasOpen = [bool](Get-Process -Name POWERPNT -ErrorAction SilentlyContinue)
+$app = New-Object -ComObject PowerPoint.Application
 $doc = $null
 try {
+  # A deck they have open is theirs: closing it here would close their window.
+  foreach ($open in $app.Presentations) {
+    if ($open.FullName -eq $deckFile) {
+      [Console]::Error.WriteLine("This deck is open in PowerPoint. Close it there, then try again.")
+      exit 3
+    }
+  }
   # ReadOnly, not Untitled, no window (msoTrue is -1, msoFalse 0).
   $doc = $app.Presentations.Open($deckFile, -1, 0, 0)
   $hidden = @()

@@ -5,8 +5,9 @@ import { privateDir } from "../server/platform";
 
 // Where connections keep what they need between restarts: tokens and which
 // account, folder and repository are in use. Only the server reads it;
-// .studio/ is ignored by git, its folders are private to this Mac's user
-// (700) and its files too (600). Nothing from here is ever sent to the
+// .studio/ is ignored by git and private to this computer's user: mode 700
+// and 600 on the Mac, an access list of only that user (and the system) on
+// Windows (privateDir). Nothing from here is ever sent to the
 // page, logged, or passed to a Claude turn.
 
 export const STUDIO_DIR = path.join(ROOT, ".studio");

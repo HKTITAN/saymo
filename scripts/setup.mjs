@@ -46,7 +46,7 @@ const winget = (id, what) => {
   if (!has("winget")) stop(`Install ${what} first (winget isn't here: get "App Installer" from the Microsoft Store), then run this again.`);
   note(`installing ${what} with winget...`);
   const r = spawnSync("winget", ["install", "--id", id, "-e", "--silent", "--accept-package-agreements", "--accept-source-agreements"], { stdio: "inherit" });
-  if (r.status !== 0 && !has(what)) stop(`winget couldn't install ${what}. Install it yourself, then run this again.`);
+  if (!has(what)) stop(`winget couldn't install ${what}${r.status === 0 ? ", or it isn't on the PATH yet: open a new terminal" : ""}. Install it yourself if needed, then run this again.`);
 };
 
 step("1. Checking this PC");
@@ -101,7 +101,7 @@ if (WITH_RUST) {
   step("5. The Rust engine");
   if (!has("cargo")) stop("Install Rust first (https://rustup.rs), then run: npm run setup -- --with-rust");
   for (const [tool, id] of [["nasm", "NASM.NASM"], ["ninja", "Ninja-build.Ninja"]]) if (!has(tool)) winget(id, tool);
-  ok(`Rust ${quiet("rustc", ["--version"]).stdout.split(" ")[1]}; the first Rust film takes a few minutes to build`);
+  ok(`Rust ${(quiet("rustc", ["--version"]).stdout ?? "").split(" ")[1] ?? ""}; the first Rust film takes a few minutes to build`);
 }
 
 step("Ready");

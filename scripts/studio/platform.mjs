@@ -43,11 +43,20 @@ export const windowsAccount = () =>
 // (src/lib/studio/server/platform.ts says more).
 export function ownerOnly(dir) {
   if (!IS_WINDOWS) return;
-  spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { stdio: "ignore", windowsHide: true });
+  const r = spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { encoding: "utf8", windowsHide: true });
+  if (r.status !== 0) throw new Error(`Couldn't make ${dir} private to this user: ${(r.stderr || r.stdout || "").trim()}`);
 }
 
+// `detached` gives a child its own process group on the Mac; on Windows it
+// would open a console window of its own instead.
+export const OWN_GROUP = { detached: !IS_WINDOWS, windowsHide: true };
+
 // Who can open a file on Windows, as icacls lists them (for messages).
-export const accessList = (file) => (IS_WINDOWS ? spawnSync("icacls", [file], { encoding: "utf8", windowsHide: true }).stdout?.trim() ?? "" : "");
+export const accessList = (file) => {
+  if (!IS_WINDOWS) return "";
+  const r = spawnSync("icacls", [file], { encoding: "utf8", windowsHide: true });
+  return `${r.stdout ?? ""}${r.stderr ?? ""}`.trim() || `icacls exited ${r.status} (${r.error?.message ?? "no output"}); account ${windowsAccount()}`;
+};
 
 // Whether anyone but this user (and the system) can open the file. On
 // Windows that's its access list; elsewhere its mode.

@@ -1,5 +1,6 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { copyFile, link as hardLink, lstat, mkdir, readdir, readFile, readlink, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { link as hardLink, lstat, mkdir, readdir, readFile, readlink, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { aiChoice, childEnv, codexBin, killGroup, aiCommand } from "./ai-env";
@@ -139,8 +140,15 @@ async function prepareHome(id: string, instructions: string) {
   if (!linked) {
     await rm(link, { force: true });
     // Windows lets only administrators and Developer Mode make symbolic
-    // links; a hard link (same drive) or else a copy does the same job.
-    await symlink(source, link).catch(() => hardLink(source, link).catch(() => copyFile(source, link)));
+    // links; a hard link does the same job there (on the same drive). The
+    // sign-in is never copied. With no sign-in yet, Codex says so itself.
+    if (existsSync(source)) {
+      await symlink(source, link).catch(() =>
+        hardLink(source, link).catch(() => {
+          throw new Error("Codex's sign-in is on another drive from Saymo. Turn on Developer Mode in Windows' settings, or keep both on one drive.");
+        }),
+      );
+    }
   }
   await writeFile(path.join(home, "config.toml"), codexConfig(id, instructions), { mode: 0o600 });
   return home;

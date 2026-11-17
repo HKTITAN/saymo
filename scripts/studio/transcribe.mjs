@@ -1,7 +1,8 @@
 // Listens to a file's speech and writes its words with their times, for
-// captions and for Claude to cut by what's said. Runs on this Mac, offline
-// once set up: whisper.cpp (built here the first time, Metal on Apple
-// silicon) with the large-v3-turbo model, which handles Indian English
+// captions and for Claude to cut by what's said. Runs on this computer,
+// offline once set up: whisper.cpp (built here the first time with Metal on
+// a Mac; on Windows its own prebuilt programs, CUDA on NVIDIA cards, see
+// whisper-windows.mjs) with the large-v3-turbo model, which handles Indian English
 // well and runs several times faster than large-v3 at nearly its accuracy.
 //
 // usage: node scripts/studio/transcribe.mjs <source file> <out.json>
@@ -87,7 +88,16 @@ async function setup() {
     say("Setting up listening on this computer (first time only, a few minutes)");
     await rm(WHISPER, { recursive: true, force: true });
     try {
-      if (IS_WINDOWS) await installWhisperWindows(WHISPER);
+      let shownSetup = -1;
+      if (IS_WINDOWS) {
+        await installWhisperWindows(WHISPER, (done, total) => {
+          const pct = total ? Math.floor((100 * done) / total) : 0;
+          if (pct >= shownSetup + 5) {
+            shownSetup = pct;
+            say(`Setting up listening (first time only, ${pct}%)`);
+          }
+        });
+      }
       else await installWhisperCpp({ version: VERSION, to: WHISPER, printOutput: false });
     } catch (error) {
       console.error(error);

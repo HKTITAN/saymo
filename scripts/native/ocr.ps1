@@ -46,12 +46,18 @@ try {
   $stream.Dispose()
 }
 
-# Top to bottom (lines within a hundredth of the height count as one row),
-# then left to right.
+# Top to bottom, then left to right: a line whose top is within a hundredth
+# of the height of the row's first line belongs to that row.
 $height = [Math]::Max(1, $transform.ScaledHeight)
 $lines = foreach ($line in $result.Lines) {
   $top = ($line.Words | ForEach-Object { $_.BoundingRect.Y } | Measure-Object -Minimum).Minimum
   $left = ($line.Words | ForEach-Object { $_.BoundingRect.X } | Measure-Object -Minimum).Minimum
-  [pscustomobject]@{ Row = [Math]::Round($top / $height * 100); Left = $left; Text = $line.Text }
+  [pscustomobject]@{ Top = $top; Row = 0; Left = $left; Text = $line.Text }
+}
+$row = -1
+$rowTop = -1e9
+foreach ($line in ($lines | Sort-Object Top)) {
+  if ($line.Top - $rowTop -gt $height / 100) { $row++; $rowTop = $line.Top }
+  $line.Row = $row
 }
 ($lines | Sort-Object Row, Left | ForEach-Object { $_.Text }) -join "`n"

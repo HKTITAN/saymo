@@ -21,7 +21,9 @@ export type Voice = { id: string; label: string; accent: string; language: strin
 export const VOICES: Voice[] = [
   { id: "Rishi", label: "Rishi", accent: "Indian English, male", language: "en_IN", windows: "Microsoft Ravi" },
   { id: "Tara", label: "Tara", accent: "Indian English, female", language: "en_IN", windows: "Microsoft Heera" },
-  { id: "Aman", label: "Aman", accent: "Indian English, male", language: "en_IN", windows: "Microsoft Hemant" },
+  // Windows has one Indian English man's voice (Ravi, Rishi's twin); its
+  // other Indian man's voice, Hemant, reads Hindi, so Aman has no twin there.
+  { id: "Aman", label: "Aman", accent: "Indian English, male", language: "en_IN", windows: "" },
   { id: "Lekha", label: "Lekha", accent: "Hindi, female", language: "hi_IN", windows: "Microsoft Kalpana" },
 ];
 export const DEFAULT_VOICE = "Rishi";
@@ -45,7 +47,7 @@ const SPEAK = ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-
 
 // Where to add a voice that's missing.
 export const ADD_VOICE = IS_WINDOWS
-  ? "Add it in Settings, Time & language, Speech, Add voices (English (India) for Ravi and Heera, Hindi for Hemant and Kalpana)."
+  ? "Add it in Settings, Time & language, Speech, Add voices (English (India) for Rishi and Tara, Hindi for Lekha). Aman has no Windows voice yet; pick Rishi instead."
   : "Add it in System Settings, Accessibility, Spoken Content.";
 
 // Which of VOICES this computer has installed (a fresh one may lack some),
@@ -63,7 +65,7 @@ export function installedVoices(): Promise<Set<string>> {
     proc.on("close", () => {
       if (!IS_WINDOWS) return resolve(new Set(out.split("\n").map((l) => l.split(/\s{2,}/)[0]?.trim()).filter(Boolean)));
       const there = new Set(out.split(/\r?\n/).map((l) => l.split("|")[0].trim()));
-      resolve(new Set(VOICES.filter((v) => there.has(v.windows)).map((v) => v.id)));
+      resolve(new Set(VOICES.filter((v) => v.windows && there.has(v.windows)).map((v) => v.id)));
     });
   });
   return installed;

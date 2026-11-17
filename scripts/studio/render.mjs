@@ -206,15 +206,15 @@ const hfFraction = (p) => {
 const ENGINES = {
   async hyperframes(job, work, m, onProgress) {
     const home = path.join(ROOT, "studio/hyperframes");
-    const hyperframes = packageBin(home, "hyperframes");
-    if (!hyperframes) throw new Error("HyperFrames isn't installed: run npm run setup.");
-    const [cli, cliArgs] = hyperframes;
     const preset = HF_PRESETS[`${job.width * job.scale}x${job.height * job.scale}`];
     // A size HyperFrames has no preset for (4:5, say) at twice its size: the
     // same capture HyperFrames makes, done here at device scale 2.
     if (job.scale !== 1 && !preset) {
       return { pngs: await captureHtml(job, path.join(work, "frames"), onProgress) };
     }
+    const hyperframes = packageBin(home, "hyperframes");
+    if (!hyperframes) throw new Error("HyperFrames isn't installed: run npm run setup.");
+    const [cli, cliArgs] = hyperframes;
     const hf = (extra) =>
       run(
         cli,
@@ -703,7 +703,7 @@ async function picturesKey(src, film, job, m, mediaDir) {
     // still count as the same.
     finalVideoToolbox: m.finalEncoder === "h264_videotoolbox",
     draftVideoToolbox: m.draftEncoder === "h264_videotoolbox",
-    encoder: m.finalEncoder === "h264_videotoolbox" || m.draftEncoder === "h264_videotoolbox" ? undefined : [m.finalEncoder, m.draftEncoder].join("/"),
+    encoder: m.finalEncoder === "h264_videotoolbox" || m.draftEncoder === "h264_videotoolbox" || !(m.finalEncoder || m.draftEncoder) ? undefined : [m.finalEncoder, m.draftEncoder].join("/"),
   }));
   await hashTree(hash, src, src, (rel) => rel !== "film.json");
   if (mediaDir) await hashTree(hash, mediaDir, mediaDir, () => true, true);

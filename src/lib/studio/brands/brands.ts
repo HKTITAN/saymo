@@ -7,6 +7,8 @@ import { promisify } from "node:util";
 import type { BrandKit, BrandSummary, ColorRoles, Ramp } from "./brand";
 import { brandDir, brandsDir, DEFAULT_BRAND, isBrandId, readKit, seedShipped, stageFileUrl } from "./brand-tokens";
 import { ROOT } from "../films/films";
+import { openZip, type ZipEntry } from "../input/zip";
+import { IS_WINDOWS } from "../server/platform";
 
 // Brand kits live in brands/<id>/ (brand.ts). The kits the studio ships are
 // seeded from studio/brands/ on first use, then edited like any other.
@@ -307,7 +309,9 @@ export async function exportBrand(id: string): Promise<string> {
   const folder = path.join(temp, id);
   await cp(kitDir(id), folder, { recursive: true, filter: (p) => !COPY_SKIP.has(path.basename(p)) });
   const zip = path.join(temp, `${id}.zip`);
-  await run("/usr/bin/ditto", ["-c", "-k", "--norsrc", "--keepParent", folder, zip]);
+  if (IS_WINDOWS) await run("tar.exe", ["-a", "-c", "-f", zip, "-C", temp, id]); // Windows' own tar writes zips
+  // eslint-disable-next-line no-restricted-syntax -- Mac's zip tool; Windows: tar.exe above
+  else await run("/usr/bin/ditto", ["-c", "-k", "--norsrc", "--keepParent", folder, zip]);
   return zip;
 }
 
@@ -333,25 +337,29 @@ export async function importBrand(body: ReadableStream<Uint8Array>): Promise<Bra
     }
     await writeFile(zip, Buffer.concat(chunks));
 
-    // List first: names and sizes, without unpacking.
-    const listing = await run("/usr/bin/zipinfo", ["-l", zip], { maxBuffer: 16 * 1024 * 1024 }).catch(() => null);
-    if (!listing) throw new Error("That isn't a kit file. Export a kit from the studio and import that .zip.");
+    // List first: names and sizes, without unpacking (the same reader on
+    // the Mac and Windows).
+    let listing: ZipEntry[];
+    try {
+      listing = openZip(await readFile(zip)).list();
+    } catch {
+      throw new Error("That isn't a kit file. Export a kit from the studio and import that .zip.");
+    }
     let total = 0;
     let entries = 0;
-    for (const line of listing.stdout.split("\n")) {
-      const m = /^([-dl])\S+\s+\S+\s+\S+\s+(\d+)\s+\S+\s+\S+\s+(\d+)\s+\S+\s+\S+\s+(.+)$/.exec(line);
-      if (!m) continue;
-      const [, type, unpacked, , name] = m;
+    for (const { name, size, link } of listing) {
       entries++;
-      total += Number(unpacked);
-      if (type === "l") throw new Error("The kit file contains a link, which the studio doesn't accept.");
-      if (name.startsWith("/") || name.split("/").includes("..")) throw new Error("The kit file has a file outside its own folder.");
+      total += size;
+      if (link) throw new Error("The kit file contains a link, which the studio doesn't accept.");
+      if (/^([/\\]|[A-Za-z]:)/.test(name) || name.split(/[/\\]/).includes("..")) throw new Error("The kit file has a file outside its own folder.");
     }
     if (entries > MAX_ENTRIES || total > MAX_UNPACKED) throw new Error("The kit file is too big to import.");
 
     const out = path.join(temp, "out");
     await mkdir(out);
-    await run("/usr/bin/ditto", ["-x", "-k", "--norsrc", zip, out]);
+    if (IS_WINDOWS) await run("tar.exe", ["-x", "-f", zip, "-C", out]);
+    // eslint-disable-next-line no-restricted-syntax -- Mac's zip tool; Windows: tar.exe above
+    else await run("/usr/bin/ditto", ["-x", "-k", "--norsrc", zip, out]);
     // brand.json at the top, or one folder down.
     let base = out;
     if (!(await stat(path.join(base, "brand.json")).catch(() => null))) {

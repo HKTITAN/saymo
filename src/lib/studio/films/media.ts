@@ -445,12 +445,13 @@ function nextTranscription() {
 // ─── Cutting the person out ───────────────────────────────────────────────────
 
 // For layouts where someone stands in front of the graphics (the reel's
-// pop-out): macOS's own person finder (scripts/native/vision.swift, the face
-// finder's binary, compiled once) draws a mask of them in every frame of
-// the preview copy, following them from frame to frame so the edge holds;
+// pop-out): the computer's own person finder (on a Mac, Vision through
+// scripts/native/vision.swift; on Windows, MediaPipe in Chrome through
+// scripts/native/vision.mjs) draws a mask of them in every frame of the
+// preview copy, following them from frame to frame so the edge holds;
 // ffmpeg folds the masks in as transparency and writes cutout.webm, VP9
 // with the sound kept, which the browser plays see-through. Nothing leaves
-// the Mac. One at a time across the studio: it uses the whole machine.
+// the computer. One at a time across the studio: it uses the whole machine.
 const cutting = (g.__cutting ??= { queue: [], running: null });
 
 export async function startCutout(id: string, mid: string): Promise<Media | null | "not ready" | "not video"> {

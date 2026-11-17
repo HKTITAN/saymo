@@ -9,6 +9,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+/* global gridField -- defined by the effect file load() runs below */
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PARTS = path.join(ROOT, "studio/starters/html/assets/parts");

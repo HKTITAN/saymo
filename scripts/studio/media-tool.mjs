@@ -30,6 +30,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { readToken, STUDIO_URL } from "./client.mjs";
+import { IS_MAC } from "./platform.mjs";
 import { resolveEdit } from "../../src/lib/studio/films/anchors.ts";
 import { cutPauses, cutWords, fillers, filmEnd } from "../../src/lib/studio/films/cuts.ts";
 import { readTranscriptsSync } from "../../src/lib/studio/films/edit-file.ts";
@@ -285,21 +286,27 @@ async function faceIn(bin, image) {
   }
 }
 
-// Many pictures: one at a time for the Mac's quick binary; in one go for
-// vision.mjs, which starts Chrome each time it runs.
+// Many pictures: one at a time for the Mac's quick binary; in batches for
+// vision.mjs, which starts Chrome each time it runs (100 at a time keeps the
+// command under Windows' 32,767-character limit).
 async function facesIn(bin, images) {
   if (!bin[1].length) {
     const found = [];
     for (const image of images) found.push(await faceIn(bin, image));
     return found;
   }
-  try {
-    const { stdout } = await exec(bin[0], [...bin[1], "face", ...images], { timeout: 60_000 + images.length * 2_000, maxBuffer: 1 << 20 });
-    const lines = stdout.trim().split(/\r?\n/);
-    return images.map((_, i) => JSON.parse(lines[i] ?? "null"));
-  } catch {
-    return images.map(() => null);
+  const found = [];
+  for (let at = 0; at < images.length; at += 100) {
+    const batch = images.slice(at, at + 100);
+    try {
+      const { stdout } = await exec(bin[0], [...bin[1], "face", ...batch], { timeout: 60_000 + batch.length * 2_000, maxBuffer: 1 << 20 });
+      const lines = stdout.trim().split(/\r?\n/);
+      found.push(...batch.map((_, i) => JSON.parse(lines[i] ?? "null")));
+    } catch (error) {
+      fail(`The face finder didn't run: ${String(error.stderr || error.message).trim().split("\n").pop()}`);
+    }
   }
+  return found;
 }
 
 // ffmpeg prints filter reports on stderr.

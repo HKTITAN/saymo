@@ -36,8 +36,13 @@ export function launcher(bin: string): [string, string[]] {
   if (!IS_WINDOWS || !/\.cmd$/i.test(bin)) return [bin, []];
   try {
     const shim = readFileSync(bin, "utf8");
-    const script = /"%dp0%\\([^"]+\.[cm]?js)"/i.exec(shim)?.[1];
-    if (script) return [process.execPath, [path.join(path.dirname(bin), script)]];
+    const target = /"%dp0%\\([^"]+)"/i.exec(shim.replace(/"%dp0%\\node\.exe"/gi, ""))?.[1];
+    if (target) {
+      const file = path.join(path.dirname(bin), target);
+      // npm's shims run a script with Node, or a program directly.
+      if (/\.exe$/i.test(target)) return [file, []];
+      return [process.execPath, [file]];
+    }
   } catch {}
   return [bin, []];
 }
@@ -71,7 +76,11 @@ export function rulePath(abs: string) {
 
 // A path in a command Claude runs. Its shell on Windows is Git Bash, which
 // reads a backslash as an escape; forward slashes work there and in Node.
-export const shellPath = (abs: string) => (IS_WINDOWS ? abs.replaceAll("\\", "/") : abs);
+// Quoted when it has a space (C:/Users/Jane Doe), on both.
+export const shellPath = (abs: string) => {
+  const p = IS_WINDOWS ? abs.replaceAll("\\", "/") : abs;
+  return /[\s'"$`]/.test(p) ? `"${p.replace(/(["$`\\])/g, "\\$1")}"` : p;
+};
 
 // The few variables a program needs to run, and `keep` besides, for
 // starting one with a clean environment. Windows programs also need these
@@ -120,8 +129,11 @@ export function privateDir(dir: string) {
     return;
   }
   if (locked.has(dir)) return;
-  const r = spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { stdio: "ignore", windowsHide: true });
-  if (r.status === 0) locked.add(dir);
+  // What's already inside follows the folder's new list (it inherits it).
+  const r = spawnSync("icacls", [dir, "/inheritance:r", "/grant:r", `${windowsAccount()}:(OI)(CI)F`, "*S-1-5-18:(OI)(CI)F"], { encoding: "utf8", windowsHide: true });
+  // Never carry on with tokens in a folder others can open.
+  if (r.status !== 0) throw new Error(`Couldn't make ${dir} private to this user: ${(r.stderr || r.stdout || "").trim()}`);
+  locked.add(dir);
 }
 
 // `detached` gives a child its own process group on the Mac; on Windows it
