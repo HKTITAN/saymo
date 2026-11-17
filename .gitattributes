@@ -6,6 +6,10 @@
 # Browser libraries copied into the starters
 **/vendor/** linguist-vendored
 
+# Shell scripts keep Unix line endings, so bash runs them from a Windows
+# checkout too.
+*.sh text eol=lf
+
 # Generated files
 docs/THIRD-PARTY-NOTICES.md linguist-generated
 public/licences.json linguist-generated

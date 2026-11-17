@@ -1,9 +1,10 @@
-import { chmod, mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { aiChoice, CLAUDE_BIN, childEnv, codexBin, runQuick } from "./ai-env";
 import { type AiStatus, choiceWords, DEFAULT_PROVIDER, type ProviderId, type ProviderStatus } from "./ai-types";
 import { ConnectError, readSecret, removeSecret, STUDIO_DIR, writeSecret } from "../connect/connect-store";
 import { IS_PRODUCT } from "../server/edition";
+import { privateDir } from "../server/platform";
 
 // The AIs a film's turn can run on, and whether each is ready on this Mac.
 // After Pond's provider subscriptions (github.com/raphaelsalaja/pond, MIT):
@@ -89,8 +90,8 @@ export async function claudeEnvFor(provider: ProviderId = DEFAULT_PROVIDER): Pro
   const key = await readApiKey();
   if (!key) throw new ConnectError((await keyProblem(provider)) ?? NO_KEY);
   if (!IS_PRODUCT) return { ...env, ANTHROPIC_API_KEY: key };
-  await mkdir(PRODUCT_CLAUDE_HOME, { recursive: true, mode: 0o700 });
-  await chmod(PRODUCT_CLAUDE_HOME, 0o700).catch(() => {});
+  privateDir(STUDIO_DIR);
+  privateDir(PRODUCT_CLAUDE_HOME);
   return { ...env, ANTHROPIC_API_KEY: key, CLAUDE_CONFIG_DIR: PRODUCT_CLAUDE_HOME };
 }
 

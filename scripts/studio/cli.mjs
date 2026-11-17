@@ -5,7 +5,7 @@
 // stdout; progress and problems go to stderr. --json prints the result as
 // JSON instead. See docs/mcp.md.
 
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -28,6 +28,7 @@ import {
   TOKEN_FILE,
   tokenFileMode,
 } from "./client.mjs";
+import { IS_MAC, IS_WINDOWS, openLink, othersCanRead } from "./platform.mjs";
 
 const HELP = `Saymo from the terminal
 
@@ -179,7 +180,7 @@ async function open(words) {
   const link = filmLink(id);
   if (asJson) out(JSON.stringify({ link }, null, 2));
   else out(link);
-  if (process.platform === "darwin") spawn("open", [link], { stdio: "ignore", detached: true }).unref();
+  if (IS_MAC || IS_WINDOWS) openLink(link);
 }
 
 async function library(words, opts) {
@@ -222,13 +223,15 @@ async function doctor() {
     if (process.env.SAYMO_TOKEN ?? process.env.MOTION_STUDIO_TOKEN) add("Token", true, "from SAYMO_TOKEN");
     else {
       const mode = await tokenFileMode();
-      const tight = mode !== null && (mode & 0o077) === 0;
+      const tight = mode !== null && !othersCanRead(TOKEN_FILE, mode);
       add(
         "Token",
         tight,
         tight
           ? `${hadFile ? "saved" : "made just now"} in .studio/api-token, readable only by you`
-          : `.studio/api-token can be read by others on this Mac (mode ${mode?.toString(8)}). Fix it with: chmod 600 "${TOKEN_FILE}"`,
+          : IS_WINDOWS
+            ? ".studio/api-token can be read by others on this PC. Restart the studio (npm run dev) and it makes .studio private again."
+            : `.studio/api-token can be read by others on this Mac (mode ${mode?.toString(8)}). Fix it with: chmod 600 "${TOKEN_FILE}"`,
       );
     }
   }

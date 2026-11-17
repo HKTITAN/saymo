@@ -1,10 +1,11 @@
 import { spawn } from "node:child_process";
+import { OWN_GROUP, rulePath } from "../server/platform";
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { attachmentNote } from "../input/attachments";
 import type { BrandKit } from "./brand";
 import { checkKit, kitDir, readBrand, restoreBrand, snapshotBrand, withBrand, writeBrand } from "./brands";
-import { aiChoice } from "../agent/ai-env";
+import { aiChoice, aiCommand } from "../agent/ai-env";
 import { CLAUDE_BIN, explain, killGroup, StreamReader } from "../agent/claude";
 import { claudeEnvFor, keyProblem } from "../agent/providers";
 import type { Attachment, ChatEvent, ChatMessage, Film } from "../films/contract";
@@ -140,7 +141,7 @@ async function brandTurn(
 
   const session = (await readFile(sessionFile(id), "utf8").catch(() => "")).trim() || undefined;
   const args = brandArgs(id, session, sites);
-  const proc = spawn(CLAUDE_BIN, args, { cwd: dir, env: await claudeEnvFor(), stdio: ["pipe", "pipe", "pipe"], detached: true });
+  const proc = spawn(...aiCommand(CLAUDE_BIN, args), { cwd: dir, env: await claudeEnvFor(), stdio: ["pipe", "pipe", "pipe"], ...OWN_GROUP });
   turn.pid = proc.pid ?? null;
   if (turn.stopped && proc.pid) killGroup(proc.pid);
   proc.stdin.end(
@@ -237,10 +238,10 @@ async function inventory(dir: string) {
 
 function brandArgs(id: string, session: string | undefined, sites: string[]) {
   const dir = kitDir(id);
-  const root = `/${ROOT}`;
+  const root = rulePath(ROOT);
   const allow = [
-    `Edit(/${dir}/**)`,
-    `Read(/${dir}/**)`,
+    `Edit(${rulePath(dir)}/**)`,
+    `Read(${rulePath(dir)}/**)`,
     `Read(${root}/studio/brands/**)`,
     `Read(${root}/src/lib/studio/brands/brand.ts)`,
     `Read(${root}/.claude/skills/**)`,
@@ -248,7 +249,7 @@ function brandArgs(id: string, session: string | undefined, sites: string[]) {
     "TodoWrite",
     ...sites.map((host) => `WebFetch(domain:${host})`),
   ];
-  const deny = [`Edit(/${dir}/.history/**)`, `Read(${root}/**/.env*)`];
+  const deny = [`Edit(${rulePath(dir)}/.history/**)`, `Read(${root}/**/.env*)`];
   const args = [
     "-p",
     "--output-format", "stream-json",

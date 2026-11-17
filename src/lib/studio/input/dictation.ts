@@ -18,6 +18,7 @@ import {
   type PieceResult,
 } from "./dictation-shared";
 import { ROOT } from "../films/films";
+import { commandOf, IS_MAC, IS_WINDOWS } from "../server/platform";
 import { hasDevanagari, toRoman } from "./roman";
 
 // Talking into a prompt box: each piece of a recording is written down on
@@ -53,6 +54,8 @@ import { hasDevanagari, toRoman } from "./roman";
 const HOME = path.join(ROOT, "node_modules/.cache/studio-whisper");
 const VERSION = "1.9.5";
 const BIN = path.join(HOME, `whisper.cpp-${VERSION}`, "build/bin");
+// One of whisper.cpp's programs (setup puts .exe ones there on Windows).
+const program = (name: string) => path.join(BIN, IS_WINDOWS ? `${name}.exe` : name);
 const MODELS = path.join(HOME, "models");
 const KEEP = path.join(ROOT, ".studio/dictation");
 const TMP = path.join(HOME, "tmp");
@@ -149,7 +152,7 @@ const state = (g.__dictation ??= {
 
 // ─── Status ──────────────────────────────────────────────────────────────────
 
-const installed = () => existsSync(path.join(BIN, "whisper-cli")) && existsSync(STANDARD);
+const installed = () => existsSync(program("whisper-cli")) && existsSync(STANDARD);
 
 export async function status(): Promise<DictationStatus> {
   return {
@@ -210,14 +213,17 @@ const quiet = (cmd: string, args: string[]) =>
 // whisper-cli the same way). Point a program at its own folder, once, and
 // re-sign it so macOS still runs it.
 async function ownLibraries(name: string) {
-  if (process.platform !== "darwin") return;
+  if (!IS_MAC) return;
   const bin = path.join(BIN, name);
   if (!existsSync(bin)) return;
+  // eslint-disable-next-line no-restricted-syntax -- Mac only; Windows' build needs no fixing
   const loads = await quiet("otool", ["-l", bin]).catch(() => "");
   if (loads.includes("@executable_path")) return;
   try {
+    /* eslint-disable no-restricted-syntax -- Mac only; Windows' build needs no fixing */
     await quiet("install_name_tool", ["-add_rpath", "@executable_path", bin]);
     await quiet("codesign", ["--force", "-s", "-", bin]);
+    /* eslint-enable no-restricted-syntax */
   } catch (error) {
     console.error(`[studio dictation] couldn't fix ${name}'s library path`, error);
   }
@@ -326,8 +332,8 @@ function freePort() {
 async function stopStray() {
   const pid = Number((await readFile(PID_FILE, "utf8").catch(() => "")).trim());
   if (!Number.isInteger(pid) || pid <= 1 || pid === state.server?.child.pid) return;
-  const command = await quiet("ps", ["-p", String(pid), "-o", "command="]).catch(() => "");
-  if (command.includes(path.join(BIN, "whisper-server"))) {
+  const command = await commandOf(pid);
+  if (command.includes(program("whisper-server"))) {
     try {
       process.kill(pid);
     } catch {}
@@ -359,7 +365,7 @@ async function server(model: string): Promise<Server> {
   const secret = randomBytes(12).toString("hex");
   const args = ["--host", "127.0.0.1", "--port", String(port), "--request-path", `/${secret}`, "-m", model, "-t", String(threads()), "-nt"];
   if (existsSync(VAD.file)) args.push("--vad", "-vm", VAD.file);
-  const child = spawn(path.join(BIN, "whisper-server"), args, { cwd: HOME, stdio: ["ignore", "ignore", "pipe"] });
+  const child = spawn(program("whisper-server"), args, { cwd: HOME, stdio: ["ignore", "ignore", "pipe"], windowsHide: true });
   let err = "";
   child.stderr?.on("data", (c) => (err = (err + c).slice(-3000)));
   const s: Server = { child, port, secret, model, ready: Promise.resolve() };
@@ -544,7 +550,7 @@ function viaCli(wav: string, p: Plan, detect = false) {
     if (detect) args.push("-dl");
     if (existsSync(VAD.file)) args.push("--vad", "-vm", VAD.file);
     args.push("-f", wav);
-    const child = spawn(path.join(BIN, "whisper-cli"), args, { cwd: HOME, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(program("whisper-cli"), args, { cwd: HOME, stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
     let out = "";
     let err = "";
     child.stdout.on("data", (c) => (out += c));
@@ -615,7 +621,7 @@ function oneAtATime<T>(job: () => Promise<T>): Promise<T> {
 async function speechIn(wav: string): Promise<{ start: number; end: number }[] | null> {
   if (!existsSync(VAD.file)) return null;
   await ownLibraries("whisper-vad-speech-segments");
-  const out = await quiet(path.join(BIN, "whisper-vad-speech-segments"), ["-vm", VAD.file, "-f", wav, "-t", "4", "-np"]).catch(() => null);
+  const out = await quiet(program("whisper-vad-speech-segments"), ["-vm", VAD.file, "-f", wav, "-t", "4", "-np"]).catch(() => null);
   if (out === null) return null;
   const regions: { start: number; end: number }[] = [];
   // "Speech segment 0: start = 243.00, end = 493.00" (hundredths of a second)
@@ -644,7 +650,7 @@ async function languagesOf(wav: string, stretches: { start: number; end: number 
     parts.push(...files);
     await Promise.all(stretches.map((r, i) => cut(wav, r.start, r.end, files[i])));
     const out = await new Promise<string>((resolve, reject) => {
-      const child = spawn(path.join(BIN, "whisper-cli"), ["-m", LANGUAGE_ID.file, "-l", "auto", "-dl", "-t", "4", ...files.flatMap((f) => ["-f", f])], {
+      const child = spawn(program("whisper-cli"), ["-m", LANGUAGE_ID.file, "-l", "auto", "-dl", "-t", "4", ...files.flatMap((f) => ["-f", f])], {
         cwd: HOME,
         stdio: ["ignore", "pipe", "pipe"],
       });

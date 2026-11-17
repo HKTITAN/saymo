@@ -1,10 +1,12 @@
 import { type ChildProcess, spawn } from "node:child_process";
+import { OWN_GROUP } from "../server/platform";
 import { existsSync } from "node:fs";
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { aiChoice, CLAUDE_BIN, codexBin, killGroup } from "./ai-env";
+import { aiChoice, CLAUDE_BIN, codexBin, killGroup, aiCommand } from "./ai-env";
 import { DEFAULT_PROVIDER, familyOf, isProviderId, type ProviderId } from "./ai-types";
 import { IS_PRODUCT } from "../server/edition";
+import { rulePath, shellPath } from "../server/platform";
 import { runCodex, readThread, writeThread } from "./codex";
 import type { ChatContext, ChatEvent, ChatMessage, ChatRequest, Film } from "../films/contract";
 import { claudeEnvFor, keyProblem } from "./providers";
@@ -358,11 +360,11 @@ async function runClaude(
 ): Promise<Outcome & { session: string | undefined }> {
   const dir = filmDir(id);
   const args = claudeArgs(id, film.session, film.kind, film.brand);
-  const proc = spawn(CLAUDE_BIN, args, {
+  const proc = spawn(...aiCommand(CLAUDE_BIN, args), {
     cwd: dir,
     env: await claudeEnvFor(provider),
     stdio: ["pipe", "pipe", "pipe"],
-    detached: true, // its own process group, so stopping ends everything
+    ...OWN_GROUP, // its own process group, so stopping ends everything
   });
   turn.proc = proc;
   if (turn.stopped && proc.pid) killGroup(proc.pid);
@@ -432,9 +434,9 @@ function recapFor(chat: ChatMessage[], family: "claude" | "codex", hasSession: b
 
 function claudeArgs(id: string, session: string | undefined, kind: Film["kind"], brand?: string) {
   const dir = filmDir(id);
-  const root = `/${ROOT}`; // permission rules: "//" starts an absolute path
-  const check = `node ${path.join(ROOT, "scripts/studio/check-film.mjs")}`;
-  const draft = `node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft`;
+  const root = rulePath(ROOT); // permission rules: "//" starts an absolute path
+  const check = `node ${shellPath(path.join(ROOT, "scripts/studio/check-film.mjs"))}`;
+  const draft = `node ${shellPath(path.join(ROOT, "scripts/studio/render.mjs"))} --film ${id} --draft`;
   const sound = soundCommand(id);
   // Its arguments vary (media ids, times), so it's allowed as a prefix. The
   // tool checks every argument and runs nothing through a shell, and Claude
@@ -442,8 +444,8 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
   const media = mediaTool(id);
   const frames = path.join(ROOT, "films/.work", id, "frames");
   const allow = [
-    `Edit(/${dir}/**)`, // covers Write and Edit: this film's folder only
-    `Read(/${dir}/**)`,
+    `Edit(${rulePath(dir)}/**)`, // covers Write and Edit: this film's folder only
+    `Read(${rulePath(dir)}/**)`,
     `Read(${root}/src/**)`,
     `Read(${root}/studio/**)`,
     `Read(${root}/scripts/studio/**)`,
@@ -452,8 +454,8 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Read(${root}/public/**)`,
     `Read(${root}/CLAUDE.md)`,
     `Read(${root}/AGENTS.md)`,
-    `Read(/${frames}/**)`, // stills the media tool makes, so Claude can see the footage
-    `Read(/${brandDir(ROOT, brand && isBrandId(brand) ? brand : DEFAULT_BRAND)}/**)`, // the film's brand kit
+    `Read(${rulePath(frames)}/**)`, // stills the media tool makes, so Claude can see the footage
+    `Read(${rulePath(brandDir(ROOT, brand && isBrandId(brand) ? brand : DEFAULT_BRAND))}/**)`, // the film's brand kit
     `Bash(${check})`,
     `Bash(${draft})`,
     `Bash(${sound})`,
@@ -471,32 +473,32 @@ function claudeArgs(id: string, session: string | undefined, kind: Film["kind"],
     `Read(${root}/.studio/**)`,
     `Edit(${root}/.studio/**)`,
     `Read(${root}/**/node_modules/**)`,
-    `Edit(/${dir}/.history/**)`,
-    `Edit(/${dir}/out/**)`,
+    `Edit(${rulePath(dir)}/.history/**)`,
+    `Edit(${rulePath(dir)}/out/**)`,
     // Footage is never changed, and the big files are never read (the
     // media tool reports on them); stills, thumbnails and JSON stay readable.
-    `Edit(/${dir}/media/**)`,
+    `Edit(${rulePath(dir)}/media/**)`,
     // What they attach is theirs: read it, never change it.
-    `Edit(/${dir}/refs/**)`,
+    `Edit(${rulePath(dir)}/refs/**)`,
     ...refAudioDenies(dir), // sounds are heard with the listening tool
     // A rust film's build script is the studio's own (it runs code when the
     // film is built); Claude may not change it.
-    `Edit(/${dir}/build.rs)`,
+    `Edit(${rulePath(dir)}/build.rs)`,
     // The sound is written as a score; what it renders to is the renderer's.
-    `Edit(/${dir}/sound/sound.wav)`,
-    `Edit(/${dir}/sound/peaks.json)`,
-    `Edit(/${dir}/sound/status.json)`,
-    `Read(/${dir}/sound/*.wav)`,
+    `Edit(${rulePath(dir)}/sound/sound.wav)`,
+    `Edit(${rulePath(dir)}/sound/peaks.json)`,
+    `Edit(${rulePath(dir)}/sound/status.json)`,
+    `Read(${rulePath(dir)}/sound/*.wav)`,
     // The stems and the person's own volume edits are the studio's.
-    `Edit(/${dir}/sound/*.wav)`,
-    `Edit(/${dir}/sound/*-peaks.json)`,
-    `Edit(/${dir}/sound/master.json)`,
-    `Edit(/${dir}/sound/mix.json)`,
+    `Edit(${rulePath(dir)}/sound/*.wav)`,
+    `Edit(${rulePath(dir)}/sound/*-peaks.json)`,
+    `Edit(${rulePath(dir)}/sound/master.json)`,
+    `Edit(${rulePath(dir)}/sound/mix.json)`,
     // A slide film's voiceover clips are the studio's; Claude may move them
     // in sound/voice.json, not change or open the recordings.
-    `Edit(/${dir}/sound/voice/*.wav)`,
-    `Read(/${dir}/sound/voice/*.wav)`,
-    ...FOOTAGE_FILES.map((f) => `Read(/${dir}/media/**/${f})`),
+    `Edit(${rulePath(dir)}/sound/voice/*.wav)`,
+    `Read(${rulePath(dir)}/sound/voice/*.wav)`,
+    ...FOOTAGE_FILES.map((f) => `Read(${rulePath(dir)}/media/**/${f})`),
   ];
   const args = [
     "-p",
@@ -527,9 +529,9 @@ function systemPrompt(id: string, kind: Film["kind"]) {
 Your film is films/${id}/ and the shell is already in it. Write only inside it. Load the saymo-film skill before your first change: it explains how a studio film is made, how film.json works and which other skills to use.
 
 To check your work, run exactly:
-  node ${path.join(ROOT, "scripts/studio/check-film.mjs")}
+  node ${shellPath(path.join(ROOT, "scripts/studio/check-film.mjs"))}
 and fix what it reports. For a quick test video of a film that can't be checked any other way, run exactly:
-  node ${path.join(ROOT, "scripts/studio/render.mjs")} --film ${id} --draft
+  node ${shellPath(path.join(ROOT, "scripts/studio/render.mjs"))} --film ${id} --draft
 The film's sound design is sound/score.js (music as a music bed, effects in Tone.js, as src/lib/studio/sound/sound.ts describes). Load the saymo-sound-design skill before writing or changing sound. To render the sound and hear what you made (loudness, and where each hit lands against the film's moments), run exactly:
   ${soundCommand(id)}
 
@@ -589,7 +591,7 @@ function codexStep(kind: "command" | "edit", detail: string, dir: string): strin
 
 const FOOTAGE_FILES = ["original.*", "*.mp4", "*.mov", "*.m4v", "*.webm", "*.mkv", "*.wav", "*.mp3", "*.m4a", "*.aac", "*.aif", "*.aiff", "*.flac"];
 
-const soundCommand = (id: string) => `node ${path.join(ROOT, "scripts/studio/sound.mjs")} ${id}`;
+const soundCommand = (id: string) => `node ${shellPath(path.join(ROOT, "scripts/studio/sound.mjs"))} ${id}`;
 
 // A part of the sound picked on the timeline's Music (Score, on a video
 // film), Effects or Voiceover lane.
@@ -606,7 +608,7 @@ function voiceSpanNote(s: NonNullable<ChatContext["sound"]>) {
   return `<sound>They picked part of the voiceover: from ${span}. "This" or "this bit" means the voice there. The voiceover is clips of speech placed by sound/voice.json (each clip's "start", in film seconds); the clips themselves are the studio's recordings. To move a line, change its clip's "start" (and keep its slide on screen while it plays); to drop a line, take its clip out. You can't record new lines for a slide film from here, so if they want different words or a different voice, say so plainly and suggest they make the film from the slides again with the new speaker notes. Leave every other clip, and the music and effects, as they are. Then render the sound again with the sound command. Their own volume edits in sound/mix.json are applied on top; never edit mix.json.</sound>`;
 }
 
-const mediaTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/media-tool.mjs")} ${id}`;
+const mediaTool = (id: string) => `node ${shellPath(path.join(ROOT, "scripts/studio/media-tool.mjs"))} ${id}`;
 
 // What a video film adds to the system prompt.
 function videoPrompt(id: string) {
@@ -632,11 +634,11 @@ For a voiceover, write the words to voice/<name>.txt in the film, then run exact
 Voices: Rishi (Indian English, male, the default), Tara (Indian English, female), Aman (Indian English, male), Lekha (Hindi, female); pace 175 is normal. It lands in the film's media; place it on an audio track and transcribe it for captions.`;
 }
 
-const photoTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/photo.mjs")} ${id}`;
+const photoTool = (id: string) => `node ${shellPath(path.join(ROOT, "scripts/studio/photo.mjs"))} ${id}`;
 // The blank-page skill's reference search (are.na, Sketchfab), scoped to the film.
-const lookTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/look.mjs")} ${id}`;
+const lookTool = (id: string) => `node ${shellPath(path.join(ROOT, "scripts/studio/look.mjs"))} ${id}`;
 
-const voiceTool = (id: string) => `node ${path.join(ROOT, "scripts/studio/voice.mjs")} ${id}`;
+const voiceTool = (id: string) => `node ${shellPath(path.join(ROOT, "scripts/studio/voice.mjs"))} ${id}`;
 
 // A short picture of a video film's edit, sent with each message, so "the
 // second clip" or "the lower third" makes sense.

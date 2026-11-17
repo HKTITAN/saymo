@@ -1,8 +1,9 @@
 import { type ChildProcess, spawn } from "node:child_process";
-import { chmod, lstat, mkdir, readdir, readFile, readlink, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { copyFile, link as hardLink, lstat, mkdir, readdir, readFile, readlink, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
-import { aiChoice, childEnv, codexBin, killGroup } from "./ai-env";
+import { aiChoice, childEnv, codexBin, killGroup, aiCommand } from "./ai-env";
+import { OWN_GROUP, privateDir } from "../server/platform";
 import type { ChatEvent } from "../films/contract";
 import { STUDIO_DIR } from "../connect/connect-store";
 import { filmDir, ROOT } from "../films/films";
@@ -126,9 +127,9 @@ export function codexConfig(id: string, instructions: string) {
 // settings above.
 async function prepareHome(id: string, instructions: string) {
   const home = homeOf(id);
-  await mkdir(home, { recursive: true, mode: 0o700 });
-  await chmod(path.join(STUDIO_DIR, "codex"), 0o700).catch(() => {});
-  await chmod(home, 0o700).catch(() => {});
+  privateDir(STUDIO_DIR);
+  privateDir(path.join(STUDIO_DIR, "codex"));
+  privateDir(home);
   const source = path.join(process.env.CODEX_HOME ?? path.join(homedir(), ".codex"), "auth.json");
   const link = path.join(home, "auth.json");
   const linked = await lstat(link).then(
@@ -137,7 +138,9 @@ async function prepareHome(id: string, instructions: string) {
   );
   if (!linked) {
     await rm(link, { force: true });
-    await symlink(source, link);
+    // Windows lets only administrators and Developer Mode make symbolic
+    // links; a hard link (same drive) or else a copy does the same job.
+    await symlink(source, link).catch(() => hardLink(source, link).catch(() => copyFile(source, link)));
   }
   await writeFile(path.join(home, "config.toml"), codexConfig(id, instructions), { mode: 0o600 });
   return home;
@@ -173,7 +176,7 @@ export async function runCodex(o: {
   const args = o.thread ? ["exec", "resume", ...common, o.thread, "-"] : ["exec", ...common, "--color", "never", "-"];
   o.log(JSON.stringify({ type: "studio_command", bin, args }));
 
-  const proc = spawn(bin, args, { cwd: dir, env, stdio: ["pipe", "pipe", "pipe"], detached: true });
+  const proc = spawn(...aiCommand(bin, args), { cwd: dir, env, stdio: ["pipe", "pipe", "pipe"], ...OWN_GROUP });
   o.turn.proc = proc;
   if (o.turn.stopped && proc.pid) killGroup(proc.pid);
   proc.stdin.on("error", () => {});

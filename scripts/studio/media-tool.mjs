@@ -236,9 +236,9 @@ async function faces(mid, everyRaw) {
     const scale = info.width / Math.min(960, info.width);
     console.log(`Main face, sampled every ${secs(every)} s; a line only when it moves. x and y are the face centre as 0..1 of the source frame (${info.width}x${info.height}); size is the face height as a share of the frame height.`);
     let last = null;
-    for (const [i, shot] of shots.entries()) {
+    const found = await facesIn(bin, shots.map((shot) => path.join(tmp, shot)));
+    for (const [i, f] of found.entries()) {
       const t = i * every + every / 2;
-      const f = await faceIn(bin, path.join(tmp, shot));
       const line = f
         ? `x ${((f.x + f.width / 2) * scale / info.width).toFixed(2)}, y ${((f.y + f.height / 2) * scale / info.height).toFixed(2)}, size ${(f.height * scale / info.height).toFixed(2)}`
         : "no face";
@@ -258,15 +258,19 @@ async function probeImage(file) {
   return p.width ? p : null;
 }
 
-// The Mac's own face finder (scripts/native/vision.swift), compiled once.
+// The face finder as [program, arguments before the job's own]: the Mac's
+// own (scripts/native/vision.swift), compiled once; elsewhere MediaPipe in
+// Chrome (scripts/native/vision.mjs).
 async function vision() {
+  if (!IS_MAC) return [process.execPath, [path.join(ROOT, "scripts/native/vision.mjs")]];
   const source = path.join(ROOT, "scripts/native/vision.swift");
   const binary = path.join(ROOT, "node_modules/.cache/speaker-post/vision");
-  if (existsSync(binary) && statSync(binary).mtimeMs >= statSync(source).mtimeMs) return binary;
+  if (existsSync(binary) && statSync(binary).mtimeMs >= statSync(source).mtimeMs) return [binary, []];
   try {
     mkdirSync(path.dirname(binary), { recursive: true });
+    // eslint-disable-next-line no-restricted-syntax -- Mac only; elsewhere vision.mjs, above
     await exec("swiftc", ["-O", source, "-o", binary], { timeout: 180_000 });
-    return binary;
+    return [binary, []];
   } catch {
     fail("The face finder couldn't be built on this Mac (it needs Swift).");
   }
@@ -274,10 +278,27 @@ async function vision() {
 
 async function faceIn(bin, image) {
   try {
-    const { stdout } = await exec(bin, ["face", image], { timeout: 30_000 });
+    const { stdout } = await exec(bin[0], [...bin[1], "face", image], { timeout: 60_000 });
     return JSON.parse(stdout);
   } catch {
     return null;
+  }
+}
+
+// Many pictures: one at a time for the Mac's quick binary; in one go for
+// vision.mjs, which starts Chrome each time it runs.
+async function facesIn(bin, images) {
+  if (!bin[1].length) {
+    const found = [];
+    for (const image of images) found.push(await faceIn(bin, image));
+    return found;
+  }
+  try {
+    const { stdout } = await exec(bin[0], [...bin[1], "face", ...images], { timeout: 60_000 + images.length * 2_000, maxBuffer: 1 << 20 });
+    const lines = stdout.trim().split(/\r?\n/);
+    return images.map((_, i) => JSON.parse(lines[i] ?? "null"));
+  } catch {
+    return images.map(() => null);
   }
 }
 

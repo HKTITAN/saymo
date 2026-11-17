@@ -17,7 +17,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const ENGINE_DIR = path.join(ROOT, "studio/sound");
@@ -86,7 +86,7 @@ export async function engineBundle() {
   if (!existsSync(path.join(ENGINE_DIR, "node_modules"))) {
     throw new Error("The sound engine isn't installed. Run: npm ci --prefix studio/sound");
   }
-  const { build } = await import(path.join(ENGINE_DIR, "node_modules/esbuild/lib/main.js"));
+  const { build } = await import(pathToFileURL(path.join(ENGINE_DIR, "node_modules/esbuild/lib/main.js")).href);
   await mkdir(CACHE, { recursive: true });
   const result = await build({
     entryPoints: [entry],
@@ -129,7 +129,7 @@ export function servePage(script) {
 export async function openEngine() {
   const { script, inputs, strudel } = await engineBundle();
   const server = await servePage(script);
-  const { chromium } = await import(path.join(ROOT, "node_modules/playwright/index.mjs"));
+  const { chromium } = await import(pathToFileURL(path.join(ROOT, "node_modules/playwright/index.mjs")).href);
   const browser = await chromium.launch({ channel: "chrome", args: ["--autoplay-policy=no-user-gesture-required"] });
   const logs = [];
   try {

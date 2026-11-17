@@ -54,7 +54,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { fontFaces, kitForFilm, tokensForRender } from "../../src/lib/studio/brands/brand-tokens.ts";
 import { brandScript, paramValues, prepareHtml } from "../../src/lib/studio/stage/inject.ts";
-import { describe, machine, workersFor } from "./machine.mjs";
+import { describe, HARDWARE, machine, workersFor } from "./machine.mjs";
+import { packageBin } from "./platform.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 // One Rust build folder for every film: the engine's dependencies (about
@@ -118,7 +119,7 @@ const step = (from, to) => (fraction) => progress(from + (to - from) * Math.max(
 const shares = (m, { engine, scale }) => {
   if (draft && engine === "hyperframes") return { drawn: 0.95, encoded: 0.95 };
   if (draft) return { drawn: 0.85, encoded: 0.96 };
-  if (scale === 2 && m.finalVideoToolbox) return { drawn: 0.6, encoded: 0.96 };
+  if (scale === 2 && m.finalEncoder) return { drawn: 0.6, encoded: 0.96 };
   return { drawn: 0.4, encoded: 0.96 };
 };
 
@@ -205,7 +206,9 @@ const hfFraction = (p) => {
 const ENGINES = {
   async hyperframes(job, work, m, onProgress) {
     const home = path.join(ROOT, "studio/hyperframes");
-    const cli = path.join(home, "node_modules/.bin/hyperframes");
+    const hyperframes = packageBin(home, "hyperframes");
+    if (!hyperframes) throw new Error("HyperFrames isn't installed: run npm run setup.");
+    const [cli, cliArgs] = hyperframes;
     const preset = HF_PRESETS[`${job.width * job.scale}x${job.height * job.scale}`];
     // A size HyperFrames has no preset for (4:5, say) at twice its size: the
     // same capture HyperFrames makes, done here at device scale 2.
@@ -216,6 +219,7 @@ const ENGINES = {
       run(
         cli,
         [
+          ...cliArgs,
           "render", job.dir, "--fps", String(job.fps), "--workers", String(job.workers),
           // An 8 GB Mac would otherwise be held to one worker; the worker
           // count already leaves it room (machine.mjs).
@@ -236,7 +240,7 @@ const ENGINES = {
       // left out (the film's sound design goes on afterwards, as for a
       // final) and its H.264 level set right for the size and frame rate.
       const raw = path.join(work, "hyperframes.mp4");
-      await hf(["--format", "mp4", "--output", raw, ...(m.draftVideoToolbox ? ["--gpu"] : ["--crf", "18"])]);
+      await hf(["--format", "mp4", "--output", raw, ...(m.draftEncoder ? ["--gpu"] : ["--crf", "18"])]);
       const file = path.join(work, "film.mp4");
       await run("ffmpeg", [
         "-y", "-loglevel", "error", "-i", raw, "-map", "0:v", "-c", "copy",
@@ -390,15 +394,15 @@ function encoderOnly(m, file, job, width, height, tune) {
   const level = levelFor(width, height, job.fps);
   const keyframes = ["-g", String(Math.round(job.fps * 2))];
   const ceiling = ceilingFor(width, height, job.fps);
-  if (draft && m.draftVideoToolbox) {
+  if (draft && m.draftEncoder) {
     const rate = Math.max(4, Math.round((width * height * job.fps * 0.08) / 1e6));
-    return ["-c:v", "h264_videotoolbox", "-b:v", `${Math.min(rate, ceiling)}M`, ...capped(ceiling), "-profile:v", "high", "-level:v", level, ...keyframes];
+    return ["-c:v", m.draftEncoder, ...HARDWARE[m.draftEncoder].draft(Math.min(rate, ceiling)), ...capped(ceiling), "-profile:v", "high", "-level:v", level, ...keyframes];
   }
   if (draft) return ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", ...capped(ceiling), "-tune", tune, "-level:v", level];
-  if (file.big && job.scale === 2 && m.finalVideoToolbox) {
-    // Apple's encoder aims a little under its target, so the target is the
-    // ceiling itself (a busy 4K film comes out near 85 Mb/s).
-    return ["-c:v", "h264_videotoolbox", "-b:v", `${ceiling}M`, ...capped(ceiling), "-profile:v", "high", "-level:v", level, ...keyframes];
+  if (file.big && job.scale === 2 && m.finalEncoder) {
+    // Hardware encoders aim a little under their target, so the target is
+    // the ceiling itself (a busy 4K film comes out near 85 Mb/s on a Mac).
+    return ["-c:v", m.finalEncoder, ...HARDWARE[m.finalEncoder].final(ceiling), ...capped(ceiling), "-profile:v", "high", "-level:v", level, ...keyframes];
   }
   return ["-c:v", "libx264", "-preset", "slow", "-crf", "14", ...capped(ceiling), "-tune", tune, "-level:v", level];
 }
@@ -695,8 +699,11 @@ async function picturesKey(src, film, job, m, mediaDir) {
   void [dir, workers];
   hash.update(JSON.stringify({
     PIPELINE, draft, look, shape,
-    finalVideoToolbox: m.finalVideoToolbox,
-    draftVideoToolbox: m.draftVideoToolbox,
+    // Named as before VideoToolbox had company, so a Mac's past renders
+    // still count as the same.
+    finalVideoToolbox: m.finalEncoder === "h264_videotoolbox",
+    draftVideoToolbox: m.draftEncoder === "h264_videotoolbox",
+    encoder: m.finalEncoder === "h264_videotoolbox" || m.draftEncoder === "h264_videotoolbox" ? undefined : [m.finalEncoder, m.draftEncoder].join("/"),
   }));
   await hashTree(hash, src, src, (rel) => rel !== "film.json");
   if (mediaDir) await hashTree(hash, mediaDir, mediaDir, () => true, true);

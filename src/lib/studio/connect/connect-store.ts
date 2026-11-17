@@ -1,6 +1,7 @@
-import { chmod, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { chmod, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { ROOT } from "../films/films";
+import { privateDir } from "../server/platform";
 
 // Where connections keep what they need between restarts: tokens and which
 // account, folder and repository are in use. Only the server reads it;
@@ -13,9 +14,8 @@ const DIR = path.join(STUDIO_DIR, "connections");
 const fileOf = (name: string) => path.join(DIR, `${name}.json`);
 
 async function ensureDir() {
-  await mkdir(DIR, { recursive: true, mode: 0o700 });
-  await chmod(STUDIO_DIR, 0o700).catch(() => {});
-  await chmod(DIR, 0o700).catch(() => {});
+  privateDir(STUDIO_DIR);
+  privateDir(DIR);
 }
 
 export async function readSecret<T>(name: string): Promise<T | null> {

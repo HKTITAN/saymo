@@ -17,7 +17,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { bundle } from "@remotion/bundler";
 import { ensureBrowser, renderFrames, renderMedia, selectComposition } from "@remotion/renderer";
 import { browser } from "../browser.js";
@@ -34,7 +34,7 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const modules = path.join(root, "node_modules");
 const require = createRequire(path.join(root, "package.json"));
 const spec = JSON.parse(await readFile(specFile, "utf8"));
-const { KIT, registrySource } = await import(path.join(root, "../../scripts/studio/graphics-registry.mjs"));
+const { KIT, registrySource } = await import(pathToFileURL(path.join(root, "../../scripts/studio/graphics-registry.mjs")).href);
 const graphicsModule = path.join(path.dirname(path.resolve(specFile)), "graphics.js");
 await writeFile(graphicsModule, await registrySource(path.resolve(filmDir)));
 

@@ -14,6 +14,7 @@ import { once } from "node:events";
 import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { post } from "../../src/content/post.ts";
+import { IS_WINDOWS, killTree, packageBin } from "../studio/platform.mjs";
 
 const PORT = 3200;
 const BASE = `http://localhost:${PORT}`;
@@ -59,7 +60,8 @@ const finished = async (proc, what) => {
 let server;
 if (!(await up())) {
   console.log("Starting the dev server...");
-  server = spawn("npx", ["next", "dev", "-p", String(PORT)], { stdio: "ignore", detached: true });
+  const [next, before] = packageBin(process.cwd(), "next");
+  server = spawn(next, [...before, "dev", "-p", String(PORT)], { stdio: "ignore", detached: !IS_WINDOWS, windowsHide: true });
   for (let i = 0; i < 90 && !(await up()); i++) await new Promise((r) => setTimeout(r, 1000));
 }
 
@@ -132,4 +134,4 @@ for (const { id: motion, duration, still } of asked) {
 }
 
 await browser.close();
-if (server) process.kill(-server.pid);
+if (server) killTree(server.pid);

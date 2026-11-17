@@ -340,7 +340,7 @@ const EXTRAS = [
     author: "Georgi Gerganov and the ggml authors",
     url: "https://github.com/ggml-org/whisper.cpp",
     file: whisperDir && path.join(whisperDir, "LICENSE"),
-    note: "Downloaded and built on first use of dictation and captions.",
+    note: "Downloaded and built on first use of dictation and captions (on Windows, the project's own prebuilt programs are downloaded).",
   },
   {
     name: "Whisper speech models (large-v3-turbo, large-v3, base)",
@@ -351,6 +351,16 @@ const EXTRAS = [
     author: "OpenAI; converted for whisper.cpp by its authors",
     url: "https://github.com/openai/whisper",
     note: "Downloaded on first use.",
+  },
+  {
+    name: "MediaPipe models (BlazeFace short range, selfie segmenter, selfie multiclass, magic touch)",
+    version: "float16/float32 1",
+    kind: "model",
+    licence: "Apache-2.0",
+    copyright: ["Copyright 2023 The MediaPipe Authors"],
+    author: "Google",
+    url: "https://ai.google.dev/edge/mediapipe/solutions/vision/image_segmenter",
+    note: "Windows only: downloaded on first use of the background remover, face finder and cutouts.",
   },
   {
     name: "Silero VAD (voice detector)",

@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { chmodSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { IS_WINDOWS, privateDir } from "./platform";
 
 // The local API token: what lets apps outside the browser (the studio's MCP
 // server and command line, Raycast, your own scripts) use the studio. One
@@ -51,7 +52,7 @@ export function readToken(): string | null {
 }
 
 function save(token: string) {
-  mkdirSync(path.dirname(TOKEN_FILE), { recursive: true, mode: 0o700 });
+  privateDir(path.dirname(TOKEN_FILE));
   // Written aside and renamed, so a half-written token never counts.
   const tmp = `${TOKEN_FILE}.${process.pid}.tmp`;
   writeFileSync(tmp, `${token}\n`, { mode: 0o600 });
@@ -70,7 +71,8 @@ export function ensureToken(): string {
     return fresh;
   }
   try {
-    if ((statSync(TOKEN_FILE).mode & 0o077) !== 0) chmodSync(TOKEN_FILE, 0o600);
+    if (IS_WINDOWS) privateDir(path.dirname(TOKEN_FILE));
+    else if ((statSync(TOKEN_FILE).mode & 0o077) !== 0) chmodSync(TOKEN_FILE, 0o600);
   } catch {
     // Read just now; if it's gone, the next request makes a new one.
   }

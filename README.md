@@ -1,10 +1,10 @@
 # Saymo
 
-Saymo is an open-source motion editor for the Mac. You make motion graphics and edit videos by talking to Claude, by pointing at the part of the film you want changed, or by moving the controls yourself. Every film follows a brand kit, has its own sound design and renders to a sharp 4K video.
+Saymo is an open-source motion editor for the Mac and Windows. You make motion graphics and edit videos by talking to Claude, by pointing at the part of the film you want changed, or by moving the controls yourself. Every film follows a brand kit, has its own sound design and renders to a sharp 4K video.
 
 ## How it runs
 
-Saymo runs on your own Mac, in your browser at http://localhost:3200, and only answers that Mac. It uses the Mac's own tools (Chrome to draw frames, Apple's video encoder, Vision for cutouts, the Mac's voices) and your own Claude account. Your films are stored on your Mac rather than in a cloud service; Claude reads what it needs from them to make each change.
+Saymo runs on your own Mac or Windows PC, in your browser at http://localhost:3200, and only answers that computer. It uses the computer's own tools (Chrome to draw frames, its hardware video encoder, the Mac's Vision or MediaPipe for cutouts, the computer's own voices) and your own Claude account. Your films are stored on your computer rather than in a cloud service; Claude reads what it needs from them to make each change.
 
 ## Coming later
 
@@ -39,11 +39,10 @@ Every film gets its own sound design, and Claude composes it as code instead of 
 
 ## What you need
 
-- A Mac running macOS 14 or newer (Apple silicon renders fastest)
-- [Homebrew](https://brew.sh)
+- A Mac running macOS 14 or newer (Apple silicon renders fastest), with [Homebrew](https://brew.sh) and Apple's command line tools (`xcode-select --install`)
+- Or a PC running Windows 10 or 11 (an NVIDIA card renders and transcribes fastest), with winget (built into Windows 11)
 - [Node.js](https://nodejs.org) 22 or newer
 - [Google Chrome](https://www.google.com/chrome/), which draws the frames of every render
-- Apple's command line tools: run `xcode-select --install`
 - [Claude Code](https://claude.com/claude-code), signed in with your Claude plan or an API key
 - About 3 GB of free disk space
 
@@ -55,7 +54,7 @@ cd saymo
 npm run setup
 ```
 
-Setup checks your Mac, installs ffmpeg and the other video tools, and installs the packages for the app and each engine. If something is missing, it stops and tells you what to install. You can run it again at any time; it skips what's already there.
+Setup checks your computer, installs ffmpeg and the other video tools (with Homebrew on a Mac, winget on Windows), and installs the packages for the app and each engine. If something is missing, it stops and tells you what to install. You can run it again at any time; it skips what's already there.
 
 Then sign in to Claude Code once, if you haven't already:
 

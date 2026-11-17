@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
+import { OWN_GROUP } from "../server/platform";
 import { mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { aiChoice } from "../agent/ai-env";
+import { aiChoice, aiCommand } from "../agent/ai-env";
 import { CLAUDE_BIN, explain, killGroup } from "../agent/claude";
 import { claudeEnvFor, keyProblem } from "../agent/providers";
 import { type Beat, cleanScript, type ScriptEvent, type ScriptRequest, tidy } from "./script";
@@ -80,7 +81,7 @@ export async function writeScript(request: ScriptRequest, emit: (event: ScriptEv
     emit({ kind: "error", message: noKey });
     return;
   }
-  const proc = spawn(CLAUDE_BIN, args, { cwd, env: await claudeEnvFor(), stdio: ["pipe", "pipe", "pipe"], detached: true });
+  const proc = spawn(...aiCommand(CLAUDE_BIN, args), { cwd, env: await claudeEnvFor(), stdio: ["pipe", "pipe", "pipe"], ...OWN_GROUP });
   const stop = () => proc.pid && killGroup(proc.pid);
   signal.addEventListener("abort", stop, { once: true });
   const limit = setTimeout(stop, LIMIT_MS);

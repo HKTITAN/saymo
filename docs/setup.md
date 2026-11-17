@@ -1,6 +1,6 @@
 # Setup
 
-Saymo runs on your own Mac. You install it once, sign in with your own Claude account, and everything you make stays on your Mac.
+Saymo runs on your own Mac or Windows PC. You install it once, sign in with your own Claude account, and everything you make stays on your computer. The steps below are for the Mac; [On Windows](#on-windows) says what's different there.
 
 ## What you need
 
@@ -25,6 +25,34 @@ npm run dev                    # then open http://localhost:3200
 Setup works in five steps: it checks your Mac, installs ffmpeg, cmake and poppler with Homebrew, then installs the app's packages and each engine's packages. Run it again any time; it skips what's already there. It also checks that ffmpeg can use your Mac's hardware video encoder; if it says it can't, run `brew reinstall ffmpeg`.
 
 To update later, run `git pull`, then `npm run setup`, then restart `npm run dev`.
+
+## On Windows
+
+Windows 10 or 11 with winget (built into Windows 11; on Windows 10, install App Installer from the Microsoft Store), Node.js 22 or newer, Google Chrome and Claude Code. The same commands install it, in PowerShell or any terminal:
+
+```bash
+git clone https://github.com/sethihq/saymo.git
+cd saymo
+npm run setup
+claude
+npm run dev
+```
+
+Setup installs ffmpeg and poppler with winget instead of Homebrew. Everything the Mac does with its own tools has a Windows twin:
+
+| On the Mac | On Windows |
+| --- | --- |
+| VideoToolbox, Apple's video encoder | NVENC on NVIDIA cards (finals and drafts), Quick Sync or AMF (drafts) |
+| whisper.cpp built with Metal | whisper.cpp's own Windows build: CUDA on NVIDIA cards (about 300 MB more), else the CPU build |
+| The Mac's voices (Rishi, Tara, Aman, Lekha) | Windows' voices: Ravi, Heera, Hemant, Kalpana. Add them in Settings, Time & language, Speech |
+| Vision: background remover, face finder, cutouts | MediaPipe in Chrome (its models download once) |
+| Keynote and the Mac's text recognition, for slides | PowerPoint (or LibreOffice) and Windows' own text recognition |
+| Finder's folder picker, iCloud and CloudStorage folders | Windows' folder picker, OneDrive, Google Drive's drive, Dropbox and iCloud Drive folders |
+| `.studio/` private by file mode | `.studio/` private by its access list (only you and the system) |
+
+Keynote files need a PDF export on Windows. To keep the studio from opening PowerPoint, add `STUDIO_POWERPOINT=off` to `.env.local`; `STUDIO_WHISPER_GPU=off` uses the CPU build of whisper even on an NVIDIA card.
+
+To check this PC is ready: `node scripts/studio/platform-check.mjs`.
 
 ## AI for the chat
 
@@ -95,7 +123,7 @@ Some things happen the first time you use them:
 - **The studio says it can't reach Claude:** run `claude` once in a terminal and sign in.
 - **A render fails:** check that Google Chrome is installed, then run `npm run setup` again.
 - **Your Mac slows down a lot while rendering:** add `STUDIO_WORKERS=2` to `.env.local` and restart `npm run dev`.
-- **Port 3200 is busy:** another copy of the studio is running. Close it, or stop it with `lsof -ti tcp:3200 | xargs kill`.
+- **Port 3200 is busy:** another copy of the studio is running. Close it, or stop it with `lsof -ti tcp:3200 | xargs kill` (on Windows: `Get-NetTCPConnection -LocalPort 3200 | % { Stop-Process -Id $_.OwningProcess }` in PowerShell).
 - **`npm run setup` stops early:** it says what's missing (Homebrew, Node, Chrome or Apple's command line tools). Install that, then run setup again.
 - **Anything else:** run `npm run setup` again, restart `npm run dev`, and check the terminal running the studio for the error.
 

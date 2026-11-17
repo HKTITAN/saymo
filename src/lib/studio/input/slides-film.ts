@@ -9,7 +9,7 @@ import { createFilm, filmDir, listFolders, readFilm, writeFilm } from "../films/
 import { copySlides, type FilmSlide, importDir, readImport, SlidesError } from "./slides";
 import { SECONDS, type SlidesWay } from "./slides-shared";
 import { startSound } from "../sound/sound-render";
-import { installedVoices, RATE, sayTo, VOICES } from "../sound/voice";
+import { ADD_VOICE, installedVoices, RATE, sayTo, VOICES } from "../sound/voice";
 
 // "Turn slides into a video": a new motion film made from the slides she
 // picked, in her order. The slides go into the film's refs/slides/ with
@@ -50,7 +50,7 @@ export async function checkOptions(body: unknown): Promise<SlidesOptions | strin
   if (!size) return "Choose one of the film sizes.";
   const voice = typeof body.voice === "string" ? body.voice : null;
   if (voice && !VOICES.some((v) => v.id === voice)) return `There's no voice called ${voice}.`;
-  if (voice && !(await installedVoices()).has(voice)) return `${voice} isn't installed on this Mac. Add it in System Settings, Accessibility, Spoken Content.`;
+  if (voice && !(await installedVoices()).has(voice)) return `${voice} isn't installed on this computer. ${ADD_VOICE}`;
   const seconds =
     body.seconds === "voice" && voice ? "voice" : Math.min(SECONDS.max, Math.max(SECONDS.min, Number(body.seconds) || SECONDS.normal));
   const brand = typeof body.brand === "string" && body.brand ? body.brand : DEFAULT_BRAND;

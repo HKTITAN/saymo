@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { type AiChoice, DEFAULT_CHOICE, isEffort, isModelId, isProviderId } from "./ai-types";
 import { homedir } from "node:os";
 import path from "node:path";
+import { IS_WINDOWS, killTree, launcher, minimalEnv, OWN_GROUP, pathDirs, privateDir, which } from "../server/platform";
 
 // What every AI the studio runs shares: which programs, which model, and the
 // clean environment each one starts in. Kept apart from claude.ts so the
@@ -32,7 +33,7 @@ export function aiChoice(): AiChoice & { chosen: boolean } {
 
 export function saveAiChoice(choice: AiChoice) {
   const dir = path.dirname(choiceFile());
-  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  privateDir(dir);
   const tmp = `${choiceFile()}.tmp`;
   writeFileSync(tmp, `${JSON.stringify({ model: choice.model, effort: choice.effort, provider: choice.provider }, null, 2)}\n`, { mode: 0o600 });
   renameSync(tmp, choiceFile());
@@ -42,9 +43,17 @@ export function saveAiChoice(choice: AiChoice) {
 // Claude Code's own install, not the `claude` shell function some people
 // have in zsh: spawn() never sees shell functions, so the real file is used.
 export const CLAUDE_BIN = (() => {
-  const own = path.join(homedir(), ".local/bin/claude");
-  return process.env.STUDIO_CLAUDE_BIN ?? (existsSync(own) ? own : "claude");
+  const own = path.join(homedir(), IS_WINDOWS ? ".local/bin/claude.exe" : ".local/bin/claude");
+  return process.env.STUDIO_CLAUDE_BIN ?? (existsSync(own) ? own : (which("claude") ?? "claude"));
 })();
+
+// An AI's program and its arguments, also when npm installed it as a .cmd
+// on Windows. Started with OWN_GROUP, so stopping it ends everything it
+// started.
+export const aiCommand = (bin: string, args: string[]): [string, string[]] => {
+  const [cmd, before] = launcher(bin);
+  return [cmd, [...before, ...args]];
+};
 
 // Codex on this Mac, or null. Looked for on the studio's PATH and in the
 // places npm, Homebrew, bun, fnm and nvm put programs, since a studio
@@ -62,8 +71,9 @@ export function codexBin(): string | null {
     }
   };
   const dirs = [
-    ...(process.env.PATH ?? "").split(path.delimiter).filter(Boolean),
+    ...pathDirs(),
     path.join(home, ".local/bin"),
+    ...(IS_WINDOWS ? [path.join(process.env.APPDATA ?? path.join(home, "AppData/Roaming"), "npm")] : []),
     "/opt/homebrew/bin",
     "/usr/local/bin",
     path.join(home, ".bun/bin"),
@@ -73,8 +83,10 @@ export function codexBin(): string | null {
     ...versions(path.join(home, ".nvm/versions/node"), "bin"),
   ];
   for (const dir of dirs) {
-    const file = path.join(dir, "codex");
-    if (existsSync(file)) return file;
+    for (const name of IS_WINDOWS ? ["codex.cmd", "codex.exe"] : ["codex"]) {
+      const file = path.join(dir, name);
+      if (existsSync(file)) return file;
+    }
   }
   return null;
 }
@@ -120,9 +132,7 @@ export function scrubbed(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 // A clean environment: the dev server's own variables (keys in .env.local,
 // the owner's Claude Code session settings) don't pass to the turn.
 export function childEnv(): NodeJS.ProcessEnv {
-  const keep = ["PATH", "HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "TERM", "CARGO_HOME", "RUSTUP_HOME"];
-  const env = {} as NodeJS.ProcessEnv;
-  for (const key of keep) if (process.env[key]) env[key] = process.env[key] as string;
+  const env = minimalEnv(["USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "TERM", "CARGO_HOME", "RUSTUP_HOME"]);
   for (const [key, value] of Object.entries(process.env)) if (key.startsWith("LC_") && value) env[key] = value;
   env.HYPERFRAMES_NO_TELEMETRY = "1";
   // The same effort as the flag, so a person's own Claude settings don't lower it.
@@ -133,16 +143,7 @@ export function childEnv(): NodeJS.ProcessEnv {
 }
 
 // Stops a whole process group, so nothing a turn started keeps going.
-export function killGroup(pid: number) {
-  try {
-    process.kill(-pid, "SIGTERM");
-  } catch {}
-  setTimeout(() => {
-    try {
-      process.kill(-pid, "SIGKILL");
-    } catch {}
-  }, 3000).unref();
-}
+export const killGroup = killTree;
 
 export type Quick = { code: number | null; stdout: string; stderr: string; missing: boolean };
 
@@ -155,7 +156,7 @@ export function runQuick(bin: string, args: string[], env: NodeJS.ProcessEnv, ti
     let missing = false;
     let proc: ReturnType<typeof spawn>;
     try {
-      proc = spawn(bin, args, { cwd: homedir(), env, stdio: ["ignore", "pipe", "pipe"], detached: true });
+      proc = spawn(...aiCommand(bin, args), { cwd: homedir(), env, stdio: ["ignore", "pipe", "pipe"], ...OWN_GROUP });
     } catch {
       resolve({ code: -1, stdout, stderr, missing: true });
       return;

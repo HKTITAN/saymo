@@ -19,6 +19,8 @@ import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { IS_MAC, IS_WINDOWS } from "./platform.mjs";
+import { installWhisperWindows } from "./whisper-windows.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const require = createRequire(path.join(ROOT, "studio/remotion/package.json"));
@@ -27,6 +29,7 @@ const { installWhisperCpp, downloadWhisperModel, transcribe, toCaptions } = requ
 const HOME = path.join(ROOT, "node_modules/.cache/studio-whisper");
 const VERSION = "1.9.5";
 const WHISPER = path.join(HOME, `whisper.cpp-${VERSION}`);
+const CLI = path.join(WHISPER, "build/bin", IS_WINDOWS ? "whisper-cli.exe" : "whisper-cli");
 const MODELS = path.join(HOME, "models");
 const MODEL = process.env.STUDIO_WHISPER_MODEL || "large-v3-turbo";
 // English, so mixed Hindi and English speech comes out in Latin letters for
@@ -56,10 +59,11 @@ const run = (cmd, args) =>
 // libraries, so moving or renaming the project broke it. Point it at its own
 // folder instead (once), and re-sign it so macOS still runs it.
 async function findOwnLibraries() {
-  if (process.platform !== "darwin") return;
-  const bin = path.join(WHISPER, "build/bin/whisper-cli");
+  if (!IS_MAC) return;
+  const bin = CLI;
   if (!existsSync(bin)) return;
   const paths = await new Promise((resolve) => {
+    // eslint-disable-next-line no-restricted-syntax -- Mac only; Windows' build needs no fixing
     const child = spawn("otool", ["-l", bin], { stdio: ["ignore", "pipe", "ignore"] });
     let out = "";
     child.stdout.on("data", (c) => (out += c));
@@ -68,8 +72,10 @@ async function findOwnLibraries() {
   });
   if (String(paths).includes("@executable_path")) return;
   try {
+    /* eslint-disable no-restricted-syntax -- Mac only; Windows' build needs no fixing */
     await run("install_name_tool", ["-add_rpath", "@executable_path", bin]);
     await run("codesign", ["--force", "-s", "-", bin]);
+    /* eslint-enable no-restricted-syntax */
   } catch {
     // Left as it is; transcribing reports its own error if it can't start.
   }
@@ -77,14 +83,19 @@ async function findOwnLibraries() {
 
 async function setup() {
   await mkdir(HOME, { recursive: true });
-  if (!existsSync(path.join(WHISPER, "build/bin/whisper-cli"))) {
-    say("Setting up listening on this Mac (first time only, a few minutes)");
+  if (!existsSync(CLI)) {
+    say("Setting up listening on this computer (first time only, a few minutes)");
     await rm(WHISPER, { recursive: true, force: true });
     try {
-      await installWhisperCpp({ version: VERSION, to: WHISPER, printOutput: false });
+      if (IS_WINDOWS) await installWhisperWindows(WHISPER);
+      else await installWhisperCpp({ version: VERSION, to: WHISPER, printOutput: false });
     } catch (error) {
       console.error(error);
-      fail("Setting up listening failed. It needs the internet once, Xcode's command line tools and cmake (brew install cmake).");
+      fail(
+        IS_WINDOWS
+          ? "Setting up listening failed. It needs the internet once; try again."
+          : "Setting up listening failed. It needs the internet once, Xcode's command line tools and cmake (brew install cmake).",
+      );
     }
   }
   await findOwnLibraries();

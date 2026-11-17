@@ -5,6 +5,7 @@ import { createReadStream, existsSync } from "node:fs";
 import { chmod, cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { ConnectError, STUDIO_DIR } from "./connect-store";
+import { minimalEnv, privateDir } from "../server/platform";
 import type { SaveState } from "./connect-types";
 import type { Film, RenderStatus } from "../films/contract";
 import { driveRecord } from "./drive-sync";
@@ -44,7 +45,7 @@ const MAX_FILE = 10 * 1024 * 1024;
 // ─── Git, with the token kept out of URLs, config and logs ────────────────
 
 async function askpass() {
-  await mkdir(STUDIO_DIR, { recursive: true, mode: 0o700 });
+  privateDir(STUDIO_DIR);
   // Reads the token from its own environment at the moment git asks.
   await writeFile(ASKPASS, '#!/bin/sh\ncase "$1" in\n  Username*) echo "x-access-token" ;;\n  *) printf "%s\\n" "$STUDIO_GIT_TOKEN" ;;\nesac\n', { mode: 0o700 });
   await chmod(ASKPASS, 0o700);
@@ -60,8 +61,7 @@ function git(cwd: string, args: string[], token?: string) {
         cwd,
         stdio: ["ignore", "pipe", "pipe"],
         env: {
-          PATH: process.env.PATH,
-          HOME: process.env.HOME,
+          ...minimalEnv(),
           LANG: process.env.LANG ?? "en_US.UTF-8",
           GIT_TERMINAL_PROMPT: "0",
           ...(token ? { GIT_ASKPASS: ASKPASS, STUDIO_GIT_TOKEN: token } : {}),

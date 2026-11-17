@@ -4,7 +4,10 @@ import { copyFile, mkdir, mkdtemp, readdir, readFile, rename, rm, stat, writeFil
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import sharp from "sharp";
 import { FILMS_DIR, newId, ROOT } from "../films/films";
+import { heicToJpeg } from "../server/convert";
+import { IS_MAC, IS_WINDOWS, which } from "../server/platform";
 import { type Box, extOf, isImageFile, MAX_SLIDES, type Slide, type SlideChart, type SlideImport, type SlidePicture } from "./slides-shared";
 import { openZip, type Zip } from "./zip";
 
@@ -20,10 +23,13 @@ import { openZip, type Zip } from "./zip";
 //               Mac's own PDFKit (scripts/native/slides.swift)
 //   PowerPoint  words, notes, pictures and charts read from the file's XML;
 //               slides drawn by LibreOffice (soffice) when installed, else
-//               by Keynote, else words only, and she's asked for a PDF too
+//               by Keynote on a Mac or PowerPoint on Windows, else words
+//               only, and she's asked for a PDF too
 //   Keynote     exported to PDF by Keynote itself (AppleScript), which also
-//               hands over the presenter notes
-//   pictures    sips, and the Mac's text recognition reads their words
+//               hands over the presenter notes (a Mac only)
+//   pictures    sips on a Mac, sharp elsewhere; the computer's own text
+//               recognition reads their words (Vision on a Mac,
+//               Windows.Media.Ocr on Windows: scripts/native/ocr.ps1)
 //
 // Slides wait in films/.imports/<id>/ until a film is made from them (the
 // studio's film list skips names that aren't film ids), and are cleared
@@ -73,29 +79,26 @@ async function mustRun(cmd: string, args: string[], opts?: { timeout?: number; c
   return r;
 }
 
-const SEARCH = [...new Set(["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", ...(process.env.PATH ?? "").split(":")])].filter(Boolean);
-function which(cmd: string, extra: string[] = []): string | null {
-  for (const dir of SEARCH) {
-    const full = path.join(dir, cmd);
-    if (existsSync(full)) return full;
-  }
-  return extra.find((p) => existsSync(p)) ?? null;
-}
+const PROGRAM_FILES = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"]].filter((d): d is string => !!d);
 
 export const tools = () => ({
   pdftoppm: which("pdftoppm"),
   pdftotext: which("pdftotext"),
-  soffice: which("soffice", ["/Applications/LibreOffice.app/Contents/MacOS/soffice"]),
+  soffice: which("soffice", [
+    "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+    ...PROGRAM_FILES.map((d) => path.join(d, "LibreOffice", "program", "soffice.exe")),
+  ]),
 });
 
 // Keynote's id, if it's installed (the App Store copy, or Creator Studio's).
 let keynoteId: string | null = null;
 export async function findKeynote(): Promise<string | null> {
   // STUDIO_KEYNOTE=off in .env.local: never open Keynote.
-  if (process.env.STUDIO_KEYNOTE === "off") return null;
+  if (!IS_MAC || process.env.STUDIO_KEYNOTE === "off") return null;
   if (keynoteId) return keynoteId;
   for (const app of ["/Applications/Keynote.app", "/Applications/Keynote Creator Studio.app"]) {
     if (!existsSync(app)) continue;
+    // eslint-disable-next-line no-restricted-syntax -- Keynote is Mac only; Windows: PowerPoint (office-pdf.ps1)
     const r = await run("/usr/bin/defaults", ["read", path.join(app, "Contents/Info"), "CFBundleIdentifier"]).catch(() => null);
     const id = r?.stdout.toString().trim() ?? "";
     if (/^com\.apple\.(iWork\.)?Keynote$/.test(id)) return (keynoteId = id);
@@ -110,12 +113,14 @@ const HELPER = path.join(ROOT, "node_modules/.cache/studio-slides/slides");
 const g = globalThis as { __slidesHelper?: Promise<string | null> };
 
 async function helper(): Promise<string | null> {
+  if (!IS_MAC) return null;
   const [source, binary] = await Promise.all([stat(HELPER_SOURCE).catch(() => null), stat(HELPER).catch(() => null)]);
   if (!source) return null;
   if (binary && binary.mtimeMs >= source.mtimeMs) return HELPER;
   g.__slidesHelper ??= (async () => {
     try {
       await mkdir(path.dirname(HELPER), { recursive: true });
+      // eslint-disable-next-line no-restricted-syntax -- Mac only; Windows: ocr.ps1 and poppler
       await promisify(execFile)("swiftc", ["-O", HELPER_SOURCE, "-o", HELPER], { timeout: 180_000 });
       return HELPER;
     } catch (error) {
@@ -128,8 +133,17 @@ async function helper(): Promise<string | null> {
   return g.__slidesHelper;
 }
 
-// The words in a picture, read by the Mac (empty if it can't).
+// Windows PowerShell, for the scripts in scripts/native/*.ps1. Each file
+// name goes to the script as its own argument, never inside a command.
+const powershell = (script: string, args: string[], timeout: number) =>
+  run("powershell.exe", ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", path.join(ROOT, "scripts/native", script), ...args], { timeout });
+
+// The words in a picture, read by the computer (empty if it can't).
 async function readWords(file: string) {
+  if (IS_WINDOWS) {
+    const r = await powershell("ocr.ps1", [file], 60_000).catch(() => null);
+    return r?.code === 0 ? tidyText(r.stdout.toString("utf8")) : "";
+  }
   const bin = await helper();
   if (!bin) return "";
   const r = await run(bin, ["ocr", file], { timeout: 60_000 }).catch(() => null);
@@ -211,7 +225,7 @@ async function pdfPages(pdf: string, dir: string, onStep: (label: string) => voi
     );
   } else {
     const bin = await helper();
-    if (!bin) throw new SlidesError("This Mac can't open PDFs yet. Run npm run setup, then try again.");
+    if (!bin) throw new SlidesError(`This ${IS_MAC ? "Mac" : "computer"} can't open PDFs yet. Run npm run setup, then try again.`);
     onStep("Drawing the slides");
     const r = await run(bin, ["pdf", pdf, dir, String(MIN_WIDTH)], { timeout: 600_000 });
     if (r.code !== 0) throw new SlidesError("This PDF couldn't be opened. Try exporting it again.");
@@ -480,6 +494,7 @@ async function keynotePdf(file: string, work: string): Promise<{ pdf: string; sk
   if (!id) throw new SlidesError("Keynote isn't on this Mac.");
   const pdf = path.join(work, "keynote.pdf");
   const args = KEYNOTE_SCRIPT(id).flatMap((line) => ["-e", line]);
+  // eslint-disable-next-line no-restricted-syntax -- Keynote is Mac only; Windows: PowerPoint (office-pdf.ps1)
   const r = await run("/usr/bin/osascript", [...args, file, pdf], { timeout: 180_000 });
   if (r.code !== 0 || !existsSync(pdf)) {
     throw new SlidesError(
@@ -491,6 +506,37 @@ async function keynotePdf(file: string, work: string): Promise<{ pdf: string; sk
     pdf,
     skipped: skips.split(String.fromCharCode(30)).map((s) => s.trim() === "true"),
     notes: notes.split(String.fromCharCode(30)).map((s) => tidyText(s === "missing value" ? "" : s)),
+  };
+}
+
+// PowerPoint, on Windows, does what Keynote does on a Mac: opens the deck
+// without a window, saves it as a PDF (hidden slides left out), hands back
+// each slide's notes and closes it without saving
+// (scripts/native/office-pdf.ps1). STUDIO_POWERPOINT=off in .env.local:
+// never open PowerPoint.
+let powerPoint: Promise<boolean> | null = null;
+export function findPowerPoint(): Promise<boolean> {
+  if (!IS_WINDOWS || process.env.STUDIO_POWERPOINT === "off") return Promise.resolve(false);
+  powerPoint ??= run("reg", ["query", "HKCR\\PowerPoint.Application"], { timeout: 10_000 }).then(
+    (r) => r.code === 0,
+    () => false,
+  );
+  return powerPoint;
+}
+
+async function powerPointPdf(file: string, work: string): Promise<{ pdf: string; skipped: boolean[]; notes: string[] }> {
+  const pdf = path.join(work, "powerpoint.pdf");
+  const r = await powershell("office-pdf.ps1", [file, pdf], 180_000);
+  if (r.code !== 0 || !existsSync(pdf)) {
+    throw new SlidesError(
+      "PowerPoint couldn't export the deck. Open PowerPoint once and close any window it shows, then try again, or save a PDF from PowerPoint (File, Export, PDF) and drop that in.",
+    );
+  }
+  const [skips = "", notes = ""] = r.stdout.toString("utf8").replace(/\r?\n$/, "").split(String.fromCharCode(29));
+  return {
+    pdf,
+    skipped: skips.split(String.fromCharCode(30)).map((s) => s.trim() === "true"),
+    notes: notes.split(String.fromCharCode(30)).map((s) => tidyText(s)),
   };
 }
 
@@ -542,10 +588,32 @@ function withImport<T>(id: string, job: () => Promise<T>): Promise<T> {
 
 // A picture made a slide: PNG, at least 1920 px wide (at most 3840).
 async function pictureSlide(file: string, out: string) {
+  if (!IS_MAC) {
+    let source = file;
+    if (/\.(heic|heif)$/i.test(file)) {
+      source = `${out}.heic.jpg`;
+      await heicToJpeg(file, source);
+    }
+    try {
+      const image = sharp(source, { animated: false }).rotate();
+      const width = (await image.metadata()).autoOrient?.width ?? 0;
+      if (!width) throw new SlidesError(`${path.basename(file)} isn't a picture this computer can open.`);
+      const target = width < MIN_WIDTH ? MIN_WIDTH : width > MAX_WIDTH ? MAX_WIDTH : width;
+      await (target !== width ? image.resize({ width: target }) : image).png().toFile(out);
+    } catch (e) {
+      if (e instanceof SlidesError) throw e;
+      throw new SlidesError(`${path.basename(file)} isn't a picture this computer can open.`);
+    } finally {
+      if (source !== file) await rm(source, { force: true });
+    }
+    return pngSize(out);
+  }
+  // eslint-disable-next-line no-restricted-syntax -- Mac only; sharp above elsewhere
   const r = await mustRun("/usr/bin/sips", ["-g", "pixelWidth", "-g", "pixelHeight", file]);
   const width = Number(/pixelWidth: (\d+)/.exec(r.stdout.toString())?.[1]);
   if (!width) throw new SlidesError(`${path.basename(file)} isn't a picture this Mac can open.`);
   const target = width < MIN_WIDTH ? MIN_WIDTH : width > MAX_WIDTH ? MAX_WIDTH : width;
+  // eslint-disable-next-line no-restricted-syntax -- Mac only; sharp above elsewhere
   await mustRun("/usr/bin/sips", ["-s", "format", "png", ...(target !== width ? ["--resampleWidth", String(target)] : []), file, "--out", out]);
   return pngSize(out);
 }
@@ -623,6 +691,14 @@ export async function convertInto(
         why = String((e as Error).message);
       }
     }
+    if (!drawn && ext !== "key" && (await findPowerPoint())) {
+      onStep("Drawing the slides with PowerPoint");
+      try {
+        drawn = await powerPointPdf(file, work);
+      } catch (e) {
+        why = e instanceof SlidesError ? e.message : String((e as Error).message);
+      }
+    }
     if (!drawn && ext !== "odp" && (await findKeynote())) {
       onStep("Drawing the slides with Keynote");
       try {
@@ -631,16 +707,22 @@ export async function convertInto(
         why = e instanceof SlidesError ? e.message : String((e as Error).message);
       }
     }
+    // PowerPoint says which slides are hidden, which an .odp's own XML
+    // doesn't, so its PDF lines up with the words.
+    if (IS_WINDOWS && words && drawn?.skipped?.length === words.length) words = words.map((w, i) => ({ ...w, hidden: w.hidden || !!drawn?.skipped?.[i] }));
     const pages = drawn ? await pdfPages(drawn.pdf, path.join(work, "pages"), onStep, maxPages) : null;
 
     if (!words) {
       // Keynote or .ppt: the words come from the PDF, the notes from Keynote.
       if (!pages) {
         const app = ext === "key" ? "Keynote" : "PowerPoint";
+        if (ext === "key" && !IS_MAC) {
+          throw new SlidesError("Keynote files need Keynote, which only runs on a Mac. In Keynote, choose File, Export To, PDF, and drop the PDF here.");
+        }
         throw new SlidesError(
-          why && ext === "key"
+          why && (ext === "key" || why.startsWith("PowerPoint"))
             ? why
-            : `This Mac can't open ${ext === "key" ? "Keynote" : "this kind of"} files on its own. In ${app}, choose File, Export, PDF, and drop the PDF here.`,
+            : `This ${IS_MAC ? "Mac" : "computer"} can't open ${ext === "key" ? "Keynote" : "this kind of"} files on its own. In ${app}, choose File, Export, PDF, and drop the PDF here.`,
         );
       }
       const notes = (drawn?.notes ?? []).filter((_, i) => !drawn?.skipped?.[i]);
@@ -668,7 +750,7 @@ export async function convertInto(
     if (!pages) {
       const app = ext === "odp" ? "your slides app" : "PowerPoint (or Google Slides)";
       notes.unshift(
-        `Got the words and notes, but ${why.startsWith("Keynote") ? "Keynote couldn't draw the slides (open Keynote once and close any window it shows)" : "this Mac can't draw these slides"}. In ${app}, choose File, Export, PDF, and drop the PDF here too: it fills in the pictures. Installing LibreOffice also fixes this.`,
+        `Got the words and notes, but ${why.startsWith("Keynote") ? "Keynote couldn't draw the slides (open Keynote once and close any window it shows)" : why.startsWith("PowerPoint") ? "PowerPoint couldn't draw the slides (open PowerPoint once and close any window it shows)" : `this ${IS_MAC ? "Mac" : "computer"} can't draw these slides`}. In ${app}, choose File, Export, PDF, and drop the PDF here too: it fills in the pictures. Installing LibreOffice also fixes this.`,
       );
     }
     return { slides, note: notes.filter(Boolean).join(" ") || null };

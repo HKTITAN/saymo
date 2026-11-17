@@ -1,13 +1,14 @@
 import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { createWriteStream, existsSync } from "node:fs";
-import { mkdir, rename, rm, stat } from "node:fs/promises";
+import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { Attachment, AttachmentKind } from "../films/contract";
 import { slidesForAttachment, SlidesError } from "./slides";
 import { MAX_DECK_BYTES } from "./slides-shared";
+import { docxText, heicToJpeg } from "../server/convert";
 
 // Files attached to a prompt: a reference picture, a brief as a PDF, notes.
 // They're saved beside the film (refs/) or the kit (guide/) so Claude can
@@ -51,13 +52,6 @@ const kindsFor = (folder: "refs" | "guide") => (folder === "refs" ? { ...KINDS, 
 const ATTACHED_PAGES = 60;
 
 export class AttachmentError extends Error {}
-
-const run = (cmd: string, args: string[]) =>
-  new Promise<void>((resolve, reject) => {
-    const proc = spawn(cmd, args, { stdio: "ignore" });
-    proc.on("error", reject);
-    proc.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} failed`))));
-  });
 
 // A sound file's length in seconds, or null if ffprobe finds no sound in it.
 const soundLength = (file: string) =>
@@ -140,11 +134,11 @@ export async function saveAttachment(
       await rename(part, final);
     } else if (ext === "heic" || ext === "heif") {
       final = final.replace(/\.(heic|heif)$/, ".jpg");
-      await run("sips", ["-s", "format", "jpeg", part, "--out", final]);
+      await heicToJpeg(part, final);
       await rm(part, { force: true });
     } else if (ext === "docx") {
       final = final.replace(/\.docx$/, ".txt");
-      await run("textutil", ["-convert", "txt", part, "-output", final]);
+      await writeFile(final, `${await docxText(part)}\n`);
       await rm(part, { force: true });
     } else {
       await rename(part, final);

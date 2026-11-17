@@ -13,6 +13,8 @@ import type { Attachment } from "../films/contract";
 import { AttachmentError, saveAttachment } from "../input/attachments";
 import { filmDir, isId, newId, readFilm, ROOT } from "../films/films";
 import { mediaDir, readMedia } from "../films/media";
+import { docxText, heicToJpeg } from "../server/convert";
+import { IS_MAC, which } from "../server/platform";
 import {
   cleanTags,
   EXTS,
@@ -358,8 +360,6 @@ function run(cmd: string, args: string[], { timeout = 120_000 }: { timeout?: num
   });
 }
 
-const SEARCH = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin", ...(process.env.PATH ?? "").split(":")];
-const which = (cmd: string) => SEARCH.map((d) => path.join(d, cmd)).find((p) => existsSync(p)) ?? null;
 
 type Probe = {
   streams?: { codec_type?: string; width?: number; height?: number; side_data_list?: { rotation?: number }[]; tags?: { rotate?: string }; disposition?: { attached_pic?: number } }[];
@@ -376,7 +376,7 @@ async function prepare(item: RefItem, dir: string) {
     let source = original;
     if (ext === "heic" || ext === "heif") {
       source = path.join(dir, ".converted.jpg");
-      await run("sips", ["-s", "format", "jpeg", original, "--out", source]);
+      await heicToJpeg(original, source);
     }
     const picture = sharp(source, { animated: false, density: ext === "svg" ? 216 : undefined }).rotate();
     const info = await picture.metadata();
@@ -458,12 +458,12 @@ async function prepare(item: RefItem, dir: string) {
     return;
   }
   if (item.kind === "doc") {
-    item.excerpt = (await run("textutil", ["-convert", "txt", "-stdout", original]).catch(() => "")).trim().slice(0, 600);
+    item.excerpt = (await docxText(original).catch(() => "")).slice(0, 600);
   }
 }
 
 // A PDF's first page as the card's picture: poppler when it's installed,
-// else Quick Look.
+// else Quick Look on a Mac (setup installs poppler on Windows).
 async function pdfThumb(pdf: string, dir: string) {
   const out = path.join(dir, "thumb.webp");
   const pdftoppm = which("pdftoppm");
@@ -474,8 +474,10 @@ async function pdfThumb(pdf: string, dir: string) {
     await rm(`${prefix}.png`, { force: true });
     return;
   }
+  if (!IS_MAC) return;
   const work = path.join(dir, ".ql");
   await mkdir(work, { recursive: true });
+  // eslint-disable-next-line no-restricted-syntax -- Mac only; Windows uses poppler, above
   await run("/usr/bin/qlmanage", ["-t", "-s", "900", "-o", work, pdf]);
   const png = (await readdir(work)).find((f) => f.endsWith(".png"));
   if (png) await sharp(path.join(work, png)).resize(THUMB).webp({ quality: 84 }).toFile(out);

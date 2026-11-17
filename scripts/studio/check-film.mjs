@@ -16,7 +16,8 @@ import { execFileSync, spawn } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { IS_MAC, packageBin } from "./platform.mjs";
 import { parseWordRef, resolveEdit } from "../../src/lib/studio/films/anchors.ts";
 import { readTranscriptsSync } from "../../src/lib/studio/films/edit-file.ts";
 
@@ -90,9 +91,10 @@ if (film.engine === "html") {
   if (process.env.STUDIO_EDITION === "product" && /<script[^>]+src=["'][^"']*gsap[^"']*["']/i.test(html)) {
     fail("index.html loads GSAP, which this edition of the studio doesn't include. Move the film to Motion (assets/vendor/motion.js with assets/timeline.js).");
   }
-  const bin = path.join(ROOT, "studio/hyperframes/node_modules/.bin/hyperframes");
-  if (!existsSync(bin)) fail("The film checker isn't installed: run `npm ci` in studio/hyperframes.");
-  const code = await run(bin, ["check", dir, "--max-issues=30"], {
+  const checker = packageBin(path.join(ROOT, "studio/hyperframes"), "hyperframes");
+  if (!checker) fail("The film checker isn't installed: run `npm ci` in studio/hyperframes.");
+  const [bin, before] = checker;
+  const code = await run(bin, [...before, "check", dir, "--max-issues=30"], {
     // CI=1: no warm checker left running in the background afterwards.
     env: { ...process.env, HYPERFRAMES_NO_TELEMETRY: "1", CI: "1" },
   });
@@ -135,11 +137,13 @@ if (film.engine === "rust") {
     '  (subpath "/private/tmp") (subpath "/private/var/folders") (literal "/dev/null"))',
   ].join("\n");
   const cargo = existsSync(path.join(cargoHome, "bin/cargo")) ? path.join(cargoHome, "bin/cargo") : "cargo";
-  process.exit(
-    await run("sandbox-exec", ["-p", profile, cargo, "build", "--release", "--offline", "--quiet"], {
-      env: { ...process.env, CARGO_TARGET_DIR: target },
-    }),
-  );
+  const build = ["build", "--release", "--offline", "--quiet"];
+  const env = { ...process.env, CARGO_TARGET_DIR: target };
+  // Windows has no sandbox-exec. The checks above still hold there (only
+  // the studio's build.rs, no proc-macros, no network), which is how a
+  // render builds the film on the Mac too.
+  // eslint-disable-next-line no-restricted-syntax -- Mac's sandbox; Windows builds with the checks above
+  process.exit(IS_MAC ? await run("sandbox-exec", ["-p", profile, cargo, ...build], { env }) : await run(cargo, build, { env }));
 }
 
 fail(`Unknown engine "${film.engine}" in film.json.`);
@@ -157,7 +161,7 @@ async function checkLayers() {
   const LAYER_BUDGET = 16; // full frames of 3D layers at one moment
   let chromium;
   try {
-    ({ chromium } = await import(path.join(ROOT, "node_modules/playwright/index.mjs")));
+    ({ chromium } = await import(pathToFileURL(path.join(ROOT, "node_modules/playwright/index.mjs")).href));
   } catch {
     console.log("Skipped the graphics memory check (Playwright isn't installed).");
     return 0;

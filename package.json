@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/post/export.mjs",
-    "setup": "bash scripts/setup.sh",
+    "setup": "node scripts/setup.mjs",
     "licences": "node scripts/licences.mjs",
     "studio": "node scripts/studio/cli.mjs"
   },
@@ -17,6 +17,7 @@
     "@base-ui/react": "^1.9.0",
     "@hugeicons/core-free-icons": "^4.4.0",
     "@hugeicons/react": "^1.1.10",
+    "@mediapipe/tasks-vision": "1.2.3",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "border-beam": "^1.4.1",
     "class-variance-authority": "^0.7.1",

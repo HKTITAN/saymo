@@ -1,6 +1,7 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { STUDIO_DIR } from "../connect/connect-store";
+import { privateDir } from "../server/platform";
 
 // The person's list of things to make, on the Ideas page: reels, demos and
 // videos, each still to make, made, or let go. Kept on this Mac in
@@ -48,7 +49,7 @@ export async function readIdeas(): Promise<Idea[]> {
 }
 
 export async function writeIdeas(list: Idea[]) {
-  await mkdir(STUDIO_DIR, { recursive: true, mode: 0o700 });
+  privateDir(STUDIO_DIR);
   await writeFile(`${FILE}.tmp`, `${JSON.stringify(list, null, 2)}\n`, { mode: 0o600 });
   await rename(`${FILE}.tmp`, FILE);
 }

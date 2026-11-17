@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
+import { OWN_GROUP } from "../server/platform";
 import { mkdir, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { CLAUDE_BIN, killGroup } from "./ai-env";
+import { CLAUDE_BIN, killGroup, aiCommand } from "./ai-env";
 import { readChat } from "./claude";
 import { FILMS_DIR, readFilm, withFilm, writeFilm } from "../films/films";
 import { claudeEnvFor, keyProblem } from "./providers";
@@ -44,7 +45,7 @@ async function askForName(brief: string): Promise<string | null> {
   const env = await claudeEnvFor().catch(() => null);
   if (!env) return null;
   return new Promise((resolve) => {
-    const proc = spawn(CLAUDE_BIN, args, { cwd, env, stdio: ["pipe", "pipe", "ignore"], detached: true });
+    const proc = spawn(...aiCommand(CLAUDE_BIN, args), { cwd, env, stdio: ["pipe", "pipe", "ignore"], ...OWN_GROUP });
     let out = "";
     const limit = setTimeout(() => proc.pid && killGroup(proc.pid), LIMIT_MS);
     proc.stdout.on("data", (c: Buffer) => {

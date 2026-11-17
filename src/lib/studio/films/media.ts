@@ -8,6 +8,8 @@ import { pipeline } from "node:stream/promises";
 import sharp from "sharp";
 import type { Edit, Media, MediaKind } from "./edit";
 import { filmDir, isId, newId, ROOT } from "./films";
+import { heicToJpeg } from "../server/convert";
+import { IS_MAC } from "../server/platform";
 
 // Footage brought into a video film. Each file gets its own folder,
 // films/<id>/media/<mid>/, holding the original (never changed), a record
@@ -362,7 +364,7 @@ async function prepareImage(id: string, media: Media, dir: string, original: str
   const ext = path.extname(original).slice(1).toLowerCase();
   if (ext === "heic" || ext === "heif") {
     source = path.join(dir, "converted.jpg");
-    await run("sips", ["-s", "format", "jpeg", "-s", "formatOptions", "95", original, "--out", source]);
+    await heicToJpeg(original, source);
   }
   const image = sharp(source, { animated: false }).rotate();
   const meta = await image.metadata();
@@ -483,13 +485,18 @@ function nextCutout() {
   );
 }
 
-async function visionBinary() {
+// The person finder as [program, arguments before the job's own]: macOS's
+// Vision on a Mac; elsewhere the same jobs run with MediaPipe in Chrome
+// (scripts/native/vision.mjs).
+async function vision(): Promise<[string, string[]]> {
+  if (!IS_MAC) return [process.execPath, [path.join(ROOT, "scripts/native/vision.mjs")]];
   const source = path.join(ROOT, "scripts/native/vision.swift");
   const binary = path.join(ROOT, "node_modules/.cache/speaker-post/vision");
-  if (existsSync(binary) && statSync(binary).mtimeMs >= statSync(source).mtimeMs) return binary;
+  if (existsSync(binary) && statSync(binary).mtimeMs >= statSync(source).mtimeMs) return [binary, []];
   await mkdir(path.dirname(binary), { recursive: true });
+  // eslint-disable-next-line no-restricted-syntax -- Mac only; elsewhere vision.mjs, above
   await run("swiftc", ["-O", source, "-o", binary]);
-  return binary;
+  return [binary, []];
 }
 
 async function cutOut(id: string, mid: string) {
@@ -500,7 +507,8 @@ async function cutOut(id: string, mid: string) {
   const masks = await mkdtemp(path.join(tmpdir(), "studio-cutout-"));
   try {
     await update(id, mid, () => ({ step: "Finding you in each frame" }));
-    const frames = Number((await run(await visionBinary(), ["matte", proxy, masks])).trim());
+    const [finder, before] = await vision();
+    const frames = Number((await run(finder, [...before, "matte", proxy, masks])).trim());
     if (!frames) throw new Error("no frames");
     // The masks come one per frame of the preview copy, which runs at a steady rate (see prepare).
     const fps = Math.min(media.fps ?? 30, 60);

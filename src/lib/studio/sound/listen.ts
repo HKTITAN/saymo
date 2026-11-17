@@ -2,6 +2,7 @@ import path from "node:path";
 import { AUDIO_EXTS } from "../input/attachments";
 import type { Attachment, ChatContext, Film } from "../films/contract";
 import { ROOT } from "../films/films";
+import { rulePath, shellPath } from "../server/platform";
 
 // Reference sounds: audio files attached to a film's prompt ("make it feel
 // like this"). Claude can't hear, so it runs the listening tool
@@ -9,10 +10,10 @@ import { ROOT } from "../films/films";
 // compare. The tool only opens this film's refs/ and its rendered sound.
 // References guide the sound; they never go into the film.
 
-export const listenCommand = (id: string) => `node ${path.join(ROOT, "scripts/studio/listen.mjs")} --film ${id}`;
+export const listenCommand = (id: string) => `node ${shellPath(path.join(ROOT, "scripts/studio/listen.mjs"))} --film ${id}`;
 
 // Reads Claude may not try on a sound file (it can't open them; the tool can).
-export const refAudioDenies = (dir: string) => AUDIO_EXTS.map((ext) => `Read(/${dir}/refs/*.${ext})`);
+export const refAudioDenies = (dir: string) => AUDIO_EXTS.map((ext) => `Read(${rulePath(dir)}/refs/*.${ext})`);
 
 const clock = (s?: number) => (s ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}` : "length unknown");
 

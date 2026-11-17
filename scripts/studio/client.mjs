@@ -14,6 +14,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { ownerOnly } from "./platform.mjs";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const TOKEN_FILE = path.join(ROOT, ".studio", "api-token");
@@ -65,6 +66,7 @@ export async function readToken({ create = true } = {}) {
   if (!create) return null;
   const token = `ms_${randomBytes(32).toString("base64url")}`;
   await mkdir(path.dirname(TOKEN_FILE), { recursive: true, mode: 0o700 });
+  ownerOnly(path.dirname(TOKEN_FILE));
   try {
     // Only if there still isn't one: another app may have just made it.
     await writeFile(TOKEN_FILE, `${token}\n`, { mode: 0o600, flag: "wx" });
